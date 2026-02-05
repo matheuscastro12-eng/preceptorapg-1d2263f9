@@ -41,6 +41,14 @@ serve(async (req) => {
     const user = claimsData.user;
     const { planType } = await req.json();
 
+    // Validate planType
+    if (!planType || !["monthly", "annual"].includes(planType)) {
+      return new Response(
+        JSON.stringify({ error: "Tipo de plano inválido" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });

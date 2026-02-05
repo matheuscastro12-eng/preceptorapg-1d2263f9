@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -187,35 +188,118 @@ Cite as obras utilizadas, preferencialmente:
 - SEMPRE explique os mecanismos por trás dos fenômenos
 - SEMPRE correlacione teoria com prática clínica`;
 
+// Input validation constants
+const MAX_TEMA_LENGTH = 500;
+const MAX_OBJETIVOS_LENGTH = 2000;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { tema, objetivos } = await req.json();
+    // Authentication check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Autenticação necessária" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: authError } = await supabaseClient.auth.getUser(token);
+
+    if (authError || !userData.user) {
+      return new Response(
+        JSON.stringify({ error: "Token de autenticação inválido" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check subscription status
+    const { data: subscription } = await supabaseClient
+      .from("subscriptions")
+      .select("status, plan_type")
+      .eq("user_id", userData.user.id)
+      .maybeSingle();
+
+    // Check if user has admin role (admins can use without subscription)
+    const { data: userRole } = await supabaseClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userData.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    const isAdmin = !!userRole;
+    const hasActiveSubscription = subscription?.status === "active" || subscription?.plan_type === "free_access";
+
+    if (!hasActiveSubscription && !isAdmin) {
+      return new Response(
+        JSON.stringify({ error: "Assinatura ativa necessária" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Parse and validate input
+    const body = await req.json();
+    const { tema, objetivos } = body;
     
-    if (!tema || typeof tema !== 'string' || !tema.trim()) {
+    // Validate tema
+    if (!tema || typeof tema !== "string" || !tema.trim()) {
       return new Response(
         JSON.stringify({ error: "Tema é obrigatório" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    if (tema.length > MAX_TEMA_LENGTH) {
+      return new Response(
+        JSON.stringify({ error: `Tema deve ter no máximo ${MAX_TEMA_LENGTH} caracteres` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate objetivos if provided
+    if (objetivos !== undefined && objetivos !== null && typeof objetivos !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Objetivos deve ser texto" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (objetivos && objetivos.length > MAX_OBJETIVOS_LENGTH) {
+      return new Response(
+        JSON.stringify({ error: `Objetivos deve ter no máximo ${MAX_OBJETIVOS_LENGTH} caracteres` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Sanitize inputs (remove control characters)
+    const sanitizedTema = tema.trim().replace(/[\x00-\x1F\x7F]/g, "");
+    const sanitizedObjetivos = objetivos ? objetivos.trim().replace(/[\x00-\x1F\x7F]/g, "") : "";
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    let userPrompt = `**Tema Central:** ${tema.trim()}
+    let userPrompt = `**Tema Central:** ${sanitizedTema}
 
 Gere um fechamento de APG COMPLETO, EXTENSO e PROFUNDO sobre este tema. Não seja superficial. Cubra TODOS os aspectos relevantes com máxima profundidade técnica.`;
     
-    if (objetivos && objetivos.trim()) {
+    if (sanitizedObjetivos) {
       userPrompt += `
 
 **Objetivos de Aprendizado Específicos:**
-${objetivos.trim()}
+${sanitizedObjetivos}
 
 ATENÇÃO: Além da estrutura padrão, certifique-se de responder EXAUSTIVAMENTE a cada um dos objetivos listados acima.`;
     }
