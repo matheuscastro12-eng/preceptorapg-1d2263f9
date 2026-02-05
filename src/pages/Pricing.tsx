@@ -45,11 +45,8 @@ const Pricing = () => {
 
   const handleSubscribe = async (planType: 'monthly' | 'annual') => {
     if (!user) {
-      toast({
-        title: 'Faça login para assinar',
-        description: 'Entre ou crie sua conta para iniciar o checkout.',
-      });
-      navigate('/auth');
+      // Redireciona para auth com o plano escolhido
+      navigate(`/auth?plan=${planType}`);
       return;
     }
 

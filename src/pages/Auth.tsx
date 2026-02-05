@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,11 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, BookOpen, Stethoscope } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const Auth = () => {
   const { user, loading: authLoading, signIn, signUp } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [redirectingToCheckout, setRedirectingToCheckout] = useState(false);
   
   // Login form
   const [loginEmail, setLoginEmail] = useState('');
@@ -24,15 +27,52 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
 
-  if (authLoading) {
+  const planType = searchParams.get('plan') as 'monthly' | 'annual' | null;
+
+  // Redireciona para checkout automaticamente após login se tiver plano na URL
+  useEffect(() => {
+    const redirectToCheckout = async () => {
+      if (user && planType && !redirectingToCheckout) {
+        setRedirectingToCheckout(true);
+        try {
+          const { data, error } = await supabase.functions.invoke('create-checkout', {
+            body: { planType }
+          });
+
+          if (error) throw error;
+
+          if (data?.url) {
+            window.location.href = data.url;
+          }
+        } catch (error) {
+          console.error('Checkout error:', error);
+          toast({
+            title: 'Erro',
+            description: 'Não foi possível iniciar o checkout. Tente novamente.',
+            variant: 'destructive',
+          });
+          setRedirectingToCheckout(false);
+        }
+      }
+    };
+
+    redirectToCheckout();
+  }, [user, planType, redirectingToCheckout, toast]);
+
+  if (authLoading || redirectingToCheckout) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+          {redirectingToCheckout && (
+            <p className="text-muted-foreground">Redirecionando para o checkout...</p>
+          )}
+        </div>
       </div>
     );
   }
 
-  if (user) {
+  if (user && !planType) {
     return <Navigate to="/dashboard" replace />;
   }
 
