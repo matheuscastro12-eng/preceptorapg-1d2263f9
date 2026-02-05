@@ -1,118 +1,99 @@
 
-# Plano de Reestruturação da Interface - Castro's PBL
+# Plano: Toggle Dark/Light Mode, Renomear Botão e Melhorar Formatação
 
 ## Visão Geral
-Reorganizar a interface para ter uma tela principal limpa e focada no gerador, com biblioteca e perfil em abas/modais separados, além de adicionar animação de typing no resultado.
+1. Adicionar toggle de tema escuro/claro no ProfileDropdown
+2. Renomear "Gerar Fechamento" para "Estudar"
+3. Melhorar a formatação do resultado com espaçamentos e visual mais profissional
 
 ---
 
-## 1. Nova Estrutura de Navegação
-
-### Layout Principal
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│  Header: Logo   [Gerador] [Biblioteca]         [Ícone Perfil]   │
-├────────────────────────┬────────────────────────────────────────┤
-│                        │                                        │
-│   ÁREA DE INPUT        │           ÁREA DE RESULTADO            │
-│   (Lado Esquerdo)      │           (Lado Direito)               │
-│                        │                                        │
-│   - Tema               │   - Texto com animação de typing       │
-│   - Objetivos          │   - Botões: Salvar, Copiar, PDF        │
-│   - Botão Gerar        │   - Scroll interno                     │
-│   - Barra Progresso    │                                        │
-│                        │                                        │
-└────────────────────────┴────────────────────────────────────────┘
-```
-
-### Abas do Header
-- **Gerador** (aba principal): Tela dividida com input e resultado
-- **Biblioteca**: Fechamentos salvos em tela cheia
-- **Perfil** (ícone no canto): Dropdown/modal com estatísticas e logout
-
----
-
-## 2. Animação de Typing
+## 1. Toggle de Tema (Dark/Light Mode)
 
 ### Implementação
-- Criar CSS para cursor piscando no final do texto
-- Aplicar efeito quando `generating === true` e texto está sendo recebido
-- Remover cursor quando geração completar
+- Utilizar a biblioteca `next-themes` já instalada no projeto
+- Adicionar `ThemeProvider` no `App.tsx` para gerenciar o estado do tema
+- Remover a classe `dark` fixa do `html` no CSS
+- Adicionar switch de tema no `ProfileDropdown` com ícones de sol/lua
 
-### CSS Necessário
-```css
-@keyframes blink-cursor {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
+### Arquivos a Modificar
+- `src/App.tsx`: Envolver app com `ThemeProvider`
+- `src/index.css`: Remover `@apply dark` do html
+- `src/components/ProfileDropdown.tsx`: Adicionar toggle com `useTheme()`
 
-.typing-cursor::after {
-  content: '▋';
-  animation: blink-cursor 1s infinite;
-  color: hsl(var(--primary));
-}
+---
+
+## 2. Renomear Botão
+
+### Mudança
+- Trocar texto "Gerar Fechamento" para "Estudar"
+- Manter ícone de Sparkles
+
+### Arquivo
+- `src/pages/Dashboard.tsx`: Alterar texto do botão
+
+---
+
+## 3. Melhorar Formatação do Resultado
+
+### Melhorias no MarkdownRenderer
+- Aumentar espaçamento entre seções
+- Adicionar bordas/backgrounds sutis para separar seções
+- Melhorar contraste e legibilidade
+- Adicionar estilos para tabelas (caso existam)
+- Melhorar visual de listas com bullets customizados
+- Adicionar padding e margens mais generosas
+
+### CSS Adicional
+- Criar classe `.markdown-content` com estilos refinados
+- Adicionar separadores visuais entre seções h2
+- Melhorar visual de blockquotes e código
+
+### Arquivo
+- `src/components/MarkdownRenderer.tsx`: Refinar componentes
+- `src/index.css`: Adicionar estilos para `.markdown-content`
+
+---
+
+## Detalhes Técnicos
+
+### ThemeProvider Setup
+```tsx
+// App.tsx
+import { ThemeProvider } from 'next-themes';
+
+<ThemeProvider attribute="class" defaultTheme="dark">
+  {/* routes */}
+</ThemeProvider>
 ```
 
----
+### Toggle no ProfileDropdown
+```tsx
+import { useTheme } from 'next-themes';
+import { Switch } from '@/components/ui/switch';
+import { Sun, Moon } from 'lucide-react';
 
-## 3. Componentes a Criar/Modificar
+const { theme, setTheme } = useTheme();
 
-### Novos Componentes
-- `src/components/ProfileDropdown.tsx`: Menu dropdown do perfil com estatísticas
-- `src/pages/Library.tsx`: Página dedicada para biblioteca
+<div className="flex items-center justify-between">
+  <span>Modo Claro</span>
+  <Switch 
+    checked={theme === 'light'} 
+    onCheckedChange={(checked) => setTheme(checked ? 'light' : 'dark')} 
+  />
+</div>
+```
 
-### Modificações
-- `src/App.tsx`: Adicionar rota `/library`
-- `src/pages/Dashboard.tsx`: Redesenhar para layout lado-a-lado (input | resultado)
-- `src/components/MarkdownRenderer.tsx`: Adicionar suporte para cursor de typing
-- `src/index.css`: Adicionar animação de cursor
-
----
-
-## 4. Detalhes Técnicos
-
-### Dashboard Redesenhado
-- Usar `grid grid-cols-2` para dividir a tela em desktop
-- Input à esquerda com altura total
-- Resultado à direita com scroll interno
-- Mobile: empilhar verticalmente
-
-### ProfileDropdown
-- Ícone `User` ou `CircleUser` no header
-- Ao clicar, abrir Popover/DropdownMenu com:
-  - Email do usuário
-  - Cards de estatísticas (compactos)
-  - Botão de logout
-- Usar componente `Popover` existente
-
-### Animação de Typing no MarkdownRenderer
-- Prop `isTyping?: boolean`
-- Quando true, adicionar classe `.typing-cursor` ao container
-- Container do texto recebe cursor piscando no final
-
-### Navegação por Abas
-- Usar tabs no header para alternar entre Gerador e Biblioteca
-- Tabs integrados ao header de forma elegante
-- Estado controlado por URL ou state local
-
----
-
-## 5. Arquivos a Modificar
-
-| Arquivo | Ação |
-|---------|------|
-| `src/App.tsx` | Adicionar rota `/library` |
-| `src/pages/Dashboard.tsx` | Redesenhar layout lado-a-lado, remover stats e biblioteca |
-| `src/pages/Library.tsx` | Nova página com FechamentoLibrary em tela cheia |
-| `src/components/ProfileDropdown.tsx` | Novo componente de perfil |
-| `src/components/MarkdownRenderer.tsx` | Adicionar prop isTyping com cursor |
-| `src/index.css` | Adicionar keyframes de cursor piscando |
+### Formatação Melhorada no Markdown
+- Headings h2: Adicionar background sutil e padding
+- Listas: Espaçamento maior entre itens, bullets com cor primária
+- Parágrafos: Line-height maior para melhor leitura
+- Seções: Margin-top maior para separar conteúdo
+- Strong/Bold: Destaque com cor primária
 
 ---
 
 ## Resultado Esperado
-- Tela principal limpa e focada na geração
-- Layout dividido: input à esquerda, resultado à direita
-- Biblioteca acessível por aba dedicada
-- Perfil com estatísticas em dropdown no canto superior direito
-- Animação de typing enquanto IA gera conteúdo
+- Toggle funcional para alternar entre tema claro e escuro
+- Botão renomeado para "Estudar"
+- Resultado formatado de forma mais profissional e legível
