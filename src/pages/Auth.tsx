@@ -103,11 +103,11 @@ const Auth = () => {
             </div>
           </div>
           <h1 className="mb-4 font-display text-4xl font-bold text-white">
-            Castro's PBL
+            PreceptorAPG
           </h1>
           <p className="text-lg text-white/90">
             Fechamentos de objetivos com IA para estudantes de medicina.
-            Metodologia PBL/APG da rede AFYA.
+            Metodologia PBL/APG (Aprendizagem em Pequenos Grupos).
           </p>
           <div className="mt-8 flex items-center justify-center gap-4 text-white/70">
             <BookOpen className="h-5 w-5" />
@@ -125,7 +125,7 @@ const Auth = () => {
               <Stethoscope className="h-10 w-10 text-primary" />
             </div>
             <h1 className="font-display text-2xl font-bold text-gradient-medical">
-              Castro's PBL
+              PreceptorAPG
             </h1>
           </div>
           

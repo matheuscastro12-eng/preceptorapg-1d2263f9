@@ -38,15 +38,21 @@ const Pricing = () => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  if (hasAccess) {
+  // Allow viewing pricing without login; require login only to start checkout.
+  if (user && hasAccess) {
     return <Navigate to="/dashboard" replace />;
   }
 
   const handleSubscribe = async (planType: 'monthly' | 'annual') => {
+    if (!user) {
+      toast({
+        title: 'Faça login para assinar',
+        description: 'Entre ou crie sua conta para iniciar o checkout.',
+      });
+      navigate('/auth');
+      return;
+    }
+
     setLoadingPlan(planType);
     
     try {
@@ -98,11 +104,17 @@ const Pricing = () => {
             </div>
             <div>
               <span className="font-display text-xl font-bold text-gradient-medical">
-                Castro's PBL
+                PreceptorAPG
               </span>
               <p className="text-xs text-muted-foreground">Fechamentos com IA</p>
             </div>
           </div>
+
+          {!user ? (
+            <Button variant="outline" onClick={() => navigate('/auth')}>
+              Entrar / Criar conta
+            </Button>
+          ) : null}
         </div>
       </header>
 
