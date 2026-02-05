@@ -222,17 +222,23 @@ const Dashboard = () => {
 
       const paragraphs = pdfContainer.querySelectorAll('p');
       paragraphs.forEach((p) => {
-        (p as HTMLElement).style.cssText = 'margin-bottom: 8px !important; text-align: justify !important;';
+        (p as HTMLElement).style.cssText = 'color: #1a1a1a !important; margin-bottom: 8px !important; text-align: justify !important;';
       });
 
       const lists = pdfContainer.querySelectorAll('ul, ol');
       lists.forEach((list) => {
-        (list as HTMLElement).style.cssText = 'margin-left: 20px !important; margin-bottom: 10px !important;';
+        (list as HTMLElement).style.cssText = 'color: #1a1a1a !important; margin-left: 20px !important; margin-bottom: 10px !important;';
       });
 
       const listItems = pdfContainer.querySelectorAll('li');
       listItems.forEach((li) => {
-        (li as HTMLElement).style.cssText = 'margin-bottom: 4px !important;';
+        (li as HTMLElement).style.cssText = 'color: #1a1a1a !important; margin-bottom: 4px !important;';
+      });
+
+      // Força cor preta em spans e outros elementos inline
+      const spans = pdfContainer.querySelectorAll('span, em, code, a');
+      spans.forEach((span) => {
+        (span as HTMLElement).style.cssText = 'color: #1a1a1a !important;';
       });
       
       const opt = {
