@@ -72,6 +72,7 @@ const Auth = () => {
     );
   }
 
+  // Usuário logado sem plano na URL vai direto pro dashboard
   if (user && !planType) {
     return <Navigate to="/dashboard" replace />;
   }

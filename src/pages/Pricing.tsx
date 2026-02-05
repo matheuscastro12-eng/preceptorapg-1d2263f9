@@ -38,8 +38,8 @@ const Pricing = () => {
     );
   }
 
-  // Allow viewing pricing without login; require login only to start checkout.
-  if (user && hasAccess) {
+  // Redireciona usuários com acesso para o dashboard
+  if (!subLoading && user && hasAccess) {
     return <Navigate to="/dashboard" replace />;
   }
 
