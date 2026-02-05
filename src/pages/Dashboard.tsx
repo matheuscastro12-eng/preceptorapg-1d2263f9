@@ -391,12 +391,12 @@ const Dashboard = () => {
                 {generating ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Gerando...
+                    Estudando...
                   </>
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-5 w-5" />
-                    Gerar Fechamento
+                    Estudar
                   </>
                 )}
               </Button>
