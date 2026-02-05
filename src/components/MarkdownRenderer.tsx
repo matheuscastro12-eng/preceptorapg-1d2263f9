@@ -11,6 +11,8 @@ const MarkdownRenderer = ({ content, className = '', isTyping = false }: Markdow
     <div className={`markdown-content ${className} ${isTyping ? 'typing-cursor' : ''}`}>
       <ReactMarkdown
         components={{
+          // Remove images from rendered content
+          img: () => null,
           h1: ({ children }) => (
             <h1 className="mb-6 mt-8 text-2xl font-bold text-primary first:mt-0 pb-3 border-b-2 border-primary/30">
               {children}
