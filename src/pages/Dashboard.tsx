@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useUserStats } from '@/hooks/useUserStats';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import FechamentoLibrary from '@/components/FechamentoLibrary';
+import StatsCard from '@/components/StatsCard';
+import GenerationProgress from '@/components/GenerationProgress';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Loader2, 
@@ -17,10 +19,15 @@ import {
   Sparkles, 
   Copy, 
   BookOpen,
-  FileText,
   Download,
-  Save
+  Save,
+  FileText,
+  Star,
+  Calendar,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface Fechamento {
   id: string;
@@ -34,19 +41,30 @@ interface Fechamento {
 const Dashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
+  const { stats, refresh: refreshStats } = useUserStats();
+  
   const [tema, setTema] = useState('');
   const [objetivos, setObjetivos] = useState('');
   const [resultado, setResultado] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [hasStartedReceiving, setHasStartedReceiving] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [libraryKey, setLibraryKey] = useState(0);
+  const [libraryOpen, setLibraryOpen] = useState(true);
   const resultRef = useRef<HTMLDivElement>(null);
 
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="text-center space-y-4">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
+            <Stethoscope className="relative h-12 w-12 text-primary animate-float" />
+          </div>
+          <p className="text-muted-foreground animate-pulse">Carregando...</p>
+        </div>
       </div>
     );
   }
@@ -67,6 +85,8 @@ const Dashboard = () => {
 
     setGenerating(true);
     setResultado('');
+    setHasStartedReceiving(false);
+    setIsComplete(false);
 
     try {
       const response = await fetch(
@@ -107,6 +127,9 @@ const Dashboard = () => {
                 const parsed = JSON.parse(jsonStr);
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
+                  if (!hasStartedReceiving) {
+                    setHasStartedReceiving(true);
+                  }
                   fullText += content;
                   setResultado(fullText);
                 }
@@ -117,6 +140,8 @@ const Dashboard = () => {
           }
         }
       }
+      
+      setIsComplete(true);
     } catch (error) {
       toast({
         title: 'Erro',
@@ -144,11 +169,9 @@ const Dashboard = () => {
     try {
       const html2pdf = (await import('html2pdf.js')).default;
       
-      // Create a styled container for PDF - not a clone, build fresh content
       const pdfContainer = document.createElement('div');
       pdfContainer.innerHTML = resultRef.current.innerHTML;
       
-      // Apply print-friendly styles to container
       pdfContainer.style.cssText = `
         background: white !important;
         color: #1a1a1a !important;
@@ -161,7 +184,6 @@ const Dashboard = () => {
         overflow: visible !important;
       `;
       
-      // Style all text elements for print
       const allElements = pdfContainer.querySelectorAll('*');
       allElements.forEach((el) => {
         const htmlEl = el as HTMLElement;
@@ -171,7 +193,6 @@ const Dashboard = () => {
         htmlEl.style.overflow = 'visible';
       });
       
-      // Style headings
       const h1s = pdfContainer.querySelectorAll('h1');
       h1s.forEach((h1) => {
         (h1 as HTMLElement).style.cssText = 'color: #0d5c4d !important; font-size: 18pt !important; margin-bottom: 12px !important; font-weight: bold !important; page-break-after: avoid !important;';
@@ -187,19 +208,16 @@ const Dashboard = () => {
         (h3 as HTMLElement).style.cssText = 'color: #1a1a1a !important; font-size: 12pt !important; margin-top: 14px !important; margin-bottom: 6px !important; font-weight: bold !important; page-break-after: avoid !important;';
       });
       
-      // Style bold/strong elements
       const strongs = pdfContainer.querySelectorAll('strong');
       strongs.forEach((strong) => {
         (strong as HTMLElement).style.cssText = 'color: #0d5c4d !important; font-weight: bold !important;';
       });
 
-      // Style paragraphs
       const paragraphs = pdfContainer.querySelectorAll('p');
       paragraphs.forEach((p) => {
         (p as HTMLElement).style.cssText = 'margin-bottom: 8px !important; text-align: justify !important;';
       });
 
-      // Style lists
       const lists = pdfContainer.querySelectorAll('ul, ol');
       lists.forEach((list) => {
         (list as HTMLElement).style.cssText = 'margin-left: 20px !important; margin-bottom: 10px !important;';
@@ -273,8 +291,8 @@ const Dashboard = () => {
         description: 'Fechamento salvo na sua biblioteca.',
       });
 
-      // Refresh library
       setLibraryKey(prev => prev + 1);
+      refreshStats();
     } catch (error) {
       console.error('Save error:', error);
       toast({
@@ -291,6 +309,7 @@ const Dashboard = () => {
     setTema(fechamento.tema);
     setObjetivos(fechamento.objetivos || '');
     setResultado(fechamento.resultado);
+    setIsComplete(true);
   };
 
   const handleLogout = async () => {
@@ -299,23 +318,40 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Decorative background elements */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+      </div>
+
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
+      <header className="sticky top-0 z-50 border-b border-border/30 glass-strong">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <Stethoscope className="h-6 w-6 text-primary" />
+            <div className="relative">
+              <div className="absolute inset-0 rounded-xl bg-primary/30 blur-lg" />
+              <div className="relative rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 p-2.5">
+                <Stethoscope className="h-6 w-6 text-primary" />
+              </div>
             </div>
-            <span className="font-display text-xl font-bold text-gradient-medical">
-              Castro's PBL
-            </span>
+            <div>
+              <span className="font-display text-xl font-bold text-gradient-medical">
+                Castro's PBL
+              </span>
+              <p className="text-xs text-muted-foreground">Fechamentos com IA</p>
+            </div>
           </div>
           
           <div className="flex items-center gap-4">
             <span className="hidden text-sm text-muted-foreground sm:block">
               {user.email}
             </span>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleLogout}
+              className="hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
               <LogOut className="h-5 w-5" />
             </Button>
           </div>
@@ -323,152 +359,226 @@ const Dashboard = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container py-8">
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* Input Form */}
-          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                Gerador de Fechamento
-              </CardTitle>
-              <CardDescription>
-                Insira o tema e objetivos para gerar um fechamento completo com IA
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="tema">
-                  Tema Central <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="tema"
-                  placeholder="Ex: Insuficiência Cardíaca Congestiva"
-                  value={tema}
-                  onChange={(e) => setTema(e.target.value)}
-                  disabled={generating}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="objetivos">
-                  Objetivos de Aprendizado <span className="text-muted-foreground">(opcional)</span>
-                </Label>
-                <Textarea
-                  id="objetivos"
-                  placeholder="Ex: Compreender a fisiopatologia, identificar os principais sinais clínicos..."
-                  value={objetivos}
-                  onChange={(e) => setObjetivos(e.target.value)}
-                  disabled={generating}
-                  className="min-h-[120px]"
-                />
-              </div>
-              
-              <Button 
-                className="w-full glow-medical" 
-                onClick={handleGenerate}
-                disabled={generating}
-              >
-                {generating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Gerando fechamento...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Gerar Fechamento com IA
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Result Area */}
-          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5 text-primary" />
-                  Resultado
-                </CardTitle>
-                {resultado && !generating && (
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleSave}
-                      disabled={saving}
-                    >
-                      {saving ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Save className="mr-2 h-4 w-4" />
-                      )}
-                      Salvar
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleCopy}>
-                      <Copy className="mr-2 h-4 w-4" />
-                      Copiar
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleExportPDF}
-                      disabled={exporting}
-                    >
-                      {exporting ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Download className="mr-2 h-4 w-4" />
-                      )}
-                      PDF
-                    </Button>
-                  </div>
-                )}
-              </div>
-              <CardDescription>
-                O fechamento gerado aparecerá aqui formatado
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {generating && !resultado ? (
-                <div className="flex items-center justify-center py-16">
-                  <div className="text-center">
-                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-                    <p className="mt-4 text-sm text-muted-foreground">
-                      Gerando conteúdo com alta densidade técnica...
-                    </p>
-                  </div>
-                </div>
-              ) : resultado ? (
-                <div 
-                  ref={resultRef}
-                  className="max-h-[600px] overflow-y-auto rounded-lg bg-background/50 p-4 print:max-h-none print:overflow-visible"
-                >
-                  <MarkdownRenderer content={resultado} />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center py-16 text-center">
-                  <div>
-                    <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                    <p className="mt-4 text-muted-foreground">
-                      Insira um tema e clique em "Gerar" para criar seu fechamento
-                    </p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Library Section */}
-        <div className="mt-8">
-          <FechamentoLibrary 
-            key={libraryKey}
-            onSelect={handleSelectFromLibrary} 
+      <main className="container relative py-6 space-y-6">
+        {/* Stats Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-in">
+          <StatsCard
+            title="Total Gerado"
+            value={stats.totalFechamentos}
+            icon={FileText}
+            variant="primary"
+            loading={stats.loading}
+          />
+          <StatsCard
+            title="Favoritos"
+            value={stats.totalFavoritos}
+            icon={Star}
+            variant="accent"
+            loading={stats.loading}
+          />
+          <StatsCard
+            title="Este Mês"
+            value={stats.thisMonth}
+            icon={Calendar}
+            variant="default"
+            loading={stats.loading}
           />
         </div>
+
+        {/* Generator Section */}
+        <div className="glass rounded-2xl p-6 space-y-6 animate-fade-in" style={{ animationDelay: '100ms' }}>
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-primary/10 p-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold">Gerador de Fechamento</h2>
+              <p className="text-sm text-muted-foreground">
+                Insira o tema e objetivos para gerar um fechamento completo com IA
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="tema" className="text-sm font-medium">
+                Tema Central <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="tema"
+                placeholder="Ex: Insuficiência Cardíaca Congestiva"
+                value={tema}
+                onChange={(e) => setTema(e.target.value)}
+                disabled={generating}
+                className="h-12 bg-background/50 border-border/50 focus:border-primary/50 transition-colors"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="objetivos" className="text-sm font-medium">
+                Objetivos <span className="text-muted-foreground text-xs">(opcional)</span>
+              </Label>
+              <Textarea
+                id="objetivos"
+                placeholder="Ex: Compreender a fisiopatologia..."
+                value={objetivos}
+                onChange={(e) => setObjetivos(e.target.value)}
+                disabled={generating}
+                className="min-h-[48px] h-12 resize-none bg-background/50 border-border/50 focus:border-primary/50 transition-colors"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <Button 
+              className="w-full h-12 text-base font-semibold glow-medical hover-lift transition-all duration-300" 
+              onClick={handleGenerate}
+              disabled={generating}
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Gerando...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Gerar Fechamento com IA
+                </>
+              )}
+            </Button>
+
+            {/* Progress Bar */}
+            <GenerationProgress 
+              isGenerating={generating}
+              hasStartedReceiving={hasStartedReceiving}
+              isComplete={isComplete}
+            />
+          </div>
+        </div>
+
+        {/* Result Section */}
+        {(resultado || generating) && (
+          <div className="glass rounded-2xl p-6 space-y-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-accent/10 p-2">
+                  <BookOpen className="h-5 w-5 text-accent" />
+                </div>
+                <h2 className="text-lg font-semibold">Resultado</h2>
+              </div>
+              
+              {resultado && !generating && (
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="hover-lift"
+                  >
+                    {saving ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Salvar
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleCopy}
+                    className="hover-lift"
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copiar
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleExportPDF}
+                    disabled={exporting}
+                    className="hover-lift"
+                  >
+                    {exporting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="mr-2 h-4 w-4" />
+                    )}
+                    PDF
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {generating && !resultado ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="text-center space-y-4">
+                  <div className="relative mx-auto w-fit">
+                    <div className="absolute inset-0 rounded-full bg-primary/30 blur-xl animate-pulse" />
+                    <Sparkles className="relative h-10 w-10 text-primary animate-float" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Gerando conteúdo com alta densidade técnica...
+                  </p>
+                </div>
+              </div>
+            ) : resultado ? (
+              <div 
+                ref={resultRef}
+                className="max-h-[600px] overflow-y-auto rounded-xl bg-background/30 p-6 print:max-h-none print:overflow-visible"
+              >
+                <MarkdownRenderer content={resultado} />
+              </div>
+            ) : null}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!resultado && !generating && (
+          <div className="glass rounded-2xl p-12 text-center animate-fade-in" style={{ animationDelay: '200ms' }}>
+            <div className="relative mx-auto w-fit mb-6">
+              <div className="absolute inset-0 rounded-full bg-muted/30 blur-2xl" />
+              <BookOpen className="relative h-16 w-16 text-muted-foreground/30" />
+            </div>
+            <h3 className="text-lg font-medium text-muted-foreground mb-2">
+              Nenhum fechamento gerado
+            </h3>
+            <p className="text-sm text-muted-foreground/70">
+              Insira um tema acima e clique em "Gerar" para criar seu fechamento
+            </p>
+          </div>
+        )}
+
+        {/* Library Section - Collapsible */}
+        <Collapsible open={libraryOpen} onOpenChange={setLibraryOpen}>
+          <div className="glass rounded-2xl overflow-hidden animate-fade-in" style={{ animationDelay: '300ms' }}>
+            <CollapsibleTrigger asChild>
+              <button className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-secondary p-2">
+                    <BookOpen className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <span className="font-semibold">Biblioteca de Fechamentos</span>
+                </div>
+                {libraryOpen ? (
+                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                )}
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 pb-4">
+                <FechamentoLibrary 
+                  key={libraryKey}
+                  onSelect={handleSelectFromLibrary}
+                  onFavoriteChange={refreshStats}
+                />
+              </div>
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
       </main>
     </div>
   );
