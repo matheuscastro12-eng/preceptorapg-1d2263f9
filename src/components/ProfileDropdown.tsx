@@ -1,4 +1,4 @@
-import { User, LogOut, Star, FileText, Calendar, Sun, Moon } from 'lucide-react';
+import { User, LogOut, Star, FileText, Calendar, Sun, Moon, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -8,6 +8,8 @@ import {
 } from '@/components/ui/popover';
 import { useUserStats } from '@/hooks/useUserStats';
 import { useTheme } from 'next-themes';
+import { useAdmin } from '@/hooks/useAdmin';
+import { useNavigate } from 'react-router-dom';
 
 interface ProfileDropdownProps {
   userEmail: string;
@@ -18,6 +20,8 @@ const ProfileDropdown = ({ userEmail, onLogout }: ProfileDropdownProps) => {
   const { stats } = useUserStats();
   const loading = stats.loading;
   const { theme, setTheme } = useTheme();
+  const { isAdmin } = useAdmin();
+  const navigate = useNavigate();
 
   return (
     <Popover>
@@ -104,6 +108,18 @@ const ProfileDropdown = ({ userEmail, onLogout }: ProfileDropdownProps) => {
               </div>
             </div>
           </div>
+
+          {/* Admin Link */}
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-primary hover:text-primary hover:bg-primary/10"
+              onClick={() => navigate('/admin')}
+            >
+              <Shield className="h-4 w-4 mr-2" />
+              Painel Admin
+            </Button>
+          )}
 
           {/* Logout */}
           <Button
