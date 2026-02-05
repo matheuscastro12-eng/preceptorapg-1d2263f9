@@ -1,11 +1,13 @@
-import { User, LogOut, BarChart3, Star, FileText, Calendar } from 'lucide-react';
+import { User, LogOut, Star, FileText, Calendar, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useUserStats } from '@/hooks/useUserStats';
+import { useTheme } from 'next-themes';
 
 interface ProfileDropdownProps {
   userEmail: string;
@@ -15,6 +17,7 @@ interface ProfileDropdownProps {
 const ProfileDropdown = ({ userEmail, onLogout }: ProfileDropdownProps) => {
   const { stats } = useUserStats();
   const loading = stats.loading;
+  const { theme, setTheme } = useTheme();
 
   return (
     <Popover>
@@ -40,6 +43,22 @@ const ProfileDropdown = ({ userEmail, onLogout }: ProfileDropdownProps) => {
               </p>
               <p className="text-xs text-muted-foreground">Estudante de Medicina</p>
             </div>
+          </div>
+
+          {/* Theme Toggle */}
+          <div className="flex items-center justify-between py-2 px-1 border-b border-border/50">
+            <div className="flex items-center gap-2">
+              {theme === 'dark' ? (
+                <Moon className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <Sun className="h-4 w-4 text-muted-foreground" />
+              )}
+              <span className="text-sm text-foreground">Modo Claro</span>
+            </div>
+            <Switch
+              checked={theme === 'light'}
+              onCheckedChange={(checked) => setTheme(checked ? 'light' : 'dark')}
+            />
           </div>
 
           {/* Stats */}
