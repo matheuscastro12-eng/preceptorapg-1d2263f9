@@ -70,19 +70,32 @@ const Library = () => {
         htmlEl.style.overflow = 'visible';
       });
       
+      // H1 - Título principal (capa)
       const h1s = pdfContainer.querySelectorAll('h1');
-      h1s.forEach((h1) => {
-        (h1 as HTMLElement).style.cssText = 'color: #0d5c4d !important; font-size: 18pt !important; margin-bottom: 12px !important; font-weight: bold !important;';
+      h1s.forEach((h1, index) => {
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = index === 0 
+          ? 'display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 200px; text-align: center; margin-bottom: 30px;'
+          : 'display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 200px; text-align: center; margin-bottom: 30px; page-break-before: always;';
+        (h1 as HTMLElement).style.cssText = 'color: #0d5c4d !important; font-size: 24pt !important; font-weight: bold !important; text-transform: uppercase !important; letter-spacing: 2px !important; border-bottom: 3px solid #0d5c4d !important; padding-bottom: 15px !important; margin: 0 !important;';
+        h1.parentNode?.insertBefore(wrapper, h1);
+        wrapper.appendChild(h1);
       });
       
+      // H2 - Seções principais (capa de seção)
       const h2s = pdfContainer.querySelectorAll('h2');
       h2s.forEach((h2) => {
-        (h2 as HTMLElement).style.cssText = 'color: #1a1a1a !important; font-size: 14pt !important; margin-top: 18px !important; margin-bottom: 10px !important; font-weight: bold !important; border-bottom: 1px solid #ccc !important; padding-bottom: 6px !important;';
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 180px; text-align: center; margin-bottom: 25px; page-break-before: always;';
+        (h2 as HTMLElement).style.cssText = 'color: #0d5c4d !important; font-size: 20pt !important; font-weight: bold !important; text-transform: uppercase !important; letter-spacing: 1.5px !important; border-bottom: 2px solid #0d5c4d !important; padding-bottom: 12px !important; margin: 0 !important;';
+        h2.parentNode?.insertBefore(wrapper, h2);
+        wrapper.appendChild(h2);
       });
       
+      // H3 - Subseções (não quebra página, mas destaca)
       const h3s = pdfContainer.querySelectorAll('h3');
       h3s.forEach((h3) => {
-        (h3 as HTMLElement).style.cssText = 'color: #1a1a1a !important; font-size: 12pt !important; margin-top: 14px !important; margin-bottom: 6px !important; font-weight: bold !important;';
+        (h3 as HTMLElement).style.cssText = 'color: #0d5c4d !important; font-size: 14pt !important; margin-top: 20px !important; margin-bottom: 10px !important; font-weight: bold !important; border-left: 4px solid #0d5c4d !important; padding-left: 12px !important; page-break-after: avoid !important;';
       });
       
       const strongs = pdfContainer.querySelectorAll('strong');
