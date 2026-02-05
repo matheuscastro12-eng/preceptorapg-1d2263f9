@@ -1,47 +1,31 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { useUserStats } from '@/hooks/useUserStats';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
-import FechamentoLibrary from '@/components/FechamentoLibrary';
-import StatsCard from '@/components/StatsCard';
 import GenerationProgress from '@/components/GenerationProgress';
+import ProfileDropdown from '@/components/ProfileDropdown';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Loader2, 
   Stethoscope, 
-  LogOut, 
   Sparkles, 
   Copy, 
   BookOpen,
   Download,
   Save,
-  FileText,
-  Star,
-  Calendar,
-  ChevronDown,
-  ChevronUp
+  FileText
 } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-
-interface Fechamento {
-  id: string;
-  tema: string;
-  objetivos: string | null;
-  resultado: string;
-  favorito: boolean;
-  created_at: string;
-}
 
 const Dashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const { stats, refresh: refreshStats } = useUserStats();
   
   const [tema, setTema] = useState('');
   const [objetivos, setObjetivos] = useState('');
@@ -51,9 +35,17 @@ const Dashboard = () => {
   const [isComplete, setIsComplete] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [libraryKey, setLibraryKey] = useState(0);
-  const [libraryOpen, setLibraryOpen] = useState(true);
   const resultRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll result
+  useEffect(() => {
+    if (resultRef.current && generating) {
+      const scrollArea = resultRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollArea) {
+        scrollArea.scrollTop = scrollArea.scrollHeight;
+      }
+    }
+  }, [resultado, generating]);
 
   if (authLoading) {
     return (
@@ -290,9 +282,6 @@ const Dashboard = () => {
         title: 'Salvo!',
         description: 'Fechamento salvo na sua biblioteca.',
       });
-
-      setLibraryKey(prev => prev + 1);
-      refreshStats();
     } catch (error) {
       console.error('Save error:', error);
       toast({
@@ -305,19 +294,8 @@ const Dashboard = () => {
     }
   };
 
-  const handleSelectFromLibrary = (fechamento: Fechamento) => {
-    setTema(fechamento.tema);
-    setObjetivos(fechamento.objetivos || '');
-    setResultado(fechamento.resultado);
-    setIsComplete(true);
-  };
-
-  const handleLogout = async () => {
-    await signOut();
-  };
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Decorative background elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
@@ -326,7 +304,7 @@ const Dashboard = () => {
 
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/30 glass-strong">
-        <div className="container flex h-16 items-center justify-between">
+        <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="absolute inset-0 rounded-xl bg-primary/30 blur-lg" />
@@ -342,128 +320,102 @@ const Dashboard = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
-            <span className="hidden text-sm text-muted-foreground sm:block">
-              {user.email}
-            </span>
+          <div className="flex items-center gap-3">
             <Button 
               variant="ghost" 
-              size="icon" 
-              onClick={handleLogout}
-              className="hover:bg-destructive/10 hover:text-destructive transition-colors"
+              size="sm"
+              onClick={() => navigate('/library')}
+              className="gap-2"
             >
-              <LogOut className="h-5 w-5" />
+              <BookOpen className="h-4 w-4" />
+              <span className="hidden sm:inline">Biblioteca</span>
             </Button>
+            <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container relative py-6 space-y-6">
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-in">
-          <StatsCard
-            title="Total Gerado"
-            value={stats.totalFechamentos}
-            icon={FileText}
-            variant="primary"
-            loading={stats.loading}
-          />
-          <StatsCard
-            title="Favoritos"
-            value={stats.totalFavoritos}
-            icon={Star}
-            variant="accent"
-            loading={stats.loading}
-          />
-          <StatsCard
-            title="Este Mês"
-            value={stats.thisMonth}
-            icon={Calendar}
-            variant="default"
-            loading={stats.loading}
-          />
-        </div>
-
-        {/* Generator Section */}
-        <div className="glass rounded-2xl p-6 space-y-6 animate-fade-in" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <Sparkles className="h-5 w-5 text-primary" />
+      {/* Main Content - Side by Side */}
+      <main className="flex-1 container relative py-6 px-4">
+        <div className="grid lg:grid-cols-2 gap-6 h-[calc(100vh-8rem)]">
+          {/* Left Side - Input */}
+          <div className="glass rounded-2xl p-6 flex flex-col">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="rounded-lg bg-primary/10 p-2">
+                <FileText className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Gerador de Fechamento</h2>
+                <p className="text-sm text-muted-foreground">
+                  Insira o tema e objetivos para gerar
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-semibold">Gerador de Fechamento</h2>
-              <p className="text-sm text-muted-foreground">
-                Insira o tema e objetivos para gerar um fechamento completo com IA
-              </p>
-            </div>
-          </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="tema" className="text-sm font-medium">
-                Tema Central <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="tema"
-                placeholder="Ex: Insuficiência Cardíaca Congestiva"
-                value={tema}
-                onChange={(e) => setTema(e.target.value)}
+            <div className="space-y-4 flex-1">
+              <div className="space-y-2">
+                <Label htmlFor="tema" className="text-sm font-medium">
+                  Tema Central <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="tema"
+                  placeholder="Ex: Insuficiência Cardíaca Congestiva"
+                  value={tema}
+                  onChange={(e) => setTema(e.target.value)}
+                  disabled={generating}
+                  className="h-12 bg-background/50 border-border/50 focus:border-primary/50 transition-colors"
+                />
+              </div>
+              
+              <div className="space-y-2 flex-1">
+                <Label htmlFor="objetivos" className="text-sm font-medium">
+                  Objetivos <span className="text-muted-foreground text-xs">(opcional)</span>
+                </Label>
+                <Textarea
+                  id="objetivos"
+                  placeholder="Ex: Compreender a fisiopatologia, identificar sinais e sintomas, entender o tratamento..."
+                  value={objetivos}
+                  onChange={(e) => setObjetivos(e.target.value)}
+                  disabled={generating}
+                  className="min-h-[120px] resize-none bg-background/50 border-border/50 focus:border-primary/50 transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 mt-6">
+              <Button 
+                className="w-full h-12 text-base font-semibold glow-medical hover-lift transition-all duration-300" 
+                onClick={handleGenerate}
                 disabled={generating}
-                className="h-12 bg-background/50 border-border/50 focus:border-primary/50 transition-colors"
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-5 w-5" />
+                    Gerar Fechamento
+                  </>
+                )}
+              </Button>
+
+              {/* Progress Bar */}
+              <GenerationProgress 
+                isGenerating={generating}
+                hasStartedReceiving={hasStartedReceiving}
+                isComplete={isComplete}
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="objetivos" className="text-sm font-medium">
-                Objetivos <span className="text-muted-foreground text-xs">(opcional)</span>
-              </Label>
-              <Textarea
-                id="objetivos"
-                placeholder="Ex: Compreender a fisiopatologia..."
-                value={objetivos}
-                onChange={(e) => setObjetivos(e.target.value)}
-                disabled={generating}
-                className="min-h-[48px] h-12 resize-none bg-background/50 border-border/50 focus:border-primary/50 transition-colors"
-              />
-            </div>
           </div>
 
-          <div className="space-y-4">
-            <Button 
-              className="w-full h-12 text-base font-semibold glow-medical hover-lift transition-all duration-300" 
-              onClick={handleGenerate}
-              disabled={generating}
-            >
-              {generating ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Gerando...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  Gerar Fechamento com IA
-                </>
-              )}
-            </Button>
-
-            {/* Progress Bar */}
-            <GenerationProgress 
-              isGenerating={generating}
-              hasStartedReceiving={hasStartedReceiving}
-              isComplete={isComplete}
-            />
-          </div>
-        </div>
-
-        {/* Result Section */}
-        {(resultado || generating) && (
-          <div className="glass rounded-2xl p-6 space-y-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
-            <div className="flex items-center justify-between">
+          {/* Right Side - Result */}
+          <div className="glass rounded-2xl p-6 flex flex-col" ref={resultRef}>
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="rounded-lg bg-accent/10 p-2">
-                  <BookOpen className="h-5 w-5 text-accent" />
+                  <Sparkles className="h-5 w-5 text-accent" />
                 </div>
                 <h2 className="text-lg font-semibold">Resultado</h2>
               </div>
@@ -511,74 +463,28 @@ const Dashboard = () => {
               )}
             </div>
 
-            {generating && !resultado ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="text-center space-y-4">
-                  <div className="relative mx-auto w-fit">
-                    <div className="absolute inset-0 rounded-full bg-primary/30 blur-xl animate-pulse" />
-                    <Sparkles className="relative h-10 w-10 text-primary animate-float" />
+            <ScrollArea className="flex-1 pr-4">
+              {resultado ? (
+                <MarkdownRenderer 
+                  content={resultado} 
+                  isTyping={generating && resultado.length > 0}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                  <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                    <Sparkles className="h-8 w-8 text-muted-foreground/50" />
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Gerando conteúdo com alta densidade técnica...
+                  <p className="text-muted-foreground">
+                    Insira um tema e clique em "Gerar Fechamento"
+                  </p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">
+                    O resultado aparecerá aqui com animação de typing
                   </p>
                 </div>
-              </div>
-            ) : resultado ? (
-              <div 
-                ref={resultRef}
-                className="max-h-[600px] overflow-y-auto rounded-xl bg-background/30 p-6 print:max-h-none print:overflow-visible"
-              >
-                <MarkdownRenderer content={resultado} />
-              </div>
-            ) : null}
+              )}
+            </ScrollArea>
           </div>
-        )}
-
-        {/* Empty State */}
-        {!resultado && !generating && (
-          <div className="glass rounded-2xl p-12 text-center animate-fade-in" style={{ animationDelay: '200ms' }}>
-            <div className="relative mx-auto w-fit mb-6">
-              <div className="absolute inset-0 rounded-full bg-muted/30 blur-2xl" />
-              <BookOpen className="relative h-16 w-16 text-muted-foreground/30" />
-            </div>
-            <h3 className="text-lg font-medium text-muted-foreground mb-2">
-              Nenhum fechamento gerado
-            </h3>
-            <p className="text-sm text-muted-foreground/70">
-              Insira um tema acima e clique em "Gerar" para criar seu fechamento
-            </p>
-          </div>
-        )}
-
-        {/* Library Section - Collapsible */}
-        <Collapsible open={libraryOpen} onOpenChange={setLibraryOpen}>
-          <div className="glass rounded-2xl overflow-hidden animate-fade-in" style={{ animationDelay: '300ms' }}>
-            <CollapsibleTrigger asChild>
-              <button className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-secondary p-2">
-                    <BookOpen className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <span className="font-semibold">Biblioteca de Fechamentos</span>
-                </div>
-                {libraryOpen ? (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                )}
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="px-4 pb-4">
-                <FechamentoLibrary 
-                  key={libraryKey}
-                  onSelect={handleSelectFromLibrary}
-                  onFavoriteChange={refreshStats}
-                />
-              </div>
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
+        </div>
       </main>
     </div>
   );

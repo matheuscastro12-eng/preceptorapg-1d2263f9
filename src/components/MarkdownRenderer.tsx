@@ -3,11 +3,12 @@ import ReactMarkdown from 'react-markdown';
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+  isTyping?: boolean;
 }
 
-const MarkdownRenderer = ({ content, className = '' }: MarkdownRendererProps) => {
+const MarkdownRenderer = ({ content, className = '', isTyping = false }: MarkdownRendererProps) => {
   return (
-    <div className={`markdown-content ${className}`}>
+    <div className={`markdown-content ${className} ${isTyping ? 'typing-cursor' : ''}`}>
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
