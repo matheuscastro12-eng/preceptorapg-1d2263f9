@@ -29,9 +29,10 @@ interface Fechamento {
 
 interface FechamentoLibraryProps {
   onSelect: (fechamento: Fechamento) => void;
+  onFavoriteChange?: () => void;
 }
 
-const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
+const FechamentoLibrary = ({ onSelect, onFavoriteChange }: FechamentoLibraryProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [fechamentos, setFechamentos] = useState<Fechamento[]>([]);
@@ -78,6 +79,8 @@ const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
       setFechamentos(prev =>
         prev.map(f => (f.id === id ? { ...f, favorito: !currentValue } : f))
       );
+
+      onFavoriteChange?.();
 
       toast({
         title: currentValue ? 'Removido dos favoritos' : 'Adicionado aos favoritos',
