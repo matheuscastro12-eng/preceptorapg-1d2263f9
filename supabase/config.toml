@@ -1,0 +1,4 @@
+project_id = "jmdqlgqxnjscxvjhhxio"
+
+[functions.generate-fechamento]
+verify_jwt = false
