@@ -11,6 +11,8 @@ import MarkdownRenderer from '@/components/MarkdownRenderer';
 import GenerationProgress from '@/components/GenerationProgress';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import { supabase } from '@/integrations/supabase/client';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useAdmin } from '@/hooks/useAdmin';
 import { 
   Loader2, 
   Stethoscope, 
@@ -24,6 +26,8 @@ import {
 
 const Dashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
+  const { hasAccess, loading: subLoading } = useSubscription();
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -47,7 +51,7 @@ const Dashboard = () => {
     }
   }, [resultado, generating]);
 
-  if (authLoading) {
+  if (authLoading || subLoading || adminLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
@@ -63,6 +67,11 @@ const Dashboard = () => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Redirect to pricing if user doesn't have access and is not admin
+  if (!hasAccess && !isAdmin) {
+    return <Navigate to="/pricing" replace />;
   }
 
   const handleGenerate = async () => {
