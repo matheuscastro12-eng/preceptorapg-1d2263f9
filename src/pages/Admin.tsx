@@ -222,7 +222,7 @@ const Admin = () => {
               <span className="font-display text-xl font-bold text-gradient-medical">
                 Painel Admin
               </span>
-              <p className="text-xs text-muted-foreground">Castro's PBL</p>
+              <p className="text-xs text-muted-foreground">PreceptorAPG</p>
             </div>
           </div>
           

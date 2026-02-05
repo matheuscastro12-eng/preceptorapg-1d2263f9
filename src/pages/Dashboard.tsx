@@ -323,7 +323,7 @@ const Dashboard = () => {
             </div>
             <div>
               <span className="font-display text-xl font-bold text-gradient-medical">
-                Castro's PBL
+                PreceptorAPG
               </span>
               <p className="text-xs text-muted-foreground">Fechamentos com IA</p>
             </div>
