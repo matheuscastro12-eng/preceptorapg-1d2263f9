@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 import { 
   Loader2, 
   Stethoscope, 
@@ -14,7 +15,8 @@ import {
   Sparkles, 
   Copy, 
   BookOpen,
-  FileText
+  FileText,
+  Download
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -24,6 +26,8 @@ const Dashboard = () => {
   const [objetivos, setObjetivos] = useState('');
   const [resultado, setResultado] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const resultRef = useRef<HTMLDivElement>(null);
 
   if (authLoading) {
     return (
@@ -64,7 +68,8 @@ const Dashboard = () => {
       );
 
       if (!response.ok) {
-        throw new Error('Erro ao gerar fechamento');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao gerar fechamento');
       }
 
       const reader = response.body?.getReader();
@@ -101,7 +106,7 @@ const Dashboard = () => {
     } catch (error) {
       toast({
         title: 'Erro',
-        description: 'Não foi possível gerar o fechamento. Tente novamente.',
+        description: error instanceof Error ? error.message : 'Não foi possível gerar o fechamento. Tente novamente.',
         variant: 'destructive',
       });
     } finally {
@@ -115,6 +120,93 @@ const Dashboard = () => {
       title: 'Copiado!',
       description: 'Fechamento copiado para a área de transferência.',
     });
+  };
+
+  const handleExportPDF = async () => {
+    if (!resultRef.current || !resultado) return;
+    
+    setExporting(true);
+    
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      // Create a styled clone for PDF
+      const element = resultRef.current;
+      const clonedElement = element.cloneNode(true) as HTMLElement;
+      
+      // Apply print-friendly styles
+      clonedElement.style.cssText = `
+        background: white !important;
+        color: #1a1a1a !important;
+        padding: 40px !important;
+        font-family: 'Georgia', 'Times New Roman', serif !important;
+        font-size: 12pt !important;
+        line-height: 1.6 !important;
+      `;
+      
+      // Style all text elements for print
+      const allElements = clonedElement.querySelectorAll('*');
+      allElements.forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        htmlEl.style.color = '#1a1a1a';
+        htmlEl.style.background = 'transparent';
+      });
+      
+      // Style headings
+      const h1s = clonedElement.querySelectorAll('h1');
+      h1s.forEach((h1) => {
+        (h1 as HTMLElement).style.cssText = 'color: #0d5c4d !important; font-size: 20pt !important; margin-bottom: 16px !important; font-weight: bold !important;';
+      });
+      
+      const h2s = clonedElement.querySelectorAll('h2');
+      h2s.forEach((h2) => {
+        (h2 as HTMLElement).style.cssText = 'color: #1a1a1a !important; font-size: 16pt !important; margin-top: 24px !important; margin-bottom: 12px !important; font-weight: bold !important; border-bottom: 1px solid #ccc !important; padding-bottom: 8px !important;';
+      });
+      
+      const h3s = clonedElement.querySelectorAll('h3');
+      h3s.forEach((h3) => {
+        (h3 as HTMLElement).style.cssText = 'color: #1a1a1a !important; font-size: 14pt !important; margin-top: 18px !important; margin-bottom: 8px !important; font-weight: bold !important;';
+      });
+      
+      // Style bold/strong elements
+      const strongs = clonedElement.querySelectorAll('strong');
+      strongs.forEach((strong) => {
+        (strong as HTMLElement).style.cssText = 'color: #0d5c4d !important; font-weight: bold !important;';
+      });
+      
+      const opt = {
+        margin: [15, 15, 15, 15] as [number, number, number, number],
+        filename: `fechamento-${tema.trim().toLowerCase().replace(/\s+/g, '-')}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { 
+          scale: 2,
+          useCORS: true,
+          logging: false,
+        },
+        jsPDF: { 
+          unit: 'mm' as const, 
+          format: 'a4' as const, 
+          orientation: 'portrait' as const
+        },
+        pagebreak: { mode: 'avoid-all' as const }
+      };
+      
+      await html2pdf().set(opt).from(clonedElement).save();
+      
+      toast({
+        title: 'PDF exportado!',
+        description: 'O fechamento foi salvo como PDF.',
+      });
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast({
+        title: 'Erro ao exportar',
+        description: 'Não foi possível exportar o PDF. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -136,7 +228,7 @@ const Dashboard = () => {
           </div>
           
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
+            <span className="hidden text-sm text-muted-foreground sm:block">
               {user.email}
             </span>
             <Button variant="ghost" size="icon" onClick={handleLogout}>
@@ -216,15 +308,30 @@ const Dashboard = () => {
                   <BookOpen className="h-5 w-5 text-primary" />
                   Resultado
                 </CardTitle>
-                {resultado && (
-                  <Button variant="outline" size="sm" onClick={handleCopy}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copiar
-                  </Button>
+                {resultado && !generating && (
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={handleCopy}>
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copiar
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleExportPDF}
+                      disabled={exporting}
+                    >
+                      {exporting ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="mr-2 h-4 w-4" />
+                      )}
+                      PDF
+                    </Button>
+                  </div>
                 )}
               </div>
               <CardDescription>
-                O fechamento gerado aparecerá aqui
+                O fechamento gerado aparecerá aqui formatado
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -238,10 +345,11 @@ const Dashboard = () => {
                   </div>
                 </div>
               ) : resultado ? (
-                <div className="prose prose-invert max-w-none">
-                  <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {resultado}
-                  </div>
+                <div 
+                  ref={resultRef}
+                  className="max-h-[600px] overflow-y-auto rounded-lg bg-background/50 p-4"
+                >
+                  <MarkdownRenderer content={resultado} />
                 </div>
               ) : (
                 <div className="flex items-center justify-center py-16 text-center">
