@@ -1,34 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Navigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import MarkdownRenderer from '@/components/MarkdownRenderer';
-import GenerationProgress from '@/components/GenerationProgress';
-import ProfileDropdown from '@/components/ProfileDropdown';
 import { supabase } from '@/integrations/supabase/client';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAdmin } from '@/hooks/useAdmin';
-import { 
-  Loader2, 
-  Stethoscope, 
-  Sparkles, 
-  Copy, 
-  BookOpen,
-  Download,
-  Save,
-  FileText
-} from 'lucide-react';
+import { Stethoscope } from 'lucide-react';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import InputPanel from '@/components/dashboard/InputPanel';
+import ResultPanel from '@/components/dashboard/ResultPanel';
 
 const Dashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const { hasAccess, loading: subLoading } = useSubscription();
   const { isAdmin, loading: adminLoading } = useAdmin();
-  const navigate = useNavigate();
   const { toast } = useToast();
   
   const [tema, setTema] = useState('');
@@ -69,7 +54,6 @@ const Dashboard = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Redirect to pricing if user doesn't have access and is not admin
   if (!hasAccess && !isAdmin) {
     return <Navigate to="/pricing" replace />;
   }
@@ -90,7 +74,6 @@ const Dashboard = () => {
     setIsComplete(false);
 
     try {
-      // Get user session token for authentication
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('Sessão expirada. Faça login novamente.');
@@ -235,7 +218,6 @@ const Dashboard = () => {
         (li as HTMLElement).style.cssText = 'color: #1a1a1a !important; margin-bottom: 4px !important;';
       });
 
-      // Força cor preta em spans e outros elementos inline
       const spans = pdfContainer.querySelectorAll('span, em, code, a');
       spans.forEach((span) => {
         (span as HTMLElement).style.cssText = 'color: #1a1a1a !important;';
@@ -317,194 +299,38 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Decorative background elements */}
+      {/* Animated background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-accent/5 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-primary/3 to-accent/3 rounded-full blur-3xl" />
       </div>
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/30 glass-strong">
-        <div className="container flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-xl bg-primary/30 blur-lg" />
-              <div className="relative rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 p-2.5">
-                <Stethoscope className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-            <div>
-              <span className="font-display text-xl font-bold text-gradient-medical">
-                PreceptorAPG
-              </span>
-              <p className="text-xs text-muted-foreground">Fechamentos com IA</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => navigate('/library')}
-              className="gap-2"
-            >
-              <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Biblioteca</span>
-            </Button>
-            <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
-          </div>
-        </div>
-      </header>
+      <DashboardHeader userEmail={user.email || ''} onLogout={signOut} />
 
-      {/* Main Content - Side by Side */}
       <main className="flex-1 container relative py-6 px-4">
         <div className="grid lg:grid-cols-2 gap-6 h-[calc(100vh-8rem)]">
-          {/* Left Side - Input */}
-          <div className="glass rounded-2xl p-6 flex flex-col">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <FileText className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">Gerador de Fechamento</h2>
-                <p className="text-sm text-muted-foreground">
-                  Insira o tema e objetivos para gerar
-                </p>
-              </div>
-            </div>
+          <InputPanel
+            tema={tema}
+            setTema={setTema}
+            objetivos={objetivos}
+            setObjetivos={setObjetivos}
+            generating={generating}
+            hasStartedReceiving={hasStartedReceiving}
+            isComplete={isComplete}
+            onGenerate={handleGenerate}
+          />
 
-            <div className="space-y-4 flex-1">
-              <div className="space-y-2">
-                <Label htmlFor="tema" className="text-sm font-medium">
-                  Tema Central <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="tema"
-                  placeholder="Ex: Insuficiência Cardíaca Congestiva"
-                  value={tema}
-                  onChange={(e) => setTema(e.target.value)}
-                  disabled={generating}
-                  className="h-12 bg-background/50 border-border/50 focus:border-primary/50 transition-colors"
-                />
-              </div>
-              
-              <div className="space-y-2 flex-1">
-                <Label htmlFor="objetivos" className="text-sm font-medium">
-                  Objetivos <span className="text-muted-foreground text-xs">(opcional)</span>
-                </Label>
-                <Textarea
-                  id="objetivos"
-                  placeholder="Ex: Compreender a fisiopatologia, identificar sinais e sintomas, entender o tratamento..."
-                  value={objetivos}
-                  onChange={(e) => setObjetivos(e.target.value)}
-                  disabled={generating}
-                  className="min-h-[120px] resize-none bg-background/50 border-border/50 focus:border-primary/50 transition-colors"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4 mt-6">
-              <Button 
-                className="w-full h-12 text-base font-semibold glow-medical hover-lift transition-all duration-300" 
-                onClick={handleGenerate}
-                disabled={generating}
-              >
-                {generating ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Estudando...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-5 w-5" />
-                    Estudar
-                  </>
-                )}
-              </Button>
-
-              {/* Progress Bar */}
-              <GenerationProgress 
-                isGenerating={generating}
-                hasStartedReceiving={hasStartedReceiving}
-                isComplete={isComplete}
-              />
-            </div>
-          </div>
-
-          {/* Right Side - Result */}
-          <div className="glass rounded-2xl p-6 flex flex-col" ref={resultRef}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-accent/10 p-2">
-                  <Sparkles className="h-5 w-5 text-accent" />
-                </div>
-                <h2 className="text-lg font-semibold">Resultado</h2>
-              </div>
-              
-              {resultado && !generating && (
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="hover-lift"
-                  >
-                    {saving ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="mr-2 h-4 w-4" />
-                    )}
-                    Salvar
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleCopy}
-                    className="hover-lift"
-                  >
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copiar
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleExportPDF}
-                    disabled={exporting}
-                    className="hover-lift"
-                  >
-                    {exporting ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Download className="mr-2 h-4 w-4" />
-                    )}
-                    PDF
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            <ScrollArea className="flex-1 pr-4">
-              {resultado ? (
-                <MarkdownRenderer 
-                  content={resultado} 
-                  isTyping={generating && resultado.length > 0}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center py-12">
-                  <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                    <Sparkles className="h-8 w-8 text-muted-foreground/50" />
-                  </div>
-                  <p className="text-muted-foreground">
-                    Insira um tema e clique em "Gerar Fechamento"
-                  </p>
-                  <p className="text-sm text-muted-foreground/70 mt-1">
-                    O resultado aparecerá aqui com animação de typing
-                  </p>
-                </div>
-              )}
-            </ScrollArea>
-          </div>
+          <ResultPanel
+            resultado={resultado}
+            generating={generating}
+            saving={saving}
+            exporting={exporting}
+            resultRef={resultRef}
+            onSave={handleSave}
+            onCopy={handleCopy}
+            onExportPDF={handleExportPDF}
+          />
         </div>
       </main>
     </div>
