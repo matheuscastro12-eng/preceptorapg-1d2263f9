@@ -3,11 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export type DifficultyLevel = 'basico' | 'residencia';
+export type PracticeMode = 'prova' | 'caso_clinico';
 
 export interface ExamConfig {
   quantidade: number;
   nivel: DifficultyLevel;
   simulationMode: boolean;
+  practiceMode: PracticeMode;
 }
 
 export const useExamGenerator = () => {
@@ -50,18 +52,20 @@ export const useExamGenerator = () => {
             conteudo,
             quantidade: config.quantidade,
             nivel: config.nivel,
+            modo: config.practiceMode,
           }),
         }
       );
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Erro ao gerar a prova');
+        throw new Error(errorData.error || 'Erro ao gerar conteúdo');
       }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let fullText = '';
+      let started = false;
 
       if (reader) {
         while (true) {
@@ -80,7 +84,8 @@ export const useExamGenerator = () => {
                 const parsed = JSON.parse(jsonStr);
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
-                  if (!hasStartedReceiving) {
+                  if (!started) {
+                    started = true;
                     setHasStartedReceiving(true);
                   }
                   fullText += content;
@@ -98,13 +103,13 @@ export const useExamGenerator = () => {
     } catch (error) {
       toast({
         title: 'Erro',
-        description: error instanceof Error ? error.message : 'Não foi possível gerar a prova.',
+        description: error instanceof Error ? error.message : 'Não foi possível gerar o conteúdo.',
         variant: 'destructive',
       });
     } finally {
       setGenerating(false);
     }
-  }, [toast, hasStartedReceiving]);
+  }, [toast]);
 
   const reset = useCallback(() => {
     setResultado('');
