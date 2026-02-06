@@ -1,4 +1,4 @@
-// PDF Export utility with cover page and section formatting
+// PDF Export utility with cover page and optimized page breaks
 
 interface PDFExportOptions {
   tema: string;
@@ -11,6 +11,71 @@ const formatDate = (date: Date): string => {
     month: 'long',
     year: 'numeric'
   });
+};
+
+/**
+ * Strip AI preamble text that appears before the actual content.
+ * Removes conversational intros like "Com certeza...", "Claro...", etc.
+ */
+const stripAIPreamble = (html: string): string => {
+  // Create a temporary container to work with DOM
+  const temp = document.createElement('div');
+  temp.innerHTML = html;
+
+  const children = Array.from(temp.childNodes);
+  let foundContentStart = false;
+
+  for (const child of children) {
+    if (foundContentStart) break;
+
+    const el = child as HTMLElement;
+    const tagName = el.tagName?.toLowerCase();
+
+    // Keep headings, lists, tables, hrs, details — they are real content
+    if (tagName && ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'table', 'hr', 'details', 'blockquote'].includes(tagName)) {
+      foundContentStart = true;
+      break;
+    }
+
+    // Check if it's a paragraph that looks like AI preamble
+    if (tagName === 'p' || child.nodeType === Node.TEXT_NODE) {
+      const text = (child.textContent || '').trim();
+      if (!text) {
+        child.remove();
+        continue;
+      }
+
+      // If the paragraph starts with a question marker or bold "Questão", keep it
+      if (/^\*?\*?Quest[ãa]o/i.test(text) || /^\*?\*?\d+[\.\)]/i.test(text)) {
+        foundContentStart = true;
+        break;
+      }
+
+      // Remove conversational preamble paragraphs
+      const preamblePatterns = [
+        /^(com certeza|claro|certo|ok|perfeito|vamos|aqui est[áa]|segue|pronto|elabor)/i,
+        /^(como (preceptor|coordenador|professor))/i,
+        /^(este (caso|material|conte[úu]do) foi)/i,
+        /^(a seguir|abaixo|conforme solicitado)/i,
+        /^(apresento|segue abaixo|seguem)/i,
+      ];
+
+      if (preamblePatterns.some(p => p.test(text))) {
+        child.remove();
+        continue;
+      }
+
+      // If it's a short introductory paragraph before any heading, remove it
+      if (text.length < 400 && !foundContentStart) {
+        child.remove();
+        continue;
+      }
+
+      foundContentStart = true;
+    }
+  }
+
+  return temp.innerHTML;
 };
 
 const createCoverPage = (tema: string): string => {
@@ -113,30 +178,67 @@ const styleContentElements = (container: HTMLElement): void => {
     htmlEl.style.overflow = 'visible';
   });
 
-  // H1 - Título principal (capa de seção)
+  // H1 - Main section title (inline, no full-page cover)
   const h1s = container.querySelectorAll('h1');
-  h1s.forEach((h1) => {
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 200px; text-align: center; margin-bottom: 30px; page-break-before: always;';
-    (h1 as HTMLElement).style.cssText = 'color: #0d5c4d !important; font-size: 24pt !important; font-weight: bold !important; text-transform: uppercase !important; letter-spacing: 2px !important; border-bottom: 3px solid #0d5c4d !important; padding-bottom: 15px !important; margin: 0 !important;';
-    h1.parentNode?.insertBefore(wrapper, h1);
-    wrapper.appendChild(h1);
+  h1s.forEach((h1, index) => {
+    (h1 as HTMLElement).style.cssText = `
+      color: #0d5c4d !important;
+      font-size: 20pt !important;
+      font-weight: bold !important;
+      text-transform: uppercase !important;
+      letter-spacing: 2px !important;
+      border-bottom: 3px solid #0d5c4d !important;
+      padding-bottom: 10px !important;
+      margin-top: ${index === 0 ? '0' : '24px'} !important;
+      margin-bottom: 16px !important;
+      page-break-after: avoid !important;
+      ${index > 0 ? 'page-break-before: always !important;' : ''}
+    `;
   });
 
-  // H2 - Seções principais (capa de seção)
+  // H2 - Section headings (inline, page-break only if not first)
   const h2s = container.querySelectorAll('h2');
-  h2s.forEach((h2) => {
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 180px; text-align: center; margin-bottom: 25px; page-break-before: always;';
-    (h2 as HTMLElement).style.cssText = 'color: #0d5c4d !important; font-size: 20pt !important; font-weight: bold !important; text-transform: uppercase !important; letter-spacing: 1.5px !important; border-bottom: 2px solid #0d5c4d !important; padding-bottom: 12px !important; margin: 0 !important;';
-    h2.parentNode?.insertBefore(wrapper, h2);
-    wrapper.appendChild(h2);
+  h2s.forEach((h2, index) => {
+    (h2 as HTMLElement).style.cssText = `
+      color: #0d5c4d !important;
+      font-size: 16pt !important;
+      font-weight: bold !important;
+      text-transform: uppercase !important;
+      letter-spacing: 1px !important;
+      border-bottom: 2px solid #0d5c4d !important;
+      padding-bottom: 8px !important;
+      margin-top: ${index === 0 ? '0' : '20px'} !important;
+      margin-bottom: 12px !important;
+      page-break-after: avoid !important;
+    `;
   });
 
-  // H3 - Subseções
+  // H3 - Subsections
   const h3s = container.querySelectorAll('h3');
   h3s.forEach((h3) => {
-    (h3 as HTMLElement).style.cssText = 'color: #0d5c4d !important; font-size: 14pt !important; margin-top: 20px !important; margin-bottom: 10px !important; font-weight: bold !important; border-left: 4px solid #0d5c4d !important; padding-left: 12px !important; page-break-after: avoid !important;';
+    (h3 as HTMLElement).style.cssText = `
+      color: #0d5c4d !important;
+      font-size: 13pt !important;
+      margin-top: 16px !important;
+      margin-bottom: 8px !important;
+      font-weight: bold !important;
+      border-left: 4px solid #0d5c4d !important;
+      padding-left: 10px !important;
+      page-break-after: avoid !important;
+    `;
+  });
+
+  // H4 - Sub-subsections
+  const h4s = container.querySelectorAll('h4');
+  h4s.forEach((h4) => {
+    (h4 as HTMLElement).style.cssText = `
+      color: #0d5c4d !important;
+      font-size: 12pt !important;
+      margin-top: 12px !important;
+      margin-bottom: 6px !important;
+      font-weight: bold !important;
+      page-break-after: avoid !important;
+    `;
   });
 
   // Strong elements
@@ -148,25 +250,105 @@ const styleContentElements = (container: HTMLElement): void => {
   // Paragraphs
   const paragraphs = container.querySelectorAll('p');
   paragraphs.forEach((p) => {
-    (p as HTMLElement).style.cssText = 'color: #1a1a1a !important; margin-bottom: 8px !important; text-align: justify !important;';
+    (p as HTMLElement).style.cssText = `
+      color: #1a1a1a !important;
+      margin-bottom: 6px !important;
+      text-align: justify !important;
+      orphans: 3 !important;
+      widows: 3 !important;
+    `;
   });
 
   // Lists
   const lists = container.querySelectorAll('ul, ol');
   lists.forEach((list) => {
-    (list as HTMLElement).style.cssText = 'color: #1a1a1a !important; margin-left: 20px !important; margin-bottom: 10px !important;';
+    (list as HTMLElement).style.cssText = `
+      color: #1a1a1a !important;
+      margin-left: 20px !important;
+      margin-bottom: 8px !important;
+      page-break-inside: avoid !important;
+    `;
   });
 
   // List items
   const listItems = container.querySelectorAll('li');
   listItems.forEach((li) => {
-    (li as HTMLElement).style.cssText = 'color: #1a1a1a !important; margin-bottom: 4px !important;';
+    (li as HTMLElement).style.cssText = 'color: #1a1a1a !important; margin-bottom: 3px !important;';
   });
 
   // Inline elements
   const spans = container.querySelectorAll('span, em, code, a');
   spans.forEach((span) => {
     (span as HTMLElement).style.cssText = 'color: #1a1a1a !important;';
+  });
+
+  // Tables - make them not break across pages
+  const tables = container.querySelectorAll('table');
+  tables.forEach((table) => {
+    (table as HTMLElement).style.cssText = `
+      width: 100% !important;
+      border-collapse: collapse !important;
+      margin-bottom: 12px !important;
+      page-break-inside: avoid !important;
+      font-size: 9pt !important;
+    `;
+  });
+
+  const ths = container.querySelectorAll('th');
+  ths.forEach((th) => {
+    (th as HTMLElement).style.cssText = `
+      background: #0d5c4d !important;
+      color: white !important;
+      padding: 6px 8px !important;
+      text-align: left !important;
+      font-size: 9pt !important;
+      border: 1px solid #0d5c4d !important;
+    `;
+  });
+
+  const tds = container.querySelectorAll('td');
+  tds.forEach((td) => {
+    (td as HTMLElement).style.cssText = `
+      padding: 5px 8px !important;
+      border: 1px solid #ccc !important;
+      color: #1a1a1a !important;
+      font-size: 9pt !important;
+    `;
+  });
+
+  // Details/summary (gabarito sections) - keep together
+  const details = container.querySelectorAll('details');
+  details.forEach((detail) => {
+    (detail as HTMLElement).setAttribute('open', '');
+    (detail as HTMLElement).style.cssText = `
+      page-break-inside: avoid !important;
+      margin-bottom: 8px !important;
+      border: 1px solid #e0e0e0 !important;
+      border-radius: 4px !important;
+      padding: 8px !important;
+      background: #fafafa !important;
+    `;
+  });
+
+  const summaries = container.querySelectorAll('summary');
+  summaries.forEach((summary) => {
+    (summary as HTMLElement).style.cssText = `
+      font-weight: bold !important;
+      color: #0d5c4d !important;
+      cursor: default !important;
+      margin-bottom: 4px !important;
+    `;
+  });
+
+  // Horizontal rules - thin separator, avoid page break near them
+  const hrs = container.querySelectorAll('hr');
+  hrs.forEach((hr) => {
+    (hr as HTMLElement).style.cssText = `
+      border: none !important;
+      border-top: 1px solid #ddd !important;
+      margin: 12px 0 !important;
+      page-break-after: avoid !important;
+    `;
   });
 };
 
@@ -179,16 +361,16 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   // Add cover page
   pdfContainer.innerHTML = createCoverPage(tema);
   
-  // Create content wrapper
+  // Create content wrapper with cleaned HTML
   const contentWrapper = document.createElement('div');
-  contentWrapper.innerHTML = contentElement.innerHTML;
+  contentWrapper.innerHTML = stripAIPreamble(contentElement.innerHTML);
   contentWrapper.style.cssText = `
     background: white !important;
     color: #1a1a1a !important;
-    padding: 20px 30px !important;
+    padding: 15px 25px !important;
     font-family: 'Georgia', 'Times New Roman', serif !important;
     font-size: 11pt !important;
-    line-height: 1.5 !important;
+    line-height: 1.45 !important;
     width: 100% !important;
     max-width: none !important;
     overflow: visible !important;
@@ -201,14 +383,15 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   pdfContainer.appendChild(contentWrapper);
 
   const opt = {
-    margin: [10, 12, 10, 12] as [number, number, number, number],
-    filename: `fechamento-${tema.trim().toLowerCase().replace(/\s+/g, '-')}.pdf`,
-    image: { type: 'jpeg' as const, quality: 0.95 },
+    margin: [12, 15, 12, 15] as [number, number, number, number],
+    filename: `fechamento-${tema.trim().toLowerCase().replace(/\s+/g, '-').substring(0, 50)}.pdf`,
+    image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: {
       scale: 2,
       useCORS: true,
       logging: false,
-      windowWidth: 800,
+      windowWidth: 794, // A4 width at 96dpi
+      letterRendering: true,
     },
     jsPDF: {
       unit: 'mm' as const,
@@ -216,10 +399,8 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
       orientation: 'portrait' as const
     },
     pagebreak: {
-      mode: ['avoid-all', 'css', 'legacy'] as ('avoid-all' | 'css' | 'legacy')[],
-      before: '.page-break-before',
-      after: '.page-break-after',
-      avoid: ['h1', 'h2', 'h3', 'h4', 'tr']
+      mode: ['css'] as ('css')[],
+      avoid: ['p', 'li', 'tr', 'h3', 'h4', 'details', 'table', 'ul', 'ol'],
     }
   };
 
