@@ -211,7 +211,7 @@ const Exam = () => {
       </header>
 
       <main className="flex-1 container relative py-6 px-4">
-        <div className={`grid gap-6 h-[calc(100vh-8rem)] ${isFullScreen ? 'grid-cols-1' : 'lg:grid-cols-2'}`}>
+        <div className={`grid gap-6 lg:h-[calc(100vh-8rem)] ${isFullScreen ? 'grid-cols-1' : 'lg:grid-cols-2'}`}>
           {/* Left panel — hidden in full-screen simulation */}
           {!isFullScreen && (
             <ExamConfigPanel
