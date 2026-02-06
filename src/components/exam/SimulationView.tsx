@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
-import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, RotateCcw, Trophy, Eye, EyeOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, RotateCcw, Trophy, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 interface ParsedQuestion {
   number: number;
@@ -18,12 +18,13 @@ interface ParsedQuestion {
 interface SimulationViewProps {
   resultado: string;
   onExit: () => void;
+  isGenerating?: boolean;
+  isComplete?: boolean;
 }
 
 function parseQuestions(markdown: string): ParsedQuestion[] {
   const questions: ParsedQuestion[] = [];
 
-  // Split by "## Questão X" headers
   const questionBlocks = markdown.split(/(?=##\s*Questão\s+\d+)/i);
 
   for (const block of questionBlocks) {
@@ -32,24 +33,19 @@ function parseQuestions(markdown: string): ParsedQuestion[] {
 
     const number = parseInt(numMatch[1]);
 
-    // Extract type and tema
     const metaMatch = block.match(/\*Tipo:\s*(.+?)\s*\|\s*Tema:\s*(.+?)\s*\|/i);
     const type = metaMatch?.[1]?.trim();
     const tema = metaMatch?.[2]?.trim();
 
-    // Find explanation section — everything inside <details> or after "Gabarito"
-    // We need to isolate the question part from the explanation part
     let questionPart = block;
     let explanationPart = '';
 
-    // Try to split at <details> tag
     const detailsIdx = block.indexOf('<details>');
     if (detailsIdx !== -1) {
       questionPart = block.slice(0, detailsIdx);
       const detailsMatch = block.match(/<details>[\s\S]*?<summary>[\s\S]*?<\/summary>([\s\S]*?)<\/details>/i);
       explanationPart = detailsMatch?.[1]?.trim() || '';
     } else {
-      // Try to split at "**Gabarito:" line
       const gabaritoIdx = block.search(/\*\*Gabarito:\s*[A-E]\*\*/i);
       if (gabaritoIdx !== -1) {
         questionPart = block.slice(0, gabaritoIdx);
@@ -57,22 +53,18 @@ function parseQuestions(markdown: string): ParsedQuestion[] {
       }
     }
 
-    // Extract correct answer
     const correctMatch = block.match(/\*\*Gabarito:\s*([A-E])\*\*/i);
     const correctAnswer = correctMatch?.[1] || '';
 
-    // Extract alternatives ONLY from the question part (not explanation)
     const alternatives: { letter: string; text: string }[] = [];
     const altRegex = /\*\*([A-E])\)\*\*\s*(.+)/g;
     let altMatch;
     while ((altMatch = altRegex.exec(questionPart)) !== null) {
-      // Only add first occurrence of each letter
       if (!alternatives.find(a => a.letter === altMatch[1])) {
         alternatives.push({ letter: altMatch[1], text: altMatch[2].trim() });
       }
     }
 
-    // Extract enunciado (between header and first alternative)
     const headerEnd = questionPart.indexOf('\n', questionPart.indexOf('##'));
     const firstAltIdx = questionPart.search(/\*\*[A-E]\)\*\*/);
     const enunciado = firstAltIdx > headerEnd
@@ -95,7 +87,7 @@ function parseQuestions(markdown: string): ParsedQuestion[] {
   return questions;
 }
 
-const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
+const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = true }: SimulationViewProps) => {
   const questions = useMemo(() => parseQuestions(resultado), [resultado]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -106,6 +98,9 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
   const totalQuestions = questions.length;
   const answeredCount = Object.keys(answers).length;
   const progress = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
+
+  // Check if the user has navigated beyond available questions
+  const isWaitingForQuestion = currentIndex >= totalQuestions && isGenerating;
 
   const selectAnswer = useCallback((letter: string) => {
     if (showResults) return;
@@ -143,7 +138,7 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
     };
   }, [showResults, answers, questions]);
 
-  if (questions.length === 0) {
+  if (questions.length === 0 && !isGenerating) {
     return (
       <div className="flex flex-col items-center justify-center h-full py-16 text-center">
         <p className="text-muted-foreground">Não foi possível analisar as questões para o modo simulação.</p>
@@ -154,11 +149,21 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
     );
   }
 
+  // Initial loading — no questions parsed yet but generating
+  if (questions.length === 0 && isGenerating) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full py-16 text-center space-y-4">
+        <Loader2 className="h-10 w-10 text-primary animate-spin" />
+        <p className="text-muted-foreground">Gerando as questões... aguarde um momento.</p>
+      </div>
+    );
+  }
+
   // Results screen
   if (showResults) {
     return (
       <div className="flex flex-col h-full">
-        <div className="text-center py-6 border-b border-border/30">
+        <div className="text-center py-6 border-b border-border/30 shrink-0">
           <Trophy className={`h-12 w-12 mx-auto mb-3 ${score.percentage >= 70 ? 'text-primary' : score.percentage >= 50 ? 'text-accent' : 'text-destructive'}`} />
           <h2 className="text-2xl font-bold">Resultado</h2>
           <p className="text-4xl font-bold mt-2">
@@ -171,7 +176,7 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
           </p>
         </div>
 
-        <ScrollArea className="flex-1 px-4 py-4">
+        <ScrollArea className="flex-1 min-h-0 px-4 py-4">
           <div className="space-y-3 max-w-xl mx-auto">
             {questions.map((q, i) => {
               const userAnswer = answers[i];
@@ -216,7 +221,7 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
           </div>
         </ScrollArea>
 
-        <div className="flex gap-2 pt-4 border-t border-border/30">
+        <div className="flex gap-2 pt-4 border-t border-border/30 shrink-0">
           <Button variant="outline" onClick={resetExam} className="flex-1 gap-2">
             <RotateCcw className="h-4 w-4" />
             Refazer
@@ -229,26 +234,80 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
     );
   }
 
+  // Waiting for next question screen
+  if (isWaitingForQuestion) {
+    return (
+      <div className="flex flex-col h-full">
+        {/* Progress */}
+        <div className="mb-4 shrink-0">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-muted-foreground">
+              Questão {currentIndex + 1}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {answeredCount} respondida{answeredCount !== 1 ? 's' : ''}
+            </span>
+          </div>
+          <Progress value={progress} className="h-2" />
+        </div>
+
+        <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
+          <Loader2 className="h-8 w-8 text-primary animate-spin" />
+          <div>
+            <p className="text-foreground font-medium">Aguarde um momento...</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              A próxima questão ainda está sendo gerada.
+            </p>
+          </div>
+        </div>
+
+        {/* Navigation — only back button */}
+        <div className="flex items-center justify-between pt-4 border-t border-border/30 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
+            disabled={currentIndex === 0}
+            className="gap-1"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Anterior
+          </Button>
+          <span className="text-xs text-muted-foreground">Gerando...</span>
+        </div>
+      </div>
+    );
+  }
+
   // Question view
   const isRevealed = revealedQuestions.has(currentIndex);
   const userAnswer = answers[currentIndex];
+  const canGoNext = currentIndex < totalQuestions - 1 || (isGenerating && currentIndex === totalQuestions - 1);
+  const isLastAvailable = currentIndex === totalQuestions - 1;
+  const showFinishButton = isLastAvailable && isComplete && answeredCount > 0;
 
   return (
     <div className="flex flex-col h-full">
       {/* Progress */}
-      <div className="mb-4">
+      <div className="mb-4 shrink-0">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs text-muted-foreground">
-            Questão {currentIndex + 1} de {totalQuestions}
+            Questão {currentIndex + 1} de {isComplete ? totalQuestions : `${totalQuestions}+`}
           </span>
           <span className="text-xs text-muted-foreground">
             {answeredCount} respondida{answeredCount !== 1 ? 's' : ''}
+            {isGenerating && (
+              <span className="ml-2 text-primary">
+                • Gerando...
+              </span>
+            )}
           </span>
         </div>
         <Progress value={progress} className="h-2" />
       </div>
 
-      <ScrollArea className="flex-1">
+      {/* Scrollable content */}
+      <ScrollArea className="flex-1 min-h-0">
         <div className="space-y-4 pr-2">
           {/* Metadata */}
           {(currentQ.type || currentQ.tema) && (
@@ -339,8 +398,8 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
         </div>
       </ScrollArea>
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between pt-4 border-t border-border/30 mt-4">
+      {/* Navigation — always visible, outside ScrollArea */}
+      <div className="flex items-center justify-between pt-4 border-t border-border/30 shrink-0">
         <Button
           variant="outline"
           size="sm"
@@ -352,7 +411,7 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
           Anterior
         </Button>
 
-        {currentIndex === totalQuestions - 1 && answeredCount > 0 ? (
+        {showFinishButton ? (
           <Button
             size="sm"
             onClick={finishExam}
@@ -365,8 +424,8 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentIndex(Math.min(totalQuestions - 1, currentIndex + 1))}
-            disabled={currentIndex === totalQuestions - 1}
+            onClick={() => setCurrentIndex(currentIndex + 1)}
+            disabled={isLastAvailable && !isGenerating}
             className="gap-1"
           >
             Próxima

@@ -147,7 +147,7 @@ const Pricing = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-4xl font-bold">
-                  R$ 29,90
+                  R$ 19,90
                   <span className="text-base font-normal text-muted-foreground">/mês</span>
                 </div>
                 <ul className="space-y-2 text-sm text-left">
@@ -180,11 +180,11 @@ const Pricing = () => {
               </Badge>
               <CardHeader>
                 <CardTitle className="text-xl">Anual</CardTitle>
-                <CardDescription>Economia de 2 meses</CardDescription>
+                <CardDescription>Economia de quase 2 meses</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-4xl font-bold">
-                  R$ 249,90
+                  R$ 199,90
                   <span className="text-base font-normal text-muted-foreground">/ano</span>
                 </div>
                 <ul className="space-y-2 text-sm text-left">
@@ -194,7 +194,7 @@ const Pricing = () => {
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-primary" />
-                    Equivale a R$ 20,83/mês
+                    Equivale a R$ 16,66/mês
                   </li>
                 </ul>
                 <Button 
