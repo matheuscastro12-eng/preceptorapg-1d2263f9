@@ -53,9 +53,13 @@ const SeminarActions = ({ resultado, tema }: SeminarActionsProps) => {
   const handleSendToManus = async () => {
     setSendingToManus(true);
 
+    // Open window synchronously to avoid mobile popup blockers
+    const newWindow = window.open('about:blank', '_blank');
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
+        newWindow?.close();
         throw new Error('Sessão expirada. Faça login novamente.');
       }
 
@@ -72,6 +76,7 @@ const SeminarActions = ({ resultado, tema }: SeminarActionsProps) => {
       );
 
       if (!response.ok) {
+        newWindow?.close();
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Erro ao enviar para o Manus');
       }
@@ -79,12 +84,17 @@ const SeminarActions = ({ resultado, tema }: SeminarActionsProps) => {
       const data = await response.json();
 
       if (data.task_url) {
-        window.open(data.task_url, '_blank');
+        if (newWindow) {
+          newWindow.location.href = data.task_url;
+        } else {
+          window.location.href = data.task_url;
+        }
         toast({
           title: 'Enviado para o Manus! 🎉',
           description: 'A apresentação está sendo criada. Acompanhe na aba que foi aberta.',
         });
       } else {
+        newWindow?.close();
         throw new Error('URL da tarefa não retornada pelo Manus');
       }
     } catch (error) {
