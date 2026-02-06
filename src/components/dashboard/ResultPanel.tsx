@@ -13,6 +13,7 @@ interface ResultPanelProps {
   exporting: boolean;
   resultRef: RefObject<HTMLDivElement>;
   modo: GenerationMode;
+  tema?: string;
   onSave: () => void;
   onCopy: () => void;
   onExportPDF: () => void;
@@ -25,6 +26,7 @@ const ResultPanel = ({
   exporting,
   resultRef,
   modo,
+  tema,
   onSave,
   onCopy,
   onExportPDF,
@@ -143,7 +145,7 @@ const ResultPanel = ({
 
       {/* Seminar-specific actions */}
       {showActions && isSeminario && (
-        <SeminarActions resultado={resultado} />
+        <SeminarActions resultado={resultado} tema={tema} />
       )}
     </div>
   );
