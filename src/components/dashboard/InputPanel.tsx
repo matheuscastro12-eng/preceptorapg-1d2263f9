@@ -3,13 +3,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import GenerationProgress from '@/components/GenerationProgress';
-import { Loader2, Sparkles, Brain, Target, Lightbulb } from 'lucide-react';
+import ModeToggle, { type GenerationMode } from './ModeToggle';
+import { Loader2, Sparkles, Brain, Target, Lightbulb, Presentation } from 'lucide-react';
 
 interface InputPanelProps {
   tema: string;
   setTema: (value: string) => void;
   objetivos: string;
   setObjetivos: (value: string) => void;
+  modo: GenerationMode;
+  setModo: (value: GenerationMode) => void;
   generating: boolean;
   hasStartedReceiving: boolean;
   isComplete: boolean;
@@ -21,6 +24,8 @@ const InputPanel = ({
   setTema,
   objetivos,
   setObjetivos,
+  modo,
+  setModo,
   generating,
   hasStartedReceiving,
   isComplete,
@@ -33,21 +38,36 @@ const InputPanel = ({
     'TDAH',
   ];
 
+  const isSeminario = modo === 'seminario';
+
   return (
     <div className="relative rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-6 flex flex-col overflow-hidden">
       {/* Decorative gradient */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-bl-full pointer-events-none" />
+      <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${isSeminario ? 'from-accent/10' : 'from-primary/10'} to-transparent rounded-bl-full pointer-events-none transition-colors duration-500`} />
       
-      <div className="flex items-center gap-3 mb-6 relative">
-        <div className="rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 p-2.5 ring-1 ring-primary/20">
-          <Brain className="h-5 w-5 text-primary" />
+      <div className="flex items-center gap-3 mb-5 relative">
+        <div className={`rounded-xl bg-gradient-to-br ${isSeminario ? 'from-accent/20 to-accent/5 ring-accent/20' : 'from-primary/20 to-primary/5 ring-primary/20'} p-2.5 ring-1 transition-colors duration-500`}>
+          {isSeminario ? (
+            <Presentation className="h-5 w-5 text-accent" />
+          ) : (
+            <Brain className="h-5 w-5 text-primary" />
+          )}
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Novo Fechamento</h2>
+          <h2 className="text-lg font-semibold">
+            {isSeminario ? 'Roteiro de Seminário' : 'Novo Fechamento'}
+          </h2>
           <p className="text-sm text-muted-foreground">
-            Crie conteúdo educacional com IA
+            {isSeminario 
+              ? 'Crie slides com script e clinical pearls'
+              : 'Crie conteúdo educacional com IA'}
           </p>
         </div>
+      </div>
+
+      {/* Mode Toggle */}
+      <div className="mb-5 relative">
+        <ModeToggle mode={modo} onChange={setModo} disabled={generating} />
       </div>
 
       <div className="space-y-5 flex-1 relative">
@@ -90,7 +110,10 @@ const InputPanel = ({
           </Label>
           <Textarea
             id="objetivos"
-            placeholder="Ex: Compreender a fisiopatologia, identificar sinais e sintomas, entender o tratamento..."
+            placeholder={isSeminario
+              ? "Ex: Focar na fisiopatologia e tratamento farmacológico para apresentação de 20 minutos..."
+              : "Ex: Compreender a fisiopatologia, identificar sinais e sintomas, entender o tratamento..."
+            }
             value={objetivos}
             onChange={(e) => setObjetivos(e.target.value)}
             disabled={generating}
@@ -101,19 +124,23 @@ const InputPanel = ({
 
       <div className="space-y-4 mt-6 relative">
         <Button 
-          className="w-full h-12 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-300 group" 
+          className={`w-full h-12 text-base font-semibold shadow-lg transition-all duration-300 group ${
+            isSeminario
+              ? 'bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent/70 shadow-accent/20 hover:shadow-accent/30'
+              : 'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-primary/20 hover:shadow-primary/30'
+          }`}
           onClick={onGenerate}
           disabled={generating}
         >
           {generating ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Gerando conteúdo...
+              {isSeminario ? 'Gerando roteiro...' : 'Gerando conteúdo...'}
             </>
           ) : (
             <>
               <Sparkles className="mr-2 h-5 w-5 group-hover:animate-pulse" />
-              Gerar Fechamento
+              {isSeminario ? 'Gerar Roteiro de Slides' : 'Gerar Fechamento'}
             </>
           )}
         </Button>

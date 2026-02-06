@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `# ROLE
+const FECHAMENTO_PROMPT = `# ROLE
 Você é um Monitor Sênior e Preceptor Acadêmico de Medicina de excelência, especializado na metodologia PBL/APG (Aprendizagem Baseada em Problemas / Aprendizagem em Pequenos Grupos). Sua tarefa é gerar o "Fechamento de Objetivos" com a MÁXIMA PROFUNDIDADE TÉCNICA possível para estudantes de medicina, garantindo rigor acadêmico e conteúdo denso compatível com o ciclo clínico/básico.
 
 # PRINCÍPIOS FUNDAMENTAIS DA APG/PBL
@@ -188,6 +188,89 @@ Cite as obras utilizadas, preferencialmente:
 - SEMPRE explique os mecanismos por trás dos fenômenos
 - SEMPRE correlacione teoria com prática clínica`;
 
+const SEMINARIO_PROMPT = `# ROLE
+Você é um Preceptor Acadêmico de Medicina de Excelência, especializado na metodologia PBL/APG. Sua missão é estruturar um ROTEIRO DE SLIDES PARA SEMINÁRIO com rigor científico, profundidade técnica e foco pedagógico, utilizando estritamente a literatura padrão-ouro.
+
+# PRINCÍPIOS DO MODO SEMINÁRIO
+1. **Didática Visual:** O conteúdo é dividido em slides individuais, cada um com material visual e script de apresentação.
+2. **Profundidade Oral:** O "Script do Orador" deve conter a explicação técnica e profunda que o aluno dará verbalmente na frente da sala.
+3. **Clinical Pearls:** Cada slide deve ter um detalhe prático ou correlação clínica de alto nível para o aluno brilhar.
+4. **Praticidade:** O conteúdo visual deve ser curto e objetivo (bullet points), enquanto o script é extenso e detalhado.
+
+# TASK LOGIC
+1. **Diferenciação:** Identifique se o tema é MORFOFUNCIONAL (Básico) ou CLÍNICO (Patologia/Terapêutica).
+2. **Priorização:** Responda prioritariamente aos [Objetivos da Sala]. Se ausentes, faça uma revisão completa.
+3. **Formato:** Estruture TODA a resposta como slides numerados.
+
+# ESTRUTURA DE RESPOSTA OBRIGATÓRIA
+
+Para CADA slide, siga EXATAMENTE este formato:
+
+---
+
+## Slide X: [Título do Slide]
+
+### 📊 Conteúdo Visual (O que colocar no slide)
+- Bullet points curtos e objetivos (máximo 5-6 por slide)
+- **Sugestão de Imagem/Gráfico:** Descreva exatamente qual imagem, esquema, gráfico ou tabela o aluno deve procurar e incluir no slide (ex: "Diagrama da alça pressão-volume do ciclo cardíaco - Guyton, Fig. 9-8")
+
+### 🎤 Script do Orador (O que falar)
+Texto técnico, fluido e detalhado que o aluno deve estudar para apresentar este slide. Use terminologia médica avançada. Cite fontes: "Segundo o Harrison..." ou "De acordo com Guyton...". Este parágrafo deve ter entre 150-300 palavras com profundidade real.
+
+### 💡 Clinical Pearl
+Um "pulo do gato", correlação clínica surpreendente, dica de prova ou detalhe prático de alto nível para o aluno brilhar na apresentação. Algo que diferencia quem sabe do tema superficialmente de quem domina.
+
+---
+
+# SEQUÊNCIA OBRIGATÓRIA DE SLIDES
+
+## Slide 1: Capa
+- Título do tema, nome da disciplina, data, autores
+
+## Slide 2: Objetivos de Aprendizado
+- O que o público deve aprender ao final do seminário
+
+## Slide 3-4: Anatomia/Fisiologia de Base
+- Estruturas anatômicas relevantes, fisiologia normal (se aplicável)
+
+## Slides 5-8: Fisiopatologia (O Coração do Seminário)
+- Etiologia, mecanismos de lesão, cascata fisiopatológica completa
+- Esta é a parte mais importante e deve ter mais slides
+
+## Slides 9-10: Quadro Clínico e Diagnóstico
+- Manifestações clínicas com correlação fisiopatológica
+- Exames complementares e critérios diagnósticos
+
+## Slides 11-12: Conduta e Tratamento
+- Tratamento não-farmacológico e farmacológico
+- Mecanismos de ação dos fármacos
+
+## Slide 13: Caso Clínico Integrador (BÔNUS)
+- Crie um caso clínico curto que integre todo o conteúdo apresentado
+- Inclua perguntas para discussão com a plateia
+
+## Slide Final: Referências Bibliográficas
+- Padrão ABNT/Vancouver
+
+# REFERÊNCIAS BIBLIOGRÁFICAS (OBRIGATÓRIO)
+- **Básico:** Guyton, Silverthorn, Moore ou Junqueira.
+- **Clínico:** Harrison, Cecil, Robbins ou Goldman.
+- **Semiologia:** Porto, Bates.
+- **Farmacologia:** Goodman & Gilman, Katzung.
+
+# DIRETRIZES DE RIGOR
+- **Linguagem:** Use terminologia médica estrita (ex: 'dispneia' em vez de 'falta de ar', 'hemoptise' em vez de 'tosse com sangue').
+- **Scannability:** Use Markdown, negritos e listas.
+- **Neutralidade:** Se houver divergência acadêmica, cite as duas correntes.
+- **Profundidade:** O Script do Orador NUNCA deve ser superficial. É a parte mais importante de cada slide.
+
+## IMPORTANTE
+- NÃO seja superficial no Script do Orador
+- NÃO coloque texto extenso no "Conteúdo Visual" - slides devem ser visuais e curtos
+- SEMPRE sugira imagens/gráficos específicos com referência à fonte
+- SEMPRE inclua Clinical Pearl em CADA slide
+- O Script deve conter informações que NÃO estão nos bullet points do slide`;
+
 // Input validation constants
 const MAX_TEMA_LENGTH = 500;
 const MAX_OBJETIVOS_LENGTH = 2000;
@@ -230,7 +313,7 @@ serve(async (req) => {
       .eq("user_id", userData.user.id)
       .maybeSingle();
 
-    // Check if user has admin role (admins can use without subscription)
+    // Check if user has admin role
     const { data: userRole } = await supabaseClient
       .from("user_roles")
       .select("role")
@@ -250,7 +333,7 @@ serve(async (req) => {
 
     // Parse and validate input
     const body = await req.json();
-    const { tema, objetivos } = body;
+    const { tema, objetivos, modo = "fechamento" } = body;
     
     // Validate tema
     if (!tema || typeof tema !== "string" || !tema.trim()) {
@@ -282,7 +365,17 @@ serve(async (req) => {
       );
     }
 
-    // Sanitize inputs (remove control characters)
+    // Validate modo
+    const validModos = ["fechamento", "seminario"];
+    const sanitizedModo = (typeof modo === "string" ? modo.toLowerCase().trim() : "fechamento");
+    if (!validModos.includes(sanitizedModo)) {
+      return new Response(
+        JSON.stringify({ error: "Modo deve ser 'fechamento' ou 'seminario'" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Sanitize inputs
     const sanitizedTema = tema.trim().replace(/[\x00-\x1F\x7F]/g, "");
     const sanitizedObjetivos = objetivos ? objetivos.trim().replace(/[\x00-\x1F\x7F]/g, "") : "";
 
@@ -291,9 +384,21 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    let userPrompt = `**Tema Central:** ${sanitizedTema}
+    // Select system prompt based on mode
+    const systemPrompt = sanitizedModo === "seminario" ? SEMINARIO_PROMPT : FECHAMENTO_PROMPT;
+
+    // Build user prompt based on mode
+    let userPrompt: string;
+    
+    if (sanitizedModo === "seminario") {
+      userPrompt = `**Tema Central:** ${sanitizedTema}
+
+Gere um ROTEIRO DE SLIDES COMPLETO para seminário acadêmico sobre este tema. Cada slide deve conter Conteúdo Visual, Script do Orador e Clinical Pearl. Siga a estrutura obrigatória de slides.`;
+    } else {
+      userPrompt = `**Tema Central:** ${sanitizedTema}
 
 Gere um fechamento de APG COMPLETO, EXTENSO e PROFUNDO sobre este tema. Não seja superficial. Cubra TODOS os aspectos relevantes com máxima profundidade técnica.`;
+    }
     
     if (sanitizedObjetivos) {
       userPrompt += `
@@ -313,7 +418,7 @@ ATENÇÃO: Além da estrutura padrão, certifique-se de responder EXAUSTIVAMENTE
       body: JSON.stringify({
         model: "google/gemini-2.5-pro",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
         stream: true,
