@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ProfileDropdown from '@/components/ProfileDropdown';
-import { Stethoscope, BookOpen, Zap } from 'lucide-react';
+import { Stethoscope, BookOpen, Zap, FileQuestion } from 'lucide-react';
 
 interface DashboardHeaderProps {
   userEmail: string;
@@ -41,6 +41,15 @@ const DashboardHeader = ({ userEmail, onLogout }: DashboardHeaderProps) => {
           >
             <BookOpen className="h-4 w-4" />
             <span className="hidden sm:inline">Biblioteca</span>
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => navigate('/exam')}
+            className="gap-2 hover:bg-destructive/10 hover:text-destructive transition-colors"
+          >
+            <FileQuestion className="h-4 w-4" />
+            <span className="hidden sm:inline">Provas</span>
           </Button>
           <ProfileDropdown userEmail={userEmail} onLogout={onLogout} />
         </div>

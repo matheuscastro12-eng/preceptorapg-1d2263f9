@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.send-to-manus]
 verify_jwt = false
+
+[functions.generate-exam]
+verify_jwt = false
