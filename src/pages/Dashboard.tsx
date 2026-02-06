@@ -247,6 +247,7 @@ const Dashboard = () => {
             exporting={exporting}
             resultRef={resultRef}
             modo={modo}
+            tema={tema}
             onSave={handleSave}
             onCopy={handleCopy}
             onExportPDF={handleExportPDF}
