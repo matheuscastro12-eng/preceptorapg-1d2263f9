@@ -8,6 +8,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Library from "./pages/Library";
+import Exam from "./pages/Exam";
 import Pricing from "./pages/Pricing";
 import Admin from "./pages/Admin";
 import Landing from "./pages/Landing";
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/library" element={<Library />} />
+              <Route path="/exam" element={<Exam />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/admin" element={<Admin />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
