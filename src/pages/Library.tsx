@@ -73,30 +73,30 @@ const Library = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate('/dashboard')}
-              className="gap-2"
+              className="gap-1 sm:gap-2 px-2 sm:px-3"
             >
               <ArrowLeft className="h-4 w-4" />
-              Voltar
+              <span className="hidden sm:inline">Voltar</span>
             </Button>
-            <div className="h-6 w-px bg-border/50" />
+            <div className="h-6 w-px bg-border/50 hidden sm:block" />
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-primary" />
+              <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
               </div>
-              <span className="text-lg font-bold text-gradient-medical">PreceptorAPG</span>
+              <span className="text-base sm:text-lg font-bold text-gradient-medical">PreceptorAPG</span>
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden sm:flex items-center gap-2 text-muted-foreground">
               <BookOpen className="h-4 w-4" />
-              <span className="text-sm font-medium">Biblioteca de Fechamentos</span>
+              <span className="text-sm font-medium">Biblioteca</span>
             </div>
             <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
           </div>
@@ -112,7 +112,7 @@ const Library = () => {
 
       {/* Modal de Visualização */}
       <Dialog open={!!selectedFechamento} onOpenChange={(open) => !open && setSelectedFechamento(null)}>
-        <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0">
+        <DialogContent className="max-w-4xl h-[95vh] sm:h-[85vh] w-[95vw] sm:w-full flex flex-col p-0">
           <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl font-bold text-gradient-medical">

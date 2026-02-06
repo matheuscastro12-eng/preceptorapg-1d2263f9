@@ -226,7 +226,7 @@ const Dashboard = () => {
       <DashboardHeader userEmail={user.email || ''} onLogout={signOut} />
 
       <main className="flex-1 container relative py-6 px-4">
-        <div className="grid lg:grid-cols-2 gap-6 h-[calc(100vh-8rem)]">
+        <div className="grid lg:grid-cols-2 gap-6 lg:h-[calc(100vh-8rem)]">
           <InputPanel
             tema={tema}
             setTema={setTema}

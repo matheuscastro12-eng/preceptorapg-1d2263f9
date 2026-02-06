@@ -116,29 +116,29 @@ const Pricing = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 container relative py-12 px-4">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
-          <div className="space-y-4">
-            <h1 className="text-4xl font-bold text-gradient-medical">
+      <main className="flex-1 container relative py-8 sm:py-12 px-4">
+        <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8">
+          <div className="space-y-3 sm:space-y-4">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gradient-medical">
               Desbloqueie o Poder do PBL
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
               Gere fechamentos completos para seus estudos de medicina com inteligência artificial.
             </p>
           </div>
 
           {/* Features */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 py-6 sm:py-8">
             {features.map((feature, index) => (
-              <div key={index} className="flex flex-col items-center gap-2 p-4 glass rounded-xl">
-                <feature.icon className="h-6 w-6 text-primary" />
-                <span className="text-sm text-center">{feature.text}</span>
+              <div key={index} className="flex items-center sm:flex-col gap-3 sm:gap-2 p-4 glass rounded-xl">
+                <feature.icon className="h-6 w-6 text-primary shrink-0" />
+                <span className="text-sm text-left sm:text-center">{feature.text}</span>
               </div>
             ))}
           </div>
 
           {/* Pricing Cards */}
-          <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+          <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 max-w-2xl mx-auto">
             {/* Monthly Plan */}
             <Card className="glass border-border/50 hover-lift">
               <CardHeader>
