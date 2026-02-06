@@ -1,37 +1,48 @@
 
 
-## Diagnóstico
+## Trocar Lovable AI por Google Gemini Direto
 
-Encontrei dois problemas principais:
+### O que vai mudar
 
-1. **Role admin não foi salva**: A tabela `user_roles` está vazia para seu usuário. O registro de admin não foi criado corretamente durante a aprovação anterior.
+A edge function `generate-fechamento` atualmente usa o Lovable AI Gateway. Vamos troca-la para chamar a API do Google Gemini diretamente usando sua propria API key.
 
-2. **Rota inicial incorreta**: No `App.tsx`, a rota `/` redireciona diretamente para `/auth` (página de login) em vez de mostrar a página de pricing ou uma landing page.
+### Passo a passo
 
-## Plano de Correção
+1. **Configurar sua API Key do Google AI Studio como secret seguro**
+   - Voce vai precisar da sua API key do Google AI Studio (pegue em [aistudio.google.com](https://aistudio.google.com/apikey))
+   - A key sera armazenada de forma segura no backend e nunca ficara exposta no codigo
 
-### 1. Inserir role admin no banco de dados
-Vou executar uma migration para inserir seu papel de admin:
-```sql
-INSERT INTO public.user_roles (user_id, role)
-VALUES ('e4b3e01b-86df-4fd3-9693-225335b2f9ec', 'admin');
-```
+2. **Atualizar a edge function `generate-fechamento`**
+   - Trocar a URL do Lovable AI Gateway pela API do Google Gemini (`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:streamGenerateContent`)
+   - Usar o formato de request do Google Gemini (que e diferente do formato OpenAI)
+   - Adaptar o parsing do streaming (o Google usa formato JSON diferente do SSE padrao OpenAI)
+   - Manter toda a logica de autenticacao, validacao e prompts existentes intactas
+   - Atualizar o tratamento de erros para os codigos do Google (429 rate limit, 403 quota, etc.)
 
-### 2. Corrigir a rota inicial
-Atualizar `App.tsx` para que a rota `/` redirecione para `/pricing` (ou outra página) em vez de `/auth`:
-```tsx
-<Route path="/" element={<Navigate to="/pricing" replace />} />
-```
-Isso fará com que visitantes não logados vejam a página de preços primeiro.
+3. **Adaptar o streaming no frontend (se necessario)**
+   - O Google Gemini retorna streaming em formato diferente, entao pode ser necessario converter o formato na edge function para manter compatibilidade com o frontend atual
 
-### 3. Alternativa: Criar uma landing page
-Se preferir, posso criar uma página inicial (`Index.tsx`) com informações sobre o app e botões para "Entrar" e "Ver Planos".
+### Detalhes Tecnicos
 
-## Arquivos a Modificar
-- **Migration SQL**: Inserir role admin
-- `src/App.tsx`: Alterar redirecionamento da rota `/`
+**Mudanca principal na edge function:**
 
-## Resultado Esperado
-- Você verá o link "Painel Admin" no dropdown do perfil
-- Visitantes verão a página de pricing ao acessar a URL principal
+- **Antes:** `fetch("https://ai.gateway.lovable.dev/v1/chat/completions")` com formato OpenAI
+- **Depois:** `fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:streamGenerateContent?alt=sse&key=...")` com formato Google
+
+**Estrategia de streaming:**
+- Usar o parametro `alt=sse` do Google para receber Server-Sent Events
+- O formato SSE do Google retorna `candidates[0].content.parts[0].text` em vez de `choices[0].delta.content`
+- Converter o formato na edge function para que o frontend continue funcionando sem alteracoes
+
+**Modelo:**
+- Usar `gemini-2.5-pro` (o mesmo que ja estava sendo usado via gateway, porem agora direto)
+
+**Secret necessario:**
+- `GOOGLE_AI_API_KEY` - sua chave da API do Google AI Studio
+
+### O que NAO muda
+- Os prompts de fechamento e seminario permanecem identicos
+- A interface do dashboard continua igual
+- A logica de autenticacao e validacao continua igual
+- O frontend nao precisa de alteracoes (a conversao de formato sera feita na edge function)
 
