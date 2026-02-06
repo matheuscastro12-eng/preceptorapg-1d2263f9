@@ -1,72 +1,93 @@
 
 
-## Integrar com Manus.ia para Gerar Slides Automaticamente
+# Plano de Implementacao
 
-### Como vai funcionar
+Este plano aborda 3 areas: correcoes na simulacao de provas, modo tela cheia com questoes progressivas, e atualizacao de precos.
 
-Depois que o conteudo do seminario for gerado pelo Google Gemini, o usuario podera clicar em um botao "Gerar Slides com Manus" que enviara automaticamente o conteudo para o Manus.ia criar a apresentacao. O Manus processa a tarefa e retorna um link onde o usuario acompanha e baixa os slides prontos.
+---
 
-### Fluxo do usuario
+## 1. Corrigir botoes de navegacao sumindo ao ver gabarito
 
-```text
-+---------------------------+       +---------------------------+       +---------------------------+
-|  1. Gera conteudo do      |       |  2. Clica em "Gerar       |       |  3. Manus cria os slides  |
-|  seminario (ja existe)    | ----> |  Slides com Manus"        | ----> |  e abre o link em nova    |
-|                           |       |  (novo botao)             |       |  aba para acompanhar      |
-+---------------------------+       +---------------------------+       +---------------------------+
-```
+**Problema:** Quando o aluno clica em "Ver Gabarito" e a explicacao aparece, os botoes "Anterior" e "Proxima" desaparecem porque o conteudo da explicacao empurra a navegacao para fora da area visivel.
 
-### Passo a passo
+**Solucao:** Ajustar o layout do `SimulationView.tsx` para que a area de navegacao fique sempre fixa na parte inferior, independente do tamanho da explicacao. A `ScrollArea` vai conter todo o conteudo scrollavel, e os botoes ficam fora dela com posicao fixa.
 
-1. **Configurar a API Key do Manus como secret seguro**
-   - Voce vai precisar da sua API key do Manus (pegue em [manus.im/app](http://manus.im/app?show_settings=integrations&app_name=api) em Settings > Integrations > API)
-   - A key sera armazenada de forma segura no backend
+---
 
-2. **Criar nova edge function `send-to-manus`**
-   - Recebe o conteudo gerado do seminario
-   - Envia para a API do Manus (`POST https://api.manus.ai/v1/tasks`) com um prompt instruindo a criar slides a partir do conteudo
-   - Retorna o `task_url` (link do Manus onde o usuario acompanha a criacao dos slides)
+## 2. Modo Simulacao em tela cheia
 
-3. **Atualizar o componente `SeminarActions`**
-   - Remover o botao "Copiar para Slides" e toda a logica de extracao de slide visual
-   - Adicionar botao "Gerar Slides com Manus" com icone e estado de loading
-   - Ao clicar, chama a edge function e abre o link do Manus em uma nova aba
-   - Manter o timer de tempo estimado (continua util)
+**Problema:** Atualmente o painel de configuracao (lado esquerdo) continua visivel durante a simulacao, desperdicando espaco.
 
-4. **Atualizar o `ResultPanel`** (ajustes menores de texto)
+**Solucao:**
+- Quando a geracao iniciar em modo simulacao, esconder o painel esquerdo (`ExamConfigPanel`)
+- O painel direito (simulacao) ocupa a tela toda
+- Adicionar um botao "Voltar ao Menu" no header da simulacao para retornar ao painel de configuracao
+- Quando o aluno clicar em "Voltar ao Menu", o layout volta ao grid de 2 colunas
 
-### Detalhes Tecnicos
+**Arquivo:** `src/pages/Exam.tsx`
+- Adicionar estado `examStarted` para controlar visibilidade do painel esquerdo
+- Mudar o grid de `lg:grid-cols-2` para `lg:grid-cols-1` quando em modo simulacao ativo
 
-**Nova edge function `send-to-manus/index.ts`:**
-- Endpoint: `POST https://api.manus.ai/v1/tasks`
-- Header de autenticacao: `API_KEY: {MANUS_API_KEY}`
-- Body: prompt com instrucoes para criar slides + conteudo do seminario como anexo/contexto
-- Resposta: `{ task_id, task_url }` -- abriremos o `task_url` em nova aba
-- Inclui verificacao de autenticacao do usuario (mesma logica da edge function existente)
+---
 
-**Prompt enviado ao Manus:**
-- Instrucoes claras para criar apresentacao de slides medica/academica
-- O conteudo completo gerado pelo Gemini sera enviado como contexto
-- Pedir que gere em formato PPTX com design profissional
+## 3. Responder questoes durante a geracao (streaming progressivo)
 
-**Componente SeminarActions atualizado:**
-- Remove: botao "Copiar para Slides", `slideVisualContent` useMemo
-- Adiciona: botao "Gerar Slides com Manus" com estados: idle, loading ("Criando..."), sucesso (link aberto)
-- Mantem: timer de tempo estimado
+**Problema:** O aluno precisa esperar toda a prova ser gerada para comecar a responder.
 
-**Secret necessario:**
-- `MANUS_API_KEY` -- chave da API do Manus
+**Solucao:**
+- Entrar no modo simulacao assim que a primeira questao completa for parseada (em vez de esperar `isComplete`)
+- O `SimulationView` recebe o `resultado` em tempo real e faz re-parse das questoes conforme chegam
+- Se o aluno avancar alem da ultima questao ja parseada, mostra uma mensagem: "Aguarde... a proxima questao ainda esta sendo gerada"
+- O botao "Finalizar" so aparece quando `isComplete` for `true` E o aluno estiver na ultima questao
 
-### O que muda vs o que nao muda
+**Arquivos:**
+- `src/pages/Exam.tsx`: Remover a condicao `isComplete` do `useEffect` que ativa a simulacao; ativar assim que `hasStartedReceiving` e houver pelo menos 1 questao parseada
+- `src/components/exam/SimulationView.tsx`:
+  - Aceitar novas props: `isGenerating` e `isComplete`
+  - Usar `useMemo` reativo no `resultado` para re-parsear questoes conforme chegam
+  - Quando `currentIndex >= questions.length` e `isGenerating`, mostrar tela de "aguardando proxima questao"
+  - So mostrar botao "Finalizar" quando `isComplete === true`
 
-**Muda:**
-- Botao "Copiar para Slides" vira "Gerar Slides com Manus"
-- Nova edge function para comunicar com a API do Manus
-- Novo secret `MANUS_API_KEY`
+---
 
-**Nao muda:**
-- Geracao de conteudo pelo Google Gemini (continua igual)
-- Timer de tempo estimado (continua)
-- Botoes de Salvar, Copiar, PDF (continuam)
-- Modo Fechamento (nao e afetado)
+## 4. Atualizar precos para R$ 19,90/mes e R$ 199,90/ano
 
+### 4a. Stripe
+- O preco mensal de R$ 19,90 ja existe no Stripe: `price_1SxsscCqd1B4NxDH8i05CAxC`
+- Criar novo preco anual de R$ 199,90 (19990 centavos BRL) no Stripe
+- Atualizar os secrets `STRIPE_MONTHLY_PRICE_ID` e `STRIPE_ANNUAL_PRICE_ID` com os novos IDs
+
+### 4b. Frontend (`src/pages/Pricing.tsx`)
+- Alterar "R$ 29,90" para "R$ 19,90" no card mensal
+- Alterar "R$ 249,90" para "R$ 199,90" no card anual
+- Atualizar "Equivale a R$ 20,83/mês" para "Equivale a R$ 16,66/mês"
+- Atualizar "Economia de 2 meses" para refletir a nova economia
+
+### 4c. Backend
+- O `create-checkout` ja usa os secrets (`STRIPE_MONTHLY_PRICE_ID` e `STRIPE_ANNUAL_PRICE_ID`) dinamicamente, entao nao precisa de mudanca no codigo -- apenas atualizar os secrets.
+
+---
+
+## Detalhes Tecnicos
+
+### Mudancas em `SimulationView.tsx`
+- Novas props: `isGenerating: boolean`, `isComplete: boolean`
+- O `parseQuestions` continua funcionando porque ja faz split por `## Questao X` -- questoes parciais (sem todas as alternativas) sao filtradas pelo check `alternatives.length >= 4`
+- Tela de espera: um componente com spinner e mensagem amigavel quando o aluno chega numa questao que ainda nao foi gerada
+- Layout: garantir que os botoes de navegacao usem `shrink-0` e fiquem fora do `ScrollArea`
+
+### Mudancas em `Exam.tsx`
+- Estado `examStarted`: setado quando `handleGenerate` e chamado com `simulationMode` ativo
+- Condicao do grid: `examStarted && config.simulationMode ? 'grid-cols-1' : 'lg:grid-cols-2'`
+- Auto-entrar em simulacao: mudar o `useEffect` para observar `hasStartedReceiving` + existencia de questoes parseadas (nao mais `isComplete`)
+- Passar `generating` e `isComplete` para `SimulationView`
+
+### Stripe
+- Criar preco anual R$ 199,90 via ferramenta Stripe
+- Atualizar 2 secrets via ferramenta de secrets
+
+### Arquivos modificados
+1. `src/components/exam/SimulationView.tsx` -- layout fixo de navegacao, props de streaming, tela de espera
+2. `src/pages/Exam.tsx` -- tela cheia, logica de ativacao progressiva
+3. `src/pages/Pricing.tsx` -- novos valores de preco
+4. Secrets do Stripe (STRIPE_MONTHLY_PRICE_ID, STRIPE_ANNUAL_PRICE_ID)
