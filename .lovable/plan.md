@@ -1,48 +1,72 @@
 
 
-## Trocar Lovable AI por Google Gemini Direto
+## Integrar com Manus.ia para Gerar Slides Automaticamente
 
-### O que vai mudar
+### Como vai funcionar
 
-A edge function `generate-fechamento` atualmente usa o Lovable AI Gateway. Vamos troca-la para chamar a API do Google Gemini diretamente usando sua propria API key.
+Depois que o conteudo do seminario for gerado pelo Google Gemini, o usuario podera clicar em um botao "Gerar Slides com Manus" que enviara automaticamente o conteudo para o Manus.ia criar a apresentacao. O Manus processa a tarefa e retorna um link onde o usuario acompanha e baixa os slides prontos.
+
+### Fluxo do usuario
+
+```text
++---------------------------+       +---------------------------+       +---------------------------+
+|  1. Gera conteudo do      |       |  2. Clica em "Gerar       |       |  3. Manus cria os slides  |
+|  seminario (ja existe)    | ----> |  Slides com Manus"        | ----> |  e abre o link em nova    |
+|                           |       |  (novo botao)             |       |  aba para acompanhar      |
++---------------------------+       +---------------------------+       +---------------------------+
+```
 
 ### Passo a passo
 
-1. **Configurar sua API Key do Google AI Studio como secret seguro**
-   - Voce vai precisar da sua API key do Google AI Studio (pegue em [aistudio.google.com](https://aistudio.google.com/apikey))
-   - A key sera armazenada de forma segura no backend e nunca ficara exposta no codigo
+1. **Configurar a API Key do Manus como secret seguro**
+   - Voce vai precisar da sua API key do Manus (pegue em [manus.im/app](http://manus.im/app?show_settings=integrations&app_name=api) em Settings > Integrations > API)
+   - A key sera armazenada de forma segura no backend
 
-2. **Atualizar a edge function `generate-fechamento`**
-   - Trocar a URL do Lovable AI Gateway pela API do Google Gemini (`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:streamGenerateContent`)
-   - Usar o formato de request do Google Gemini (que e diferente do formato OpenAI)
-   - Adaptar o parsing do streaming (o Google usa formato JSON diferente do SSE padrao OpenAI)
-   - Manter toda a logica de autenticacao, validacao e prompts existentes intactas
-   - Atualizar o tratamento de erros para os codigos do Google (429 rate limit, 403 quota, etc.)
+2. **Criar nova edge function `send-to-manus`**
+   - Recebe o conteudo gerado do seminario
+   - Envia para a API do Manus (`POST https://api.manus.ai/v1/tasks`) com um prompt instruindo a criar slides a partir do conteudo
+   - Retorna o `task_url` (link do Manus onde o usuario acompanha a criacao dos slides)
 
-3. **Adaptar o streaming no frontend (se necessario)**
-   - O Google Gemini retorna streaming em formato diferente, entao pode ser necessario converter o formato na edge function para manter compatibilidade com o frontend atual
+3. **Atualizar o componente `SeminarActions`**
+   - Remover o botao "Copiar para Slides" e toda a logica de extracao de slide visual
+   - Adicionar botao "Gerar Slides com Manus" com icone e estado de loading
+   - Ao clicar, chama a edge function e abre o link do Manus em uma nova aba
+   - Manter o timer de tempo estimado (continua util)
+
+4. **Atualizar o `ResultPanel`** (ajustes menores de texto)
 
 ### Detalhes Tecnicos
 
-**Mudanca principal na edge function:**
+**Nova edge function `send-to-manus/index.ts`:**
+- Endpoint: `POST https://api.manus.ai/v1/tasks`
+- Header de autenticacao: `API_KEY: {MANUS_API_KEY}`
+- Body: prompt com instrucoes para criar slides + conteudo do seminario como anexo/contexto
+- Resposta: `{ task_id, task_url }` -- abriremos o `task_url` em nova aba
+- Inclui verificacao de autenticacao do usuario (mesma logica da edge function existente)
 
-- **Antes:** `fetch("https://ai.gateway.lovable.dev/v1/chat/completions")` com formato OpenAI
-- **Depois:** `fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:streamGenerateContent?alt=sse&key=...")` com formato Google
+**Prompt enviado ao Manus:**
+- Instrucoes claras para criar apresentacao de slides medica/academica
+- O conteudo completo gerado pelo Gemini sera enviado como contexto
+- Pedir que gere em formato PPTX com design profissional
 
-**Estrategia de streaming:**
-- Usar o parametro `alt=sse` do Google para receber Server-Sent Events
-- O formato SSE do Google retorna `candidates[0].content.parts[0].text` em vez de `choices[0].delta.content`
-- Converter o formato na edge function para que o frontend continue funcionando sem alteracoes
-
-**Modelo:**
-- Usar `gemini-2.5-pro` (o mesmo que ja estava sendo usado via gateway, porem agora direto)
+**Componente SeminarActions atualizado:**
+- Remove: botao "Copiar para Slides", `slideVisualContent` useMemo
+- Adiciona: botao "Gerar Slides com Manus" com estados: idle, loading ("Criando..."), sucesso (link aberto)
+- Mantem: timer de tempo estimado
 
 **Secret necessario:**
-- `GOOGLE_AI_API_KEY` - sua chave da API do Google AI Studio
+- `MANUS_API_KEY` -- chave da API do Manus
 
-### O que NAO muda
-- Os prompts de fechamento e seminario permanecem identicos
-- A interface do dashboard continua igual
-- A logica de autenticacao e validacao continua igual
-- O frontend nao precisa de alteracoes (a conversao de formato sera feita na edge function)
+### O que muda vs o que nao muda
+
+**Muda:**
+- Botao "Copiar para Slides" vira "Gerar Slides com Manus"
+- Nova edge function para comunicar com a API do Manus
+- Novo secret `MANUS_API_KEY`
+
+**Nao muda:**
+- Geracao de conteudo pelo Google Gemini (continua igual)
+- Timer de tempo estimado (continua)
+- Botoes de Salvar, Copiar, PDF (continuam)
+- Modo Fechamento (nao e afetado)
 
