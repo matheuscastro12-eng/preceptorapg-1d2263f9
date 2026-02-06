@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useExamGenerator, type ExamConfig } from '@/hooks/useExamGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate } from 'react-router-dom';
-import { Stethoscope, ArrowLeft, Sparkles, Zap, BookOpen, ToggleLeft } from 'lucide-react';
+import { Stethoscope, ArrowLeft, Sparkles, BookOpen, ToggleLeft, Dumbbell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import ExamConfigPanel from '@/components/exam/ExamConfigPanel';
@@ -27,6 +27,7 @@ const Exam = () => {
     quantidade: 30,
     nivel: 'residencia',
     simulationMode: false,
+    practiceMode: 'prova',
   });
   const [exporting, setExporting] = useState(false);
   const [showSimulation, setShowSimulation] = useState(false);
@@ -53,10 +54,10 @@ const Exam = () => {
 
   // Auto-enter simulation mode when generation is complete and mode is active
   useEffect(() => {
-    if (isComplete && config.simulationMode && resultado) {
+    if (isComplete && config.simulationMode && config.practiceMode === 'prova' && resultado) {
       setShowSimulation(true);
     }
-  }, [isComplete, config.simulationMode, resultado]);
+  }, [isComplete, config.simulationMode, config.practiceMode, resultado]);
 
   if (authLoading || subLoading || adminLoading) {
     return (
@@ -76,7 +77,6 @@ const Exam = () => {
   if (!hasAccess && !isAdmin) return <Navigate to="/pricing" replace />;
 
   const handleGenerate = async () => {
-    // Fetch selected content
     const { data, error } = await supabase
       .from('fechamentos')
       .select('tema, resultado')
@@ -101,18 +101,18 @@ const Exam = () => {
 
   const handleCopy = () => {
     navigator.clipboard.writeText(resultado);
-    toast({ title: 'Copiado!', description: 'Prova copiada para a área de transferência.' });
+    toast({ title: 'Copiado!', description: 'Conteúdo copiado para a área de transferência.' });
   };
 
   const handleExportPDF = async () => {
     if (!resultRef.current || !resultado) return;
     setExporting(true);
     try {
-      await exportToPDF({
-        tema: `Prova - ${config.nivel === 'basico' ? 'Ciclo Básico' : 'Residência'} (${config.quantidade}Q)`,
-        contentElement: resultRef.current,
-      });
-      toast({ title: 'PDF exportado!', description: 'A prova foi salva como PDF.' });
+      const title = config.practiceMode === 'caso_clinico'
+        ? `Caso Clínico - ${config.nivel === 'basico' ? 'Ciclo Básico' : 'Residência'}`
+        : `Prova - ${config.nivel === 'basico' ? 'Ciclo Básico' : 'Residência'} (${config.quantidade}Q)`;
+      await exportToPDF({ tema: title, contentElement: resultRef.current });
+      toast({ title: 'PDF exportado!', description: 'Conteúdo salvo como PDF.' });
     } catch (error) {
       console.error('PDF export error:', error);
       toast({ title: 'Erro ao exportar', description: 'Tente novamente.', variant: 'destructive' });
@@ -120,6 +120,10 @@ const Exam = () => {
       setExporting(false);
     }
   };
+
+  const isProva = config.practiceMode === 'prova';
+  const resultTitle = isProva ? 'Prova Gerada' : 'Caso Clínico';
+  const generatingLabel = isProva ? 'Elaborando questões...' : 'Elaborando caso clínico...';
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -133,12 +137,7 @@ const Exam = () => {
       <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/dashboard')}
-              className="gap-2"
-            >
+            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')} className="gap-2">
               <ArrowLeft className="h-4 w-4" />
               Voltar
             </Button>
@@ -179,28 +178,20 @@ const Exam = () => {
             onGenerate={handleGenerate}
           />
 
-          {/* Right panel: simulation or result */}
+          {/* Right panel */}
           <div className="relative rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-6 flex flex-col overflow-hidden">
-            {showSimulation && isComplete ? (
+            {showSimulation && isComplete && isProva ? (
               <>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <ToggleLeft className="h-5 w-5 text-accent" />
                     <h2 className="text-lg font-semibold">Modo Simulação</h2>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowSimulation(false)}
-                    className="text-xs"
-                  >
-                    Ver Prova Completa
+                  <Button variant="outline" size="sm" onClick={() => setShowSimulation(false)} className="text-xs">
+                    Ver Completa
                   </Button>
                 </div>
-                <SimulationView
-                  resultado={resultado}
-                  onExit={() => setShowSimulation(false)}
-                />
+                <SimulationView resultado={resultado} onExit={() => setShowSimulation(false)} />
               </>
             ) : (
               <ExamResultPanel
@@ -210,11 +201,13 @@ const Exam = () => {
                 resultRef={resultRef}
                 onCopy={handleCopy}
                 onExportPDF={handleExportPDF}
+                title={resultTitle}
+                generatingLabel={generatingLabel}
               />
             )}
 
-            {/* Toggle simulation button when complete */}
-            {isComplete && resultado && !showSimulation && (
+            {/* Toggle simulation button — prova mode only */}
+            {isComplete && resultado && !showSimulation && isProva && (
               <div className="pt-3 border-t border-border/20 mt-3">
                 <Button
                   variant="outline"

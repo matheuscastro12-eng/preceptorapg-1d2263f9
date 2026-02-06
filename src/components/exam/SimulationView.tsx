@@ -7,7 +7,6 @@ import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, RotateCcw, Trophy, Ey
 
 interface ParsedQuestion {
   number: number;
-  fullText: string;
   enunciado: string;
   alternatives: { letter: string; text: string }[];
   explanation: string;
@@ -23,58 +22,76 @@ interface SimulationViewProps {
 
 function parseQuestions(markdown: string): ParsedQuestion[] {
   const questions: ParsedQuestion[] = [];
-  
-  // Split by question markers (## Questão X or **Questão X**)
+
+  // Split by "## Questão X" headers
   const questionBlocks = markdown.split(/(?=##\s*Questão\s+\d+)/i);
-  
+
   for (const block of questionBlocks) {
     const numMatch = block.match(/##\s*Questão\s+(\d+)/i);
     if (!numMatch) continue;
-    
+
     const number = parseInt(numMatch[1]);
-    
-    // Extract type and tema from italics line
+
+    // Extract type and tema
     const metaMatch = block.match(/\*Tipo:\s*(.+?)\s*\|\s*Tema:\s*(.+?)\s*\|/i);
     const type = metaMatch?.[1]?.trim();
     const tema = metaMatch?.[2]?.trim();
-    
-    // Extract alternatives
+
+    // Find explanation section — everything inside <details> or after "Gabarito"
+    // We need to isolate the question part from the explanation part
+    let questionPart = block;
+    let explanationPart = '';
+
+    // Try to split at <details> tag
+    const detailsIdx = block.indexOf('<details>');
+    if (detailsIdx !== -1) {
+      questionPart = block.slice(0, detailsIdx);
+      const detailsMatch = block.match(/<details>[\s\S]*?<summary>[\s\S]*?<\/summary>([\s\S]*?)<\/details>/i);
+      explanationPart = detailsMatch?.[1]?.trim() || '';
+    } else {
+      // Try to split at "**Gabarito:" line
+      const gabaritoIdx = block.search(/\*\*Gabarito:\s*[A-E]\*\*/i);
+      if (gabaritoIdx !== -1) {
+        questionPart = block.slice(0, gabaritoIdx);
+        explanationPart = block.slice(gabaritoIdx);
+      }
+    }
+
+    // Extract correct answer
+    const correctMatch = block.match(/\*\*Gabarito:\s*([A-E])\*\*/i);
+    const correctAnswer = correctMatch?.[1] || '';
+
+    // Extract alternatives ONLY from the question part (not explanation)
     const alternatives: { letter: string; text: string }[] = [];
     const altRegex = /\*\*([A-E])\)\*\*\s*(.+)/g;
     let altMatch;
-    while ((altMatch = altRegex.exec(block)) !== null) {
-      alternatives.push({ letter: altMatch[1], text: altMatch[2].trim() });
+    while ((altMatch = altRegex.exec(questionPart)) !== null) {
+      // Only add first occurrence of each letter
+      if (!alternatives.find(a => a.letter === altMatch[1])) {
+        alternatives.push({ letter: altMatch[1], text: altMatch[2].trim() });
+      }
     }
-    
-    // Extract correct answer from explanation
-    const correctMatch = block.match(/\*\*Gabarito:\s*([A-E])\*\*/i);
-    const correctAnswer = correctMatch?.[1] || '';
-    
-    // Extract explanation (everything inside <details> or after Gabarito)
-    const detailsMatch = block.match(/<details>[\s\S]*?<summary>[\s\S]*?<\/summary>([\s\S]*?)<\/details>/i);
-    const explanation = detailsMatch?.[1]?.trim() || '';
-    
-    // Extract enunciado (between the header and the first alternative)
-    const headerEnd = block.indexOf('\n', block.indexOf('##'));
-    const firstAltIdx = block.search(/\*\*[A-E]\)\*\*/);
-    const enunciado = firstAltIdx > headerEnd 
-      ? block.slice(headerEnd, firstAltIdx).replace(/\*Tipo:.*?\*/i, '').trim()
+
+    // Extract enunciado (between header and first alternative)
+    const headerEnd = questionPart.indexOf('\n', questionPart.indexOf('##'));
+    const firstAltIdx = questionPart.search(/\*\*[A-E]\)\*\*/);
+    const enunciado = firstAltIdx > headerEnd
+      ? questionPart.slice(headerEnd, firstAltIdx).replace(/\*Tipo:.*?\*/i, '').trim()
       : '';
-    
-    if (alternatives.length > 0) {
+
+    if (alternatives.length >= 4) {
       questions.push({
         number,
-        fullText: block,
         enunciado,
         alternatives,
-        explanation,
+        explanation: explanationPart,
         correctAnswer,
         type,
         tema,
       });
     }
   }
-  
+
   return questions;
 }
 
@@ -98,18 +115,13 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
   const toggleReveal = useCallback(() => {
     setRevealedQuestions(prev => {
       const next = new Set(prev);
-      if (next.has(currentIndex)) {
-        next.delete(currentIndex);
-      } else {
-        next.add(currentIndex);
-      }
+      if (next.has(currentIndex)) next.delete(currentIndex);
+      else next.add(currentIndex);
       return next;
     });
   }, [currentIndex]);
 
-  const finishExam = useCallback(() => {
-    setShowResults(true);
-  }, []);
+  const finishExam = useCallback(() => setShowResults(true), []);
 
   const resetExam = useCallback(() => {
     setCurrentIndex(0);
@@ -148,7 +160,7 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
       <div className="flex flex-col h-full">
         <div className="text-center py-6 border-b border-border/30">
           <Trophy className={`h-12 w-12 mx-auto mb-3 ${score.percentage >= 70 ? 'text-primary' : score.percentage >= 50 ? 'text-accent' : 'text-destructive'}`} />
-          <h2 className="text-2xl font-bold">Resultado da Prova</h2>
+          <h2 className="text-2xl font-bold">Resultado</h2>
           <p className="text-4xl font-bold mt-2">
             <span className={score.percentage >= 70 ? 'text-primary' : score.percentage >= 50 ? 'text-accent' : 'text-destructive'}>
               {score.percentage}%
@@ -170,34 +182,27 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
                 <button
                   key={i}
                   onClick={() => {
+                    setShowResults(false);
                     setCurrentIndex(i);
                     setRevealedQuestions(prev => new Set(prev).add(i));
                   }}
                   className={`w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-colors hover:bg-accent/10 ${
                     wasAnswered
-                      ? isCorrect
-                        ? 'border-primary/30 bg-primary/5'
-                        : 'border-destructive/30 bg-destructive/5'
+                      ? isCorrect ? 'border-primary/30 bg-primary/5' : 'border-destructive/30 bg-destructive/5'
                       : 'border-border/30 bg-muted/20'
                   }`}
                 >
                   <div className={`shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${
                     wasAnswered
-                      ? isCorrect
-                        ? 'bg-primary/20 text-primary'
-                        : 'bg-destructive/20 text-destructive'
+                      ? isCorrect ? 'bg-primary/20 text-primary' : 'bg-destructive/20 text-destructive'
                       : 'bg-muted text-muted-foreground'
                   }`}>
                     {i + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {q.tema || `Questão ${q.number}`}
-                    </p>
+                    <p className="text-sm font-medium truncate">{q.tema || `Questão ${q.number}`}</p>
                     <p className="text-xs text-muted-foreground">
-                      {wasAnswered
-                        ? `Resposta: ${userAnswer} | Gabarito: ${q.correctAnswer}`
-                        : 'Não respondida'}
+                      {wasAnswered ? `Resposta: ${userAnswer} | Gabarito: ${q.correctAnswer}` : 'Não respondida'}
                     </p>
                   </div>
                   {wasAnswered && (
@@ -217,7 +222,7 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
             Refazer
           </Button>
           <Button variant="outline" onClick={onExit} className="flex-1">
-            Ver Prova Completa
+            Ver Completa
           </Button>
         </div>
       </div>
@@ -230,7 +235,7 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Progress bar */}
+      {/* Progress */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs text-muted-foreground">
@@ -245,7 +250,7 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
 
       <ScrollArea className="flex-1">
         <div className="space-y-4 pr-2">
-          {/* Question metadata */}
+          {/* Metadata */}
           {(currentQ.type || currentQ.tema) && (
             <div className="flex items-center gap-2 flex-wrap">
               {currentQ.type && (
@@ -282,9 +287,7 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
                     showFeedback
                       ? isCorrectAlt
                         ? 'border-primary/50 bg-primary/10'
-                        : isSelected
-                          ? 'border-destructive/50 bg-destructive/10'
-                          : 'border-border/30 bg-background/40 opacity-60'
+                        : isSelected ? 'border-destructive/50 bg-destructive/10' : 'border-border/30 bg-background/40 opacity-60'
                       : isSelected
                         ? 'border-primary/50 bg-primary/10'
                         : 'border-border/30 bg-background/40 hover:bg-accent/10 hover:border-accent/30'
@@ -293,24 +296,14 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
                   <div className="flex items-start gap-3">
                     <span className={`shrink-0 h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold ${
                       showFeedback
-                        ? isCorrectAlt
-                          ? 'bg-primary/20 text-primary'
-                          : isSelected
-                            ? 'bg-destructive/20 text-destructive'
-                            : 'bg-muted text-muted-foreground'
-                        : isSelected
-                          ? 'bg-primary/20 text-primary'
-                          : 'bg-muted text-muted-foreground'
+                        ? isCorrectAlt ? 'bg-primary/20 text-primary' : isSelected ? 'bg-destructive/20 text-destructive' : 'bg-muted text-muted-foreground'
+                        : isSelected ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                     }`}>
                       {alt.letter}
                     </span>
                     <span className="text-sm flex-1">{alt.text}</span>
-                    {showFeedback && isCorrectAlt && (
-                      <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    )}
-                    {showFeedback && isSelected && !isCorrectAlt && (
-                      <XCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-                    )}
+                    {showFeedback && isCorrectAlt && <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />}
+                    {showFeedback && isSelected && !isCorrectAlt && <XCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />}
                   </div>
                 </button>
               );
@@ -321,21 +314,14 @@ const SimulationView = ({ resultado, onExit }: SimulationViewProps) => {
           {userAnswer && (
             <div className="pt-2">
               {!isRevealed ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleReveal}
-                  className="gap-2"
-                >
+                <Button variant="outline" size="sm" onClick={toggleReveal} className="gap-2">
                   <Eye className="h-4 w-4" />
                   Ver Gabarito
                 </Button>
               ) : (
                 <div className="rounded-xl border border-border/30 bg-secondary/20 p-4 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-primary">
-                      Gabarito: {currentQ.correctAnswer}
-                    </span>
+                    <span className="text-sm font-semibold text-primary">Gabarito: {currentQ.correctAnswer}</span>
                     <Button variant="ghost" size="sm" onClick={toggleReveal} className="gap-1 h-7 text-xs">
                       <EyeOff className="h-3 w-3" />
                       Ocultar

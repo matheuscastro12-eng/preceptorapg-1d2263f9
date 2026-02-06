@@ -4,8 +4,8 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import GenerationProgress from '@/components/GenerationProgress';
 import ContentSelector from './ContentSelector';
-import type { DifficultyLevel, ExamConfig } from '@/hooks/useExamGenerator';
-import { Loader2, Sparkles, GraduationCap, Brain, Target, ToggleLeft, FileQuestion } from 'lucide-react';
+import type { ExamConfig, PracticeMode } from '@/hooks/useExamGenerator';
+import { Loader2, Sparkles, GraduationCap, Brain, Target, ToggleLeft, FileQuestion, Stethoscope, Dumbbell } from 'lucide-react';
 
 interface ExamConfigPanelProps {
   selectedIds: string[];
@@ -28,6 +28,9 @@ const ExamConfigPanel = ({
   isComplete,
   onGenerate,
 }: ExamConfigPanelProps) => {
+  const isProva = config.practiceMode === 'prova';
+  const isCasoClin = config.practiceMode === 'caso_clinico';
+
   return (
     <div className="relative rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-6 flex flex-col overflow-hidden">
       {/* Decorative gradient */}
@@ -35,17 +38,53 @@ const ExamConfigPanel = ({
 
       <div className="flex items-center gap-3 mb-5 relative">
         <div className="rounded-xl bg-gradient-to-br from-destructive/20 to-destructive/5 p-2.5 ring-1 ring-destructive/20">
-          <FileQuestion className="h-5 w-5 text-destructive" />
+          <Dumbbell className="h-5 w-5 text-destructive" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Gerador de Provas</h2>
+          <h2 className="text-lg font-semibold">Modo Prática</h2>
           <p className="text-sm text-muted-foreground">
-            Crie provas com casos clínicos e questões conceituais
+            Gere provas ou casos clínicos a partir da biblioteca
           </p>
         </div>
       </div>
 
       <div className="space-y-5 flex-1 relative overflow-y-auto">
+        {/* Practice Mode Toggle */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <Target className="h-3.5 w-3.5 text-primary" />
+            Tipo de Prática
+          </Label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => onConfigChange({ ...config, practiceMode: 'prova' })}
+              disabled={generating}
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${
+                isProva
+                  ? 'border-destructive/50 bg-destructive/10 text-destructive'
+                  : 'border-border/40 bg-background/40 hover:bg-accent/10 hover:border-accent/30'
+              } disabled:opacity-50`}
+            >
+              <FileQuestion className="h-5 w-5" />
+              <span className="text-xs font-medium">Prova</span>
+              <span className="text-[10px] text-muted-foreground">Questões objetivas</span>
+            </button>
+            <button
+              onClick={() => onConfigChange({ ...config, practiceMode: 'caso_clinico' })}
+              disabled={generating}
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${
+                isCasoClin
+                  ? 'border-accent/50 bg-accent/10 text-accent'
+                  : 'border-border/40 bg-background/40 hover:bg-accent/10 hover:border-accent/30'
+              } disabled:opacity-50`}
+            >
+              <Stethoscope className="h-5 w-5" />
+              <span className="text-xs font-medium">Caso Clínico</span>
+              <span className="text-[10px] text-muted-foreground">Caso integrador</span>
+            </button>
+          </div>
+        </div>
+
         {/* Content Selector */}
         <ContentSelector
           selectedIds={selectedIds}
@@ -53,28 +92,30 @@ const ExamConfigPanel = ({
           disabled={generating}
         />
 
-        {/* Question Count */}
-        <div className="space-y-3">
-          <Label className="text-sm font-medium flex items-center gap-2">
-            <Target className="h-3.5 w-3.5 text-primary" />
-            Quantidade de Questões
-            <span className="ml-auto text-primary font-semibold">{config.quantidade}</span>
-          </Label>
-          <Slider
-            value={[config.quantidade]}
-            onValueChange={([v]) => onConfigChange({ ...config, quantidade: v })}
-            min={5}
-            max={60}
-            step={5}
-            disabled={generating}
-            className="py-1"
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>5</span>
-            <span>30</span>
-            <span>60</span>
+        {/* Question Count — only for prova mode */}
+        {isProva && (
+          <div className="space-y-3">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Target className="h-3.5 w-3.5 text-primary" />
+              Quantidade de Questões
+              <span className="ml-auto text-primary font-semibold">{config.quantidade}</span>
+            </Label>
+            <Slider
+              value={[config.quantidade]}
+              onValueChange={([v]) => onConfigChange({ ...config, quantidade: v })}
+              min={5}
+              max={60}
+              step={5}
+              disabled={generating}
+              className="py-1"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>5</span>
+              <span>30</span>
+              <span>60</span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Difficulty Level */}
         <div className="space-y-3">
@@ -110,38 +151,44 @@ const ExamConfigPanel = ({
           </div>
         </div>
 
-        {/* Simulation Mode */}
-        <div className="flex items-center justify-between p-3 rounded-xl border border-border/30 bg-background/40">
-          <div className="flex items-center gap-2">
-            <ToggleLeft className="h-4 w-4 text-accent" />
-            <div>
-              <Label className="text-sm font-medium cursor-pointer">Modo Simulação</Label>
-              <p className="text-xs text-muted-foreground">Gabaritos ocultos, uma questão por vez</p>
+        {/* Simulation Mode — only for prova mode */}
+        {isProva && (
+          <div className="flex items-center justify-between p-3 rounded-xl border border-border/30 bg-background/40">
+            <div className="flex items-center gap-2">
+              <ToggleLeft className="h-4 w-4 text-accent" />
+              <div>
+                <Label className="text-sm font-medium cursor-pointer">Modo Simulação</Label>
+                <p className="text-xs text-muted-foreground">Gabaritos ocultos, uma questão por vez</p>
+              </div>
             </div>
+            <Switch
+              checked={config.simulationMode}
+              onCheckedChange={(v) => onConfigChange({ ...config, simulationMode: v })}
+              disabled={generating}
+            />
           </div>
-          <Switch
-            checked={config.simulationMode}
-            onCheckedChange={(v) => onConfigChange({ ...config, simulationMode: v })}
-            disabled={generating}
-          />
-        </div>
+        )}
       </div>
 
       <div className="space-y-4 mt-6 relative">
         <Button
-          className="w-full h-12 text-base font-semibold shadow-lg transition-all duration-300 group bg-gradient-to-r from-destructive to-destructive/80 hover:from-destructive/90 hover:to-destructive/70 shadow-destructive/20 hover:shadow-destructive/30"
+          className={`w-full h-12 text-base font-semibold shadow-lg transition-all duration-300 group ${
+            isCasoClin
+              ? 'bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent/70 shadow-accent/20'
+              : 'bg-gradient-to-r from-destructive to-destructive/80 hover:from-destructive/90 hover:to-destructive/70 shadow-destructive/20'
+          }`}
           onClick={onGenerate}
           disabled={generating || selectedIds.length === 0}
         >
           {generating ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Gerando prova...
+              {isProva ? 'Gerando prova...' : 'Gerando caso clínico...'}
             </>
           ) : (
             <>
               <Sparkles className="mr-2 h-5 w-5 group-hover:animate-pulse" />
-              Gerar Prova ({config.quantidade} questões)
+              {isProva ? `Gerar Prova (${config.quantidade} questões)` : 'Gerar Caso Clínico'}
             </>
           )}
         </Button>
