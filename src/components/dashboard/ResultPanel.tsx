@@ -2,7 +2,9 @@ import { RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
-import { Loader2, Copy, Download, Save, Sparkles, FileText, CheckCircle2 } from 'lucide-react';
+import SeminarActions from './SeminarActions';
+import type { GenerationMode } from './ModeToggle';
+import { Loader2, Copy, Download, Save, Sparkles, FileText, CheckCircle2, Presentation } from 'lucide-react';
 
 interface ResultPanelProps {
   resultado: string;
@@ -10,6 +12,7 @@ interface ResultPanelProps {
   saving: boolean;
   exporting: boolean;
   resultRef: RefObject<HTMLDivElement>;
+  modo: GenerationMode;
   onSave: () => void;
   onCopy: () => void;
   onExportPDF: () => void;
@@ -21,11 +24,13 @@ const ResultPanel = ({
   saving,
   exporting,
   resultRef,
+  modo,
   onSave,
   onCopy,
   onExportPDF,
 }: ResultPanelProps) => {
   const showActions = resultado && !generating;
+  const isSeminario = modo === 'seminario';
 
   return (
     <div 
@@ -33,19 +38,25 @@ const ResultPanel = ({
       ref={resultRef}
     >
       {/* Decorative gradient */}
-      <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-accent/10 to-transparent rounded-br-full pointer-events-none" />
+      <div className={`absolute top-0 left-0 w-32 h-32 bg-gradient-to-br ${isSeminario ? 'from-accent/10' : 'from-accent/10'} to-transparent rounded-br-full pointer-events-none`} />
       
       <div className="flex items-center justify-between mb-4 relative">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-gradient-to-br from-accent/20 to-accent/5 p-2.5 ring-1 ring-accent/20">
-            <FileText className="h-5 w-5 text-accent" />
+          <div className={`rounded-xl bg-gradient-to-br ${isSeminario ? 'from-accent/20 to-accent/5 ring-accent/20' : 'from-accent/20 to-accent/5 ring-accent/20'} p-2.5 ring-1`}>
+            {isSeminario ? (
+              <Presentation className="h-5 w-5 text-accent" />
+            ) : (
+              <FileText className="h-5 w-5 text-accent" />
+            )}
           </div>
           <div>
-            <h2 className="text-lg font-semibold">Resultado</h2>
+            <h2 className="text-lg font-semibold">
+              {isSeminario ? 'Roteiro de Slides' : 'Resultado'}
+            </h2>
             {generating && (
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                Escrevendo...
+                {isSeminario ? 'Montando roteiro...' : 'Escrevendo...'}
               </p>
             )}
             {showActions && (
@@ -111,18 +122,29 @@ const ResultPanel = ({
             <div className="relative mb-6">
               <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl animate-pulse" />
               <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-muted/80 to-muted/40 flex items-center justify-center ring-1 ring-border/30">
-                <Sparkles className="h-10 w-10 text-muted-foreground/40" />
+                {isSeminario ? (
+                  <Presentation className="h-10 w-10 text-muted-foreground/40" />
+                ) : (
+                  <Sparkles className="h-10 w-10 text-muted-foreground/40" />
+                )}
               </div>
             </div>
             <h3 className="text-lg font-medium text-foreground/80 mb-2">
-              Nenhum fechamento gerado
+              {isSeminario ? 'Nenhum roteiro gerado' : 'Nenhum fechamento gerado'}
             </h3>
             <p className="text-sm text-muted-foreground max-w-[280px]">
-              Insira um tema médico e clique em "Gerar Fechamento" para começar
+              {isSeminario 
+                ? 'Insira um tema e clique em "Gerar Roteiro de Slides" para criar seu seminário'
+                : 'Insira um tema médico e clique em "Gerar Fechamento" para começar'}
             </p>
           </div>
         )}
       </ScrollArea>
+
+      {/* Seminar-specific actions */}
+      {showActions && isSeminario && (
+        <SeminarActions resultado={resultado} />
+      )}
     </div>
   );
 };

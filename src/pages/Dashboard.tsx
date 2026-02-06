@@ -10,6 +10,7 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import InputPanel from '@/components/dashboard/InputPanel';
 import ResultPanel from '@/components/dashboard/ResultPanel';
 import { exportToPDF } from '@/utils/pdfExport';
+import type { GenerationMode } from '@/components/dashboard/ModeToggle';
 
 const Dashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -19,6 +20,7 @@ const Dashboard = () => {
   
   const [tema, setTema] = useState('');
   const [objetivos, setObjetivos] = useState('');
+  const [modo, setModo] = useState<GenerationMode>('fechamento');
   const [resultado, setResultado] = useState('');
   const [generating, setGenerating] = useState(false);
   const [hasStartedReceiving, setHasStartedReceiving] = useState(false);
@@ -88,7 +90,7 @@ const Dashboard = () => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ tema, objetivos }),
+          body: JSON.stringify({ tema, objetivos, modo }),
         }
       );
 
@@ -230,6 +232,8 @@ const Dashboard = () => {
             setTema={setTema}
             objetivos={objetivos}
             setObjetivos={setObjetivos}
+            modo={modo}
+            setModo={setModo}
             generating={generating}
             hasStartedReceiving={hasStartedReceiving}
             isComplete={isComplete}
@@ -242,6 +246,7 @@ const Dashboard = () => {
             saving={saving}
             exporting={exporting}
             resultRef={resultRef}
+            modo={modo}
             onSave={handleSave}
             onCopy={handleCopy}
             onExportPDF={handleExportPDF}
