@@ -216,11 +216,10 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Animated background */}
+      {/* Subtle background - Safari/iOS safe */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-accent/5 rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-primary/3 to-accent/3 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-primary/5 rounded-full blur-2xl" />
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-accent/5 rounded-full blur-2xl" />
       </div>
 
       <DashboardHeader userEmail={user.email || ''} onLogout={signOut} />

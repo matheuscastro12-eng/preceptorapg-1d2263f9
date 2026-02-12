@@ -41,7 +41,7 @@ const InputPanel = ({
   const isSeminario = modo === 'seminario';
 
   return (
-    <div className="relative rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-6 flex flex-col overflow-hidden">
+    <div className="relative rounded-2xl border border-border/30 bg-card p-6 flex flex-col overflow-hidden">
       {/* Decorative gradient */}
       <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${isSeminario ? 'from-accent/10' : 'from-primary/10'} to-transparent rounded-bl-full pointer-events-none transition-colors duration-500`} />
       
