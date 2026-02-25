@@ -78,7 +78,7 @@ const Library = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/menu')}
               className="gap-1 sm:gap-2 px-2 sm:px-3"
             >
               <ArrowLeft className="h-4 w-4" />

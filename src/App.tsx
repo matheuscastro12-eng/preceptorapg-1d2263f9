@@ -12,6 +12,7 @@ import Exam from "./pages/Exam";
 import Pricing from "./pages/Pricing";
 import Admin from "./pages/Admin";
 import Landing from "./pages/Landing";
+import MainMenu from "./pages/MainMenu";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/menu" element={<MainMenu />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/library" element={<Library />} />
               <Route path="/exam" element={<Exam />} />

@@ -181,7 +181,7 @@ const Exam = () => {
                 Voltar ao Menu
               </Button>
             ) : (
-              <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')} className="gap-2">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/menu')} className="gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 Voltar
               </Button>
