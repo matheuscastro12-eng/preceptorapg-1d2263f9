@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ProfileDropdown from '@/components/ProfileDropdown';
-import { Stethoscope, BookOpen, Zap, Dumbbell } from 'lucide-react';
+import { Stethoscope, BookOpen, Zap, Dumbbell, ArrowLeft } from 'lucide-react';
 
 interface DashboardHeaderProps {
   userEmail: string;
@@ -14,7 +14,12 @@ const DashboardHeader = ({ userEmail, onLogout }: DashboardHeaderProps) => {
   return (
     <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80">
       <div className="container flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/menu')} className="gap-1 px-2">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Menu</span>
+            </Button>
+            <div className="h-6 w-px bg-border/50 hidden sm:block" />
           <div className="relative group">
             <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/40 to-accent/40 blur-xl opacity-60 group-hover:opacity-100 transition-opacity" />
             <div className="relative rounded-xl bg-gradient-to-br from-primary/20 to-accent/10 p-2.5 ring-1 ring-primary/20">
