@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAdmin } from '@/hooks/useAdmin';
+import { useGenerationGuard } from '@/hooks/useGenerationGuard';
 import { Stethoscope } from 'lucide-react';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import InputPanel from '@/components/dashboard/InputPanel';
@@ -28,6 +29,7 @@ const Dashboard = () => {
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
+  const { canGenerate, cooldown } = useGenerationGuard(generating);
 
   // Auto-scroll result
   useEffect(() => {
@@ -237,6 +239,8 @@ const Dashboard = () => {
             hasStartedReceiving={hasStartedReceiving}
             isComplete={isComplete}
             onGenerate={handleGenerate}
+            canGenerate={canGenerate}
+            cooldown={cooldown}
           />
 
           <ResultPanel

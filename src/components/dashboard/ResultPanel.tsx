@@ -115,10 +115,22 @@ const ResultPanel = ({
 
       <ScrollArea className="flex-1 pr-4">
         {resultado ? (
-          <MarkdownRenderer 
-            content={resultado} 
-            isTyping={generating && resultado.length > 0}
-          />
+          <>
+            <MarkdownRenderer 
+              content={resultado} 
+              isTyping={generating && resultado.length > 0}
+            />
+            {/* Disclaimer after result */}
+            {!generating && resultado && (
+              <div className="mt-6 p-3 rounded-lg border border-destructive/20 bg-destructive/5">
+                <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
+                  <strong className="text-destructive/80">⚠️ Aviso:</strong> Este conteúdo foi gerado por Inteligência Artificial para fins exclusivamente educacionais. 
+                  Pode conter imprecisões ou informações desatualizadas. Sempre valide com fontes primárias (livros-texto, artigos científicos, protocolos institucionais). 
+                  Não substitui orientação médica profissional. Conforme Resolução CFM nº 2.338/2023, a responsabilidade pelo uso é do usuário.
+                </p>
+              </div>
+            )}
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center py-16">
             <div className="relative mb-6">
