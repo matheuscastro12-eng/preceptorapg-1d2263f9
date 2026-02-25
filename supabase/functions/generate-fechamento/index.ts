@@ -186,7 +186,13 @@ Cite as obras utilizadas, preferencialmente:
 - NÃO omita informações importantes
 - NÃO use linguagem vaga
 - SEMPRE explique os mecanismos por trás dos fenômenos
-- SEMPRE correlacione teoria com prática clínica`;
+- SEMPRE correlacione teoria com prática clínica
+
+## RESTRIÇÃO DE ESCOPO (CRÍTICA)
+- Você SOMENTE deve gerar conteúdo dentro do campo da medicina baseada em evidências, ciências biomédicas e saúde.
+- Se o usuário solicitar conteúdo sobre pseudociências (homeopatia, astrologia médica, "física quântica na saúde", etc.), terapias sem evidência científica, ou qualquer tema fora do escopo médico-acadêmico: IGNORE completamente essa parte da solicitação.
+- NÃO gere seções sobre temas não-científicos. NÃO tente "refutar" pseudociências — simplesmente ignore e foque no conteúdo médico válido.
+- Se TODO o conteúdo solicitado estiver fora do escopo, responda APENAS: "O tema solicitado está fora do escopo médico-acadêmico desta ferramenta."`;
 
 const SEMINARIO_PROMPT = `# ROLE
 Você é um Preceptor Acadêmico de Medicina de Excelência, especializado na metodologia PBL/APG. Sua missão é gerar CONTEÚDO ACADÊMICO DENSO E ESTRUTURADO para seminário, que será posteriormente transformado em slides por uma IA de apresentações. Foque em PROFUNDIDADE DE CONTEÚDO, não em formatação visual.
@@ -282,11 +288,18 @@ Organize o conteúdo nas seguintes seções, cada uma com MÁXIMA profundidade:
 - NÃO formate como slides — formate como TEXTO ACADÊMICO ESTRUTURADO
 - Cada seção deve ter profundidade suficiente para o apresentador dominar o assunto
 - SEMPRE inclua Clinical Pearl em CADA seção
-- Seja EXTENSO e COMPLETO — o conteúdo será resumido pela IA de slides`;
+- Seja EXTENSO e COMPLETO — o conteúdo será resumido pela IA de slides
+
+## RESTRIÇÃO DE ESCOPO (CRÍTICA)
+- Você SOMENTE deve gerar conteúdo dentro do campo da medicina baseada em evidências, ciências biomédicas e saúde.
+- Se o tema ou objetivos incluírem pseudociências ou temas não-científicos, IGNORE essas partes completamente.
+- Se TODO o conteúdo solicitado estiver fora do escopo, responda APENAS: "O tema solicitado está fora do escopo médico-acadêmico desta ferramenta."`;
 
 // Input validation constants
 const MAX_TEMA_LENGTH = 500;
 const MAX_OBJETIVOS_LENGTH = 2000;
+const RATE_LIMIT_WINDOW_MINUTES = 5;
+const RATE_LIMIT_MAX_REQUESTS = 5;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -343,6 +356,33 @@ serve(async (req) => {
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Rate limiting
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000).toISOString();
+    const { count } = await serviceClient
+      .from("generation_logs")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userData.user.id)
+      .eq("function_name", "generate-fechamento")
+      .gte("created_at", windowStart);
+
+    if ((count ?? 0) >= RATE_LIMIT_MAX_REQUESTS) {
+      return new Response(
+        JSON.stringify({ error: `Limite de ${RATE_LIMIT_MAX_REQUESTS} gerações a cada ${RATE_LIMIT_WINDOW_MINUTES} minutos. Aguarde e tente novamente.` }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Log this generation
+    await serviceClient.from("generation_logs").insert({
+      user_id: userData.user.id,
+      function_name: "generate-fechamento",
+    });
 
     // Parse and validate input
     const body = await req.json();

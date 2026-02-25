@@ -212,6 +212,8 @@ const MIN_QUESTIONS = 5;
 const MAX_QUESTIONS = 100;
 const VALID_LEVELS = ["basico", "residencia"];
 const VALID_MODES = ["prova", "caso_clinico"];
+const RATE_LIMIT_WINDOW_MINUTES = 5;
+const RATE_LIMIT_MAX_REQUESTS = 5;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -267,6 +269,32 @@ serve(async (req) => {
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Rate limiting
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000).toISOString();
+    const { count } = await serviceClient
+      .from("generation_logs")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userData.user.id)
+      .eq("function_name", "generate-exam")
+      .gte("created_at", windowStart);
+
+    if ((count ?? 0) >= RATE_LIMIT_MAX_REQUESTS) {
+      return new Response(
+        JSON.stringify({ error: `Limite de ${RATE_LIMIT_MAX_REQUESTS} gerações a cada ${RATE_LIMIT_WINDOW_MINUTES} minutos. Aguarde e tente novamente.` }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    await serviceClient.from("generation_logs").insert({
+      user_id: userData.user.id,
+      function_name: "generate-exam",
+    });
 
     // Parse and validate input
     const body = await req.json();
