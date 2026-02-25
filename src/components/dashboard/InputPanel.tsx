@@ -4,7 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import GenerationProgress from '@/components/GenerationProgress';
 import ModeToggle, { type GenerationMode } from './ModeToggle';
-import { Loader2, Sparkles, Brain, Target, Lightbulb, Presentation } from 'lucide-react';
+import { Loader2, Sparkles, Brain, Target, Lightbulb, Presentation, AlertTriangle, Timer } from 'lucide-react';
 
 interface InputPanelProps {
   tema: string;
@@ -17,7 +17,12 @@ interface InputPanelProps {
   hasStartedReceiving: boolean;
   isComplete: boolean;
   onGenerate: () => void;
+  canGenerate?: boolean;
+  cooldown?: boolean;
 }
+
+const MAX_TEMA_LENGTH = 500;
+const MAX_OBJETIVOS_LENGTH = 2000;
 
 const InputPanel = ({
   tema,
@@ -30,6 +35,8 @@ const InputPanel = ({
   hasStartedReceiving,
   isComplete,
   onGenerate,
+  canGenerate = true,
+  cooldown = false,
 }: InputPanelProps) => {
   const suggestions = [
     'Insuficiência Cardíaca',
@@ -80,10 +87,14 @@ const InputPanel = ({
             id="tema"
             placeholder="Ex: Insuficiência Cardíaca Congestiva"
             value={tema}
-            onChange={(e) => setTema(e.target.value)}
+            onChange={(e) => setTema(e.target.value.slice(0, MAX_TEMA_LENGTH))}
+            maxLength={MAX_TEMA_LENGTH}
             disabled={generating}
             className="h-12 bg-background/60 border-border/40 focus:border-primary/60 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/50"
           />
+          {tema.length > MAX_TEMA_LENGTH * 0.8 && (
+            <p className="text-[10px] text-muted-foreground text-right">{tema.length}/{MAX_TEMA_LENGTH}</p>
+          )}
           
           {/* Quick suggestions */}
           {!tema && (
@@ -115,10 +126,20 @@ const InputPanel = ({
               : "Ex: Compreender a fisiopatologia, identificar sinais e sintomas, entender o tratamento..."
             }
             value={objetivos}
-            onChange={(e) => setObjetivos(e.target.value)}
+            onChange={(e) => setObjetivos(e.target.value.slice(0, MAX_OBJETIVOS_LENGTH))}
+            maxLength={MAX_OBJETIVOS_LENGTH}
             disabled={generating}
             className="min-h-[140px] resize-none bg-background/60 border-border/40 focus:border-primary/60 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/50"
           />
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-[10px] text-muted-foreground/60 leading-tight flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3 shrink-0" />
+              Restrinja-se a objetivos médicos/acadêmicos. Conteúdos fora do escopo biomédico serão ignorados.
+            </p>
+            {objetivos.length > MAX_OBJETIVOS_LENGTH * 0.5 && (
+              <p className="text-[10px] text-muted-foreground shrink-0">{objetivos.length}/{MAX_OBJETIVOS_LENGTH}</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -130,12 +151,17 @@ const InputPanel = ({
               : 'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-primary/20 hover:shadow-primary/30'
           }`}
           onClick={onGenerate}
-          disabled={generating}
+          disabled={!canGenerate}
         >
           {generating ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               {isSeminario ? 'Gerando roteiro...' : 'Gerando conteúdo...'}
+            </>
+          ) : cooldown ? (
+            <>
+              <Timer className="mr-2 h-5 w-5" />
+              Aguarde antes de gerar novamente...
             </>
           ) : (
             <>
@@ -144,6 +170,13 @@ const InputPanel = ({
             </>
           )}
         </Button>
+
+        {generating && (
+          <p className="text-[10px] text-destructive/70 text-center flex items-center justify-center gap-1">
+            <AlertTriangle className="h-3 w-3" />
+            Não feche ou atualize a página durante a geração.
+          </p>
+        )}
 
         <GenerationProgress 
           isGenerating={generating}
