@@ -4,6 +4,8 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Stethoscope, BookOpen, Brain, FlaskConical, GraduationCap, Library, Shield, AlertTriangle } from 'lucide-react';
 import ProfileDropdown from '@/components/ProfileDropdown';
+import { motion } from 'framer-motion';
+import PageTransition from '@/components/PageTransition';
 
 const menuItems = [
   {
@@ -85,16 +87,39 @@ const MainMenu = () => {
   if (!user) return <Navigate to="/auth" replace />;
   if (!hasAccess && !isAdmin) return <Navigate to="/pricing" replace />;
 
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.97 },
+    visible: (i: number) => ({
+      opacity: 1, y: 0, scale: 1,
+      transition: { delay: 0.1 + i * 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+    }),
+  };
+
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <PageTransition className="min-h-screen bg-background flex flex-col">
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-primary/5 rounded-full blur-2xl" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-accent/5 rounded-full blur-2xl" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.2, ease: 'easeOut' }}
+          className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-primary/5 rounded-full blur-2xl"
+        />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.2, delay: 0.3, ease: 'easeOut' }}
+          className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-accent/5 rounded-full blur-2xl"
+        />
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/20 bg-background/90">
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="sticky top-0 z-50 border-b border-border/20 bg-background/90"
+      >
         <div className="container flex h-14 sm:h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -104,24 +129,35 @@ const MainMenu = () => {
           </div>
           <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
         </div>
-      </header>
+      </motion.header>
 
       {/* Main Content */}
       <main className="flex-1 container relative py-6 sm:py-10 px-4">
         {/* Title area */}
-        <div className="text-center mb-8 sm:mb-12">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+          className="text-center mb-8 sm:mb-12"
+        >
           <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-muted-foreground mb-2">Menu Principal</p>
           <h1 className="text-2xl sm:text-4xl font-bold text-foreground">
             O que deseja <span className="text-gradient-medical">estudar</span> hoje?
           </h1>
-        </div>
+        </motion.div>
 
-        {/* FIFA-style Grid */}
+        {/* Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 max-w-5xl mx-auto">
-          {/* Estudo com IA - Large Card (spans 2 cols on lg) */}
-          <button
+          {/* Estudo com IA */}
+          <motion.button
+            custom={0}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            whileHover={{ scale: 1.02, y: -4 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => navigate(menuItems[0].route)}
-            className={`group relative col-span-1 sm:col-span-2 rounded-2xl border bg-gradient-to-br ${accentMap[menuItems[0].accent]} p-6 sm:p-8 text-left transition-all duration-300 cursor-pointer overflow-hidden`}
+            className={`group relative col-span-1 sm:col-span-2 rounded-2xl border bg-gradient-to-br ${accentMap[menuItems[0].accent]} p-6 sm:p-8 text-left transition-colors duration-300 cursor-pointer overflow-hidden`}
           >
             <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-primary/10 to-transparent rounded-bl-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className={`h-12 w-12 sm:h-14 sm:w-14 rounded-xl ${iconBgMap[menuItems[0].accent]} flex items-center justify-center mb-4`}>
@@ -130,12 +166,18 @@ const MainMenu = () => {
             <h2 className="text-lg sm:text-xl font-bold text-foreground mb-1">{menuItems[0].title}</h2>
             <p className="text-xs sm:text-sm font-medium text-primary mb-2">{menuItems[0].subtitle}</p>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{menuItems[0].description}</p>
-          </button>
+          </motion.button>
 
           {/* Casos Clínicos */}
-          <button
+          <motion.button
+            custom={1}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            whileHover={{ scale: 1.03, y: -4 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => navigate(menuItems[1].route)}
-            className={`group relative rounded-2xl border bg-gradient-to-br ${accentMap[menuItems[1].accent]} p-5 sm:p-6 text-left transition-all duration-300 cursor-pointer overflow-hidden`}
+            className={`group relative rounded-2xl border bg-gradient-to-br ${accentMap[menuItems[1].accent]} p-5 sm:p-6 text-left transition-colors duration-300 cursor-pointer overflow-hidden`}
           >
             <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-xl ${iconBgMap[menuItems[1].accent]} flex items-center justify-center mb-3 sm:mb-4`}>
               <FlaskConical className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -143,12 +185,18 @@ const MainMenu = () => {
             <h2 className="text-base sm:text-lg font-bold text-foreground mb-1">{menuItems[1].title}</h2>
             <p className="text-xs font-medium text-accent mb-1.5">{menuItems[1].subtitle}</p>
             <p className="text-xs text-muted-foreground leading-relaxed">{menuItems[1].description}</p>
-          </button>
+          </motion.button>
 
           {/* Simulados */}
-          <button
+          <motion.button
+            custom={2}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            whileHover={{ scale: 1.03, y: -4 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => navigate(menuItems[2].route)}
-            className={`group relative rounded-2xl border bg-gradient-to-br ${accentMap[menuItems[2].accent]} p-5 sm:p-6 text-left transition-all duration-300 cursor-pointer overflow-hidden`}
+            className={`group relative rounded-2xl border bg-gradient-to-br ${accentMap[menuItems[2].accent]} p-5 sm:p-6 text-left transition-colors duration-300 cursor-pointer overflow-hidden`}
           >
             <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-xl ${iconBgMap[menuItems[2].accent]} flex items-center justify-center mb-3 sm:mb-4`}>
               <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -156,12 +204,18 @@ const MainMenu = () => {
             <h2 className="text-base sm:text-lg font-bold text-foreground mb-1">{menuItems[2].title}</h2>
             <p className="text-xs font-medium text-destructive mb-1.5">{menuItems[2].subtitle}</p>
             <p className="text-xs text-muted-foreground leading-relaxed">{menuItems[2].description}</p>
-          </button>
+          </motion.button>
 
-          {/* Biblioteca - bottom spanning full on mobile */}
-          <button
+          {/* Biblioteca */}
+          <motion.button
+            custom={3}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            whileHover={{ scale: 1.01, y: -2 }}
+            whileTap={{ scale: 0.99 }}
             onClick={() => navigate(menuItems[3].route)}
-            className={`group relative col-span-1 sm:col-span-2 lg:col-span-4 rounded-2xl border bg-gradient-to-br ${accentMap[menuItems[3].accent]} p-4 sm:p-5 text-left transition-all duration-300 cursor-pointer flex items-center gap-4`}
+            className={`group relative col-span-1 sm:col-span-2 lg:col-span-4 rounded-2xl border bg-gradient-to-br ${accentMap[menuItems[3].accent]} p-4 sm:p-5 text-left transition-colors duration-300 cursor-pointer flex items-center gap-4`}
           >
             <div className={`h-10 w-10 rounded-xl ${iconBgMap[menuItems[3].accent]} flex items-center justify-center shrink-0`}>
               <BookOpen className="h-5 w-5" />
@@ -170,11 +224,16 @@ const MainMenu = () => {
               <h2 className="text-sm sm:text-base font-bold text-foreground">{menuItems[3].title}</h2>
               <p className="text-xs text-muted-foreground">{menuItems[3].description}</p>
             </div>
-          </button>
+          </motion.button>
         </div>
 
         {/* Legal Disclaimers */}
-        <div className="max-w-5xl mx-auto mt-10 sm:mt-14 space-y-4">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="max-w-5xl mx-auto mt-10 sm:mt-14 space-y-4"
+        >
           <div className="flex items-start gap-3 p-4 rounded-xl border border-border/30 bg-muted/30">
             <Shield className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
             <div className="space-y-1">
@@ -199,7 +258,7 @@ const MainMenu = () => {
               </p>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Footer */}
         <div className="text-center mt-8 sm:mt-10">
@@ -208,7 +267,7 @@ const MainMenu = () => {
           </p>
         </div>
       </main>
-    </div>
+    </PageTransition>
   );
 };
 
