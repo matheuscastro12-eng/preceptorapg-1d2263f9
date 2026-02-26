@@ -6,6 +6,7 @@ import { Stethoscope, BookOpen, Brain, FlaskConical, GraduationCap, Library, Shi
 import ProfileDropdown from '@/components/ProfileDropdown';
 import { motion } from 'framer-motion';
 import PageTransition from '@/components/PageTransition';
+import PageSkeleton from '@/components/PageSkeleton';
 
 const menuItems = [
   {
@@ -71,17 +72,7 @@ const MainMenu = () => {
   const navigate = useNavigate();
 
   if (authLoading || subLoading || adminLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
-            <Stethoscope className="relative h-12 w-12 text-primary animate-float" />
-          </div>
-          <p className="text-muted-foreground animate-pulse">Carregando...</p>
-        </div>
-      </div>
-    );
+    return <PageSkeleton variant="menu" />;
   }
 
   if (!user) return <Navigate to="/auth" replace />;

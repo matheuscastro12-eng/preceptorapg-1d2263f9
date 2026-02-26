@@ -166,8 +166,19 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange }: FechamentoLibraryProp
 
         {/* Fechamentos List */}
         {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <div className="space-y-2 py-2">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex items-center justify-between rounded-lg border border-border/20 p-3 animate-pulse">
+                <div className="space-y-1.5 flex-1">
+                  <div className="h-4 w-48 bg-muted rounded" />
+                  <div className="h-3 w-28 bg-muted rounded" />
+                </div>
+                <div className="flex gap-1">
+                  <div className="h-8 w-8 bg-muted rounded" />
+                  <div className="h-8 w-8 bg-muted rounded" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredFechamentos.length === 0 ? (
           <div className="py-8 text-center text-muted-foreground">
