@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useToast } from '@/hooks/use-toast';
-import { useExamGenerator, type ExamConfig } from '@/hooks/useExamGenerator';
+import { useExamGenerator, type ExamConfig, type PracticeMode } from '@/hooks/useExamGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate } from 'react-router-dom';
 import { Stethoscope, ArrowLeft, Sparkles, BookOpen, ToggleLeft, Dumbbell, PanelLeftOpen } from 'lucide-react';
@@ -38,17 +38,28 @@ const Exam = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const [searchParams] = useSearchParams();
+  const modeFromUrl = searchParams.get('mode') as PracticeMode | null;
+  const lockedMode = modeFromUrl === 'caso_clinico' || modeFromUrl === 'prova' ? modeFromUrl : null;
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [config, setConfig] = useState<ExamConfig>({
     quantidade: 30,
     nivel: 'residencia',
     simulationMode: false,
-    practiceMode: 'prova',
+    practiceMode: lockedMode || 'prova',
   });
   const [exporting, setExporting] = useState(false);
   const [showSimulation, setShowSimulation] = useState(false);
   const [examStarted, setExamStarted] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
+
+  // Keep config in sync if URL mode changes
+  useEffect(() => {
+    if (lockedMode && config.practiceMode !== lockedMode) {
+      setConfig(prev => ({ ...prev, practiceMode: lockedMode }));
+    }
+  }, [lockedMode]);
 
   const {
     resultado,
@@ -223,6 +234,7 @@ const Exam = () => {
               hasStartedReceiving={hasStartedReceiving}
               isComplete={isComplete}
               onGenerate={handleGenerate}
+              lockedMode={lockedMode}
             />
           )}
 

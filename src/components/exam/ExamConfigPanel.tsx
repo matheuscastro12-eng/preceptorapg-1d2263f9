@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import GenerationProgress from '@/components/GenerationProgress';
 import ContentSelector from './ContentSelector';
 import type { ExamConfig, PracticeMode } from '@/hooks/useExamGenerator';
-import { Loader2, Sparkles, GraduationCap, Brain, Target, ToggleLeft, FileQuestion, Stethoscope, Dumbbell } from 'lucide-react';
+import { Loader2, Sparkles, GraduationCap, Brain, Target, ToggleLeft, FileQuestion, Stethoscope, Dumbbell, FlaskConical } from 'lucide-react';
 
 interface ExamConfigPanelProps {
   selectedIds: string[];
@@ -16,6 +16,7 @@ interface ExamConfigPanelProps {
   hasStartedReceiving: boolean;
   isComplete: boolean;
   onGenerate: () => void;
+  lockedMode?: PracticeMode | null;
 }
 
 const ExamConfigPanel = ({
@@ -27,6 +28,7 @@ const ExamConfigPanel = ({
   hasStartedReceiving,
   isComplete,
   onGenerate,
+  lockedMode,
 }: ExamConfigPanelProps) => {
   const isProva = config.practiceMode === 'prova';
   const isCasoClin = config.practiceMode === 'caso_clinico';
@@ -37,53 +39,55 @@ const ExamConfigPanel = ({
       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-destructive/10 to-transparent rounded-bl-full pointer-events-none" />
 
       <div className="flex items-center gap-3 mb-5 relative">
-        <div className="rounded-xl bg-gradient-to-br from-destructive/20 to-destructive/5 p-2.5 ring-1 ring-destructive/20">
-          <Dumbbell className="h-5 w-5 text-destructive" />
+        <div className={`rounded-xl bg-gradient-to-br ${isCasoClin ? 'from-accent/20 to-accent/5 ring-accent/20' : 'from-destructive/20 to-destructive/5 ring-destructive/20'} p-2.5 ring-1`}>
+          {isCasoClin ? <FlaskConical className="h-5 w-5 text-accent" /> : <Dumbbell className="h-5 w-5 text-destructive" />}
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Modo Prática</h2>
+          <h2 className="text-lg font-semibold">{isCasoClin ? 'Casos Clínicos IA' : 'Gerador de Simulados IA'}</h2>
           <p className="text-sm text-muted-foreground">
-            Gere provas ou casos clínicos a partir da biblioteca
+            {isCasoClin ? 'Casos clínicos elaborados com base nos seus estudos' : 'Questões no estilo residência com modo simulado'}
           </p>
         </div>
       </div>
 
       <div className="space-y-5 flex-1 relative overflow-y-auto">
-        {/* Practice Mode Toggle */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium flex items-center gap-2">
-            <Target className="h-3.5 w-3.5 text-primary" />
-            Tipo de Prática
-          </Label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => onConfigChange({ ...config, practiceMode: 'prova' })}
-              disabled={generating}
-              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${
-                isProva
-                  ? 'border-destructive/50 bg-destructive/10 text-destructive'
-                  : 'border-border/40 bg-background/40 hover:bg-accent/10 hover:border-accent/30'
-              } disabled:opacity-50`}
-            >
-              <FileQuestion className="h-5 w-5" />
-              <span className="text-xs font-medium">Prova</span>
-              <span className="text-[10px] text-muted-foreground">Questões objetivas</span>
-            </button>
-            <button
-              onClick={() => onConfigChange({ ...config, practiceMode: 'caso_clinico' })}
-              disabled={generating}
-              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${
-                isCasoClin
-                  ? 'border-accent/50 bg-accent/10 text-accent'
-                  : 'border-border/40 bg-background/40 hover:bg-accent/10 hover:border-accent/30'
-              } disabled:opacity-50`}
-            >
-              <Stethoscope className="h-5 w-5" />
-              <span className="text-xs font-medium">Caso Clínico</span>
-              <span className="text-[10px] text-muted-foreground">Caso integrador</span>
-            </button>
+        {/* Practice Mode Toggle — only show when not locked */}
+        {!lockedMode && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Target className="h-3.5 w-3.5 text-primary" />
+              Tipo de Prática
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => onConfigChange({ ...config, practiceMode: 'prova' })}
+                disabled={generating}
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${
+                  isProva
+                    ? 'border-destructive/50 bg-destructive/10 text-destructive'
+                    : 'border-border/40 bg-background/40 hover:bg-accent/10 hover:border-accent/30'
+                } disabled:opacity-50`}
+              >
+                <FileQuestion className="h-5 w-5" />
+                <span className="text-xs font-medium">Prova</span>
+                <span className="text-[10px] text-muted-foreground">Questões objetivas</span>
+              </button>
+              <button
+                onClick={() => onConfigChange({ ...config, practiceMode: 'caso_clinico' })}
+                disabled={generating}
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${
+                  isCasoClin
+                    ? 'border-accent/50 bg-accent/10 text-accent'
+                    : 'border-border/40 bg-background/40 hover:bg-accent/10 hover:border-accent/30'
+                } disabled:opacity-50`}
+              >
+                <Stethoscope className="h-5 w-5" />
+                <span className="text-xs font-medium">Caso Clínico</span>
+                <span className="text-[10px] text-muted-foreground">Caso integrador</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Content Selector */}
         <ContentSelector
