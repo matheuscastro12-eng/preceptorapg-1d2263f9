@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import PageTransition from '@/components/PageTransition';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Sparkles, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -70,7 +71,7 @@ const Library = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <PageTransition className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
@@ -142,7 +143,7 @@ const Library = () => {
           </ScrollArea>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageTransition>
   );
 };
 

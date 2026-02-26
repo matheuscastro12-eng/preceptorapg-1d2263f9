@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import PageTransition from '@/components/PageTransition';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -217,7 +218,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <PageTransition className="min-h-screen bg-background flex flex-col">
       {/* Subtle background - Safari/iOS safe */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-primary/5 rounded-full blur-2xl" />
@@ -257,7 +258,7 @@ const Dashboard = () => {
           />
         </div>
       </main>
-    </div>
+    </PageTransition>
   );
 };
 
