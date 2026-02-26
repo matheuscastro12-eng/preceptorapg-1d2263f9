@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import PageTransition from '@/components/PageTransition';
+import PageSkeleton from '@/components/PageSkeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -43,17 +44,7 @@ const Dashboard = () => {
   }, [resultado, generating]);
 
   if (authLoading || subLoading || adminLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
-            <Stethoscope className="relative h-12 w-12 text-primary animate-float" />
-          </div>
-          <p className="text-muted-foreground animate-pulse">Carregando...</p>
-        </div>
-      </div>
-    );
+    return <PageSkeleton variant="dashboard" />;
   }
 
   if (!user) {

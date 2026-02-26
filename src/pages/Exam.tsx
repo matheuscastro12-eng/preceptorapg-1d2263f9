@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import PageTransition from '@/components/PageTransition';
+import PageSkeleton from '@/components/PageSkeleton';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -96,17 +97,7 @@ const Exam = () => {
   }, [hasStartedReceiving, resultado, config.simulationMode, config.practiceMode, showSimulation]);
 
   if (authLoading || subLoading || adminLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
-            <Stethoscope className="relative h-12 w-12 text-primary animate-float" />
-          </div>
-          <p className="text-muted-foreground animate-pulse">Carregando...</p>
-        </div>
-      </div>
-    );
+    return <PageSkeleton variant="exam" />;
   }
 
   if (!user) return <Navigate to="/auth" replace />;
