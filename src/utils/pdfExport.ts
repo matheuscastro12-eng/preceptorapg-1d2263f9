@@ -18,7 +18,6 @@ const formatDate = (date: Date): string => {
  * Removes conversational intros like "Com certeza...", "Claro...", etc.
  */
 const stripAIPreamble = (html: string): string => {
-  // Create a temporary container to work with DOM
   const temp = document.createElement('div');
   temp.innerHTML = html;
 
@@ -51,13 +50,20 @@ const stripAIPreamble = (html: string): string => {
         break;
       }
 
-      // Remove conversational preamble paragraphs
+      // Remove conversational preamble paragraphs (AI prompt responses)
       const preamblePatterns = [
         /^(com certeza|claro|certo|ok|perfeito|vamos|aqui est[áa]|segue|pronto|elabor)/i,
-        /^(como (preceptor|coordenador|professor))/i,
-        /^(este (caso|material|conte[úu]do) foi)/i,
-        /^(a seguir|abaixo|conforme solicitado)/i,
-        /^(apresento|segue abaixo|seguem)/i,
+        /^(como (preceptor|coordenador|professor|solicitado))/i,
+        /^(este (caso|material|conte[úu]do|fechamento|semin[áa]rio) foi)/i,
+        /^(a seguir|abaixo|conforme solicitado|conforme pedido)/i,
+        /^(apresento|segue abaixo|seguem|vou (apresentar|elaborar|gerar))/i,
+        /^(entendido|com base|baseado|de acordo)/i,
+        /^(ol[áa]|boa noite|bom dia|boa tarde)/i,
+        /^(preparei|elaborei|criei|gerei|montei|organizei|estruturei)/i,
+        /^(segue o|segue a|aqui vai|veja o|veja a)/i,
+        /^(com prazer|sem problemas|sem d[úu]vida)/i,
+        /^(esse [ée]|este [ée]|essa [ée]|esta [ée]) (um|uma|o|a) (fechamento|semin[áa]rio|material|conte[úu]do|resumo)/i,
+        /^(espero que|qualquer d[úu]vida|fico [àa] disposi[çc][ãa]o)/i,
       ];
 
       if (preamblePatterns.some(p => p.test(text))) {
@@ -73,6 +79,27 @@ const stripAIPreamble = (html: string): string => {
 
       foundContentStart = true;
     }
+  }
+
+  // Second pass: remove trailing AI closing remarks
+  const remainingChildren = Array.from(temp.childNodes);
+  for (let i = remainingChildren.length - 1; i >= 0; i--) {
+    const child = remainingChildren[i] as HTMLElement;
+    const text = (child.textContent || '').trim();
+    if (!text) {
+      child.remove();
+      continue;
+    }
+    const closingPatterns = [
+      /^(espero que|qualquer d[úu]vida|fico [àa] disposi[çc][ãa]o|bons estudos|at[ée] a pr[óo]xima)/i,
+      /^(caso (tenha|precise|queira)|se (precisar|quiser|tiver))/i,
+      /^(estou [àa] disposi[çc][ãa]o|conte comigo)/i,
+    ];
+    if (closingPatterns.some(p => p.test(text)) && text.length < 300) {
+      child.remove();
+      continue;
+    }
+    break; // Stop at first non-closing paragraph from the end
   }
 
   return temp.innerHTML;

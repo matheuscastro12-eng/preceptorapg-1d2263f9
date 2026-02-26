@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import PageTransition from '@/components/PageTransition';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -175,7 +176,7 @@ const Exam = () => {
   const isFullScreen = examStarted && config.simulationMode && isProva;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <PageTransition className="min-h-screen bg-background flex flex-col">
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-destructive/5 rounded-full blur-3xl animate-pulse" />
@@ -290,7 +291,7 @@ const Exam = () => {
           </div>
         </div>
       </main>
-    </div>
+    </PageTransition>
   );
 };
 
