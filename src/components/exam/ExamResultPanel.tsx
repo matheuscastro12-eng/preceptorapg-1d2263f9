@@ -1,7 +1,8 @@
-import { RefObject } from 'react';
+import { RefObject, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
+import InteractiveQuestion, { parseQuestionsFromMarkdown } from '@/components/exam/InteractiveQuestion';
 import { Loader2, Copy, Download, Sparkles, FileQuestion, CheckCircle2, Stethoscope } from 'lucide-react';
 
 interface ExamResultPanelProps {
@@ -26,6 +27,14 @@ const ExamResultPanel = ({
   generatingLabel = 'Elaborando questões...',
 }: ExamResultPanelProps) => {
   const showActions = resultado && !generating;
+  const isProva = !title.includes('Caso');
+
+  const parsedQuestions = useMemo(() => {
+    if (!isProva || !resultado) return [];
+    return parseQuestionsFromMarkdown(resultado);
+  }, [resultado, isProva]);
+
+  const hasInteractiveQuestions = isProva && parsedQuestions.length > 0;
 
   return (
     <>
@@ -51,7 +60,7 @@ const ExamResultPanel = ({
             {showActions && (
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <CheckCircle2 className="h-3 w-3 text-primary" />
-                Concluído
+                Concluído — {hasInteractiveQuestions ? `${parsedQuestions.length} questões interativas` : 'Pronto'}
               </p>
             )}
           </div>
@@ -84,7 +93,21 @@ const ExamResultPanel = ({
 
       <ScrollArea className="flex-1 pr-4" ref={resultRef}>
         {resultado ? (
-          <MarkdownRenderer content={resultado} isTyping={generating && resultado.length > 0} />
+          hasInteractiveQuestions ? (
+            <div className="space-y-5 pb-4">
+              {parsedQuestions.map((q, i) => (
+                <InteractiveQuestion key={q.number} question={q} index={i} />
+              ))}
+              {generating && (
+                <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <span className="text-sm">Gerando mais questões...</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <MarkdownRenderer content={resultado} isTyping={generating && resultado.length > 0} />
+          )
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center py-16">
             <div className="relative mb-6">
