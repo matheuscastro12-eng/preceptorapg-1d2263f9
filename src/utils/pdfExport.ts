@@ -283,6 +283,8 @@ const styleContentElements = (container: HTMLElement): void => {
       text-align: justify !important;
       orphans: 3 !important;
       widows: 3 !important;
+      page-break-inside: auto !important;
+      break-inside: auto !important;
     `;
   });
 
@@ -293,14 +295,20 @@ const styleContentElements = (container: HTMLElement): void => {
       color: #1a1a1a !important;
       margin-left: 20px !important;
       margin-bottom: 8px !important;
-      page-break-inside: avoid !important;
+      page-break-inside: auto !important;
+      break-inside: auto !important;
     `;
   });
 
   // List items
   const listItems = container.querySelectorAll('li');
   listItems.forEach((li) => {
-    (li as HTMLElement).style.cssText = 'color: #1a1a1a !important; margin-bottom: 3px !important;';
+    (li as HTMLElement).style.cssText = `
+      color: #1a1a1a !important;
+      margin-bottom: 3px !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    `;
   });
 
   // Inline elements
@@ -309,15 +317,24 @@ const styleContentElements = (container: HTMLElement): void => {
     (span as HTMLElement).style.cssText = 'color: #1a1a1a !important;';
   });
 
-  // Tables - make them not break across pages
+  // Tables - allow table split between pages, but never split rows
   const tables = container.querySelectorAll('table');
   tables.forEach((table) => {
     (table as HTMLElement).style.cssText = `
       width: 100% !important;
       border-collapse: collapse !important;
       margin-bottom: 12px !important;
-      page-break-inside: avoid !important;
+      page-break-inside: auto !important;
+      break-inside: auto !important;
       font-size: 9pt !important;
+    `;
+  });
+
+  const rows = container.querySelectorAll('tr');
+  rows.forEach((row) => {
+    (row as HTMLElement).style.cssText = `
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
     `;
   });
 
@@ -343,12 +360,13 @@ const styleContentElements = (container: HTMLElement): void => {
     `;
   });
 
-  // Details/summary (gabarito sections) - keep together
+  // Details/summary (gabarito sections)
   const details = container.querySelectorAll('details');
   details.forEach((detail) => {
     (detail as HTMLElement).setAttribute('open', '');
     (detail as HTMLElement).style.cssText = `
-      page-break-inside: avoid !important;
+      page-break-inside: auto !important;
+      break-inside: auto !important;
       margin-bottom: 8px !important;
       border: 1px solid #e0e0e0 !important;
       border-radius: 4px !important;
@@ -364,6 +382,7 @@ const styleContentElements = (container: HTMLElement): void => {
       color: #0d5c4d !important;
       cursor: default !important;
       margin-bottom: 4px !important;
+      page-break-after: avoid !important;
     `;
   });
 
@@ -412,26 +431,28 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   const opt = {
     margin: [12, 15, 15, 15] as [number, number, number, number],
     filename: `fechamento-${tema.trim().toLowerCase().replace(/\s+/g, '-').substring(0, 50)}.pdf`,
-    image: { type: 'jpeg' as const, quality: 0.98 },
+    image: { type: 'jpeg' as const, quality: 0.96 },
     html2canvas: {
       scale: 2,
       useCORS: true,
       logging: false,
       windowWidth: 794,
       letterRendering: true,
+      backgroundColor: '#ffffff',
       scrollY: 0,
       scrollX: 0,
     },
     jsPDF: {
       unit: 'mm' as const,
       format: 'a4' as const,
-      orientation: 'portrait' as const
+      orientation: 'portrait' as const,
+      compress: true,
     },
     pagebreak: {
-      mode: ['avoid-all', 'css'] as string[],
+      mode: ['css', 'legacy'] as string[],
       before: '.pdf-page-break-before',
       after: '.pdf-page-break-after',
-      avoid: ['p', 'li', 'tr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'details', 'table', 'ul', 'ol', 'blockquote', 'pre', 'figure', 'img'],
+      avoid: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'tr', 'table', 'details', 'img', 'figure', 'blockquote', 'pre'],
     }
   };
 
