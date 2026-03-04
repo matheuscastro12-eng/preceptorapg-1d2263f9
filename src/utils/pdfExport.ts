@@ -409,16 +409,34 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   // Append content after cover
   pdfContainer.appendChild(contentWrapper);
 
+  // Temporarily add to DOM so html2canvas can measure properly
+  pdfContainer.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 794px;
+    z-index: -9999;
+    opacity: 0;
+    pointer-events: none;
+    background: white;
+  `;
+  document.body.appendChild(pdfContainer);
+
+  // Wait for layout to settle
+  await new Promise(r => setTimeout(r, 200));
+
   const opt = {
-    margin: [12, 15, 12, 15] as [number, number, number, number],
+    margin: [12, 15, 15, 15] as [number, number, number, number],
     filename: `fechamento-${tema.trim().toLowerCase().replace(/\s+/g, '-').substring(0, 50)}.pdf`,
     image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: {
       scale: 2,
       useCORS: true,
       logging: false,
-      windowWidth: 794, // A4 width at 96dpi
+      windowWidth: 794,
       letterRendering: true,
+      scrollY: 0,
+      scrollX: 0,
     },
     jsPDF: {
       unit: 'mm' as const,
@@ -426,10 +444,16 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
       orientation: 'portrait' as const
     },
     pagebreak: {
-      mode: ['css'] as ('css')[],
-      avoid: ['p', 'li', 'tr', 'h3', 'h4', 'details', 'table', 'ul', 'ol'],
+      mode: ['avoid-all', 'css'] as string[],
+      before: '.pdf-page-break-before',
+      after: '.pdf-page-break-after',
+      avoid: ['p', 'li', 'tr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'details', 'table', 'ul', 'ol', 'blockquote', 'pre', 'figure', 'img'],
     }
   };
 
-  await html2pdf().set(opt).from(pdfContainer).save();
+  try {
+    await html2pdf().set(opt).from(pdfContainer).save();
+  } finally {
+    document.body.removeChild(pdfContainer);
+  }
 };
