@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -17,6 +17,7 @@ import type { GenerationMode } from '@/components/dashboard/ModeToggle';
 
 const Dashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
+  const navigate = useNavigate();
   const { hasAccess, loading: subLoading } = useSubscription();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const { toast } = useToast();
@@ -208,6 +209,41 @@ const Dashboard = () => {
     }
   };
 
+  const handleGenerateExam = async () => {
+    if (!resultado || !user) return;
+    
+    // Save first if not already saved
+    try {
+      const { data, error } = await supabase
+        .from('fechamentos')
+        .insert({
+          user_id: user.id,
+          tema: tema.trim(),
+          objetivos: objetivos.trim() || null,
+          resultado,
+        })
+        .select('id')
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: 'Salvo!',
+        description: 'Fechamento salvo. Redirecionando para o Modo Prática...',
+      });
+
+      // Navigate to exam with the new fechamento pre-selected
+      navigate('/exam');
+    } catch (error) {
+      console.error('Save before exam error:', error);
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Não foi possível salvar antes de gerar a prova.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <PageTransition className="min-h-screen bg-background flex flex-col">
       {/* Subtle background - Safari/iOS safe */}
@@ -246,6 +282,7 @@ const Dashboard = () => {
             onSave={handleSave}
             onCopy={handleCopy}
             onExportPDF={handleExportPDF}
+            onGenerateExam={handleGenerateExam}
           />
         </div>
       </main>
