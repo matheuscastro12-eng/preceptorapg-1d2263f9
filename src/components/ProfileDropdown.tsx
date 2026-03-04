@@ -1,4 +1,4 @@
-import { User, LogOut, Star, FileText, Calendar, Sun, Moon, Shield } from 'lucide-react';
+import { User, LogOut, Star, FileText, Calendar, Sun, Moon, Shield, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -120,6 +120,16 @@ const ProfileDropdown = ({ userEmail, onLogout }: ProfileDropdownProps) => {
               Painel Admin
             </Button>
           )}
+
+          {/* Subscription Link */}
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-foreground hover:bg-secondary/50"
+            onClick={() => navigate('/subscription')}
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            Minha Assinatura
+          </Button>
 
           {/* Logout */}
           <Button

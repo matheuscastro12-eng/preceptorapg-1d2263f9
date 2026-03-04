@@ -13,6 +13,7 @@ import Pricing from "./pages/Pricing";
 import Admin from "./pages/Admin";
 import Landing from "./pages/Landing";
 import MainMenu from "./pages/MainMenu";
+import Subscription from "./pages/Subscription";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/library" element={<Library />} />
               <Route path="/exam" element={<Exam />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/subscription" element={<Subscription />} />
               <Route path="/admin" element={<Admin />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
