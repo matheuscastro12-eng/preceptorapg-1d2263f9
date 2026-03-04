@@ -409,21 +409,19 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   // Append content after cover
   pdfContainer.appendChild(contentWrapper);
 
-  // Temporarily add to DOM so html2canvas can measure properly
+  // Temporarily add to DOM off-screen so html2canvas can measure and render properly
   pdfContainer.style.cssText = `
-    position: fixed;
+    position: absolute;
     top: 0;
-    left: 0;
+    left: -9999px;
     width: 794px;
-    z-index: -9999;
-    opacity: 0;
-    pointer-events: none;
     background: white;
+    overflow: visible;
   `;
   document.body.appendChild(pdfContainer);
 
   // Wait for layout to settle
-  await new Promise(r => setTimeout(r, 200));
+  await new Promise(r => setTimeout(r, 300));
 
   const opt = {
     margin: [12, 15, 15, 15] as [number, number, number, number],
