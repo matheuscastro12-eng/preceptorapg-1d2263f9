@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import ProfileDropdown from '@/components/ProfileDropdown';
 import { 
   Stethoscope, 
   Check, 
@@ -18,7 +19,7 @@ import {
 } from 'lucide-react';
 
 const Pricing = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { hasAccess, loading: subLoading } = useSubscription();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -107,11 +108,13 @@ const Pricing = () => {
             </div>
           </div>
 
-          {!user ? (
+          {user ? (
+            <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
+          ) : (
             <Button variant="outline" onClick={() => navigate('/auth')}>
               Entrar / Criar conta
             </Button>
-          ) : null}
+          )}
         </div>
       </header>
 
