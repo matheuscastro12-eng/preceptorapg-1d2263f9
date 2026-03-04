@@ -11,6 +11,7 @@ interface Subscription {
   stripe_subscription_id: string | null;
   current_period_end: string | null;
   granted_by: string | null;
+  created_at: string;
 }
 
 export const useSubscription = () => {

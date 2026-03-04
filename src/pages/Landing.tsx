@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import ProfileDropdown from '@/components/ProfileDropdown';
 import { 
   Stethoscope, 
   Sparkles, 
@@ -15,6 +17,7 @@ import {
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { user, loading, signOut } = useAuth();
 
   const features = [
     { 
@@ -73,14 +76,23 @@ const Landing = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={() => navigate('/auth')}>
-              Entrar
-            </Button>
-            <Button onClick={() => navigate('/pricing')}>
-              Ver Planos
-            </Button>
-          </div>
+          {!loading && user ? (
+            <div className="flex items-center gap-3">
+              <Button variant="outline" onClick={() => navigate('/menu')}>
+                Meu Painel
+              </Button>
+              <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" onClick={() => navigate('/auth')}>
+                Entrar
+              </Button>
+              <Button onClick={() => navigate('/pricing')}>
+                Ver Planos
+              </Button>
+            </div>
+          )}
         </div>
       </header>
 
