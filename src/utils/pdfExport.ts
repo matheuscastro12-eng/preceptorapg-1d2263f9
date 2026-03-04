@@ -219,6 +219,8 @@ const styleContentElements = (container: HTMLElement): void => {
       margin-top: ${index === 0 ? '0' : '24px'} !important;
       margin-bottom: 16px !important;
       page-break-after: avoid !important;
+      break-after: avoid-page !important;
+      break-inside: avoid !important;
       ${index > 0 ? 'page-break-before: always !important;' : ''}
     `;
   });
@@ -237,6 +239,8 @@ const styleContentElements = (container: HTMLElement): void => {
       margin-top: ${index === 0 ? '0' : '20px'} !important;
       margin-bottom: 12px !important;
       page-break-after: avoid !important;
+      break-after: avoid-page !important;
+      break-inside: avoid !important;
     `;
   });
 
@@ -252,6 +256,8 @@ const styleContentElements = (container: HTMLElement): void => {
       border-left: 4px solid #0d5c4d !important;
       padding-left: 10px !important;
       page-break-after: avoid !important;
+      break-after: avoid-page !important;
+      break-inside: avoid !important;
     `;
   });
 
@@ -265,6 +271,8 @@ const styleContentElements = (container: HTMLElement): void => {
       margin-bottom: 6px !important;
       font-weight: bold !important;
       page-break-after: avoid !important;
+      break-after: avoid-page !important;
+      break-inside: avoid !important;
     `;
   });
 
@@ -283,6 +291,8 @@ const styleContentElements = (container: HTMLElement): void => {
       text-align: justify !important;
       orphans: 3 !important;
       widows: 3 !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
     `;
   });
 
@@ -294,13 +304,19 @@ const styleContentElements = (container: HTMLElement): void => {
       margin-left: 20px !important;
       margin-bottom: 8px !important;
       page-break-inside: avoid !important;
+      break-inside: avoid !important;
     `;
   });
 
   // List items
   const listItems = container.querySelectorAll('li');
   listItems.forEach((li) => {
-    (li as HTMLElement).style.cssText = 'color: #1a1a1a !important; margin-bottom: 3px !important;';
+    (li as HTMLElement).style.cssText = `
+      color: #1a1a1a !important;
+      margin-bottom: 3px !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    `;
   });
 
   // Inline elements
@@ -412,7 +428,7 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   const opt = {
     margin: [12, 15, 15, 15] as [number, number, number, number],
     filename: `fechamento-${tema.trim().toLowerCase().replace(/\s+/g, '-').substring(0, 50)}.pdf`,
-    image: { type: 'jpeg' as const, quality: 0.98 },
+    image: { type: 'png' as const, quality: 1 },
     html2canvas: {
       scale: 2,
       useCORS: true,
@@ -421,6 +437,7 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
       letterRendering: true,
       scrollY: 0,
       scrollX: 0,
+      backgroundColor: '#ffffff',
     },
     jsPDF: {
       unit: 'mm' as const,
@@ -428,10 +445,10 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
       orientation: 'portrait' as const
     },
     pagebreak: {
-      mode: ['avoid-all', 'css'] as string[],
+      mode: ['css', 'legacy'] as string[],
       before: '.pdf-page-break-before',
       after: '.pdf-page-break-after',
-      avoid: ['p', 'li', 'tr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'details', 'table', 'ul', 'ol', 'blockquote', 'pre', 'figure', 'img'],
+      avoid: ['table', 'tr', 'ul', 'ol', 'details', 'blockquote', 'pre', 'figure', 'img', 'h1', 'h2', 'h3', 'h4'],
     }
   };
 
