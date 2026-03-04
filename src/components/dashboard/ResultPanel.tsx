@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import SeminarActions from './SeminarActions';
 import type { GenerationMode } from './ModeToggle';
-import { Loader2, Copy, Download, Save, Sparkles, FileText, CheckCircle2, Presentation } from 'lucide-react';
+import { Loader2, Copy, Download, Save, Sparkles, FileText, CheckCircle2, Presentation, GraduationCap } from 'lucide-react';
 
 interface ResultPanelProps {
   resultado: string;
@@ -17,6 +17,7 @@ interface ResultPanelProps {
   onSave: () => void;
   onCopy: () => void;
   onExportPDF: () => void;
+  onGenerateExam?: () => void;
 }
 
 const ResultPanel = ({
@@ -30,6 +31,7 @@ const ResultPanel = ({
   onSave,
   onCopy,
   onExportPDF,
+  onGenerateExam,
 }: ResultPanelProps) => {
   const showActions = resultado && !generating;
   const isSeminario = modo === 'seminario';
@@ -109,6 +111,17 @@ const ResultPanel = ({
               )}
               <span className="hidden sm:inline">PDF</span>
             </Button>
+            {onGenerateExam && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onGenerateExam}
+                className="gap-1.5 border-border/40 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all"
+              >
+                <GraduationCap className="h-4 w-4" />
+                <span className="hidden sm:inline">Gerar Prova</span>
+              </Button>
+            )}
           </div>
         )}
       </div>
