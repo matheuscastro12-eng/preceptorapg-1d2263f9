@@ -5,7 +5,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
 };
 
 serve(async (req) => {
@@ -40,6 +45,7 @@ serve(async (req) => {
 
     const user = claimsData.user;
     const { planType } = await req.json();
+    logStep("Checkout request", { userId: user.id, email: user.email, planType });
 
     // Validate planType
     if (!planType || !["monthly", "annual"].includes(planType)) {
@@ -67,9 +73,12 @@ serve(async (req) => {
         metadata: { user_id: user.id },
       });
       customerId = customer.id;
+      logStep("Created new Stripe customer", { customerId });
+    } else {
+      logStep("Found existing Stripe customer", { customerId });
     }
 
-    // Price IDs - these would be created in Stripe dashboard
+    // Price IDs
     const priceId = planType === "annual" 
       ? Deno.env.get("STRIPE_ANNUAL_PRICE_ID") 
       : Deno.env.get("STRIPE_MONTHLY_PRICE_ID");
@@ -81,16 +90,19 @@ serve(async (req) => {
       );
     }
 
-    const origin = req.headers.get("origin") || "https://castrospbl.lovable.app";
+    const origin = req.headers.get("origin") || "https://preceptorapg.lovable.app";
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      success_url: `${origin}/dashboard?success=true`,
+      success_url: `${origin}/menu?checkout=success`,
       cancel_url: `${origin}/pricing?canceled=true`,
       metadata: { user_id: user.id, plan_type: planType },
+      allow_promotion_codes: true,
     });
+
+    logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
