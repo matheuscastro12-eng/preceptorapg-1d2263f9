@@ -142,7 +142,22 @@ const Dashboard = () => {
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(resultado);
+    // Strip markdown syntax for clean paste into Word
+    const cleanText = resultado
+      .replace(/^#{1,6}\s+/gm, '')           // headings
+      .replace(/\*\*\*(.*?)\*\*\*/g, '$1')    // bold+italic
+      .replace(/\*\*(.*?)\*\*/g, '$1')        // bold
+      .replace(/\*(.*?)\*/g, '$1')            // italic
+      .replace(/~~(.*?)~~/g, '$1')            // strikethrough
+      .replace(/`{1,3}(.*?)`{1,3}/gs, '$1')  // code
+      .replace(/^\s*[-*+]\s+/gm, '• ')       // unordered lists
+      .replace(/^\s*\d+\.\s+/gm, (m) => m.trim() + ' ') // ordered lists
+      .replace(/^>\s+/gm, '')                // blockquotes
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // links
+      .replace(/^---+$/gm, '')               // hr
+      .replace(/\n{3,}/g, '\n\n');            // excess blank lines
+
+    navigator.clipboard.writeText(cleanText.trim());
     toast({
       title: 'Copiado!',
       description: 'Fechamento copiado para a área de transferência.',
