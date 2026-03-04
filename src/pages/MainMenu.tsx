@@ -1,12 +1,14 @@
+import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAdmin } from '@/hooks/useAdmin';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { Stethoscope, BookOpen, Brain, FlaskConical, GraduationCap, Library, Shield, AlertTriangle } from 'lucide-react';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import { motion } from 'framer-motion';
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
+import { useToast } from '@/hooks/use-toast';
 
 const menuItems = [
   {
@@ -70,6 +72,18 @@ const MainMenu = () => {
   const { hasAccess, loading: subLoading } = useSubscription();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
+
+  // Show success toast after checkout
+  useEffect(() => {
+    if (searchParams.get('checkout') === 'success') {
+      toast({
+        title: '🎉 Assinatura ativada!',
+        description: 'Seu acesso já está liberado. Bons estudos!',
+      });
+    }
+  }, [searchParams, toast]);
 
   if (authLoading || subLoading || adminLoading) {
     return <PageSkeleton variant="menu" />;
