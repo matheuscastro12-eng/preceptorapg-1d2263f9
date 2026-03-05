@@ -91,6 +91,7 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          access_expires_at: string | null
           created_at: string
           current_period_end: string | null
           granted_by: string | null
@@ -103,6 +104,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          access_expires_at?: string | null
           created_at?: string
           current_period_end?: string | null
           granted_by?: string | null
@@ -115,6 +117,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          access_expires_at?: string | null
           created_at?: string
           current_period_end?: string | null
           granted_by?: string | null
