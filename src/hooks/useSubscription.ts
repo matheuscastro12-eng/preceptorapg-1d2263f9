@@ -11,6 +11,7 @@ interface Subscription {
   stripe_subscription_id: string | null;
   current_period_end: string | null;
   granted_by: string | null;
+  access_expires_at: string | null;
   created_at: string;
 }
 
@@ -81,7 +82,11 @@ export const useSubscription = () => {
     }
   }, [user]);
 
-  const hasAccess = subscription?.status === 'active' || subscription?.plan_type === 'free_access';
+  const isExpired = subscription?.access_expires_at 
+    ? new Date(subscription.access_expires_at) < new Date() 
+    : false;
+
+  const hasAccess = (subscription?.status === 'active' || subscription?.plan_type === 'free_access') && !isExpired;
 
   return { subscription, loading, hasAccess, refetch: fetchSubscription };
 };

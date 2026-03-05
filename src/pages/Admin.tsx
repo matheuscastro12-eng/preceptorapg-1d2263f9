@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,7 +18,8 @@ import {
   Loader2,
   UserCheck,
   UserX,
-  ArrowLeft
+  ArrowLeft,
+  Clock
 } from 'lucide-react';
 
 interface UserWithSubscription {
@@ -27,8 +29,11 @@ interface UserWithSubscription {
   subscription?: {
     status: string;
     plan_type: string;
+    access_expires_at: string | null;
   };
 }
+
+type AccessDuration = 'unlimited' | '4h' | '1d' | '3d' | '7d' | '15d' | '30d';
 
 const Admin = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -39,6 +44,7 @@ const Admin = () => {
   const [users, setUsers] = useState<UserWithSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState<Record<string, AccessDuration>>({});
 
   const fetchUsers = async () => {
     try {
@@ -51,14 +57,17 @@ const Admin = () => {
 
       const { data: subscriptions, error: subsError } = await supabase
         .from('subscriptions')
-        .select('user_id, status, plan_type');
+        .select('user_id, status, plan_type, access_expires_at');
 
       if (subsError) throw subsError;
 
-      const usersWithSubs = profiles.map((profile) => ({
-        ...profile,
-        subscription: subscriptions.find(s => s.user_id === profile.user_id)
-      }));
+      const usersWithSubs = profiles.map((profile) => {
+        const sub = subscriptions.find(s => s.user_id === profile.user_id);
+        return {
+          ...profile,
+          subscription: sub ? { status: sub.status, plan_type: sub.plan_type, access_expires_at: sub.access_expires_at } : undefined,
+        };
+      });
 
       setUsers(usersWithSubs);
     } catch (error) {
@@ -98,55 +107,74 @@ const Admin = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
+  const getExpirationDate = (duration: AccessDuration): string | null => {
+    if (duration === 'unlimited') return null;
+    const now = new Date();
+    const map: Record<string, number> = {
+      '4h': 4 * 60 * 60 * 1000,
+      '1d': 24 * 60 * 60 * 1000,
+      '3d': 3 * 24 * 60 * 60 * 1000,
+      '7d': 7 * 24 * 60 * 60 * 1000,
+      '15d': 15 * 24 * 60 * 60 * 1000,
+      '30d': 30 * 24 * 60 * 60 * 1000,
+    };
+    return new Date(now.getTime() + map[duration]).toISOString();
+  };
+
+  const getDurationLabel = (duration: AccessDuration) => {
+    const labels: Record<AccessDuration, string> = {
+      'unlimited': 'Ilimitado',
+      '4h': '4 horas',
+      '1d': '1 dia',
+      '3d': '3 dias',
+      '7d': '7 dias',
+      '15d': '15 dias',
+      '30d': '30 dias',
+    };
+    return labels[duration];
+  };
+
   const grantAccess = async (userId: string) => {
     setActionLoading(userId);
     try {
-      // Check if subscription exists
+      const duration = selectedDuration[userId] || 'unlimited';
+      const expiresAt = getExpirationDate(duration);
+
       const { data: existing } = await supabase
         .from('subscriptions')
         .select('id')
         .eq('user_id', userId)
         .maybeSingle();
 
+      const subData = { 
+        status: 'active' as const, 
+        plan_type: 'free_access' as const,
+        granted_by: user.id,
+        access_expires_at: expiresAt,
+      };
+
       if (existing) {
-        // Update existing
         const { error } = await supabase
           .from('subscriptions')
-          .update({ 
-            status: 'active', 
-            plan_type: 'free_access',
-            granted_by: user.id 
-          })
+          .update(subData)
           .eq('user_id', userId);
-        
         if (error) throw error;
       } else {
-        // Insert new
         const { error } = await supabase
           .from('subscriptions')
-          .insert({ 
-            user_id: userId,
-            status: 'active', 
-            plan_type: 'free_access',
-            granted_by: user.id 
-          });
-        
+          .insert({ user_id: userId, ...subData });
         if (error) throw error;
       }
 
-      toast({
-        title: 'Acesso liberado!',
-        description: 'O usuário agora tem acesso gratuito.',
-      });
-      
+      const desc = expiresAt 
+        ? `Acesso liberado por ${getDurationLabel(duration)}.`
+        : 'Acesso gratuito ilimitado liberado.';
+
+      toast({ title: 'Acesso liberado!', description: desc });
       fetchUsers();
     } catch (error) {
       console.error('Error granting access:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível liberar o acesso.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro', description: 'Não foi possível liberar o acesso.', variant: 'destructive' });
     } finally {
       setActionLoading(null);
     }
@@ -180,18 +208,35 @@ const Admin = () => {
     }
   };
 
+  const isAccessExpired = (sub?: UserWithSubscription['subscription']) => {
+    if (!sub?.access_expires_at) return false;
+    return new Date(sub.access_expires_at) < new Date();
+  };
+
   const stats = {
     total: users.length,
     paying: users.filter(u => u.subscription?.plan_type === 'monthly' || u.subscription?.plan_type === 'annual').length,
-    freeAccess: users.filter(u => u.subscription?.plan_type === 'free_access').length,
-    noAccess: users.filter(u => !u.subscription || u.subscription.status !== 'active').length,
+    freeAccess: users.filter(u => u.subscription?.plan_type === 'free_access' && !isAccessExpired(u.subscription)).length,
+    noAccess: users.filter(u => !u.subscription || u.subscription.status !== 'active' || isAccessExpired(u.subscription)).length,
   };
 
   const getStatusBadge = (subscription?: UserWithSubscription['subscription']) => {
-    if (!subscription || subscription.status !== 'active') {
+    if (!subscription || subscription.status !== 'active' || isAccessExpired(subscription)) {
+      if (isAccessExpired(subscription)) {
+        return <Badge variant="secondary" className="flex items-center gap-1"><Clock className="h-3 w-3" /> Expirado</Badge>;
+      }
       return <Badge variant="secondary">Sem acesso</Badge>;
     }
     if (subscription.plan_type === 'free_access') {
+      if (subscription.access_expires_at) {
+        const exp = new Date(subscription.access_expires_at);
+        const now = new Date();
+        const diff = exp.getTime() - now.getTime();
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const days = Math.floor(hours / 24);
+        const remaining = days > 0 ? `${days}d restantes` : `${hours}h restantes`;
+        return <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30 flex items-center gap-1"><Clock className="h-3 w-3" /> {remaining}</Badge>;
+      }
       return <Badge className="bg-green-500/20 text-green-500 border-green-500/30">Gratuito</Badge>;
     }
     return <Badge className="bg-primary/20 text-primary border-primary/30">{subscription.plan_type}</Badge>;
@@ -308,7 +353,7 @@ const Admin = () => {
                       <TableCell>{new Date(u.created_at).toLocaleDateString('pt-BR')}</TableCell>
                       <TableCell>{getStatusBadge(u.subscription)}</TableCell>
                       <TableCell className="text-right">
-                        {u.subscription?.status === 'active' && u.subscription?.plan_type === 'free_access' ? (
+                        {u.subscription?.status === 'active' && u.subscription?.plan_type === 'free_access' && !isAccessExpired(u.subscription) ? (
                           <Button 
                             variant="destructive" 
                             size="sm"
@@ -324,22 +369,41 @@ const Admin = () => {
                               </>
                             )}
                           </Button>
-                        ) : u.subscription?.status !== 'active' || !u.subscription ? (
-                          <Button 
-                            variant="default" 
-                            size="sm"
-                            onClick={() => grantAccess(u.user_id)}
-                            disabled={actionLoading === u.user_id}
-                          >
-                            {actionLoading === u.user_id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <UserCheck className="h-4 w-4 mr-1" />
-                                Liberar
-                              </>
-                            )}
-                          </Button>
+                        ) : u.subscription?.status !== 'active' || !u.subscription || isAccessExpired(u.subscription) ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <Select 
+                              value={selectedDuration[u.user_id] || 'unlimited'} 
+                              onValueChange={(v) => setSelectedDuration(prev => ({ ...prev, [u.user_id]: v as AccessDuration }))}
+                            >
+                              <SelectTrigger className="w-[120px] h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="unlimited">Ilimitado</SelectItem>
+                                <SelectItem value="4h">4 horas</SelectItem>
+                                <SelectItem value="1d">1 dia</SelectItem>
+                                <SelectItem value="3d">3 dias</SelectItem>
+                                <SelectItem value="7d">7 dias</SelectItem>
+                                <SelectItem value="15d">15 dias</SelectItem>
+                                <SelectItem value="30d">30 dias</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button 
+                              variant="default" 
+                              size="sm"
+                              onClick={() => grantAccess(u.user_id)}
+                              disabled={actionLoading === u.user_id}
+                            >
+                              {actionLoading === u.user_id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <UserCheck className="h-4 w-4 mr-1" />
+                                  Liberar
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         ) : (
                           <span className="text-sm text-muted-foreground">Pagante</span>
                         )}
