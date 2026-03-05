@@ -14,6 +14,10 @@ import Admin from "./pages/Admin";
 import Landing from "./pages/Landing";
 import MainMenu from "./pages/MainMenu";
 import Subscription from "./pages/Subscription";
+import Profile from "./pages/Profile";
+import Feed from "./pages/Feed";
+import Discover from "./pages/Discover";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +40,12 @@ const App = () => (
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/subscription" element={<Subscription />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/:userId" element={<Profile />} />
+              <Route path="/feed" element={<Feed />} />
+              <Route path="/discover" element={<Discover />} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/messages/:chatUserId" element={<Messages />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
