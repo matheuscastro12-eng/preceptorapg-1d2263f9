@@ -66,6 +66,7 @@ const Dashboard = () => {
       return;
     }
 
+    console.log('[Dashboard] Starting generation for tema:', tema.trim());
     setGenerating(true);
     setResultado('');
     setHasStartedReceiving(false);
