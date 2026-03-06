@@ -236,8 +236,7 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: authError } = await supabaseClient.auth.getUser(token);
+    const { data: userData, error: authError } = await supabaseClient.auth.getUser();
 
     if (authError || !userData.user) {
       return new Response(
