@@ -278,10 +278,13 @@ const AIChat = () => {
                             <MarkdownRenderer content={m.content} isTyping={isStreaming && m.id === messages[messages.length - 1]?.id} />
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2 py-2 px-1">
-                            <span className="typing-dot" />
-                            <span className="typing-dot" />
-                            <span className="typing-dot" />
+                          <div className="flex items-center gap-3 py-3 px-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="typing-dot" />
+                              <span className="typing-dot" />
+                              <span className="typing-dot" />
+                            </div>
+                            <span className="text-xs text-muted-foreground animate-pulse">Pensando...</span>
                           </div>
                         )}
                         {m.content && !(isStreaming && m.id === messages[messages.length - 1]?.id) && (
