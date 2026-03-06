@@ -368,7 +368,7 @@ serve(async (req) => {
     const { count } = await serviceClient
       .from("generation_logs")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", userData.user.id)
+      .eq("user_id", userId)
       .eq("function_name", "generate-fechamento")
       .gte("created_at", windowStart);
 
