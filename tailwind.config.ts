@@ -85,6 +85,14 @@ export default {
           "0%, 100%": { boxShadow: "0 0 10px hsl(var(--medical-green) / 0.3)" },
           "50%": { boxShadow: "0 0 25px hsl(var(--medical-green) / 0.5)" },
         },
+        "wave": {
+          "0%, 100%": { transform: "translateY(0)", opacity: "0.4" },
+          "50%": { transform: "translateY(-6px)", opacity: "1" },
+        },
+        "shimmer": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",

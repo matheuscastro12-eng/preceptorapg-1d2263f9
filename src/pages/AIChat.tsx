@@ -279,12 +279,15 @@ const AIChat = () => {
                           </div>
                         ) : (
                           <div className="flex items-center gap-3 py-3 px-2">
-                            <div className="flex items-center gap-1.5">
-                              <span className="typing-dot" />
-                              <span className="typing-dot" />
-                              <span className="typing-dot" />
+                            <div className="relative flex items-center gap-1">
+                              <span className="h-2 w-2 rounded-full bg-primary animate-[wave_1.2s_ease-in-out_infinite]" />
+                              <span className="h-2 w-2 rounded-full bg-primary animate-[wave_1.2s_ease-in-out_0.2s_infinite]" />
+                              <span className="h-2 w-2 rounded-full bg-primary animate-[wave_1.2s_ease-in-out_0.4s_infinite]" />
                             </div>
-                            <span className="text-xs text-muted-foreground animate-pulse">Pensando...</span>
+                            <div className="relative overflow-hidden rounded-md">
+                              <span className="text-xs text-muted-foreground">Elaborando resposta</span>
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent animate-[shimmer_2s_infinite]" />
+                            </div>
                           </div>
                         )}
                         {m.content && !(isStreaming && m.id === messages[messages.length - 1]?.id) && (
