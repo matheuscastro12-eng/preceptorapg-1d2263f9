@@ -242,9 +242,17 @@ const AIChat = () => {
                       : 'bg-secondary/30 border border-border/30 rounded-2xl rounded-bl-md px-4 py-3'
                   }`}>
                     {m.role === 'assistant' ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
-                        <MarkdownRenderer content={m.content || (isStreaming ? '●' : '')} />
-                      </div>
+                      m.content ? (
+                        <div className={`prose prose-sm dark:prose-invert max-w-none text-sm ${isStreaming && m.id === messages[messages.length - 1]?.id ? 'typing-cursor' : ''}`}>
+                          <MarkdownRenderer content={m.content} isTyping={isStreaming && m.id === messages[messages.length - 1]?.id} />
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 py-1 px-1">
+                          <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:0ms]" />
+                          <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
+                          <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:300ms]" />
+                        </div>
+                      )
                     ) : (
                       <p className="text-sm whitespace-pre-wrap">{m.content}</p>
                     )}
