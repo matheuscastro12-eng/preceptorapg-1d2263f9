@@ -266,23 +266,47 @@ const AIChat = () => {
                       <Bot className="h-4 w-4 text-primary" />
                     </div>
                   )}
-                  <div className={`max-w-[85%] sm:max-w-[75%] ${
+                  <div className={`max-w-[85%] sm:max-w-[75%] group/msg ${
                     m.role === 'user'
                       ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3'
                       : 'bg-secondary/30 border border-border/30 rounded-2xl rounded-bl-md px-4 py-3'
                   }`}>
                     {m.role === 'assistant' ? (
-                      m.content ? (
-                        <div className={`prose prose-sm dark:prose-invert max-w-none text-sm ${isStreaming && m.id === messages[messages.length - 1]?.id ? 'typing-cursor' : ''}`}>
-                          <MarkdownRenderer content={m.content} isTyping={isStreaming && m.id === messages[messages.length - 1]?.id} />
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 py-1 px-1">
-                          <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:0ms]" />
-                          <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
-                          <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:300ms]" />
-                        </div>
-                      )
+                      <>
+                        {m.content ? (
+                          <div id={`msg-${m.id}`} className={`prose prose-sm dark:prose-invert max-w-none text-sm ${isStreaming && m.id === messages[messages.length - 1]?.id ? 'typing-cursor' : ''}`}>
+                            <MarkdownRenderer content={m.content} isTyping={isStreaming && m.id === messages[messages.length - 1]?.id} />
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 py-1 px-1">
+                            <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:0ms]" />
+                            <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
+                            <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:300ms]" />
+                          </div>
+                        )}
+                        {m.content && !(isStreaming && m.id === messages[messages.length - 1]?.id) && (
+                          <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/20 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                              onClick={() => handleCopy(m)}
+                            >
+                              {copiedId === m.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                              {copiedId === m.id ? 'Copiado' : 'Copiar'}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                              onClick={() => handlePDF(m)}
+                            >
+                              <FileDown className="h-3 w-3" />
+                              PDF
+                            </Button>
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <p className="text-sm whitespace-pre-wrap">{m.content}</p>
                     )}
