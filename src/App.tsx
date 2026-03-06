@@ -15,9 +15,7 @@ import Landing from "./pages/Landing";
 import MainMenu from "./pages/MainMenu";
 import Subscription from "./pages/Subscription";
 import Profile from "./pages/Profile";
-import Feed from "./pages/Feed";
-import Discover from "./pages/Discover";
-import Messages from "./pages/Messages";
+import AIChat from "./pages/AIChat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,11 +39,7 @@ const App = () => (
               <Route path="/subscription" element={<Subscription />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/profile/:userId" element={<Profile />} />
-              <Route path="/feed" element={<Feed />} />
-              <Route path="/discover" element={<Discover />} />
-              <Route path="/messages" element={<Messages />} />
-              <Route path="/messages/:chatUserId" element={<Messages />} />
+              <Route path="/ai-chat" element={<AIChat />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

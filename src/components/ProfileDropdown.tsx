@@ -37,10 +37,7 @@ const ProfileDropdown = ({ userEmail, onLogout }: ProfileDropdownProps) => {
       <PopoverContent className="w-72 p-4 glass-strong" align="end">
         <div className="space-y-4">
           {/* User Info */}
-          <div
-            className="flex items-center gap-3 pb-3 border-b border-border/50 cursor-pointer hover:bg-secondary/20 rounded-lg p-2 -m-1 transition-colors"
-            onClick={() => navigate('/feed')}
-          >
+          <div className="flex items-center gap-3 pb-3 border-b border-border/50 p-2 -m-1">
             <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
               <User className="h-5 w-5 text-primary" />
             </div>
@@ -48,7 +45,7 @@ const ProfileDropdown = ({ userEmail, onLogout }: ProfileDropdownProps) => {
               <p className="text-sm font-medium text-foreground truncate">
                 {userEmail}
               </p>
-              <p className="text-xs text-primary">Meu perfil e comunidade →</p>
+              <p className="text-xs text-muted-foreground">Conta ativa</p>
             </div>
           </div>
 

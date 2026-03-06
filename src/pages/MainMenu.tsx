@@ -231,7 +231,7 @@ const MainMenu = () => {
             </div>
           </motion.button>
 
-          {/* Comunidade */}
+          {/* PreceptorIA Chat */}
           <motion.button
             custom={4}
             variants={cardVariants}
@@ -239,23 +239,15 @@ const MainMenu = () => {
             animate="visible"
             whileHover={{ scale: 1.01, y: -2 }}
             whileTap={{ scale: 0.99 }}
-            onClick={() => navigate('/feed')}
+            onClick={() => navigate('/ai-chat')}
             className="group relative col-span-1 sm:col-span-2 lg:col-span-2 rounded-2xl border bg-gradient-to-br from-primary/15 to-accent/10 border-primary/20 hover:border-primary/50 hover:shadow-[0_0_30px_hsl(var(--primary)/0.1)] p-4 sm:p-5 text-left transition-colors duration-300 cursor-pointer flex items-center gap-4"
           >
             <div className="h-10 w-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
-              <Users className="h-5 w-5" />
+              <MessageSquare className="h-5 w-5" />
             </div>
             <div className="flex-1">
-              <h2 className="text-sm sm:text-base font-bold text-foreground">COMUNIDADE</h2>
-              <p className="text-xs text-muted-foreground">Feed, chat, ranking e interação entre estudantes</p>
-            </div>
-            <div className="flex gap-1.5 shrink-0">
-              <div className="h-7 w-7 rounded-full bg-accent/20 flex items-center justify-center" onClick={(e) => { e.stopPropagation(); navigate('/messages'); }}>
-                <MessageCircle className="h-3.5 w-3.5 text-accent" />
-              </div>
-              <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center" onClick={(e) => { e.stopPropagation(); navigate('/discover'); }}>
-                <Trophy className="h-3.5 w-3.5 text-primary" />
-              </div>
+              <h2 className="text-sm sm:text-base font-bold text-foreground">PRECEPTORIA</h2>
+              <p className="text-xs text-muted-foreground">Chat livre com IA acadêmica — tire dúvidas com profundidade</p>
             </div>
           </motion.button>
         </div>
