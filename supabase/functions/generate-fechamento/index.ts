@@ -381,7 +381,7 @@ serve(async (req) => {
 
     // Log this generation
     await serviceClient.from("generation_logs").insert({
-      user_id: userData.user.id,
+      user_id: userId,
       function_name: "generate-fechamento",
     });
 
