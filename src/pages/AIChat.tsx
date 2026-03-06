@@ -273,11 +273,7 @@ const AIChat = () => {
                   }`}>
                     {m.role === 'assistant' ? (
                       <>
-                        {m.content ? (
-                          <div id={`msg-${m.id}`} className={`prose prose-sm dark:prose-invert max-w-none text-sm ${isStreaming && m.id === messages[messages.length - 1]?.id ? 'typing-cursor' : ''}`}>
-                            <MarkdownRenderer content={m.content} isTyping={isStreaming && m.id === messages[messages.length - 1]?.id} />
-                          </div>
-                        ) : (
+                        {!m.content && isStreaming && m.id === messages[messages.length - 1]?.id && (
                           <div className="flex items-center gap-3 py-3 px-2">
                             <div className="relative flex items-center gap-1">
                               <span className="h-2 w-2 rounded-full bg-primary animate-[wave_1.2s_ease-in-out_infinite]" />
@@ -288,6 +284,11 @@ const AIChat = () => {
                               <span className="text-xs text-muted-foreground">Elaborando resposta</span>
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent animate-[shimmer_2s_infinite]" />
                             </div>
+                          </div>
+                        )}
+                        {m.content && (
+                          <div id={`msg-${m.id}`} className={`prose prose-sm dark:prose-invert max-w-none text-sm ${isStreaming && m.id === messages[messages.length - 1]?.id ? 'typing-cursor' : ''}`}>
+                            <MarkdownRenderer content={m.content} isTyping={isStreaming && m.id === messages[messages.length - 1]?.id} />
                           </div>
                         )}
                         {m.content && !(isStreaming && m.id === messages[messages.length - 1]?.id) && (
