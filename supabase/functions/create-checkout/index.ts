@@ -33,8 +33,7 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getUser(token);
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getUser();
     
     if (claimsError || !claimsData.user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
