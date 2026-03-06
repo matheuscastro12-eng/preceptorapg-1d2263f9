@@ -90,13 +90,13 @@ serve(async (req) => {
     const { data: subscription } = await supabaseClient
       .from("subscriptions")
       .select("status, plan_type")
-      .eq("user_id", userData.user.id)
+      .eq("user_id", userId)
       .maybeSingle();
 
     const { data: userRole } = await supabaseClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", userData.user.id)
+      .eq("user_id", userId)
       .eq("role", "admin")
       .maybeSingle();
 
