@@ -82,7 +82,7 @@ const AIChat = () => {
       let buffer = '';
       let assistantContent = '';
 
-      // Create assistant message
+      // Create assistant message with loading state
       setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
 
       while (true) {
