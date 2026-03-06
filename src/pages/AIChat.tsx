@@ -5,7 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Send, Stethoscope, Sparkles, Trash2, Bot, User } from 'lucide-react';
+import { ArrowLeft, Send, Stethoscope, Sparkles, Trash2, Bot, User, Copy, FileDown, Check } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { exportToPDF } from '@/utils/pdfExport';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
@@ -29,12 +31,40 @@ const SUGGESTIONS = [
 const AIChat = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  const stripMarkdown = (md: string) =>
+    md.replace(/#{1,6}\s?/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/`(.+?)`/g, '$1').replace(/---/g, '').replace(/- /g, '• ').trim();
+
+  const handleCopy = async (msg: ChatMessage) => {
+    await navigator.clipboard.writeText(stripMarkdown(msg.content));
+    setCopiedId(msg.id);
+    toast({ title: 'Copiado!', description: 'Resposta copiada para a área de transferência.' });
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handlePDF = (msg: ChatMessage) => {
+    const container = document.createElement('div');
+    container.className = 'markdown-content';
+    // Find the rendered message element
+    const el = document.getElementById(`msg-${msg.id}`);
+    if (el) {
+      container.innerHTML = el.innerHTML;
+    } else {
+      container.innerText = msg.content;
+    }
+    // Find the user question that preceded this answer
+    const idx = messages.findIndex(m => m.id === msg.id);
+    const question = idx > 0 ? messages[idx - 1]?.content : 'PreceptorIA';
+    exportToPDF({ tema: question.slice(0, 100), contentElement: container });
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -236,23 +266,47 @@ const AIChat = () => {
                       <Bot className="h-4 w-4 text-primary" />
                     </div>
                   )}
-                  <div className={`max-w-[85%] sm:max-w-[75%] ${
+                  <div className={`max-w-[85%] sm:max-w-[75%] group/msg ${
                     m.role === 'user'
                       ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3'
                       : 'bg-secondary/30 border border-border/30 rounded-2xl rounded-bl-md px-4 py-3'
                   }`}>
                     {m.role === 'assistant' ? (
-                      m.content ? (
-                        <div className={`prose prose-sm dark:prose-invert max-w-none text-sm ${isStreaming && m.id === messages[messages.length - 1]?.id ? 'typing-cursor' : ''}`}>
-                          <MarkdownRenderer content={m.content} isTyping={isStreaming && m.id === messages[messages.length - 1]?.id} />
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 py-1 px-1">
-                          <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:0ms]" />
-                          <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
-                          <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:300ms]" />
-                        </div>
-                      )
+                      <>
+                        {m.content ? (
+                          <div id={`msg-${m.id}`} className={`prose prose-sm dark:prose-invert max-w-none text-sm ${isStreaming && m.id === messages[messages.length - 1]?.id ? 'typing-cursor' : ''}`}>
+                            <MarkdownRenderer content={m.content} isTyping={isStreaming && m.id === messages[messages.length - 1]?.id} />
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 py-1 px-1">
+                            <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:0ms]" />
+                            <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
+                            <span className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:300ms]" />
+                          </div>
+                        )}
+                        {m.content && !(isStreaming && m.id === messages[messages.length - 1]?.id) && (
+                          <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/20 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                              onClick={() => handleCopy(m)}
+                            >
+                              {copiedId === m.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                              {copiedId === m.id ? 'Copiado' : 'Copiar'}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                              onClick={() => handlePDF(m)}
+                            >
+                              <FileDown className="h-3 w-3" />
+                              PDF
+                            </Button>
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <p className="text-sm whitespace-pre-wrap">{m.content}</p>
                     )}
