@@ -31,12 +31,40 @@ const SUGGESTIONS = [
 const AIChat = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  const stripMarkdown = (md: string) =>
+    md.replace(/#{1,6}\s?/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/`(.+?)`/g, '$1').replace(/---/g, '').replace(/- /g, '• ').trim();
+
+  const handleCopy = async (msg: ChatMessage) => {
+    await navigator.clipboard.writeText(stripMarkdown(msg.content));
+    setCopiedId(msg.id);
+    toast({ title: 'Copiado!', description: 'Resposta copiada para a área de transferência.' });
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handlePDF = (msg: ChatMessage) => {
+    const container = document.createElement('div');
+    container.className = 'markdown-content';
+    // Find the rendered message element
+    const el = document.getElementById(`msg-${msg.id}`);
+    if (el) {
+      container.innerHTML = el.innerHTML;
+    } else {
+      container.innerText = msg.content;
+    }
+    // Find the user question that preceded this answer
+    const idx = messages.findIndex(m => m.id === msg.id);
+    const question = idx > 0 ? messages[idx - 1]?.content : 'PreceptorIA';
+    exportToPDF({ tema: question.slice(0, 100), contentElement: container });
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
