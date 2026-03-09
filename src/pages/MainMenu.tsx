@@ -242,7 +242,6 @@ const MainMenu = () => {
               {isFreeUser ? 'Desbloquear' : 'Praticar'}
               <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
-            </div>
           </motion.button>
 
           {/* SIMULADOS */}
@@ -254,9 +253,14 @@ const MainMenu = () => {
             animate="visible"
             whileHover={{ scale: 1.03, y: -4 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => navigate('/exam?mode=prova')}
-            className="group relative rounded-2xl border border-destructive/30 bg-gradient-to-br from-destructive/15 via-destructive/5 to-transparent p-5 sm:p-6 text-left transition-all duration-300 cursor-pointer overflow-hidden hover:border-destructive/50 hover:shadow-[0_0_30px_hsl(var(--destructive)/0.15)]"
+            onClick={() => isFreeUser ? navigate('/pricing') : navigate('/exam?mode=prova')}
+            className={`group relative rounded-2xl border border-destructive/30 bg-gradient-to-br from-destructive/15 via-destructive/5 to-transparent p-5 sm:p-6 text-left transition-all duration-300 cursor-pointer overflow-hidden hover:border-destructive/50 hover:shadow-[0_0_30px_hsl(var(--destructive)/0.15)] ${isFreeUser ? 'opacity-80' : ''}`}
           >
+            {isFreeUser && (
+              <div className="absolute top-3 right-3 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full bg-background/80 border border-border/50 text-[10px] font-medium text-muted-foreground">
+                <Lock className="h-3 w-3" />
+              </div>
+            )}
             <div className="h-12 w-12 rounded-xl bg-destructive/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <GraduationCap className="h-6 w-6 text-destructive" />
             </div>
@@ -266,8 +270,9 @@ const MainMenu = () => {
               Questões no estilo residência com modo simulado interativo
             </p>
             <div className="flex items-center gap-1 mt-4 text-destructive text-xs font-medium">
-              Treinar
+              {isFreeUser ? 'Desbloquear' : 'Treinar'}
               <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
             </div>
           </motion.button>
         </div>
