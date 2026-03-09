@@ -143,7 +143,7 @@ const InputPanel = ({
         </div>
       </div>
 
-      <div className="space-y-4 mt-6 relative">
+      <div className="space-y-4 mt-6 relative" data-tour="generate-btn">
         <Button 
           className={`w-full h-12 text-base font-semibold shadow-lg transition-all duration-300 group ${
             isSeminario

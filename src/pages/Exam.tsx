@@ -198,6 +198,9 @@ const Exam = () => {
 
   return (
     <PageTransition className="min-h-screen bg-background flex flex-col">
+      {/* Onboarding Tour */}
+      <OnboardingTour steps={examTourSteps} tourKey="exam" />
+
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-destructive/5 rounded-full blur-3xl animate-pulse" />
