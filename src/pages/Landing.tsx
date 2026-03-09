@@ -2,231 +2,319 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import ProfileDropdown from '@/components/ProfileDropdown';
+import { motion } from 'framer-motion';
 import { 
   Stethoscope, 
-  Sparkles, 
   BookOpen, 
   Download, 
-  Clock,
   ArrowRight,
   CheckCircle2,
-  Zap,
   Brain,
-  GraduationCap
+  GraduationCap,
+  FileText,
+  Users,
+  Shield,
+  Play,
+  ChevronRight
 } from 'lucide-react';
 
 const Landing = () => {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
 
-  const features = [
+  const steps = [
     { 
-      icon: Brain, 
-      title: 'IA Especializada', 
-      description: 'Inteligência artificial treinada para metodologia PBL/APG em medicina' 
+      number: '01',
+      title: 'Insira o tema', 
+      description: 'Digite o tema central do seu estudo PBL ou os objetivos específicos que precisa fechar.' 
     },
     { 
-      icon: Sparkles, 
-      title: 'Fechamentos Automáticos', 
-      description: 'Gere fechamentos completos e estruturados em segundos' 
+      number: '02',
+      title: 'IA elabora o conteúdo', 
+      description: 'Em segundos, receba um fechamento estruturado com fisiopatologia, diagnóstico e tratamento.' 
+    },
+    { 
+      number: '03',
+      title: 'Estude e pratique', 
+      description: 'Salve na biblioteca, gere questões de prova ou casos clínicos baseados no conteúdo.' 
+    },
+  ];
+
+  const features = [
+    { 
+      icon: FileText, 
+      title: 'Fechamentos estruturados', 
+      description: 'Conteúdo organizado em tópicos claros: definição, epidemiologia, fisiopatologia, quadro clínico, diagnóstico e tratamento.' 
+    },
+    { 
+      icon: GraduationCap, 
+      title: 'Simulados de residência', 
+      description: 'Gere questões objetivas no estilo das principais bancas, com gabarito comentado.' 
+    },
+    { 
+      icon: Brain, 
+      title: 'Casos clínicos integrativos', 
+      description: 'Pratique raciocínio clínico com casos elaborados a partir dos seus fechamentos.' 
     },
     { 
       icon: BookOpen, 
-      title: 'Biblioteca Pessoal', 
-      description: 'Salve e organize seus estudos para consulta futura' 
+      title: 'Biblioteca pessoal', 
+      description: 'Todos os seus estudos organizados em um só lugar, acessíveis a qualquer momento.' 
     },
     { 
       icon: Download, 
-      title: 'Exportação PDF', 
-      description: 'Baixe seus fechamentos em formato profissional' 
+      title: 'Exportação em PDF', 
+      description: 'Baixe seus fechamentos formatados para impressão ou compartilhamento.' 
+    },
+    { 
+      icon: Shield, 
+      title: 'Conteúdo acadêmico', 
+      description: 'IA treinada especificamente para metodologia PBL/ABP em medicina.' 
     },
   ];
 
-  const benefits = [
-    'Economize horas de pesquisa e organização',
-    'Conteúdo baseado em evidências científicas',
-    'Estrutura padronizada para apresentações',
-    'Acesso ilimitado a todas as funcionalidades',
-  ];
-
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Decorative background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/3 rounded-full blur-3xl" />
-      </div>
-
+    <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/30 glass-strong">
+      <header className="sticky top-0 z-50 border-b border-border/30 bg-background/95 backdrop-blur-sm">
         <div className="container flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-xl bg-primary/30 blur-lg" />
-              <div className="relative rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 p-2.5">
-                <Stethoscope className="h-6 w-6 text-primary" />
-              </div>
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Stethoscope className="h-5 w-5 text-primary" />
             </div>
-            <div>
-              <span className="font-display text-xl font-bold text-gradient-medical">
-                PreceptorIA
-              </span>
-              <p className="text-xs text-muted-foreground">Fechamentos com IA</p>
-            </div>
+            <span className="text-lg font-bold">PreceptorIA</span>
           </div>
 
           {!loading && user ? (
             <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={() => navigate('/menu')}>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/menu')}>
                 Meu Painel
               </Button>
               <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
             </div>
           ) : (
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" onClick={() => navigate('/auth')}>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/auth')}>
                 Entrar
               </Button>
-              <Button onClick={() => navigate('/pricing')}>
-                Ver Planos
+              <Button size="sm" onClick={() => navigate('/pricing')}>
+                Começar
               </Button>
             </div>
           )}
         </div>
       </header>
 
-      {/* Hero Section */}
-      <main className="flex-1 relative">
-        <section className="container px-4 py-10 sm:py-16 md:py-24">
-          <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-primary/20">
-              <GraduationCap className="h-4 w-4 text-primary" />
-              <span className="text-sm text-muted-foreground">Para estudantes de Medicina</span>
-            </div>
-
-            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold leading-tight">
-              <span className="text-gradient-medical">Fechamentos de PBL</span>
-              <br />
-              <span className="text-foreground">com Inteligência Artificial</span>
-            </h1>
-
-            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              O PreceptorAPG automatiza a etapa mais densa do ciclo de aprendizagem PBL/APG: 
-              o fechamento de objetivos. Gere conteúdo estruturado e baseado em evidências em segundos.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-4">
-              <Button 
-                size="lg" 
-                className="glow-medical text-base sm:text-lg px-6 sm:px-8 w-full sm:w-auto"
-                onClick={() => navigate('/pricing')}
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
+          {/* Subtle gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.03] to-transparent pointer-events-none" />
+          
+          <div className="container px-4 relative">
+            <div className="max-w-3xl mx-auto text-center">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
               >
-                <Zap className="mr-2 h-5 w-5" />
-                Ver Planos
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline"
-                onClick={() => navigate('/auth')}
-                className="w-full sm:w-auto"
-              >
-                Já tenho conta
-              </Button>
-            </div>
-          </div>
-        </section>
+                <p className="text-sm font-medium text-primary mb-4">
+                  Para estudantes de medicina
+                </p>
+                
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+                  Fechamentos de PBL
+                  <span className="block text-muted-foreground font-normal mt-1">
+                    em minutos, não horas
+                  </span>
+                </h1>
 
-        {/* Features Section */}
-        <section className="container px-4 py-10 sm:py-16">
-          <div className="max-w-5xl mx-auto">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-8 sm:mb-12">
-              Tudo que você precisa para seus estudos
-            </h2>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {features.map((feature, index) => (
-                <div 
-                  key={index} 
-                  className="glass rounded-2xl p-5 sm:p-6 border border-border/50 hover-lift"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3 sm:mb-4">
-                    <feature.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-semibold text-base sm:text-lg mb-2">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
+                  Automatize a etapa mais trabalhosa do ciclo PBL. 
+                  Gere conteúdo estruturado, pratique com questões e organize seus estudos.
+                </p>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Button 
+                    size="lg" 
+                    onClick={() => navigate('/pricing')}
+                    className="w-full sm:w-auto"
+                  >
+                    Começar gratuitamente
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    onClick={() => navigate('/auth')}
+                    className="w-full sm:w-auto gap-2"
+                  >
+                    <Play className="h-4 w-4" />
+                    Ver demonstração
+                  </Button>
                 </div>
-              ))}
+              </motion.div>
             </div>
           </div>
         </section>
 
-        {/* Benefits Section */}
-        <section className="container px-4 py-10 sm:py-16">
-          <div className="max-w-3xl mx-auto glass rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 border border-primary/20">
-            <div className="text-center mb-6 sm:mb-8">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4">
-                Por que escolher o PreceptorAPG?
+        {/* How it works */}
+        <section className="py-16 sm:py-24 border-t border-border/30">
+          <div className="container px-4">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4">
+                Como funciona
               </h2>
-              <p className="text-sm sm:text-base text-muted-foreground">
-                Junte-se a estudantes de medicina que já otimizaram seus estudos
+              <p className="text-muted-foreground text-center mb-12 max-w-lg mx-auto">
+                Três passos simples para transformar sua forma de estudar
               </p>
-            </div>
 
-            <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
-              {benefits.map((benefit, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 sm:p-4 rounded-xl bg-background/50">
-                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
-                  <span className="text-sm sm:text-base">{benefit}</span>
-                </div>
+              <div className="space-y-8">
+                {steps.map((step, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                    className="flex gap-4 sm:gap-6"
+                  >
+                    <div className="shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-sm font-bold text-primary">{step.number}</span>
+                      </div>
+                    </div>
+                    <div className="pt-1">
+                      <h3 className="font-semibold text-lg mb-1">{step.title}</h3>
+                      <p className="text-muted-foreground">{step.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features grid */}
+        <section className="py-16 sm:py-24 bg-muted/30 border-t border-border/30">
+          <div className="container px-4">
+            <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4">
+              Tudo para seu estudo em um só lugar
+            </h2>
+            <p className="text-muted-foreground text-center mb-12 max-w-lg mx-auto">
+              Ferramentas desenvolvidas especificamente para a rotina do estudante de medicina
+            </p>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {features.map((feature, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                  className="bg-background rounded-xl p-6 border border-border/50"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                    <feature.icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="font-semibold mb-2">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+                </motion.div>
               ))}
             </div>
+          </div>
+        </section>
 
-            <div className="text-center mt-6 sm:mt-8">
+        {/* Social proof */}
+        <section className="py-16 sm:py-24 border-t border-border/30">
+          <div className="container px-4">
+            <div className="max-w-3xl mx-auto text-center">
+              <div className="flex items-center justify-center gap-2 mb-6">
+                <Users className="h-5 w-5 text-primary" />
+                <span className="text-sm font-medium text-muted-foreground">Usado por estudantes de medicina</span>
+              </div>
+              
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+                Otimize seu tempo de estudo
+              </h2>
+              <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
+                Enquanto outros passam horas organizando fechamentos, você pode focar no que realmente importa: entender o conteúdo.
+              </p>
+
+              <div className="grid sm:grid-cols-3 gap-4 mb-10">
+                <div className="p-4 rounded-lg bg-muted/40">
+                  <p className="text-2xl font-bold text-primary mb-1">2h → 5min</p>
+                  <p className="text-sm text-muted-foreground">Tempo médio de fechamento</p>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/40">
+                  <p className="text-2xl font-bold text-primary mb-1">100%</p>
+                  <p className="text-sm text-muted-foreground">Estrutura padronizada</p>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/40">
+                  <p className="text-2xl font-bold text-primary mb-1">∞</p>
+                  <p className="text-sm text-muted-foreground">Fechamentos e questões</p>
+                </div>
+              </div>
+
               <Button 
                 size="lg" 
-                className="glow-medical w-full sm:w-auto"
                 onClick={() => navigate('/pricing')}
               >
-                Começar Agora
-                <ArrowRight className="ml-2 h-5 w-5" />
+                Começar agora
+                <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="container px-4 py-10 sm:py-16">
-          <div className="max-w-2xl mx-auto text-center space-y-4 sm:space-y-6">
-            <Clock className="h-10 w-10 sm:h-12 sm:w-12 text-primary mx-auto" />
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">
-              Pare de perder tempo com fechamentos manuais
-            </h2>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Comece agora e veja como a IA pode transformar sua forma de estudar medicina.
-            </p>
-            <Button 
-              size="lg" 
-              onClick={() => navigate('/pricing')}
-              className="w-full sm:w-auto"
-            >
-              Ver Planos e Preços
-            </Button>
+        {/* Final CTA */}
+        <section className="py-16 sm:py-24 bg-primary/5 border-t border-border/30">
+          <div className="container px-4">
+            <div className="max-w-2xl mx-auto text-center">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+                Pronto para estudar de forma mais inteligente?
+              </h2>
+              <p className="text-muted-foreground mb-8">
+                Junte-se a estudantes que já otimizaram sua rotina de estudos com o PreceptorIA.
+              </p>
+
+              <div className="space-y-4">
+                <Button 
+                  size="lg" 
+                  onClick={() => navigate('/pricing')}
+                  className="w-full sm:w-auto"
+                >
+                  Ver planos e preços
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+
+                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                    Cancele quando quiser
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                    Suporte por email
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border/30 py-8">
+      <footer className="border-t border-border/30 py-8 bg-background">
         <div className="container px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Stethoscope className="h-5 w-5 text-primary" />
-              <span className="font-semibold">PreceptorAPG</span>
+              <Stethoscope className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">PreceptorIA</span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              © 2024 PreceptorAPG. Todos os direitos reservados.
+            <p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} PreceptorIA. Uso educacional.
             </p>
           </div>
         </div>
