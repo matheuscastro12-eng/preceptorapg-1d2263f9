@@ -102,7 +102,7 @@ const Pricing = () => {
             </div>
             <div>
               <span className="font-display text-xl font-bold text-gradient-medical">
-                PreceptorAPG
+                PreceptorIA
               </span>
               <p className="text-xs text-muted-foreground">Fechamentos com IA</p>
             </div>

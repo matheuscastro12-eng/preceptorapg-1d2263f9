@@ -144,7 +144,7 @@ const createCoverPage = (tema: string): string => {
         text-transform: uppercase;
         margin-bottom: 20px;
       ">
-        PreceptorAPG
+        PreceptorIA
       </div>
       
       <div style="

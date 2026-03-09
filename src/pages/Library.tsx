@@ -90,7 +90,7 @@ const Library = () => {
               <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-primary/20 flex items-center justify-center">
                 <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
               </div>
-              <span className="text-base sm:text-lg font-bold text-gradient-medical">PreceptorAPG</span>
+              <span className="text-base sm:text-lg font-bold text-gradient-medical">PreceptorIA</span>
             </div>
           </div>
           
