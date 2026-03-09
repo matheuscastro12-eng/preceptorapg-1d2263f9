@@ -12,6 +12,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
+import UpgradePaywall from '@/components/UpgradePaywall';
+import { useDemoLimit } from '@/hooks/useDemoLimit';
 
 interface ChatMessage {
   id: string;
@@ -32,6 +34,7 @@ const AIChat = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isSubscriber, remainingPrompts, hasReachedLimit, dailyLimit, usedToday, incrementUsage, loading: demoLoading } = useDemoLimit();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -53,14 +56,12 @@ const AIChat = () => {
   const handlePDF = (msg: ChatMessage) => {
     const container = document.createElement('div');
     container.className = 'markdown-content';
-    // Find the rendered message element
     const el = document.getElementById(`msg-${msg.id}`);
     if (el) {
       container.innerHTML = el.innerHTML;
     } else {
       container.innerText = msg.content;
     }
-    // Find the user question that preceded this answer
     const idx = messages.findIndex(m => m.id === msg.id);
     const question = idx > 0 ? messages[idx - 1]?.content : 'PreceptorIA';
     exportToPDF({ tema: question.slice(0, 100), contentElement: container });
@@ -71,12 +72,20 @@ const AIChat = () => {
   }, [messages]);
 
   const streamChat = async (userMessage: string) => {
+    // Check demo limit before sending
+    if (!isSubscriber && hasReachedLimit) return;
+
     const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: userMessage };
     const assistantId = crypto.randomUUID();
 
     setMessages(prev => [...prev, userMsg]);
     setIsStreaming(true);
     setInput('');
+
+    // Increment usage BEFORE sending (optimistic)
+    if (!isSubscriber) {
+      incrementUsage();
+    }
 
     const allMessages = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
 
@@ -112,7 +121,6 @@ const AIChat = () => {
       let buffer = '';
       let assistantContent = '';
 
-      // Create assistant message with loading state
       setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
 
       while (true) {
@@ -155,6 +163,7 @@ const AIChat = () => {
 
   const handleSend = () => {
     if (!input.trim() || isStreaming) return;
+    if (!isSubscriber && hasReachedLimit) return;
     streamChat(input.trim());
   };
 
@@ -173,7 +182,7 @@ const AIChat = () => {
     setIsStreaming(false);
   };
 
-  if (authLoading) return <PageSkeleton variant="menu" />;
+  if (authLoading || demoLoading) return <PageSkeleton variant="menu" />;
   if (!user) return <Navigate to="/auth" replace />;
 
   const isEmpty = messages.length === 0;
@@ -211,9 +220,19 @@ const AIChat = () => {
         </div>
       </header>
 
+      {/* Demo banner for non-subscribers */}
+      {!isSubscriber && !hasReachedLimit && (
+        <UpgradePaywall variant="banner" remainingPrompts={remainingPrompts} dailyLimit={dailyLimit} />
+      )}
+
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto">
-        {isEmpty ? (
+        {hasReachedLimit && !isSubscriber ? (
+          /* Paywall when limit reached */
+          <div className="h-full flex items-center justify-center px-4">
+            <UpgradePaywall variant="chat-limit" remainingPrompts={remainingPrompts} dailyLimit={dailyLimit} />
+          </div>
+        ) : isEmpty ? (
           /* Welcome Screen */
           <div className="h-full flex flex-col items-center justify-center px-4 py-8">
             <motion.div
@@ -232,6 +251,15 @@ const AIChat = () => {
                 Seu assistente acadêmico de medicina com a mesma profundidade dos fechamentos de APG. 
                 Pergunte qualquer coisa — de bioquímica molecular a raciocínio clínico.
               </p>
+
+              {!isSubscriber && (
+                <div className="mb-6 p-3 rounded-xl bg-primary/5 border border-primary/20">
+                  <p className="text-xs text-muted-foreground">
+                    🎁 <span className="font-medium text-foreground">Modo Demonstração</span> — Você tem <span className="font-bold text-primary">{remainingPrompts}</span> perguntas grátis hoje.
+                    <button onClick={() => navigate('/pricing')} className="text-primary hover:underline ml-1">Assine para ilimitado →</button>
+                  </p>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {SUGGESTIONS.map((s, i) => (
@@ -331,22 +359,22 @@ const AIChat = () => {
         )}
       </div>
 
-      {/* Input Area */}
+      {/* Input Area - disabled when limit reached */}
       <div className="shrink-0 border-t border-border/20 bg-background/90 backdrop-blur-xl p-3 sm:p-4">
         <div className="container max-w-3xl flex gap-2 items-end">
           <Textarea
             ref={textareaRef}
-            placeholder="Pergunte sobre qualquer tema médico..."
+            placeholder={hasReachedLimit && !isSubscriber ? "Limite diário atingido — assine para continuar" : "Pergunte sobre qualquer tema médico..."}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             className="flex-1 min-h-[44px] max-h-[120px] resize-none text-sm"
             rows={1}
-            disabled={isStreaming}
+            disabled={isStreaming || (hasReachedLimit && !isSubscriber)}
           />
           <Button
             onClick={handleSend}
-            disabled={!input.trim() || isStreaming}
+            disabled={!input.trim() || isStreaming || (hasReachedLimit && !isSubscriber)}
             size="icon"
             className="shrink-0 h-11 w-11 rounded-xl"
           >
