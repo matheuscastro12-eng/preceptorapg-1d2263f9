@@ -168,7 +168,7 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
           Biblioteca Pessoal
         </CardTitle>
         <CardDescription>
-          Seus fechamentos salvos ({fechamentos.length} itens)
+          Seus conteúdos salvos ({fechamentos.length} itens)
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
