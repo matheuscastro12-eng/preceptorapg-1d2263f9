@@ -3,13 +3,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAdmin } from '@/hooks/useAdmin';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { Stethoscope, BookOpen, Brain, FlaskConical, GraduationCap, Library, Shield, AlertTriangle, MessageSquare, ChevronRight, Zap } from 'lucide-react';
+import { Stethoscope, BookOpen, Brain, FlaskConical, GraduationCap, Library, Shield, AlertTriangle, MessageSquare, ChevronRight, Zap, Lock, Crown } from 'lucide-react';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import { motion } from 'framer-motion';
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
 import { useToast } from '@/hooks/use-toast';
 import OnboardingTour, { type TourStep } from '@/components/OnboardingTour';
+import { Button } from '@/components/ui/button';
 
 const menuTourSteps: TourStep[] = [
   {
