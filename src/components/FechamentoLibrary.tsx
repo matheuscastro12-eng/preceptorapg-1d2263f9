@@ -247,10 +247,22 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
                   className="group flex items-center justify-between rounded-lg border border-border/50 bg-background/50 p-3 transition-colors hover:bg-accent/50"
                 >
                   <div className="min-w-0 flex-1">
-                    <h4 className="truncate font-medium">{fechamento.tema}</h4>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="truncate font-medium">{fechamento.tema}</h4>
+                      <Badge variant="secondary" className="text-xs">
+                        {getTypeIcon(fechamento.tipo)}
+                        <span className="ml-1">{getTypeLabel(fechamento.tipo)}</span>
+                      </Badge>
+                    </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Calendar className="h-3 w-3" />
                       {format(new Date(fechamento.created_at), "dd 'de' MMM, yyyy", { locale: ptBR })}
+                      {fechamento.exam_config && (
+                        <>
+                          <span>•</span>
+                          <span>{fechamento.exam_config.quantidade}Q • {fechamento.exam_config.nivel}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
