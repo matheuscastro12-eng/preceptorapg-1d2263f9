@@ -14,6 +14,34 @@ import InputPanel from '@/components/dashboard/InputPanel';
 import ResultPanel from '@/components/dashboard/ResultPanel';
 import { exportToPDF } from '@/utils/pdfExport';
 import type { GenerationMode } from '@/components/dashboard/ModeToggle';
+import OnboardingTour, { type TourStep } from '@/components/OnboardingTour';
+
+const dashboardTourSteps: TourStep[] = [
+  {
+    target: '[data-tour="tema-input"]',
+    title: 'Tema do Estudo',
+    description: 'Digite o tema central do seu estudo. Use os chips de sugestão abaixo para temas comuns ou digite livremente.',
+    placement: 'right',
+  },
+  {
+    target: '[data-tour="objetivos-input"]',
+    title: 'Objetivos (Opcional)',
+    description: 'Liste os objetivos específicos que você quer abordar. Deixe em branco para a IA sugerir automaticamente.',
+    placement: 'right',
+  },
+  {
+    target: '[data-tour="mode-toggle"]',
+    title: 'Tipo de Conteúdo',
+    description: 'Escolha entre Fechamento (resumo focado) ou Seminário (apresentação completa).',
+    placement: 'right',
+  },
+  {
+    target: '[data-tour="generate-btn"]',
+    title: 'Gerar Conteúdo',
+    description: 'Clique para iniciar a geração. O conteúdo aparecerá em tempo real no painel ao lado.',
+    placement: 'right',
+  },
+];
 
 const Dashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
