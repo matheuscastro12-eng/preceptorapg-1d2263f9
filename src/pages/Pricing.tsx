@@ -121,7 +121,7 @@ const Pricing = () => {
                   Escolha seu plano
                 </h1>
                 <p className="text-muted-foreground max-w-lg mx-auto">
-                  Acesso completo a todas as ferramentas do PreceptorIA. Cancele quando quiser.
+                  Acesso completo a todas as ferramentas do PreceptorMED. Cancele quando quiser.
                 </p>
               </motion.div>
 
