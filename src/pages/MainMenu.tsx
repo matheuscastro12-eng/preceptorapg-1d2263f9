@@ -297,7 +297,7 @@ const MainMenu = () => {
               <MessageSquare className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-bold text-foreground">PRECEPTORIA</h2>
+              <h2 className="text-sm font-bold text-foreground">PRECEPTORMED</h2>
               <p className="text-xs text-muted-foreground truncate">
                 {isFreeUser ? 'Chat com IA — 2 perguntas grátis/dia' : 'Chat livre com IA acadêmica'}
               </p>

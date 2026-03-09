@@ -382,7 +382,7 @@ const AIChat = () => {
           </Button>
         </div>
         <p className="text-center text-[10px] text-muted-foreground/50 mt-2">
-          PreceptorIA é uma ferramenta educacional. Sempre valide com fontes primárias.
+          PreceptorMED é uma ferramenta educacional. Sempre valide com fontes primárias.
         </p>
       </div>
     </PageTransition>

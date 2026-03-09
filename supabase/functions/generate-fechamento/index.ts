@@ -451,7 +451,7 @@ Gere um ROTEIRO DE SLIDES COMPLETO para seminário acadêmico sobre este tema. C
     } else {
       userPrompt = `**Tema Central:** ${sanitizedTema}
 
-Gere um fechamento de APG COMPLETO, EXTENSO e PROFUNDO sobre este tema. Não seja superficial. Cubra TODOS os aspectos relevantes com máxima profundidade técnica.`;
+Gere um fechamento de PBL COMPLETO, EXTENSO e PROFUNDO sobre este tema. Não seja superficial. Cubra TODOS os aspectos relevantes com máxima profundidade técnica.`;
     }
     
     if (sanitizedObjetivos) {

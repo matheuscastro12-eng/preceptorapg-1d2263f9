@@ -182,7 +182,7 @@ const Auth = () => {
               <Stethoscope className="h-10 w-10 text-primary" />
             </div>
             <h1 className="font-display text-2xl font-bold text-gradient-medical">
-              PreceptorAPG
+              PreceptorMED
             </h1>
           </div>
           
