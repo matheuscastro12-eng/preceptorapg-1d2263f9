@@ -273,11 +273,8 @@ const MainMenu = () => {
               {isFreeUser ? 'Desbloquear' : 'Treinar'}
               <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
-            </div>
           </motion.button>
         </div>
-
-        {/* Secondary Features */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-5xl mx-auto mt-5">
           {/* BIBLIOTECA */}
           <motion.button
