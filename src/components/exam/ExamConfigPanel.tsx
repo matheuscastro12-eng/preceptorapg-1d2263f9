@@ -90,11 +90,13 @@ const ExamConfigPanel = ({
         )}
 
         {/* Content Selector */}
-        <ContentSelector
-          selectedIds={selectedIds}
-          onSelectionChange={onSelectionChange}
-          disabled={generating}
-        />
+        <div data-tour="content-selector">
+          <ContentSelector
+            selectedIds={selectedIds}
+            onSelectionChange={onSelectionChange}
+            disabled={generating}
+          />
+        </div>
 
         {/* Question Count — only for prova mode */}
         {isProva && (
