@@ -63,7 +63,7 @@ const AIChat = () => {
       container.innerText = msg.content;
     }
     const idx = messages.findIndex(m => m.id === msg.id);
-    const question = idx > 0 ? messages[idx - 1]?.content : 'PreceptorIA';
+    const question = idx > 0 ? messages[idx - 1]?.content : 'PreceptorMED';
     exportToPDF({ tema: question.slice(0, 100), contentElement: container });
   };
 
