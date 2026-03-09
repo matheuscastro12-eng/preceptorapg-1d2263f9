@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { 
   Library, 
   Star, 
@@ -13,7 +14,11 @@ import {
   Search, 
   Loader2,
   Calendar,
-  Eye
+  Eye,
+  FileText,
+  ClipboardList,
+  Stethoscope,
+  Play
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -25,6 +30,12 @@ interface Fechamento {
   resultado: string;
   favorito: boolean;
   created_at: string;
+  tipo: 'fechamento' | 'prova' | 'caso_clinico';
+  exam_config?: {
+    quantidade: number;
+    nivel: string;
+    simulationMode: boolean;
+  };
 }
 
 interface FechamentoLibraryProps {
