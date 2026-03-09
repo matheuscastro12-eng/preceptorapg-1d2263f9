@@ -113,7 +113,7 @@ const MainMenu = () => {
               <Stethoscope className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <span className="text-lg font-bold text-gradient-medical">PreceptorIA</span>
+              <span className="text-lg font-bold text-gradient-medical">PreceptorMED</span>
               <p className="text-[10px] text-muted-foreground hidden sm:block">Sua plataforma de estudos</p>
             </div>
           </div>
@@ -297,7 +297,7 @@ const MainMenu = () => {
               <MessageSquare className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-bold text-foreground">PRECEPTORIA</h2>
+              <h2 className="text-sm font-bold text-foreground">PRECEPTORMED</h2>
               <p className="text-xs text-muted-foreground truncate">
                 {isFreeUser ? 'Chat com IA — 2 perguntas grátis/dia' : 'Chat livre com IA acadêmica'}
               </p>
@@ -370,7 +370,7 @@ const MainMenu = () => {
         {/* Footer */}
         <div className="text-center mt-8 sm:mt-10">
           <p className="text-[10px] sm:text-xs text-muted-foreground/50">
-            PreceptorIA © {new Date().getFullYear()} — Ferramenta educacional. Uso acadêmico.
+            PreceptorMED © {new Date().getFullYear()} — Ferramenta educacional. Uso acadêmico.
           </p>
         </div>
       </main>

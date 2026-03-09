@@ -90,7 +90,7 @@ const Pricing = () => {
               <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Stethoscope className="h-5 w-5 text-primary" />
               </div>
-              <span className="text-lg font-bold">PreceptorIA</span>
+              <span className="text-lg font-bold">PreceptorMED</span>
             </button>
           </div>
 
@@ -121,7 +121,7 @@ const Pricing = () => {
                   Escolha seu plano
                 </h1>
                 <p className="text-muted-foreground max-w-lg mx-auto">
-                  Acesso completo a todas as ferramentas do PreceptorIA. Cancele quando quiser.
+                  Acesso completo a todas as ferramentas do PreceptorMED. Cancele quando quiser.
                 </p>
               </motion.div>
 
@@ -258,10 +258,10 @@ const Pricing = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Stethoscope className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">PreceptorIA</span>
+              <span className="text-sm text-muted-foreground">PreceptorMED</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} PreceptorIA. Uso educacional.
+              © {new Date().getFullYear()} PreceptorMED. Uso educacional.
             </p>
           </div>
         </div>

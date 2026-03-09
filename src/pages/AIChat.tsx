@@ -63,7 +63,7 @@ const AIChat = () => {
       container.innerText = msg.content;
     }
     const idx = messages.findIndex(m => m.id === msg.id);
-    const question = idx > 0 ? messages[idx - 1]?.content : 'PreceptorIA';
+    const question = idx > 0 ? messages[idx - 1]?.content : 'PreceptorMED';
     exportToPDF({ tema: question.slice(0, 100), contentElement: container });
   };
 
@@ -203,7 +203,7 @@ const AIChat = () => {
               <Stethoscope className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <span className="font-bold text-foreground text-sm">PreceptorIA</span>
+              <span className="font-bold text-foreground text-sm">PreceptorMED</span>
               <span className="text-[10px] text-muted-foreground block leading-none">Chat Acadêmico</span>
             </div>
           </div>
@@ -245,10 +245,10 @@ const AIChat = () => {
                 <Sparkles className="h-8 w-8 text-primary" />
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
-                Olá! Sou o <span className="text-primary">PreceptorIA</span>
+                Olá! Sou o <span className="text-primary">PreceptorMED</span>
               </h2>
               <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
-                Seu assistente acadêmico de medicina com a mesma profundidade dos fechamentos de APG. 
+                Seu assistente acadêmico de medicina com a mesma profundidade dos fechamentos de PBL. 
                 Pergunte qualquer coisa — de bioquímica molecular a raciocínio clínico.
               </p>
 
@@ -382,7 +382,7 @@ const AIChat = () => {
           </Button>
         </div>
         <p className="text-center text-[10px] text-muted-foreground/50 mt-2">
-          PreceptorIA é uma ferramenta educacional. Sempre valide com fontes primárias.
+          PreceptorMED é uma ferramenta educacional. Sempre valide com fontes primárias.
         </p>
       </div>
     </PageTransition>
