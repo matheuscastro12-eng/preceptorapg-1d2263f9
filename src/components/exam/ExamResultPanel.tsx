@@ -42,6 +42,21 @@ const ExamResultPanel = ({
     return parseQuestionsFromMarkdown(resultado);
   }, [resultado, isProva]);
 
+  const handleSave = async () => {
+    if (!onSave || !saveTema.trim()) return;
+    
+    setSaving(true);
+    try {
+      await onSave(saveTema);
+      setSaveDialogOpen(false);
+      setSaveTema('');
+    } catch (error) {
+      // Error is handled in the hook
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const hasInteractiveQuestions = isProva && parsedQuestions.length > 0;
 
   return (
