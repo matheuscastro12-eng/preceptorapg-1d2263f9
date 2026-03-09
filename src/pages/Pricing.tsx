@@ -90,7 +90,7 @@ const Pricing = () => {
               <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Stethoscope className="h-5 w-5 text-primary" />
               </div>
-              <span className="text-lg font-bold">PreceptorIA</span>
+              <span className="text-lg font-bold">PreceptorMED</span>
             </button>
           </div>
 
