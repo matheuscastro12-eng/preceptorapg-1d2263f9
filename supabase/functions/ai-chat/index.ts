@@ -86,7 +86,7 @@ serve(async (req) => {
       );
     }
 
-    // Check subscription
+    // Check subscription status
     const { data: subscription } = await supabaseClient
       .from("subscriptions")
       .select("status, plan_type")
@@ -103,11 +103,34 @@ serve(async (req) => {
     const isAdmin = !!userRole;
     const hasAccess = subscription?.status === "active" || subscription?.plan_type === "free_access" || isAdmin;
 
+    // If user is NOT a subscriber, enforce server-side daily demo limit
     if (!hasAccess) {
-      return new Response(
-        JSON.stringify({ error: "Assinatura ativa necessária" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      const today = new Date().toISOString().split("T")[0];
+      const adminClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
       );
+
+      const { count } = await adminClient
+        .from("generation_logs")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("function_name", "ai-chat")
+        .gte("created_at", `${today}T00:00:00.000Z`);
+
+      const DEMO_DAILY_LIMIT = 2;
+      if ((count ?? 0) >= DEMO_DAILY_LIMIT) {
+        return new Response(
+          JSON.stringify({ error: "Limite diário atingido. Assine para continuar." }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Log this demo usage
+      await adminClient.from("generation_logs").insert({
+        user_id: userId,
+        function_name: "ai-chat",
+      });
     }
 
     const body = await req.json();
