@@ -69,7 +69,37 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setFechamentos(data as Fechamento[] || []);
+
+      const normalized: Fechamento[] = (data ?? []).map((item) => {
+        const tipo = item.tipo === 'prova' || item.tipo === 'caso_clinico' ? item.tipo : 'fechamento';
+        const config = item.exam_config;
+        const examConfig =
+          config &&
+          typeof config === 'object' &&
+          !Array.isArray(config) &&
+          'quantidade' in config &&
+          'nivel' in config &&
+          'simulationMode' in config
+            ? {
+                quantidade: Number(config.quantidade),
+                nivel: String(config.nivel),
+                simulationMode: Boolean(config.simulationMode),
+              }
+            : null;
+
+        return {
+          id: item.id,
+          tema: item.tema,
+          objetivos: item.objetivos,
+          resultado: item.resultado,
+          favorito: item.favorito,
+          created_at: item.created_at,
+          tipo,
+          exam_config: examConfig,
+        };
+      });
+
+      setFechamentos(normalized);
     } catch (error) {
       console.error('Error fetching fechamentos:', error);
       toast({
