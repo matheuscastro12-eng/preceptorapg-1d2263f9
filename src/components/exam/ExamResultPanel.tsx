@@ -100,6 +100,49 @@ const ExamResultPanel = ({
               <Copy className="h-4 w-4" />
               <span className="hidden sm:inline">Copiar</span>
             </Button>
+            {onSave && (
+              <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 border-border/40 hover:bg-green-500/10 hover:text-green-600 hover:border-green-500/40 transition-all"
+                  >
+                    <Save className="h-4 w-4" />
+                    <span className="hidden sm:inline">Salvar</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Salvar na Biblioteca</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-4">
+                    <Input
+                      placeholder="Nome para identificar..."
+                      value={saveTema}
+                      onChange={(e) => setSaveTema(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setSaveDialogOpen(false)}
+                        disabled={saving}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        onClick={handleSave}
+                        disabled={!saveTema.trim() || saving}
+                      >
+                        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Salvar
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
             <Button
               variant="outline"
               size="sm"
