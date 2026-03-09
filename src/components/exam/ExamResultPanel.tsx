@@ -1,9 +1,11 @@
-import { RefObject, useMemo } from 'react';
+import { RefObject, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import InteractiveQuestion, { parseQuestionsFromMarkdown } from '@/components/exam/InteractiveQuestion';
-import { Loader2, Copy, Download, Sparkles, FileQuestion, CheckCircle2, Stethoscope } from 'lucide-react';
+import { Loader2, Copy, Download, Sparkles, FileQuestion, CheckCircle2, Stethoscope, Save } from 'lucide-react';
 
 interface ExamResultPanelProps {
   resultado: string;
@@ -12,6 +14,7 @@ interface ExamResultPanelProps {
   resultRef: RefObject<HTMLDivElement>;
   onCopy: () => void;
   onExportPDF: () => void;
+  onSave?: (tema: string) => Promise<void>;
   title?: string;
   generatingLabel?: string;
 }
@@ -23,9 +26,14 @@ const ExamResultPanel = ({
   resultRef,
   onCopy,
   onExportPDF,
+  onSave,
   title = 'Prova Gerada',
   generatingLabel = 'Elaborando questões...',
 }: ExamResultPanelProps) => {
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [saveTema, setSaveTema] = useState('');
+  const [saving, setSaving] = useState(false);
+
   const showActions = resultado && !generating;
   const isProva = !title.includes('Caso');
 
@@ -33,6 +41,21 @@ const ExamResultPanel = ({
     if (!isProva || !resultado) return [];
     return parseQuestionsFromMarkdown(resultado);
   }, [resultado, isProva]);
+
+  const handleSave = async () => {
+    if (!onSave || !saveTema.trim()) return;
+    
+    setSaving(true);
+    try {
+      await onSave(saveTema);
+      setSaveDialogOpen(false);
+      setSaveTema('');
+    } catch (error) {
+      // Error is handled in the hook
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const hasInteractiveQuestions = isProva && parsedQuestions.length > 0;
 
@@ -77,6 +100,49 @@ const ExamResultPanel = ({
               <Copy className="h-4 w-4" />
               <span className="hidden sm:inline">Copiar</span>
             </Button>
+            {onSave && (
+              <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 border-border/40 hover:bg-green-50 hover:text-green-700 dark:hover:bg-green-950 dark:hover:text-green-400 hover:border-green-400/40 transition-all"
+                  >
+                    <Save className="h-4 w-4" />
+                    <span className="hidden sm:inline">Salvar</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Salvar na Biblioteca</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-4">
+                    <Input
+                      placeholder="Nome para identificar..."
+                      value={saveTema}
+                      onChange={(e) => setSaveTema(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setSaveDialogOpen(false)}
+                        disabled={saving}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        onClick={handleSave}
+                        disabled={!saveTema.trim() || saving}
+                      >
+                        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Salvar
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
             <Button
               variant="outline"
               size="sm"

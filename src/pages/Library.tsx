@@ -19,6 +19,8 @@ interface Fechamento {
   resultado: string;
   favorito: boolean;
   created_at: string;
+  tipo: 'fechamento' | 'prova' | 'caso_clinico';
+  exam_config: { quantidade: number; nivel: string; simulationMode: boolean } | null;
 }
 
 const Library = () => {
@@ -38,6 +40,11 @@ const Library = () => {
 
   const handleSelectFechamento = (fechamento: Fechamento) => {
     setSelectedFechamento(fechamento);
+  };
+
+  const handleRedoExam = (fechamento: Fechamento) => {
+    const mode = fechamento.tipo === 'caso_clinico' ? 'caso_clinico' : 'prova';
+    navigate(`/exam?mode=${mode}`);
   };
 
   const handleExportPDF = async () => {
@@ -107,7 +114,7 @@ const Library = () => {
       {/* Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <FechamentoLibrary onSelect={handleSelectFechamento} />
+          <FechamentoLibrary onSelect={handleSelectFechamento} onRedoExam={handleRedoExam} />
         </div>
       </main>
 

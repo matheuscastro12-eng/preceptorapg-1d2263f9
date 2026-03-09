@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { 
   Library, 
   Star, 
@@ -13,10 +14,20 @@ import {
   Search, 
   Loader2,
   Calendar,
-  Eye
+  Eye,
+  FileText,
+  ClipboardList,
+  Stethoscope,
+  Play
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+interface ExamConfigData {
+  quantidade: number;
+  nivel: string;
+  simulationMode: boolean;
+}
 
 interface Fechamento {
   id: string;
@@ -25,20 +36,24 @@ interface Fechamento {
   resultado: string;
   favorito: boolean;
   created_at: string;
+  tipo: 'fechamento' | 'prova' | 'caso_clinico';
+  exam_config: ExamConfigData | null;
 }
 
 interface FechamentoLibraryProps {
   onSelect: (fechamento: Fechamento) => void;
   onFavoriteChange?: () => void;
+  onRedoExam?: (fechamento: Fechamento) => void;
 }
 
-const FechamentoLibrary = ({ onSelect, onFavoriteChange }: FechamentoLibraryProps) => {
+const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: FechamentoLibraryProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [fechamentos, setFechamentos] = useState<Fechamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [selectedType, setSelectedType] = useState<'all' | 'fechamento' | 'prova' | 'caso_clinico'>('all');
 
   useEffect(() => {
     if (user) {
@@ -54,7 +69,37 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange }: FechamentoLibraryProp
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setFechamentos(data || []);
+
+      const normalized: Fechamento[] = (data ?? []).map((item) => {
+        const tipo = item.tipo === 'prova' || item.tipo === 'caso_clinico' ? item.tipo : 'fechamento';
+        const config = item.exam_config;
+        const examConfig =
+          config &&
+          typeof config === 'object' &&
+          !Array.isArray(config) &&
+          'quantidade' in config &&
+          'nivel' in config &&
+          'simulationMode' in config
+            ? {
+                quantidade: Number(config.quantidade),
+                nivel: String(config.nivel),
+                simulationMode: Boolean(config.simulationMode),
+              }
+            : null;
+
+        return {
+          id: item.id,
+          tema: item.tema,
+          objetivos: item.objetivos,
+          resultado: item.resultado,
+          favorito: item.favorito,
+          created_at: item.created_at,
+          tipo,
+          exam_config: examConfig,
+        };
+      });
+
+      setFechamentos(normalized);
     } catch (error) {
       console.error('Error fetching fechamentos:', error);
       toast({
@@ -123,11 +168,28 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange }: FechamentoLibraryProp
     }
   };
 
+  const getTypeIcon = (tipo: string) => {
+    switch (tipo) {
+      case 'prova': return <ClipboardList className="h-4 w-4" />;
+      case 'caso_clinico': return <Stethoscope className="h-4 w-4" />;
+      default: return <FileText className="h-4 w-4" />;
+    }
+  };
+
+  const getTypeLabel = (tipo: string) => {
+    switch (tipo) {
+      case 'prova': return 'Prova';
+      case 'caso_clinico': return 'Caso Clínico';
+      default: return 'Fechamento';
+    }
+  };
+
   const filteredFechamentos = fechamentos.filter(f => {
     const matchesSearch = f.tema.toLowerCase().includes(searchTerm.toLowerCase()) ||
       f.objetivos?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFavorites = showFavoritesOnly ? f.favorito : true;
-    return matchesSearch && matchesFavorites;
+    const matchesType = selectedType === 'all' ? true : f.tipo === selectedType;
+    return matchesSearch && matchesFavorites && matchesType;
   });
 
   return (
@@ -138,30 +200,52 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange }: FechamentoLibraryProp
           Biblioteca Pessoal
         </CardTitle>
         <CardDescription>
-          Seus fechamentos salvos ({fechamentos.length} itens)
+          Seus conteúdos salvos ({fechamentos.length} itens)
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Search and Filters */}
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por tema..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por tema..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Button
+              variant={showFavoritesOnly ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              className="shrink-0"
+            >
+              <Star className={`mr-2 h-4 w-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+              Favoritos
+            </Button>
           </div>
-          <Button
-            variant={showFavoritesOnly ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            className="shrink-0"
-          >
-            <Star className={`mr-2 h-4 w-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-            Favoritos
-          </Button>
+          
+          {/* Type Filter */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: 'all', label: 'Todos' },
+              { value: 'fechamento', label: 'Fechamentos' },
+              { value: 'prova', label: 'Provas' },
+              { value: 'caso_clinico', label: 'Casos Clínicos' }
+            ].map((type) => (
+              <Button
+                key={type.value}
+                variant={selectedType === type.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedType(type.value as typeof selectedType)}
+                className="text-xs"
+              >
+                {type.label}
+              </Button>
+            ))}
+          </div>
         </div>
 
         {/* Fechamentos List */}
@@ -182,9 +266,9 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange }: FechamentoLibraryProp
           </div>
         ) : filteredFechamentos.length === 0 ? (
           <div className="py-8 text-center text-muted-foreground">
-            {searchTerm || showFavoritesOnly
-              ? 'Nenhum fechamento encontrado.'
-              : 'Nenhum fechamento salvo ainda.'}
+            {searchTerm || showFavoritesOnly || selectedType !== 'all'
+              ? 'Nenhum conteúdo encontrado.'
+              : 'Nenhum conteúdo salvo ainda.'}
           </div>
         ) : (
           <ScrollArea className="h-[300px]">
@@ -195,13 +279,36 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange }: FechamentoLibraryProp
                   className="group flex items-center justify-between rounded-lg border border-border/50 bg-background/50 p-3 transition-colors hover:bg-accent/50"
                 >
                   <div className="min-w-0 flex-1">
-                    <h4 className="truncate font-medium">{fechamento.tema}</h4>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="truncate font-medium">{fechamento.tema}</h4>
+                      <Badge variant="secondary" className="text-xs">
+                        {getTypeIcon(fechamento.tipo)}
+                        <span className="ml-1">{getTypeLabel(fechamento.tipo)}</span>
+                      </Badge>
+                    </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Calendar className="h-3 w-3" />
                       {format(new Date(fechamento.created_at), "dd 'de' MMM, yyyy", { locale: ptBR })}
+                      {fechamento.exam_config && (
+                        <>
+                          <span>•</span>
+                          <span>{fechamento.exam_config.quantidade}Q • {fechamento.exam_config.nivel}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
+                    {(fechamento.tipo === 'prova' || fechamento.tipo === 'caso_clinico') && onRedoExam && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-primary"
+                        onClick={() => onRedoExam(fechamento)}
+                        title="Refazer"
+                      >
+                        <Play className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -216,7 +323,7 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange }: FechamentoLibraryProp
                       className="h-8 w-8"
                       onClick={() => toggleFavorite(fechamento.id, fechamento.favorito)}
                     >
-                      <Star className={`h-4 w-4 ${fechamento.favorito ? 'fill-yellow-500 text-yellow-500' : ''}`} />
+                      <Star className={`h-4 w-4 ${fechamento.favorito ? 'fill-primary text-primary' : ''}`} />
                     </Button>
                     <Button
                       variant="ghost"
