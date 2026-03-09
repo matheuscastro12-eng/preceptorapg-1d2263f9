@@ -144,26 +144,12 @@ const OnboardingTour = ({ steps, tourKey, onComplete }: OnboardingTourProps) => 
             }}
           />
 
-          {/* Target highlight ring */}
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            className="fixed z-[9999] pointer-events-none rounded-xl ring-2 ring-primary ring-offset-2 ring-offset-background"
-            style={{
-              top: targetRect.top - 4,
-              left: targetRect.left - 4,
-              width: targetRect.width + 8,
-              height: targetRect.height + 8,
-            }}
-          />
-
-          {/* Tooltip */}
+          {/* Tooltip - highest z-index to always be visible */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="fixed z-[10000] w-80 rounded-2xl border border-border/50 bg-card p-5 shadow-2xl"
+            className="fixed z-[9999] w-80 rounded-2xl border border-primary/30 bg-card p-5 shadow-2xl"
             style={tooltipStyle}
           >
             {/* Close button */}
