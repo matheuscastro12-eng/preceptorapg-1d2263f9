@@ -68,7 +68,9 @@ const Exam = () => {
     generating,
     hasStartedReceiving,
     isComplete,
+    currentConfig,
     generate,
+    saveToLibrary,
     reset,
   } = useExamGenerator();
 
