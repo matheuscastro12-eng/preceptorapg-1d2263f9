@@ -176,9 +176,16 @@ const MainMenu = () => {
             animate="visible"
             whileHover={{ scale: 1.02, y: -4 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => navigate('/dashboard')}
-            className="group relative lg:col-span-2 lg:row-span-2 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-6 sm:p-8 text-left transition-all duration-300 cursor-pointer overflow-hidden hover:border-primary/50 hover:shadow-[0_0_40px_hsl(var(--primary)/0.15)]"
+            onClick={() => isFreeUser ? navigate('/pricing') : navigate('/dashboard')}
+            className={`group relative lg:col-span-2 lg:row-span-2 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-6 sm:p-8 text-left transition-all duration-300 cursor-pointer overflow-hidden hover:border-primary/50 hover:shadow-[0_0_40px_hsl(var(--primary)/0.15)] ${isFreeUser ? 'opacity-80' : ''}`}
           >
+            {/* Lock overlay for free users */}
+            {isFreeUser && (
+              <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background/80 border border-border/50 text-[10px] font-medium text-muted-foreground">
+                <Lock className="h-3 w-3" />
+                Premium
+              </div>
+            )}
             {/* Decorative glow */}
             <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-primary/20 to-transparent rounded-bl-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-accent/10 to-transparent rounded-tr-full pointer-events-none" />
@@ -201,7 +208,7 @@ const MainMenu = () => {
             </p>
 
             <div className="flex items-center gap-2 mt-6 text-primary text-sm font-medium">
-              Começar agora
+              {isFreeUser ? 'Desbloquear' : 'Começar agora'}
               <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </motion.button>
@@ -215,9 +222,14 @@ const MainMenu = () => {
             animate="visible"
             whileHover={{ scale: 1.03, y: -4 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => navigate('/exam?mode=caso_clinico')}
-            className="group relative rounded-2xl border border-accent/30 bg-gradient-to-br from-accent/15 via-accent/5 to-transparent p-5 sm:p-6 text-left transition-all duration-300 cursor-pointer overflow-hidden hover:border-accent/50 hover:shadow-[0_0_30px_hsl(var(--accent)/0.15)]"
+            onClick={() => isFreeUser ? navigate('/pricing') : navigate('/exam?mode=caso_clinico')}
+            className={`group relative rounded-2xl border border-accent/30 bg-gradient-to-br from-accent/15 via-accent/5 to-transparent p-5 sm:p-6 text-left transition-all duration-300 cursor-pointer overflow-hidden hover:border-accent/50 hover:shadow-[0_0_30px_hsl(var(--accent)/0.15)] ${isFreeUser ? 'opacity-80' : ''}`}
           >
+            {isFreeUser && (
+              <div className="absolute top-3 right-3 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full bg-background/80 border border-border/50 text-[10px] font-medium text-muted-foreground">
+                <Lock className="h-3 w-3" />
+              </div>
+            )}
             <div className="h-12 w-12 rounded-xl bg-accent/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <FlaskConical className="h-6 w-6 text-accent" />
             </div>
@@ -227,8 +239,9 @@ const MainMenu = () => {
               Casos clínicos elaborados com base nos seus estudos anteriores
             </p>
             <div className="flex items-center gap-1 mt-4 text-accent text-xs font-medium">
-              Praticar
+              {isFreeUser ? 'Desbloquear' : 'Praticar'}
               <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
             </div>
           </motion.button>
 
