@@ -73,7 +73,7 @@ const InputPanel = ({
       </div>
 
       {/* Mode Toggle */}
-      <div className="mb-5 relative">
+      <div className="mb-5 relative" data-tour="mode-toggle">
         <ModeToggle mode={modo} onChange={setModo} disabled={generating} />
       </div>
 
