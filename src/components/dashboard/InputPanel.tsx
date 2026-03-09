@@ -73,12 +73,12 @@ const InputPanel = ({
       </div>
 
       {/* Mode Toggle */}
-      <div className="mb-5 relative">
+      <div className="mb-5 relative" data-tour="mode-toggle">
         <ModeToggle mode={modo} onChange={setModo} disabled={generating} />
       </div>
 
       <div className="space-y-5 flex-1 relative">
-        <div className="space-y-2.5">
+        <div className="space-y-2.5" data-tour="tema-input">
           <Label htmlFor="tema" className="text-sm font-medium flex items-center gap-2">
             <Target className="h-3.5 w-3.5 text-primary" />
             Tema Central <span className="text-destructive">*</span>
@@ -113,7 +113,7 @@ const InputPanel = ({
           )}
         </div>
         
-        <div className="space-y-2.5 flex-1">
+        <div className="space-y-2.5 flex-1" data-tour="objetivos-input">
           <Label htmlFor="objetivos" className="text-sm font-medium flex items-center gap-2">
             <Lightbulb className="h-3.5 w-3.5 text-accent" />
             Objetivos 
@@ -143,7 +143,7 @@ const InputPanel = ({
         </div>
       </div>
 
-      <div className="space-y-4 mt-6 relative">
+      <div className="space-y-4 mt-6 relative" data-tour="generate-btn">
         <Button 
           className={`w-full h-12 text-base font-semibold shadow-lg transition-all duration-300 group ${
             isSeminario

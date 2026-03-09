@@ -90,15 +90,17 @@ const ExamConfigPanel = ({
         )}
 
         {/* Content Selector */}
-        <ContentSelector
-          selectedIds={selectedIds}
-          onSelectionChange={onSelectionChange}
-          disabled={generating}
-        />
+        <div data-tour="content-selector">
+          <ContentSelector
+            selectedIds={selectedIds}
+            onSelectionChange={onSelectionChange}
+            disabled={generating}
+          />
+        </div>
 
         {/* Question Count — only for prova mode */}
         {isProva && (
-          <div className="space-y-3">
+          <div className="space-y-3" data-tour="exam-config">
             <Label className="text-sm font-medium flex items-center gap-2">
               <Target className="h-3.5 w-3.5 text-primary" />
               Quantidade de Questões
@@ -157,7 +159,7 @@ const ExamConfigPanel = ({
 
         {/* Simulation Mode — only for prova mode */}
         {isProva && (
-          <div className="flex items-center justify-between p-3 rounded-xl border border-border/30 bg-background/40">
+          <div className="flex items-center justify-between p-3 rounded-xl border border-border/30 bg-background/40" data-tour="simulation-toggle">
             <div className="flex items-center gap-2">
               <ToggleLeft className="h-4 w-4 text-accent" />
               <div>
@@ -174,7 +176,7 @@ const ExamConfigPanel = ({
         )}
       </div>
 
-      <div className="space-y-4 mt-6 relative">
+      <div className="space-y-4 mt-6 relative" data-tour="generate-exam-btn">
         <Button
           className={`w-full h-12 text-base font-semibold shadow-lg transition-all duration-300 group ${
             isCasoClin
