@@ -276,18 +276,52 @@ const MainMenu = () => {
           </motion.button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-5xl mx-auto mt-5">
-          {/* BIBLIOTECA */}
+          {/* PRECEPTORIA CHAT - Always accessible */}
           <motion.button
-            data-tour="biblioteca"
+            data-tour="preceptoria"
             custom={3}
             variants={cardVariants}
             initial="hidden"
             animate="visible"
             whileHover={{ scale: 1.01, y: -2 }}
             whileTap={{ scale: 0.99 }}
-            onClick={() => navigate('/library')}
-            className="group relative rounded-xl border border-border/40 bg-gradient-to-br from-muted/40 to-muted/10 p-4 text-left transition-all duration-300 cursor-pointer flex items-center gap-4 hover:border-border/70 hover:bg-muted/30"
+            onClick={() => navigate('/ai-chat')}
+            className="group relative rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 to-accent/5 p-4 text-left transition-all duration-300 cursor-pointer flex items-center gap-4 hover:border-primary/50 hover:shadow-[0_0_20px_hsl(var(--primary)/0.1)]"
           >
+            {isFreeUser && (
+              <div className="absolute -top-2 right-3 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                GRÁTIS
+              </div>
+            )}
+            <div className="h-11 w-11 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <MessageSquare className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-sm font-bold text-foreground">PRECEPTORIA</h2>
+              <p className="text-xs text-muted-foreground truncate">
+                {isFreeUser ? 'Chat com IA — 2 perguntas grátis/dia' : 'Chat livre com IA acadêmica'}
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-primary group-hover:translate-x-1 transition-transform shrink-0" />
+          </motion.button>
+
+          {/* BIBLIOTECA */}
+          <motion.button
+            data-tour="biblioteca"
+            custom={4}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            whileHover={{ scale: 1.01, y: -2 }}
+            whileTap={{ scale: 0.99 }}
+            onClick={() => isFreeUser ? navigate('/pricing') : navigate('/library')}
+            className={`group relative rounded-xl border border-border/40 bg-gradient-to-br from-muted/40 to-muted/10 p-4 text-left transition-all duration-300 cursor-pointer flex items-center gap-4 hover:border-border/70 hover:bg-muted/30 ${isFreeUser ? 'opacity-70' : ''}`}
+          >
+            {isFreeUser && (
+              <div className="absolute top-2 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-background/80 border border-border/50 text-[10px] font-medium text-muted-foreground">
+                <Lock className="h-3 w-3" />
+              </div>
+            )}
             <div className="h-11 w-11 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
               <BookOpen className="h-5 w-5 text-muted-foreground" />
             </div>
@@ -296,28 +330,6 @@ const MainMenu = () => {
               <p className="text-xs text-muted-foreground truncate">Acesse seus conteúdos salvos</p>
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform shrink-0" />
-          </motion.button>
-
-          {/* PRECEPTORIA CHAT */}
-          <motion.button
-            data-tour="preceptoria"
-            custom={4}
-            variants={cardVariants}
-            initial="hidden"
-            animate="visible"
-            whileHover={{ scale: 1.01, y: -2 }}
-            whileTap={{ scale: 0.99 }}
-            onClick={() => navigate('/ai-chat')}
-            className="group relative rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 to-accent/5 p-4 text-left transition-all duration-300 cursor-pointer flex items-center gap-4 hover:border-primary/40 hover:shadow-[0_0_20px_hsl(var(--primary)/0.1)]"
-          >
-            <div className="h-11 w-11 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <MessageSquare className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-bold text-foreground">PRECEPTORIA</h2>
-              <p className="text-xs text-muted-foreground truncate">Chat livre com IA acadêmica</p>
-            </div>
-            <ChevronRight className="h-4 w-4 text-primary group-hover:translate-x-1 transition-transform shrink-0" />
           </motion.button>
         </div>
 
