@@ -41,6 +41,7 @@ interface Fechamento {
 interface FechamentoLibraryProps {
   onSelect: (fechamento: Fechamento) => void;
   onFavoriteChange?: () => void;
+  onRedoExam?: (fechamento: Fechamento) => void;
 }
 
 const FechamentoLibrary = ({ onSelect, onFavoriteChange }: FechamentoLibraryProps) => {
