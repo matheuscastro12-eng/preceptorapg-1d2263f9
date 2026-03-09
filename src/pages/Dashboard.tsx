@@ -290,6 +290,9 @@ const Dashboard = () => {
 
   return (
     <PageTransition className="min-h-screen bg-background flex flex-col">
+      {/* Onboarding Tour */}
+      <OnboardingTour steps={dashboardTourSteps} tourKey="dashboard" />
+      
       {/* Subtle background decorations */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
         <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-primary/5 rounded-full blur-2xl will-change-transform" />
