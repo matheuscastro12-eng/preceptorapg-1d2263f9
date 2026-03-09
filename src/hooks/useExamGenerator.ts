@@ -18,6 +18,7 @@ export const useExamGenerator = () => {
   const [generating, setGenerating] = useState(false);
   const [hasStartedReceiving, setHasStartedReceiving] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [currentConfig, setCurrentConfig] = useState<ExamConfig | null>(null);
 
   const generate = useCallback(async (conteudo: string, config: ExamConfig) => {
     if (!conteudo.trim()) {
@@ -33,6 +34,7 @@ export const useExamGenerator = () => {
     setResultado('');
     setHasStartedReceiving(false);
     setIsComplete(false);
+    setCurrentConfig(config);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -111,11 +113,55 @@ export const useExamGenerator = () => {
     }
   }, [toast]);
 
+  const saveToLibrary = useCallback(async (tema: string) => {
+    if (!resultado || !currentConfig) {
+      toast({
+        title: 'Erro',
+        description: 'Não há conteúdo para salvar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+
+      const { error } = await supabase.from('fechamentos').insert({
+        user_id: session.user.id,
+        tema,
+        resultado,
+        tipo: currentConfig.practiceMode,
+        exam_config: {
+          quantidade: currentConfig.quantidade,
+          nivel: currentConfig.nivel,
+          simulationMode: currentConfig.simulationMode,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Salvo na biblioteca!',
+        description: `${currentConfig.practiceMode === 'prova' ? 'Prova' : 'Caso clínico'} salvo com sucesso.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro ao salvar',
+        description: error instanceof Error ? error.message : 'Não foi possível salvar na biblioteca.',
+        variant: 'destructive',
+      });
+    }
+  }, [resultado, currentConfig, toast]);
+
   const reset = useCallback(() => {
     setResultado('');
     setGenerating(false);
     setHasStartedReceiving(false);
     setIsComplete(false);
+    setCurrentConfig(null);
   }, []);
 
   return {
@@ -123,7 +169,9 @@ export const useExamGenerator = () => {
     generating,
     hasStartedReceiving,
     isComplete,
+    currentConfig,
     generate,
+    saveToLibrary,
     reset,
   };
 };
