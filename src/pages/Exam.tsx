@@ -16,6 +16,34 @@ import ExamConfigPanel from '@/components/exam/ExamConfigPanel';
 import ExamResultPanel from '@/components/exam/ExamResultPanel';
 import SimulationView from '@/components/exam/SimulationView';
 import { exportToPDF } from '@/utils/pdfExport';
+import OnboardingTour, { type TourStep } from '@/components/OnboardingTour';
+
+const examTourSteps: TourStep[] = [
+  {
+    target: '[data-tour="content-selector"]',
+    title: 'Selecione o Conteúdo',
+    description: 'Escolha um ou mais fechamentos da sua biblioteca. As questões serão baseadas nesse material.',
+    placement: 'right',
+  },
+  {
+    target: '[data-tour="exam-config"]',
+    title: 'Configure a Prova',
+    description: 'Defina a quantidade de questões e o nível de dificuldade (Ciclo Básico ou Residência).',
+    placement: 'right',
+  },
+  {
+    target: '[data-tour="simulation-toggle"]',
+    title: 'Modo Simulação',
+    description: 'Ative para fazer a prova em tempo real, uma questão por vez, como em um simulado de verdade!',
+    placement: 'right',
+  },
+  {
+    target: '[data-tour="generate-exam-btn"]',
+    title: 'Gerar Prova',
+    description: 'Clique para a IA elaborar as questões. Você pode salvar na biblioteca depois.',
+    placement: 'right',
+  },
+];
 
 // Helper to check if there's at least 1 parseable question in the streaming result
 function hasParseableQuestion(text: string): boolean {
