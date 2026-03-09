@@ -173,25 +173,47 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Search and Filters */}
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por tema..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por tema..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Button
+              variant={showFavoritesOnly ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              className="shrink-0"
+            >
+              <Star className={`mr-2 h-4 w-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+              Favoritos
+            </Button>
           </div>
-          <Button
-            variant={showFavoritesOnly ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            className="shrink-0"
-          >
-            <Star className={`mr-2 h-4 w-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-            Favoritos
-          </Button>
+          
+          {/* Type Filter */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: 'all', label: 'Todos' },
+              { value: 'fechamento', label: 'Fechamentos' },
+              { value: 'prova', label: 'Provas' },
+              { value: 'caso_clinico', label: 'Casos Clínicos' }
+            ].map((type) => (
+              <Button
+                key={type.value}
+                variant={selectedType === type.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedType(type.value as typeof selectedType)}
+                className="text-xs"
+              >
+                {type.label}
+              </Button>
+            ))}
+          </div>
         </div>
 
         {/* Fechamentos List */}
