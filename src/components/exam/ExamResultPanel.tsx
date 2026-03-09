@@ -1,9 +1,11 @@
-import { RefObject, useMemo } from 'react';
+import { RefObject, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import InteractiveQuestion, { parseQuestionsFromMarkdown } from '@/components/exam/InteractiveQuestion';
-import { Loader2, Copy, Download, Sparkles, FileQuestion, CheckCircle2, Stethoscope } from 'lucide-react';
+import { Loader2, Copy, Download, Sparkles, FileQuestion, CheckCircle2, Stethoscope, Save } from 'lucide-react';
 
 interface ExamResultPanelProps {
   resultado: string;
@@ -12,6 +14,7 @@ interface ExamResultPanelProps {
   resultRef: RefObject<HTMLDivElement>;
   onCopy: () => void;
   onExportPDF: () => void;
+  onSave?: (tema: string) => Promise<void>;
   title?: string;
   generatingLabel?: string;
 }
