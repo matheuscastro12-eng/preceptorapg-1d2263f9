@@ -113,7 +113,7 @@ const MainMenu = () => {
               <Stethoscope className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <span className="text-lg font-bold text-gradient-medical">PreceptorIA</span>
+              <span className="text-lg font-bold text-gradient-medical">PreceptorMED</span>
               <p className="text-[10px] text-muted-foreground hidden sm:block">Sua plataforma de estudos</p>
             </div>
           </div>
