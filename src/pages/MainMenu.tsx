@@ -121,6 +121,28 @@ const MainMenu = () => {
         </div>
       </motion.header>
 
+      {/* Upgrade Banner for free users */}
+      {isFreeUser && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-gradient-to-r from-primary/10 to-accent/10 border-b border-primary/20"
+        >
+          <div className="container px-4 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Crown className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-xs text-muted-foreground truncate">
+                <span className="font-medium text-foreground">Modo Demonstração</span> — Experimente o chat grátis! Assine para desbloquear tudo.
+              </p>
+            </div>
+            <Button size="sm" className="shrink-0 h-7 text-xs gap-1" onClick={() => navigate('/pricing')}>
+              Ver Planos
+              <ChevronRight className="h-3 w-3" />
+            </Button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Main Content */}
       <main className="flex-1 container relative py-6 sm:py-10 px-4">
         {/* Title area */}
@@ -138,7 +160,7 @@ const MainMenu = () => {
             O que deseja <span className="text-gradient-medical">estudar</span> hoje?
           </h1>
           <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
-            Escolha uma das opções abaixo para começar sua jornada de aprendizado
+            {isFreeUser ? 'Experimente o chat acadêmico grátis ou assine para acesso completo' : 'Escolha uma das opções abaixo para começar sua jornada de aprendizado'}
           </p>
         </motion.div>
 
