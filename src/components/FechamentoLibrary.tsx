@@ -44,7 +44,7 @@ interface FechamentoLibraryProps {
   onRedoExam?: (fechamento: Fechamento) => void;
 }
 
-const FechamentoLibrary = ({ onSelect, onFavoriteChange }: FechamentoLibraryProps) => {
+const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: FechamentoLibraryProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [fechamentos, setFechamentos] = useState<Fechamento[]>([]);
