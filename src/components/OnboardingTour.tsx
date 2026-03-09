@@ -119,28 +119,28 @@ const OnboardingTour = ({ steps, tourKey, onComplete }: OnboardingTourProps) => 
     <AnimatePresence>
       {isVisible && (
         <>
-          {/* Overlay */}
+          {/* Dark overlay background */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9998] bg-background/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[9990] bg-black/70"
             onClick={handleSkip}
           />
 
-          {/* Spotlight on target */}
+          {/* Spotlight cutout - creates a "hole" to see the target */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed z-[9999] pointer-events-none"
+            className="fixed z-[9991] pointer-events-none rounded-xl"
             style={{
               top: targetRect.top - 8,
               left: targetRect.left - 8,
               width: targetRect.width + 16,
               height: targetRect.height + 16,
-              boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.6)',
-              borderRadius: '12px',
+              boxShadow: '0 0 0 4px hsl(var(--primary)), 0 0 20px 4px hsl(var(--primary) / 0.3)',
+              background: 'transparent',
             }}
           />
 
