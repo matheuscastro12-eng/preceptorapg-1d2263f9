@@ -262,6 +262,7 @@ const Exam = () => {
                 resultRef={resultRef}
                 onCopy={handleCopy}
                 onExportPDF={handleExportPDF}
+                onSave={isComplete ? saveToLibrary : undefined}
                 title={resultTitle}
                 generatingLabel={generatingLabel}
               />
