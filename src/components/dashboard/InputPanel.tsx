@@ -78,7 +78,7 @@ const InputPanel = ({
       </div>
 
       <div className="space-y-5 flex-1 relative">
-        <div className="space-y-2.5">
+        <div className="space-y-2.5" data-tour="tema-input">
           <Label htmlFor="tema" className="text-sm font-medium flex items-center gap-2">
             <Target className="h-3.5 w-3.5 text-primary" />
             Tema Central <span className="text-destructive">*</span>
