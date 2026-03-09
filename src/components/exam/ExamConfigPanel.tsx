@@ -100,7 +100,7 @@ const ExamConfigPanel = ({
 
         {/* Question Count — only for prova mode */}
         {isProva && (
-          <div className="space-y-3">
+          <div className="space-y-3" data-tour="exam-config">
             <Label className="text-sm font-medium flex items-center gap-2">
               <Target className="h-3.5 w-3.5 text-primary" />
               Quantidade de Questões
