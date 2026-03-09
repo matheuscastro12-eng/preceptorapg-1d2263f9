@@ -203,7 +203,7 @@ const AIChat = () => {
               <Stethoscope className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <span className="font-bold text-foreground text-sm">PreceptorIA</span>
+              <span className="font-bold text-foreground text-sm">PreceptorMED</span>
               <span className="text-[10px] text-muted-foreground block leading-none">Chat Acadêmico</span>
             </div>
           </div>
