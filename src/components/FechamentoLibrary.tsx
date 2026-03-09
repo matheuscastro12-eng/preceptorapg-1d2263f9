@@ -23,6 +23,12 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+interface ExamConfigData {
+  quantidade: number;
+  nivel: string;
+  simulationMode: boolean;
+}
+
 interface Fechamento {
   id: string;
   tema: string;
@@ -31,11 +37,7 @@ interface Fechamento {
   favorito: boolean;
   created_at: string;
   tipo: 'fechamento' | 'prova' | 'caso_clinico';
-  exam_config?: {
-    quantidade: number;
-    nivel: string;
-    simulationMode: boolean;
-  };
+  exam_config: ExamConfigData | null;
 }
 
 interface FechamentoLibraryProps {
