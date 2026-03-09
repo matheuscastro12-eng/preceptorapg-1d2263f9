@@ -113,7 +113,7 @@ const InputPanel = ({
           )}
         </div>
         
-        <div className="space-y-2.5 flex-1">
+        <div className="space-y-2.5 flex-1" data-tour="objetivos-input">
           <Label htmlFor="objetivos" className="text-sm font-medium flex items-center gap-2">
             <Lightbulb className="h-3.5 w-3.5 text-accent" />
             Objetivos 
