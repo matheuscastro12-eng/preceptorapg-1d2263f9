@@ -26,9 +26,14 @@ const ExamResultPanel = ({
   resultRef,
   onCopy,
   onExportPDF,
+  onSave,
   title = 'Prova Gerada',
   generatingLabel = 'Elaborando questões...',
 }: ExamResultPanelProps) => {
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [saveTema, setSaveTema] = useState('');
+  const [saving, setSaving] = useState(false);
+
   const showActions = resultado && !generating;
   const isProva = !title.includes('Caso');
 
