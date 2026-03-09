@@ -187,6 +187,14 @@ serve(async (req) => {
       );
     }
 
+    // Log demo usage AFTER confirming Gemini responded OK
+    if (demoAdminClient) {
+      await demoAdminClient.from("generation_logs").insert({
+        user_id: userId,
+        function_name: "ai-chat",
+      });
+    }
+
     const transformStream = new TransformStream({
       transform(chunk, controller) {
         const text = new TextDecoder().decode(chunk);
