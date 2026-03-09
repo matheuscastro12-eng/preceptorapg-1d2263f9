@@ -136,11 +136,28 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
     }
   };
 
+  const getTypeIcon = (tipo: string) => {
+    switch (tipo) {
+      case 'prova': return <ClipboardList className="h-4 w-4" />;
+      case 'caso_clinico': return <Stethoscope className="h-4 w-4" />;
+      default: return <FileText className="h-4 w-4" />;
+    }
+  };
+
+  const getTypeLabel = (tipo: string) => {
+    switch (tipo) {
+      case 'prova': return 'Prova';
+      case 'caso_clinico': return 'Caso Clínico';
+      default: return 'Fechamento';
+    }
+  };
+
   const filteredFechamentos = fechamentos.filter(f => {
     const matchesSearch = f.tema.toLowerCase().includes(searchTerm.toLowerCase()) ||
       f.objetivos?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFavorites = showFavoritesOnly ? f.favorito : true;
-    return matchesSearch && matchesFavorites;
+    const matchesType = selectedType === 'all' ? true : f.tipo === selectedType;
+    return matchesSearch && matchesFavorites && matchesType;
   });
 
   return (
