@@ -67,7 +67,7 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setFechamentos(data || []);
+      setFechamentos(data as Fechamento[] || []);
     } catch (error) {
       console.error('Error fetching fechamentos:', error);
       toast({
