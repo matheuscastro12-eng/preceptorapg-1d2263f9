@@ -104,14 +104,15 @@ serve(async (req) => {
     const hasAccess = subscription?.status === "active" || subscription?.plan_type === "free_access" || isAdmin;
 
     // If user is NOT a subscriber, enforce server-side daily demo limit
+    let demoAdminClient: any = null;
     if (!hasAccess) {
       const today = new Date().toISOString().split("T")[0];
-      const adminClient = createClient(
+      demoAdminClient = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
       );
 
-      const { count } = await adminClient
+      const { count } = await demoAdminClient
         .from("generation_logs")
         .select("*", { count: "exact", head: true })
         .eq("user_id", userId)
@@ -125,12 +126,7 @@ serve(async (req) => {
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-
-      // Log this demo usage
-      await adminClient.from("generation_logs").insert({
-        user_id: userId,
-        function_name: "ai-chat",
-      });
+      // NOTE: Log is inserted AFTER confirming Gemini response is OK (below)
     }
 
     const body = await req.json();
@@ -189,6 +185,14 @@ serve(async (req) => {
         JSON.stringify({ error: "Erro ao processar sua pergunta" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Log demo usage AFTER confirming Gemini responded OK
+    if (demoAdminClient) {
+      await demoAdminClient.from("generation_logs").insert({
+        user_id: userId,
+        function_name: "ai-chat",
+      });
     }
 
     const transformStream = new TransformStream({
