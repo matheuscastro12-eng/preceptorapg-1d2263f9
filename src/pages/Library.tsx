@@ -42,6 +42,11 @@ const Library = () => {
     setSelectedFechamento(fechamento);
   };
 
+  const handleRedoExam = (fechamento: Fechamento) => {
+    const mode = fechamento.tipo === 'caso_clinico' ? 'caso_clinico' : 'prova';
+    navigate(`/exam?mode=${mode}`);
+  };
+
   const handleExportPDF = async () => {
     if (!selectedFechamento) return;
     
