@@ -227,7 +227,7 @@ const Exam = () => {
               <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
                 <Sparkles className="h-4 w-4 text-primary" />
               </div>
-              <span className="text-lg font-bold text-gradient-medical">PreceptorIA</span>
+              <span className="text-lg font-bold text-gradient-medical">PreceptorMED</span>
             </div>
           </div>
 

@@ -113,7 +113,7 @@ const UpgradePaywall = ({ variant = 'chat-limit', remainingPrompts = 0, dailyLim
           Suas {dailyLimit} perguntas grátis acabaram hoje
         </h2>
         <p className="text-sm text-muted-foreground">
-          Assine o PreceptorIA para continuar estudando sem limites. 
+          Assine o PreceptorMED para continuar estudando sem limites. 
           Amanhã você terá mais {dailyLimit} perguntas grátis, ou desbloqueie agora:
         </p>
       </div>

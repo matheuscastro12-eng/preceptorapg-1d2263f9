@@ -153,7 +153,7 @@ serve(async (req) => {
     // Prepend system prompt to first message
     const contents = [
       { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
-      { role: "model", parts: [{ text: "Entendido! Sou o PreceptorIA, seu assistente acadêmico de medicina. Estou pronto para ajudar com qualquer dúvida médica com a profundidade que você precisa. Como posso ajudar?" }] },
+      { role: "model", parts: [{ text: "Entendido! Sou o PreceptorMED, seu assistente acadêmico de medicina. Estou pronto para ajudar com qualquer dúvida médica com a profundidade que você precisa. Como posso ajudar?" }] },
       ...sanitizedMessages,
     ];
 
