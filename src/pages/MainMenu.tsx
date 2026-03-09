@@ -68,7 +68,8 @@ const MainMenu = () => {
   }
 
   if (!user) return <Navigate to="/auth" replace />;
-  if (!hasAccess && !isAdmin) return <Navigate to="/pricing" replace />;
+  // Non-subscribers can now access the menu (for demo), but features will show locks
+  const isFreeUser = !hasAccess && !isAdmin;
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
