@@ -159,7 +159,7 @@ const ExamConfigPanel = ({
 
         {/* Simulation Mode — only for prova mode */}
         {isProva && (
-          <div className="flex items-center justify-between p-3 rounded-xl border border-border/30 bg-background/40">
+          <div className="flex items-center justify-between p-3 rounded-xl border border-border/30 bg-background/40" data-tour="simulation-toggle">
             <div className="flex items-center gap-2">
               <ToggleLeft className="h-4 w-4 text-accent" />
               <div>
@@ -176,7 +176,7 @@ const ExamConfigPanel = ({
         )}
       </div>
 
-      <div className="space-y-4 mt-6 relative">
+      <div className="space-y-4 mt-6 relative" data-tour="generate-exam-btn">
         <Button
           className={`w-full h-12 text-base font-semibold shadow-lg transition-all duration-300 group ${
             isCasoClin
