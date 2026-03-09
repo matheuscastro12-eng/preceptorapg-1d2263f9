@@ -245,10 +245,10 @@ const AIChat = () => {
                 <Sparkles className="h-8 w-8 text-primary" />
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
-                Olá! Sou o <span className="text-primary">PreceptorIA</span>
+                Olá! Sou o <span className="text-primary">PreceptorMED</span>
               </h2>
               <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
-                Seu assistente acadêmico de medicina com a mesma profundidade dos fechamentos de APG. 
+                Seu assistente acadêmico de medicina com a mesma profundidade dos fechamentos de PBL. 
                 Pergunte qualquer coisa — de bioquímica molecular a raciocínio clínico.
               </p>
 
