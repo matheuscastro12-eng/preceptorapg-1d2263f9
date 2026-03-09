@@ -19,6 +19,8 @@ interface Fechamento {
   resultado: string;
   favorito: boolean;
   created_at: string;
+  tipo: 'fechamento' | 'prova' | 'caso_clinico';
+  exam_config: { quantidade: number; nivel: string; simulationMode: boolean } | null;
 }
 
 const Library = () => {
