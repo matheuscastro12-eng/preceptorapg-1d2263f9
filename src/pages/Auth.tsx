@@ -160,7 +160,7 @@ const Auth = () => {
             </div>
           </div>
           <h1 className="mb-4 font-display text-4xl font-bold text-white">
-            PreceptorAPG
+            PreceptorIA
           </h1>
           <p className="text-lg text-white/90">
             Fechamentos de objetivos com IA para estudantes de medicina.

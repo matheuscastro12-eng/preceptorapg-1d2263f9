@@ -130,7 +130,7 @@ const MainMenu = () => {
             <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
               <Stethoscope className="h-4 w-4 text-primary" />
             </div>
-            <span className="text-lg font-bold text-gradient-medical">PreceptorAPG</span>
+            <span className="text-lg font-bold text-gradient-medical">PreceptorIA</span>
           </div>
           <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
         </div>
@@ -288,7 +288,7 @@ const MainMenu = () => {
         {/* Footer */}
         <div className="text-center mt-8 sm:mt-10">
           <p className="text-[10px] sm:text-xs text-muted-foreground/50">
-            PreceptorAPG © {new Date().getFullYear()} — Ferramenta educacional. Uso acadêmico.
+            PreceptorIA © {new Date().getFullYear()} — Ferramenta educacional. Uso acadêmico.
           </p>
         </div>
       </main>

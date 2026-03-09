@@ -28,7 +28,7 @@ const DashboardHeader = ({ userEmail, onLogout }: DashboardHeaderProps) => {
           </div>
           <div>
             <span className="font-display text-xl font-bold bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
-              PreceptorAPG
+              PreceptorIA
             </span>
             <div className="flex items-center gap-1.5">
               <Zap className="h-3 w-3 text-accent" />
