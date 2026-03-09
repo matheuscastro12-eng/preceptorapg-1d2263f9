@@ -234,7 +234,7 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
           </div>
         ) : filteredFechamentos.length === 0 ? (
           <div className="py-8 text-center text-muted-foreground">
-            {searchTerm || showFavoritesOnly
+            {searchTerm || showFavoritesOnly || selectedType !== 'all'
               ? 'Nenhum fechamento encontrado.'
               : 'Nenhum fechamento salvo ainda.'}
           </div>
