@@ -130,7 +130,7 @@ const MainMenu = () => {
             <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
               <Stethoscope className="h-4 w-4 text-primary" />
             </div>
-            <span className="text-lg font-bold text-gradient-medical">PreceptorAPG</span>
+            <span className="text-lg font-bold text-gradient-medical">PreceptorIA</span>
           </div>
           <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
         </div>
