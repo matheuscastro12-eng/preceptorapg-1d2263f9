@@ -323,7 +323,7 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
                       className="h-8 w-8"
                       onClick={() => toggleFavorite(fechamento.id, fechamento.favorito)}
                     >
-                      <Star className={`h-4 w-4 ${fechamento.favorito ? 'fill-yellow-500 text-yellow-500' : ''}`} />
+                      <Star className={`h-4 w-4 ${fechamento.favorito ? 'fill-primary text-primary' : ''}`} />
                     </Button>
                     <Button
                       variant="ghost"
