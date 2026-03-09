@@ -276,7 +276,7 @@ const Landing = () => {
                 Pronto para estudar de forma mais inteligente?
               </h2>
               <p className="text-muted-foreground mb-8">
-                Junte-se a estudantes que já otimizaram sua rotina de estudos com o PreceptorIA.
+                Junte-se a estudantes que já otimizaram sua rotina de estudos com o PreceptorMED.
               </p>
 
               <div className="space-y-4">
