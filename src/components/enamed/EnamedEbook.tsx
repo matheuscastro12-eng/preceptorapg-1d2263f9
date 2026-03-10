@@ -263,11 +263,31 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
       </div>
 
       <div className="flex-1 min-h-0 rounded-xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="p-6" ref={resultRef}>
-            <MarkdownRenderer content={resultado} isTyping={false} />
+        {resultado ? (
+          <ScrollArea className="h-full">
+            <div className="p-6" ref={resultRef}>
+              <MarkdownRenderer content={resultado} isTyping={false} />
+            </div>
+          </ScrollArea>
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center gap-4 text-center p-6">
+            {generatingId === selectedSpecialty.id ? (
+              <>
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Gerando resumo de {selectedSpecialty.name}... pode levar 1-2 min</p>
+              </>
+            ) : isAdmin ? (
+              <>
+                <p className="text-sm text-muted-foreground">Este resumo ainda não foi gerado.</p>
+                <Button onClick={() => generateSingle(selectedSpecialty)} className="gap-2">
+                  <RefreshCw className="h-4 w-4" />Gerar Resumo
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Este resumo ainda está sendo preparado. Volte em breve!</p>
+            )}
           </div>
-        </ScrollArea>
+        )}
       </div>
     </div>
   );
