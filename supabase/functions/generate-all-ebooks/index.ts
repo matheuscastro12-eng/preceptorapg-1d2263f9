@@ -170,7 +170,7 @@ ${spec.topics.map((t, idx) => `${idx + 1}. ${t}`).join('\n')}
 
 Gere um RESUMO COMPLETO e EXTREMAMENTE DETALHADO cobrindo TODOS os tópicos acima. Este material será o guia definitivo de estudo do aluno para esta especialidade no ENAMED.`;
 
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_AI_API_KEY}`;
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${GOOGLE_AI_API_KEY}`;
 
             const response = await fetch(geminiUrl, {
               method: "POST",
