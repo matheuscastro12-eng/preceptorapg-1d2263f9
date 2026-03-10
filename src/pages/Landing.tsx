@@ -97,8 +97,8 @@ const Landing = () => {
               <Button variant="ghost" size="sm" onClick={() => navigate('/auth')}>
                 Entrar
               </Button>
-              <Button size="sm" onClick={() => navigate('/pricing')}>
-                Começar
+              <Button size="sm" onClick={() => navigate('/auth?tab=signup')}>
+                Criar conta grátis
               </Button>
             </div>
           )}
