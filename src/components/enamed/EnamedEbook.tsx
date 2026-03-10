@@ -76,6 +76,9 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
     if (content) {
       setSelectedSpecialty(spec);
       setResultado(content);
+    } else if (isAdmin) {
+      setSelectedSpecialty(spec);
+      setResultado('');
     } else {
       toast({
         title: 'Em breve',
@@ -108,7 +111,10 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
       const { results } = await response.json();
       if (results?.[0]?.status === 'done') {
         const { data } = await supabase.from('enamed_ebooks').select('content').eq('specialty_id', spec.id).maybeSingle();
-        if (data) setSavedContent(prev => ({ ...prev, [spec.id]: data.content }));
+        if (data) {
+          setSavedContent(prev => ({ ...prev, [spec.id]: data.content }));
+          setResultado(data.content);
+        }
         toast({ title: `✅ ${spec.name} gerado com sucesso! (${results[0].content_length?.toLocaleString()} caracteres)` });
       } else {
         toast({ title: `Erro: ${results?.[0]?.error || 'Falha'}`, variant: 'destructive' });
@@ -183,8 +189,8 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
               return (
                 <button
                   key={spec.id}
-                  onClick={() => canAccess && hasContent && openSpecialty(spec)}
-                  disabled={(!canAccess || !hasContent) && !isAdmin}
+                  onClick={() => canAccess && (hasContent || isAdmin) && openSpecialty(spec)}
+                  disabled={!canAccess && !isAdmin}
                   className={`group relative rounded-xl border p-4 text-left transition-all duration-300 ${
                     hasContent && canAccess
                       ? 'border-primary/30 bg-gradient-to-br from-primary/10 to-transparent hover:border-primary/50 hover:shadow-md'
@@ -203,22 +209,10 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-[11px] text-muted-foreground line-clamp-2">
-                      {isGenerating 
-                        ? 'Gerando resumo...' 
-                        : hasContent 
-                          ? 'Resumo disponível — clique para ler'
-                          : 'Ainda não gerado'}
+                      {hasContent 
+                        ? 'Resumo disponível — clique para ler'
+                        : 'Ainda não gerado'}
                     </p>
-                    {isAdmin && (
-                      <button
-                        onClick={(e) => generateSingle(spec, e)}
-                        disabled={!!generatingId}
-                        className="ml-2 p-1.5 rounded-lg hover:bg-primary/10 text-primary shrink-0 disabled:opacity-30"
-                        title={hasContent ? 'Regenerar' : 'Gerar'}
-                      >
-                        {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                      </button>
-                    )}
                   </div>
                 </button>
               );
@@ -244,6 +238,21 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
         </div>
 
         <div className="ml-auto flex gap-2">
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => generateSingle(selectedSpecialty)}
+              disabled={!!generatingId}
+              className="gap-1 border-primary/30 hover:bg-primary/10 text-primary"
+            >
+              {generatingId === selectedSpecialty.id ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" />Regenerando...</>
+              ) : (
+                <><RefreshCw className="h-3.5 w-3.5" />Regenerar</>
+              )}
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(resultado); toast({ title: 'Copiado!' }); }} className="gap-1">
             <Copy className="h-3.5 w-3.5" />Copiar
           </Button>
@@ -254,11 +263,31 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
       </div>
 
       <div className="flex-1 min-h-0 rounded-xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="p-6" ref={resultRef}>
-            <MarkdownRenderer content={resultado} isTyping={false} />
+        {resultado ? (
+          <ScrollArea className="h-full">
+            <div className="p-6" ref={resultRef}>
+              <MarkdownRenderer content={resultado} isTyping={false} />
+            </div>
+          </ScrollArea>
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center gap-4 text-center p-6">
+            {generatingId === selectedSpecialty.id ? (
+              <>
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Gerando resumo de {selectedSpecialty.name}... pode levar 1-2 min</p>
+              </>
+            ) : isAdmin ? (
+              <>
+                <p className="text-sm text-muted-foreground">Este resumo ainda não foi gerado.</p>
+                <Button onClick={() => generateSingle(selectedSpecialty)} className="gap-2">
+                  <RefreshCw className="h-4 w-4" />Gerar Resumo
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Este resumo ainda está sendo preparado. Volte em breve!</p>
+            )}
           </div>
-        </ScrollArea>
+        )}
       </div>
     </div>
   );
