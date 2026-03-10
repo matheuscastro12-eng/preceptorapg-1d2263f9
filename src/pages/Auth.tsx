@@ -28,6 +28,7 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
 
+  const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'login';
   const planType = searchParams.get('plan') as 'monthly' | 'annual' | null;
 
   // Redireciona para checkout automaticamente após login se tiver plano na URL
