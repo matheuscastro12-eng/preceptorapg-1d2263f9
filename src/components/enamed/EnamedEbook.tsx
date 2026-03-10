@@ -108,7 +108,10 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
       const { results } = await response.json();
       if (results?.[0]?.status === 'done') {
         const { data } = await supabase.from('enamed_ebooks').select('content').eq('specialty_id', spec.id).maybeSingle();
-        if (data) setSavedContent(prev => ({ ...prev, [spec.id]: data.content }));
+        if (data) {
+          setSavedContent(prev => ({ ...prev, [spec.id]: data.content }));
+          setResultado(data.content);
+        }
         toast({ title: `✅ ${spec.name} gerado com sucesso! (${results[0].content_length?.toLocaleString()} caracteres)` });
       } else {
         toast({ title: `Erro: ${results?.[0]?.error || 'Falha'}`, variant: 'destructive' });
