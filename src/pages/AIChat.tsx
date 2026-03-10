@@ -78,7 +78,7 @@ const AIChat = () => {
     const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: userMessage };
     const assistantId = crypto.randomUUID();
 
-    setMessages(prev => [...prev, userMsg]);
+    setMessages(prev => [...prev, userMsg, { id: assistantId, role: 'assistant', content: '' }]);
     setIsStreaming(true);
     setInput('');
 
@@ -120,8 +120,6 @@ const AIChat = () => {
       const decoder = new TextDecoder();
       let buffer = '';
       let assistantContent = '';
-
-      setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
 
       while (true) {
         const { done, value } = await reader.read();
