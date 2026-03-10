@@ -80,6 +80,33 @@ export type Database = {
         }
         Relationships: []
       }
+      enamed_ebooks: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          specialty_id: string
+          specialty_name: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          specialty_id: string
+          specialty_name: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          specialty_id?: string
+          specialty_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       enamed_questions: {
         Row: {
           alternativa_a: string
