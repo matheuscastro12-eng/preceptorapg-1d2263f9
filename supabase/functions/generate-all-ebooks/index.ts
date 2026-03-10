@@ -224,9 +224,9 @@ serve(async (req) => {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 contents: [{ role: "user", parts: [{ text: SYSTEM_PROMPT + "\n\n" + userPrompt }] }],
-                generationConfig: { temperature: 1, maxOutputTokens: 16384 },
-              }),
-            });
+              generationConfig: { temperature: 1, maxOutputTokens: 65536 },
+            }),
+          });
 
             if (!response.ok) {
               const errText = await response.text();
