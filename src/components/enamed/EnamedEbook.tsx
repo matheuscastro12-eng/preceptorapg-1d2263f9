@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { BookOpen, ArrowLeft, Sparkles, ChevronRight, Loader2, Copy, FileDown, Shield, Play, CheckCircle2, AlertCircle } from 'lucide-react';
+import { BookOpen, ArrowLeft, Sparkles, ChevronRight, Loader2, Copy, FileDown, Shield, Play, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
@@ -62,6 +62,37 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
     generating: false, current: 0, total: 0, currentSpecialty: '', completed: [], errors: [],
   });
   const resultRef = useRef<HTMLDivElement>(null);
+  const [regenerating, setRegenerating] = useState<string | null>(null);
+
+  const regenerateSingle = async (spec: Specialty) => {
+    if (!isAdmin) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    setRegenerating(spec.id);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-all-ebooks`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ specialty_ids: [spec.id], stream: false }),
+        }
+      );
+      if (!response.ok) throw new Error('Erro');
+      const { results } = await response.json();
+      if (results?.[0]?.status === 'done') {
+        const { data } = await supabase.from('enamed_ebooks').select('content').eq('specialty_id', spec.id).maybeSingle();
+        if (data) setSavedContent(prev => ({ ...prev, [spec.id]: data.content }));
+        toast({ title: `${spec.name} regenerado com sucesso!` });
+      } else {
+        toast({ title: `Erro ao regenerar ${spec.name}`, variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Erro na regeneração', variant: 'destructive' });
+    } finally {
+      setRegenerating(null);
+    }
+  };
 
   useEffect(() => {
     const loadEbooks = async () => {
@@ -268,8 +299,10 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {ENAMED_SPECIALTIES.map((spec) => {
-              const hasContent = !!savedContent[spec.id];
-              const wasJustCompleted = bulkStatus.completed.includes(spec.id);
+               const hasContent = !!savedContent[spec.id];
+               const isShort = hasContent && savedContent[spec.id].length < 5000;
+               const wasJustCompleted = bulkStatus.completed.includes(spec.id);
+               const isRegenerating = regenerating === spec.id;
               return (
                 <button
                   key={spec.id}
@@ -293,9 +326,21 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
                       <ChevronRight className="h-4 w-4 text-emerald-600 shrink-0" />
                     ) : null}
                   </div>
-                  <p className="text-[11px] text-muted-foreground line-clamp-2">
-                    {hasContent ? 'Resumo disponível — clique para ler' : 'Em breve'}
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] text-muted-foreground line-clamp-2">
+                      {hasContent ? (isShort ? '⚠️ Resumo incompleto' : 'Resumo disponível — clique para ler') : 'Em breve'}
+                    </p>
+                    {isAdmin && hasContent && isShort && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); regenerateSingle(spec); }}
+                        disabled={isRegenerating}
+                        className="ml-2 p-1 rounded-md hover:bg-muted/50 text-amber-600 shrink-0"
+                        title="Regenerar"
+                      >
+                        {isRegenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                      </button>
+                    )}
+                  </div>
                 </button>
               );
             })}
