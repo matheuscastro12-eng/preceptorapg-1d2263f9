@@ -244,6 +244,21 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
         </div>
 
         <div className="ml-auto flex gap-2">
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => generateSingle(selectedSpecialty)}
+              disabled={!!generatingId}
+              className="gap-1 border-primary/30 hover:bg-primary/10 text-primary"
+            >
+              {generatingId === selectedSpecialty.id ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" />Regenerando...</>
+              ) : (
+                <><RefreshCw className="h-3.5 w-3.5" />Regenerar</>
+              )}
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(resultado); toast({ title: 'Copiado!' }); }} className="gap-1">
             <Copy className="h-3.5 w-3.5" />Copiar
           </Button>
