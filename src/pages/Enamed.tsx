@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import EnamedEbook from '@/components/enamed/EnamedEbook';
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
 import { useNavigate } from 'react-router-dom';
