@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAdmin } from '@/hooks/useAdmin';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { Stethoscope, BookOpen, Brain, FlaskConical, GraduationCap, Library, Shield, AlertTriangle, MessageSquare, ChevronRight, Zap, Lock, Crown } from 'lucide-react';
+import { Stethoscope, BookOpen, Brain, FlaskConical, GraduationCap, Library, Shield, AlertTriangle, MessageSquare, ChevronRight, Zap, Lock, Crown, ClipboardList } from 'lucide-react';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import { motion } from 'framer-motion';
 import PageTransition from '@/components/PageTransition';
@@ -275,6 +275,46 @@ const MainMenu = () => {
             </div>
           </motion.button>
         </div>
+
+        {/* ENAMED Section - Prominent */}
+        <div className="max-w-5xl mx-auto mt-5">
+          <motion.button
+            data-tour="enamed"
+            custom={3}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            whileHover={{ scale: 1.01, y: -3 }}
+            whileTap={{ scale: 0.99 }}
+            onClick={() => isFreeUser ? navigate('/pricing') : navigate('/enamed')}
+            className={`group relative w-full rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-amber-600/10 p-5 sm:p-6 text-left transition-all duration-300 cursor-pointer overflow-hidden hover:border-amber-500/60 hover:shadow-[0_0_40px_hsl(45_100%_50%/0.15)] ${isFreeUser ? 'opacity-80' : ''}`}
+          >
+            {isFreeUser && (
+              <div className="absolute top-3 right-3 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full bg-background/80 border border-border/50 text-[10px] font-medium text-muted-foreground">
+                <Lock className="h-3 w-3" />
+                Premium
+              </div>
+            )}
+            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
+
+            <div className="flex items-center gap-4">
+              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-500/25 to-amber-600/15 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform ring-1 ring-amber-500/20">
+                <GraduationCap className="h-7 w-7 text-amber-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-lg sm:text-xl font-bold text-foreground">ESTUDO ENAMED</h2>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 text-[10px] font-bold uppercase tracking-wider">2025/2026</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Banco de questões oficiais + simulados gerados por IA no padrão INEP
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-amber-600 group-hover:translate-x-1 transition-transform shrink-0" />
+            </div>
+          </motion.button>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-5xl mx-auto mt-5">
           {/* PRECEPTORIA CHAT - Always accessible */}
           <motion.button
