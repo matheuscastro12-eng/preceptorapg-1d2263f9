@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react';
-import { BookOpen, ArrowLeft, Sparkles, ChevronRight, Loader2, Copy, FileDown } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { BookOpen, ArrowLeft, Sparkles, ChevronRight, Loader2, Copy, FileDown, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAdmin } from '@/hooks/useAdmin';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import GenerationProgress from '@/components/GenerationProgress';
 import { exportToPDF } from '@/utils/pdfExport';
@@ -41,7 +42,10 @@ const ENAMED_SPECIALTIES: Specialty[] = [
 
 const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
   const { toast } = useToast();
+  const { isAdmin } = useAdmin();
   const [selectedSpecialty, setSelectedSpecialty] = useState<Specialty | null>(null);
+  const [savedContent, setSavedContent] = useState<Record<string, string>>({});
+  const [loadingContent, setLoadingContent] = useState(true);
   const [resultado, setResultado] = useState('');
   const [generating, setGenerating] = useState(false);
   const [hasStartedReceiving, setHasStartedReceiving] = useState(false);
@@ -49,7 +53,45 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
   const [exporting, setExporting] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
 
-  const generateEbook = async (specialty: Specialty) => {
+  // Load all saved ebooks from DB on mount
+  useEffect(() => {
+    const loadEbooks = async () => {
+      setLoadingContent(true);
+      const { data } = await supabase
+        .from('enamed_ebooks')
+        .select('specialty_id, content');
+      
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach((row: { specialty_id: string; content: string }) => {
+          map[row.specialty_id] = row.content;
+        });
+        setSavedContent(map);
+      }
+      setLoadingContent(false);
+    };
+    loadEbooks();
+  }, []);
+
+  const openSpecialty = (spec: Specialty) => {
+    const content = savedContent[spec.id];
+    if (content) {
+      setSelectedSpecialty(spec);
+      setResultado(content);
+      setIsComplete(true);
+      setHasStartedReceiving(true);
+    } else if (isAdmin) {
+      // Admin can generate and save
+      generateAndSave(spec);
+    } else {
+      toast({
+        title: 'Em breve',
+        description: 'Este resumo ainda está sendo preparado. Volte em breve!',
+      });
+    }
+  };
+
+  const generateAndSave = async (specialty: Specialty) => {
     setSelectedSpecialty(specialty);
     setResultado('');
     setGenerating(true);
@@ -71,11 +113,7 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({
-            tema,
-            objetivos,
-            mode: 'fechamento',
-          }),
+          body: JSON.stringify({ tema, objetivos, mode: 'fechamento' }),
         }
       );
 
@@ -115,14 +153,23 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
 
       setIsComplete(true);
 
-      // Save to fechamentos
-      await supabase.from('fechamentos').insert({
-        user_id: session.user.id,
-        tema,
-        objetivos,
-        resultado: fullText,
-        tipo: 'fechamento',
-      });
+      // Save to enamed_ebooks (upsert)
+      const { error } = await supabase
+        .from('enamed_ebooks')
+        .upsert({
+          specialty_id: specialty.id,
+          specialty_name: specialty.name,
+          content: fullText,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'specialty_id' });
+
+      if (error) {
+        console.error('Error saving ebook:', error);
+        toast({ title: 'Erro ao salvar', description: 'O resumo foi gerado mas não foi salvo.', variant: 'destructive' });
+      } else {
+        setSavedContent(prev => ({ ...prev, [specialty.id]: fullText }));
+        toast({ title: 'Resumo salvo!', description: `${specialty.name} salvo no banco de dados.` });
+      }
 
     } catch (error) {
       toast({
@@ -148,6 +195,8 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
     }
   };
 
+  const availableCount = Object.keys(savedContent).length;
+
   // Specialty selection view
   if (!selectedSpecialty) {
     return (
@@ -161,40 +210,62 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
             Resumos por <span className="text-emerald-600">Especialidade</span>
           </h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-lg mx-auto">
-            Gere resumos completos e detalhados para cada especialidade do ENAMED, com os temas mais cobrados pelo INEP
+            Resumos completos e detalhados para cada especialidade do ENAMED — {availableCount} de {ENAMED_SPECIALTIES.length} disponíveis
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {ENAMED_SPECIALTIES.map((spec) => (
-            <button
-              key={spec.id}
-              onClick={() => generateEbook(spec)}
-              className="group relative rounded-xl border border-border/40 bg-gradient-to-br from-muted/30 to-transparent p-4 text-left transition-all duration-300 hover:border-emerald-500/40 hover:shadow-[0_0_20px_hsl(150_50%_40%/0.1)] hover:bg-emerald-500/5"
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <span className="text-lg">{spec.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-foreground truncate">{spec.name}</h3>
-                  <span className="text-[10px] font-medium text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">{spec.percentage}</span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-emerald-600 shrink-0 transition-colors" />
-              </div>
-              <p className="text-[11px] text-muted-foreground line-clamp-2">
-                {spec.topics.slice(0, 3).join(' • ')}
-              </p>
-            </button>
-          ))}
-        </div>
+        {loadingContent ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {ENAMED_SPECIALTIES.map((spec) => {
+              const hasContent = !!savedContent[spec.id];
+              return (
+                <button
+                  key={spec.id}
+                  onClick={() => openSpecialty(spec)}
+                  disabled={!hasContent && !isAdmin}
+                  className={`group relative rounded-xl border p-4 text-left transition-all duration-300 ${
+                    hasContent
+                      ? 'border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-transparent hover:border-emerald-500/50 hover:shadow-[0_0_20px_hsl(150_50%_40%/0.1)]'
+                      : isAdmin
+                        ? 'border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent hover:border-amber-500/50 cursor-pointer'
+                        : 'border-border/20 bg-muted/10 opacity-50 cursor-not-allowed'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-lg">{spec.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-bold text-foreground truncate">{spec.name}</h3>
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                        hasContent ? 'text-emerald-600 bg-emerald-500/10' : 'text-muted-foreground bg-muted/30'
+                      }`}>{spec.percentage}</span>
+                    </div>
+                    {hasContent ? (
+                      <ChevronRight className="h-4 w-4 text-emerald-600 shrink-0" />
+                    ) : isAdmin ? (
+                      <Shield className="h-4 w-4 text-amber-600 shrink-0" />
+                    ) : null}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground line-clamp-2">
+                    {hasContent ? 'Resumo disponível — clique para ler' : isAdmin ? 'Admin: clique para gerar e salvar' : 'Em breve'}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   }
 
-  // Generation/result view
+  // Content view
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)]">
       <div className="flex items-center gap-3 mb-4 shrink-0">
-        <Button variant="ghost" size="sm" onClick={() => { setSelectedSpecialty(null); setResultado(''); setIsComplete(false); }} className="gap-1">
+        <Button variant="ghost" size="sm" onClick={() => { setSelectedSpecialty(null); setResultado(''); setIsComplete(false); setGenerating(false); }} className="gap-1">
           <ArrowLeft className="h-4 w-4" />Voltar
         </Button>
         <div className="h-5 w-px bg-border/50" />
@@ -212,6 +283,11 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
             <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={exporting} className="gap-1">
               <FileDown className="h-3.5 w-3.5" />{exporting ? 'Exportando...' : 'PDF'}
             </Button>
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={() => generateAndSave(selectedSpecialty)} disabled={generating} className="gap-1 border-amber-500/40 text-amber-600">
+                <Sparkles className="h-3.5 w-3.5" />Regerar
+              </Button>
+            )}
           </div>
         )}
       </div>
