@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { BookOpen, ArrowLeft, Sparkles, ChevronRight, Loader2, Copy, FileDown, Shield, Play, CheckCircle2, AlertCircle } from 'lucide-react';
+import { BookOpen, ArrowLeft, Sparkles, ChevronRight, Loader2, Copy, FileDown, Shield, Play, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
