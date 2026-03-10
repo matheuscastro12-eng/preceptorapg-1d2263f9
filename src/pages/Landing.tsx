@@ -262,9 +262,9 @@ const Landing = () => {
 
               <Button 
                 size="lg" 
-                onClick={() => navigate('/pricing')}
+                onClick={() => navigate('/auth?tab=signup')}
               >
-                Começar agora
+                Criar conta grátis
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
