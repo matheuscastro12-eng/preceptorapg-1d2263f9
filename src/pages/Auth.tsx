@@ -271,10 +271,15 @@ const Auth = () => {
                 
                 {/* Signup Tab */}
                 <TabsContent value="signup" className="mt-0">
-                  <CardTitle className="mb-2 text-xl">Criar conta</CardTitle>
-                  <CardDescription className="mb-6">
-                    Junte-se a outros estudantes de medicina
+                  <CardTitle className="mb-2 text-xl">Criar conta grátis</CardTitle>
+                  <CardDescription className="mb-4">
+                    Comece a usar agora — sem cartão de crédito
                   </CardDescription>
+                  
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mb-5">
+                    <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-primary" />2 perguntas/dia no chat IA</span>
+                    <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-primary" />Acesso imediato</span>
+                  </div>
                   
                   <form onSubmit={handleSignup} className="space-y-4">
                     <div className="space-y-2">
