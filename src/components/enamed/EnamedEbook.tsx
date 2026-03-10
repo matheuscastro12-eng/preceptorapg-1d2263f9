@@ -189,8 +189,8 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
               return (
                 <button
                   key={spec.id}
-                  onClick={() => canAccess && hasContent && openSpecialty(spec)}
-                  disabled={(!canAccess || !hasContent) && !isAdmin}
+                  onClick={() => canAccess && (hasContent || isAdmin) && openSpecialty(spec)}
+                  disabled={!canAccess && !isAdmin}
                   className={`group relative rounded-xl border p-4 text-left transition-all duration-300 ${
                     hasContent && canAccess
                       ? 'border-primary/30 bg-gradient-to-br from-primary/10 to-transparent hover:border-primary/50 hover:shadow-md'
