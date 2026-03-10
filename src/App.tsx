@@ -16,6 +16,7 @@ import MainMenu from "./pages/MainMenu";
 import Subscription from "./pages/Subscription";
 import Profile from "./pages/Profile";
 import AIChat from "./pages/AIChat";
+import Enamed from "./pages/Enamed";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
