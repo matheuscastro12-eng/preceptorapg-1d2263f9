@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { BookOpen, ArrowLeft, Sparkles, ChevronRight, Loader2, Copy, FileDown, Shield, Play, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { BookOpen, ArrowLeft, ChevronRight, Loader2, Copy, FileDown, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
@@ -40,15 +40,6 @@ const ENAMED_SPECIALTIES: Specialty[] = [
   { id: 'oftalmologia', name: 'Oftalmologia', percentage: '0,90%', icon: '👁️', topics: ['Síndrome do Olho Vermelho', 'Glaucoma', 'Trauma Ocular', 'Distúrbios de Refração', 'Neuroftalmologia'] },
 ];
 
-interface GenerationStatus {
-  generating: boolean;
-  current: number;
-  total: number;
-  currentSpecialty: string;
-  completed: string[];
-  errors: string[];
-}
-
 const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
   const { toast } = useToast();
   const { isAdmin } = useAdmin();
@@ -58,41 +49,8 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
   const [loadingContent, setLoadingContent] = useState(true);
   const [resultado, setResultado] = useState('');
   const [exporting, setExporting] = useState(false);
-  const [bulkStatus, setBulkStatus] = useState<GenerationStatus>({
-    generating: false, current: 0, total: 0, currentSpecialty: '', completed: [], errors: [],
-  });
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
-  const [regenerating, setRegenerating] = useState<string | null>(null);
-
-  const regenerateSingle = async (spec: Specialty) => {
-    if (!isAdmin) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    setRegenerating(spec.id);
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-all-ebooks`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-          body: JSON.stringify({ specialty_ids: [spec.id], stream: false }),
-        }
-      );
-      if (!response.ok) throw new Error('Erro');
-      const { results } = await response.json();
-      if (results?.[0]?.status === 'done') {
-        const { data } = await supabase.from('enamed_ebooks').select('content').eq('specialty_id', spec.id).maybeSingle();
-        if (data) setSavedContent(prev => ({ ...prev, [spec.id]: data.content }));
-        toast({ title: `${spec.name} regenerado com sucesso!` });
-      } else {
-        toast({ title: `Erro ao regenerar ${spec.name}`, variant: 'destructive' });
-      }
-    } catch {
-      toast({ title: 'Erro na regeneração', variant: 'destructive' });
-    } finally {
-      setRegenerating(null);
-    }
-  };
 
   useEffect(() => {
     const loadEbooks = async () => {
@@ -126,8 +84,9 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
     }
   };
 
-  const generateAll = async () => {
-    if (!isAdmin) return;
+  const generateSingle = async (spec: Specialty, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!isAdmin || generatingId) return;
     
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -135,76 +94,29 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
       return;
     }
 
-    setBulkStatus({ generating: true, current: 0, total: ENAMED_SPECIALTIES.length, currentSpecialty: 'Iniciando...', completed: [], errors: [] });
-
+    setGeneratingId(spec.id);
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-all-ebooks`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({}),
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ specialty_ids: [spec.id], stream: false }),
         }
       );
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || 'Erro ao gerar ebooks');
+      if (!response.ok) throw new Error('Erro na geração');
+      const { results } = await response.json();
+      if (results?.[0]?.status === 'done') {
+        const { data } = await supabase.from('enamed_ebooks').select('content').eq('specialty_id', spec.id).maybeSingle();
+        if (data) setSavedContent(prev => ({ ...prev, [spec.id]: data.content }));
+        toast({ title: `✅ ${spec.name} gerado com sucesso! (${results[0].content_length?.toLocaleString()} caracteres)` });
+      } else {
+        toast({ title: `Erro: ${results?.[0]?.error || 'Falha'}`, variant: 'destructive' });
       }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            try {
-              const parsed = JSON.parse(line.slice(6));
-              if (parsed.type === 'progress') {
-                setBulkStatus(prev => ({
-                  ...prev,
-                  current: parsed.current,
-                  total: parsed.total,
-                  currentSpecialty: parsed.specialty,
-                }));
-              } else if (parsed.type === 'done') {
-                setBulkStatus(prev => ({
-                  ...prev,
-                  completed: [...prev.completed, parsed.specialty_id],
-                }));
-                // Reload content for this specialty
-                const { data } = await supabase
-                  .from('enamed_ebooks')
-                  .select('content')
-                  .eq('specialty_id', parsed.specialty_id)
-                  .maybeSingle();
-                if (data) {
-                  setSavedContent(prev => ({ ...prev, [parsed.specialty_id]: data.content }));
-                }
-              } else if (parsed.type === 'error') {
-                setBulkStatus(prev => ({
-                  ...prev,
-                  errors: [...prev.errors, parsed.specialty],
-                }));
-              } else if (parsed.type === 'complete') {
-                setBulkStatus(prev => ({ ...prev, generating: false }));
-                toast({ title: 'Todos os ebooks foram gerados!' });
-              }
-            } catch { /* ignore */ }
-          }
-        }
-      }
-    } catch (error) {
-      toast({ title: 'Erro', description: error instanceof Error ? error.message : 'Falha na geração', variant: 'destructive' });
-      setBulkStatus(prev => ({ ...prev, generating: false }));
+    } catch {
+      toast({ title: 'Erro na geração', variant: 'destructive' });
+    } finally {
+      setGeneratingId(null);
     }
   };
 
@@ -229,63 +141,30 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
     return (
       <div className="space-y-6">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-3">
-            <BookOpen className="h-3.5 w-3.5 text-emerald-600" />
-            <span className="text-xs font-medium text-emerald-600">E-Book ENAMED</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-3">
+            <BookOpen className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs font-medium text-primary">E-Book ENAMED</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-            Resumos por <span className="text-emerald-600">Especialidade</span>
+            Resumos por <span className="text-primary">Especialidade</span>
           </h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-lg mx-auto">
             Resumos completos e detalhados para cada especialidade do ENAMED — {availableCount} de {ENAMED_SPECIALTIES.length} disponíveis
           </p>
         </div>
 
-        {/* Admin: Generate All Button */}
-        {isAdmin && (
-          <div className="flex flex-col items-center gap-3">
-            <Button
-              onClick={generateAll}
-              disabled={bulkStatus.generating}
-              className="gap-2 bg-amber-600 hover:bg-amber-700 text-white"
-            >
-              {bulkStatus.generating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
-              {bulkStatus.generating
-                ? `Gerando ${bulkStatus.current}/${bulkStatus.total} — ${bulkStatus.currentSpecialty}`
-                : `Gerar Todos os ${ENAMED_SPECIALTIES.length} Resumos`}
-            </Button>
-
-            {bulkStatus.generating && (
-              <div className="w-full max-w-md">
-                <div className="h-2 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full bg-amber-500 transition-all duration-500"
-                    style={{ width: `${(bulkStatus.current / bulkStatus.total) * 100}%` }}
-                  />
-                </div>
-                <div className="flex gap-2 mt-2 flex-wrap justify-center">
-                  {bulkStatus.completed.map(id => (
-                    <span key={id} className="text-[10px] flex items-center gap-1 text-emerald-600">
-                      <CheckCircle2 className="h-3 w-3" />{ENAMED_SPECIALTIES.find(s => s.id === id)?.name}
-                    </span>
-                  ))}
-                  {bulkStatus.errors.map(name => (
-                    <span key={name} className="text-[10px] flex items-center gap-1 text-destructive">
-                      <AlertCircle className="h-3 w-3" />{name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+        {/* Admin generating indicator */}
+        {generatingId && (
+          <div className="flex items-center justify-center gap-3 p-3 rounded-xl border border-primary/30 bg-primary/5">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <span className="text-sm font-medium text-foreground">
+              Gerando {ENAMED_SPECIALTIES.find(s => s.id === generatingId)?.name}... (pode levar 1-2 min)
+            </span>
           </div>
         )}
 
         {!canAccess && (
-          <div className="text-center p-4 rounded-xl border border-amber-500/30 bg-amber-500/5">
+          <div className="text-center p-4 rounded-xl border border-destructive/30 bg-destructive/5">
             <p className="text-sm text-muted-foreground">
               🔒 Os resumos do E-Book ENAMED estão disponíveis apenas para assinantes.
             </p>
@@ -299,45 +178,48 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {ENAMED_SPECIALTIES.map((spec) => {
-               const hasContent = !!savedContent[spec.id];
-               const isShort = hasContent && savedContent[spec.id].length < 5000;
-               const wasJustCompleted = bulkStatus.completed.includes(spec.id);
-               const isRegenerating = regenerating === spec.id;
+              const hasContent = !!savedContent[spec.id];
+              const isShort = hasContent && savedContent[spec.id].length < 10000;
+              const isGenerating = generatingId === spec.id;
               return (
                 <button
                   key={spec.id}
                   onClick={() => canAccess && hasContent && openSpecialty(spec)}
-                  disabled={!canAccess || !hasContent}
+                  disabled={(!canAccess || !hasContent) && !isAdmin}
                   className={`group relative rounded-xl border p-4 text-left transition-all duration-300 ${
                     hasContent && canAccess
-                      ? 'border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-transparent hover:border-emerald-500/50 hover:shadow-[0_0_20px_hsl(150_50%_40%/0.1)]'
+                      ? 'border-primary/30 bg-gradient-to-br from-primary/10 to-transparent hover:border-primary/50 hover:shadow-md'
                       : 'border-border/20 bg-muted/10 opacity-50 cursor-not-allowed'
-                  } ${wasJustCompleted ? 'ring-2 ring-emerald-500/50 animate-pulse' : ''}`}
+                  } ${isGenerating ? 'ring-2 ring-primary/50 animate-pulse' : ''}`}
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-lg">{spec.icon}</span>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-bold text-foreground truncate">{spec.name}</h3>
                       <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-                        hasContent ? 'text-emerald-600 bg-emerald-500/10' : 'text-muted-foreground bg-muted/30'
+                        hasContent && !isShort ? 'text-primary bg-primary/10' : 'text-muted-foreground bg-muted/30'
                       }`}>{spec.percentage}</span>
                     </div>
-                    {hasContent ? (
-                      <ChevronRight className="h-4 w-4 text-emerald-600 shrink-0" />
+                    {hasContent && !isShort ? (
+                      <ChevronRight className="h-4 w-4 text-primary shrink-0" />
                     ) : null}
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-[11px] text-muted-foreground line-clamp-2">
-                      {hasContent ? (isShort ? '⚠️ Resumo incompleto' : 'Resumo disponível — clique para ler') : 'Em breve'}
+                      {isGenerating 
+                        ? 'Gerando resumo...' 
+                        : hasContent 
+                          ? (isShort ? '⚠️ Resumo incompleto' : 'Resumo disponível — clique para ler') 
+                          : 'Em breve'}
                     </p>
-                    {isAdmin && hasContent && isShort && (
+                    {isAdmin && (!hasContent || isShort) && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); regenerateSingle(spec); }}
-                        disabled={isRegenerating}
-                        className="ml-2 p-1 rounded-md hover:bg-muted/50 text-amber-600 shrink-0"
-                        title="Regenerar"
+                        onClick={(e) => generateSingle(spec, e)}
+                        disabled={!!generatingId}
+                        className="ml-2 p-1.5 rounded-lg hover:bg-primary/10 text-primary shrink-0 disabled:opacity-30"
+                        title={hasContent ? 'Regenerar' : 'Gerar'}
                       >
-                        {isRegenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                        {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                       </button>
                     )}
                   </div>
@@ -361,7 +243,7 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
         <div className="flex items-center gap-2">
           <span className="text-lg">{selectedSpecialty.icon}</span>
           <span className="text-sm font-bold">{selectedSpecialty.name}</span>
-          <span className="text-[10px] font-medium text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">{selectedSpecialty.percentage}</span>
+          <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">{selectedSpecialty.percentage}</span>
         </div>
 
         <div className="ml-auto flex gap-2">
