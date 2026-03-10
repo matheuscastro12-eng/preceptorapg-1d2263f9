@@ -299,8 +299,10 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {ENAMED_SPECIALTIES.map((spec) => {
-              const hasContent = !!savedContent[spec.id];
-              const wasJustCompleted = bulkStatus.completed.includes(spec.id);
+               const hasContent = !!savedContent[spec.id];
+               const isShort = hasContent && savedContent[spec.id].length < 5000;
+               const wasJustCompleted = bulkStatus.completed.includes(spec.id);
+               const isRegenerating = regenerating === spec.id;
               return (
                 <button
                   key={spec.id}
