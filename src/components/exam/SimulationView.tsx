@@ -371,27 +371,51 @@ const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = 
 
           {/* Reveal / Explanation */}
           {userAnswer && (
-            <div className="pt-2">
+            <div className="pt-2 space-y-3">
               {!isRevealed ? (
                 <Button variant="outline" size="sm" onClick={toggleReveal} className="gap-2">
                   <Eye className="h-4 w-4" />
                   Ver Gabarito
                 </Button>
               ) : (
-                <div className="rounded-xl border border-border/30 bg-secondary/20 p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-primary">Gabarito: {currentQ.correctAnswer}</span>
-                    <Button variant="ghost" size="sm" onClick={toggleReveal} className="gap-1 h-7 text-xs">
-                      <EyeOff className="h-3 w-3" />
-                      Ocultar
-                    </Button>
-                  </div>
-                  {currentQ.explanation && (
-                    <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
-                      <MarkdownRenderer content={currentQ.explanation} />
+                <>
+                  <div className="rounded-xl border border-border/30 bg-secondary/20 p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-primary">Gabarito: {currentQ.correctAnswer}</span>
+                      <Button variant="ghost" size="sm" onClick={toggleReveal} className="gap-1 h-7 text-xs">
+                        <EyeOff className="h-3 w-3" />
+                        Ocultar
+                      </Button>
                     </div>
+                    {currentQ.explanation && (
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+                        <MarkdownRenderer content={currentQ.explanation} />
+                      </div>
+                    )}
+                  </div>
+                  {/* Prominent next button after explanation */}
+                  {currentIndex < totalQuestions - 1 && (
+                    <Button
+                      onClick={() => setCurrentIndex(currentIndex + 1)}
+                      className="w-full gap-2 bg-gradient-to-r from-primary to-primary/80"
+                      size="sm"
+                    >
+                      Próxima Questão
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
                   )}
-                </div>
+                  {currentIndex === totalQuestions - 1 && isGenerating && (
+                    <Button
+                      onClick={() => setCurrentIndex(currentIndex + 1)}
+                      variant="outline"
+                      className="w-full gap-2"
+                      size="sm"
+                    >
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Aguardando próxima questão...
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           )}
