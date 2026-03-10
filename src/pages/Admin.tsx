@@ -244,10 +244,10 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Decorative background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+      {/* Decorative background - hidden on mobile to avoid iOS rendering bugs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden hidden md:block">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/3 rounded-full opacity-50 will-change-transform" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/3 rounded-full opacity-50 will-change-transform" />
       </div>
 
       {/* Header */}
