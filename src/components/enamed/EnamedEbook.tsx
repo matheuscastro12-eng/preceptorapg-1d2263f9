@@ -62,6 +62,37 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
     generating: false, current: 0, total: 0, currentSpecialty: '', completed: [], errors: [],
   });
   const resultRef = useRef<HTMLDivElement>(null);
+  const [regenerating, setRegenerating] = useState<string | null>(null);
+
+  const regenerateSingle = async (spec: Specialty) => {
+    if (!isAdmin) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    setRegenerating(spec.id);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-all-ebooks`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ specialty_ids: [spec.id], stream: false }),
+        }
+      );
+      if (!response.ok) throw new Error('Erro');
+      const { results } = await response.json();
+      if (results?.[0]?.status === 'done') {
+        const { data } = await supabase.from('enamed_ebooks').select('content').eq('specialty_id', spec.id).maybeSingle();
+        if (data) setSavedContent(prev => ({ ...prev, [spec.id]: data.content }));
+        toast({ title: `${spec.name} regenerado com sucesso!` });
+      } else {
+        toast({ title: `Erro ao regenerar ${spec.name}`, variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Erro na regeneração', variant: 'destructive' });
+    } finally {
+      setRegenerating(null);
+    }
+  };
 
   useEffect(() => {
     const loadEbooks = async () => {
