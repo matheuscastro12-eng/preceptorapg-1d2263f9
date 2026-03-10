@@ -206,22 +206,10 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-[11px] text-muted-foreground line-clamp-2">
-                      {isGenerating 
-                        ? 'Gerando resumo...' 
-                        : hasContent 
-                          ? 'Resumo disponível — clique para ler'
-                          : 'Ainda não gerado'}
+                      {hasContent 
+                        ? 'Resumo disponível — clique para ler'
+                        : 'Ainda não gerado'}
                     </p>
-                    {isAdmin && (
-                      <button
-                        onClick={(e) => generateSingle(spec, e)}
-                        disabled={!!generatingId}
-                        className="ml-2 p-1.5 rounded-lg hover:bg-primary/10 text-primary shrink-0 disabled:opacity-30"
-                        title={hasContent ? 'Regenerar' : 'Gerar'}
-                      >
-                        {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                      </button>
-                    )}
                   </div>
                 </button>
               );
