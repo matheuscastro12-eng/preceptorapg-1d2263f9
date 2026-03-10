@@ -141,12 +141,64 @@ serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { specialty_ids } = body;
+    const { specialty_ids, stream: useStream = true } = body;
 
     // Filter specialties to generate
     const toGenerate = specialty_ids?.length
       ? ENAMED_SPECIALTIES.filter(s => specialty_ids.includes(s.id))
       : ENAMED_SPECIALTIES;
+
+    // Non-streaming mode: generate and return JSON
+    if (!useStream) {
+      const results: Array<{ specialty_id: string; specialty: string; status: string; content_length?: number; error?: string }> = [];
+
+      for (const spec of toGenerate) {
+        try {
+          const userPrompt = `**Especialidade:** ${spec.name} — Preparatório ENAMED\n\n**Tópicos obrigatórios a cobrir:**\n${spec.topics.map((t, idx) => `${idx + 1}. ${t}`).join('\n')}\n\nGere um RESUMO COMPLETO e EXTREMAMENTE DETALHADO cobrindo TODOS os tópicos acima. Este material será o guia definitivo de estudo do aluno para esta especialidade no ENAMED.`;
+
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GOOGLE_AI_API_KEY}`;
+
+          const response = await fetch(geminiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: SYSTEM_PROMPT + "\n\n" + userPrompt }] }],
+              generationConfig: { temperature: 1, maxOutputTokens: 16384 },
+            }),
+          });
+
+          if (!response.ok) {
+            results.push({ specialty_id: spec.id, specialty: spec.name, status: 'error', error: `API ${response.status}` });
+            continue;
+          }
+
+          const result = await response.json();
+          const content = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+          if (!content) {
+            results.push({ specialty_id: spec.id, specialty: spec.name, status: 'error', error: 'No content' });
+            continue;
+          }
+
+          const { error: dbError } = await serviceClient.from("enamed_ebooks").upsert({
+            specialty_id: spec.id, specialty_name: spec.name, content, updated_at: new Date().toISOString(),
+          }, { onConflict: "specialty_id" });
+
+          results.push({
+            specialty_id: spec.id, specialty: spec.name,
+            status: dbError ? 'db_error' : 'done',
+            content_length: content.length,
+            error: dbError?.message,
+          });
+        } catch (err) {
+          results.push({ specialty_id: spec.id, specialty: spec.name, status: 'error', error: err.message });
+        }
+      }
+
+      return new Response(JSON.stringify({ results }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Stream progress as SSE
     const encoder = new TextEncoder();
@@ -163,12 +215,7 @@ serve(async (req) => {
           send({ type: 'progress', current: i + 1, total: toGenerate.length, specialty: spec.name, specialty_id: spec.id });
 
           try {
-            const userPrompt = `**Especialidade:** ${spec.name} — Preparatório ENAMED
-
-**Tópicos obrigatórios a cobrir:**
-${spec.topics.map((t, idx) => `${idx + 1}. ${t}`).join('\n')}
-
-Gere um RESUMO COMPLETO e EXTREMAMENTE DETALHADO cobrindo TODOS os tópicos acima. Este material será o guia definitivo de estudo do aluno para esta especialidade no ENAMED.`;
+            const userPrompt = `**Especialidade:** ${spec.name} — Preparatório ENAMED\n\n**Tópicos obrigatórios a cobrir:**\n${spec.topics.map((t, idx) => `${idx + 1}. ${t}`).join('\n')}\n\nGere um RESUMO COMPLETO e EXTREMAMENTE DETALHADO cobrindo TODOS os tópicos acima. Este material será o guia definitivo de estudo do aluno para esta especialidade no ENAMED.`;
 
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GOOGLE_AI_API_KEY}`;
 
@@ -176,13 +223,8 @@ Gere um RESUMO COMPLETO e EXTREMAMENTE DETALHADO cobrindo TODOS os tópicos acim
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                contents: [
-                  { role: "user", parts: [{ text: SYSTEM_PROMPT + "\n\n" + userPrompt }] },
-                ],
-                generationConfig: {
-                  temperature: 1,
-                  maxOutputTokens: 16384,
-                },
+                contents: [{ role: "user", parts: [{ text: SYSTEM_PROMPT + "\n\n" + userPrompt }] }],
+                generationConfig: { temperature: 1, maxOutputTokens: 16384 },
               }),
             });
 
@@ -201,15 +243,9 @@ Gere um RESUMO COMPLETO e EXTREMAMENTE DETALHADO cobrindo TODOS os tópicos acim
               continue;
             }
 
-            // Upsert to database
-            const { error: dbError } = await serviceClient
-              .from("enamed_ebooks")
-              .upsert({
-                specialty_id: spec.id,
-                specialty_name: spec.name,
-                content: content,
-                updated_at: new Date().toISOString(),
-              }, { onConflict: "specialty_id" });
+            const { error: dbError } = await serviceClient.from("enamed_ebooks").upsert({
+              specialty_id: spec.id, specialty_name: spec.name, content, updated_at: new Date().toISOString(),
+            }, { onConflict: "specialty_id" });
 
             if (dbError) {
               console.error(`DB error for ${spec.id}:`, dbError);
@@ -217,7 +253,6 @@ Gere um RESUMO COMPLETO e EXTREMAMENTE DETALHADO cobrindo TODOS os tópicos acim
             } else {
               send({ type: 'done', specialty_id: spec.id, specialty: spec.name, content_length: content.length });
             }
-
           } catch (err) {
             console.error(`Exception for ${spec.id}:`, err);
             send({ type: 'error', specialty_id: spec.id, specialty: spec.name, error: err.message });
