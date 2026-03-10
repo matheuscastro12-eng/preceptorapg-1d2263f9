@@ -188,7 +188,7 @@ const Auth = () => {
           </div>
           
           <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-            <Tabs defaultValue="login" className="w-full">
+            <Tabs defaultValue={defaultTab} className="w-full">
               <CardHeader className="pb-4">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="login">Entrar</TabsTrigger>
