@@ -179,7 +179,6 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {ENAMED_SPECIALTIES.map((spec) => {
               const hasContent = !!savedContent[spec.id];
-              const isShort = hasContent && savedContent[spec.id].length < 10000;
               const isGenerating = generatingId === spec.id;
               return (
                 <button
@@ -197,22 +196,20 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-bold text-foreground truncate">{spec.name}</h3>
                       <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-                        hasContent && !isShort ? 'text-primary bg-primary/10' : 'text-muted-foreground bg-muted/30'
+                        hasContent ? 'text-primary bg-primary/10' : 'text-muted-foreground bg-muted/30'
                       }`}>{spec.percentage}</span>
                     </div>
-                    {hasContent && !isShort ? (
-                      <ChevronRight className="h-4 w-4 text-primary shrink-0" />
-                    ) : null}
+                    {hasContent && <ChevronRight className="h-4 w-4 text-primary shrink-0" />}
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-[11px] text-muted-foreground line-clamp-2">
                       {isGenerating 
                         ? 'Gerando resumo...' 
                         : hasContent 
-                          ? (isShort ? '⚠️ Resumo incompleto' : 'Resumo disponível — clique para ler') 
-                          : 'Em breve'}
+                          ? 'Resumo disponível — clique para ler'
+                          : 'Ainda não gerado'}
                     </p>
-                    {isAdmin && (!hasContent || isShort) && (
+                    {isAdmin && (
                       <button
                         onClick={(e) => generateSingle(spec, e)}
                         disabled={!!generatingId}
