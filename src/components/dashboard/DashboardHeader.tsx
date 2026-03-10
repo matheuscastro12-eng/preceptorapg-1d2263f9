@@ -21,7 +21,7 @@ const DashboardHeader = ({ userEmail, onLogout }: DashboardHeaderProps) => {
             </Button>
             <div className="h-6 w-px bg-border/50 hidden sm:block" />
           <div className="relative group">
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/40 to-accent/40 blur-xl opacity-60 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/40 to-accent/40 opacity-40 group-hover:opacity-70 transition-opacity hidden sm:block" />
             <div className="relative rounded-xl bg-gradient-to-br from-primary/20 to-accent/10 p-2.5 ring-1 ring-primary/20">
               <Stethoscope className="h-6 w-6 text-primary" />
             </div>
