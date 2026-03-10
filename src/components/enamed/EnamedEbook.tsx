@@ -76,6 +76,9 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
     if (content) {
       setSelectedSpecialty(spec);
       setResultado(content);
+    } else if (isAdmin) {
+      setSelectedSpecialty(spec);
+      setResultado('');
     } else {
       toast({
         title: 'Em breve',
