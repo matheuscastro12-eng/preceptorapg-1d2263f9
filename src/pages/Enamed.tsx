@@ -270,6 +270,35 @@ const Enamed = () => {
     );
   }
 
+  // E-Book mode
+  if (mode === 'ebook') {
+    return (
+      <PageTransition className="min-h-screen bg-background flex flex-col">
+        <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80">
+          <div className="container flex h-16 items-center justify-between px-4">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" onClick={handleBackToMenu} className="gap-2">
+                <ArrowLeft className="h-4 w-4" />Voltar
+              </Button>
+              <div className="h-6 w-px bg-border/50" />
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                  <BookOpen className="h-4 w-4 text-emerald-600" />
+                </div>
+                <span className="text-lg font-bold text-emerald-600">E-Book ENAMED</span>
+              </div>
+            </div>
+            <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
+          </div>
+        </header>
+
+        <main className="flex-1 container relative py-6 px-4">
+          <EnamedEbook onBack={handleBackToMenu} />
+        </main>
+      </PageTransition>
+    );
+  }
+
   // Area selection view (for both banco and ia)
   if (mode === 'area' || mode === 'ia_area') {
     const isIa = mode === 'ia_area';
