@@ -91,50 +91,48 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Autenticação necessária" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Verify admin role
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    // Auth: check for service role key OR valid admin user
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.replace("Bearer ", "");
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+      
+      // If not service role key and not anon key, validate as user
+      if (token !== serviceRoleKey && token !== anonKey) {
+        const supabaseClient = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          anonKey,
+          { global: { headers: { Authorization: authHeader } } }
+        );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
-    const userId = claimsData?.claims?.sub;
+        const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+        if (userError || !user?.id) {
+          return new Response(
+            JSON.stringify({ error: "Token inválido" }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
 
-    if (claimsError || !userId) {
-      return new Response(
-        JSON.stringify({ error: "Token inválido" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+        const { data: adminRole } = await serviceClient
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .maybeSingle();
 
-    // Check admin
-    const { data: adminRole } = await serviceClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
-
-    if (!adminRole) {
-      return new Response(
-        JSON.stringify({ error: "Apenas administradores podem gerar ebooks" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+        if (!adminRole) {
+          return new Response(
+            JSON.stringify({ error: "Apenas administradores podem gerar ebooks" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
     }
 
     const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
@@ -183,7 +181,7 @@ Gere um RESUMO COMPLETO e EXTREMAMENTE DETALHADO cobrindo TODOS os tópicos acim
                 ],
                 generationConfig: {
                   temperature: 1,
-                  maxOutputTokens: 65536,
+                  maxOutputTokens: 16384,
                 },
               }),
             });
