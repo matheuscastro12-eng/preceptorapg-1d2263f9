@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { BookOpen, ArrowLeft, Sparkles, ChevronRight, Loader2, Copy, FileDown, Shield } from 'lucide-react';
+import { BookOpen, ArrowLeft, Sparkles, ChevronRight, Loader2, Copy, FileDown, Shield, Play, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/hooks/useAdmin';
+import { useSubscription } from '@/hooks/useSubscription';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
-import GenerationProgress from '@/components/GenerationProgress';
 import { exportToPDF } from '@/utils/pdfExport';
 
 interface Specialty {
@@ -40,20 +40,29 @@ const ENAMED_SPECIALTIES: Specialty[] = [
   { id: 'oftalmologia', name: 'Oftalmologia', percentage: '0,90%', icon: '👁️', topics: ['Síndrome do Olho Vermelho', 'Glaucoma', 'Trauma Ocular', 'Distúrbios de Refração', 'Neuroftalmologia'] },
 ];
 
+interface GenerationStatus {
+  generating: boolean;
+  current: number;
+  total: number;
+  currentSpecialty: string;
+  completed: string[];
+  errors: string[];
+}
+
 const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
   const { toast } = useToast();
   const { isAdmin } = useAdmin();
+  const { hasAccess } = useSubscription();
   const [selectedSpecialty, setSelectedSpecialty] = useState<Specialty | null>(null);
   const [savedContent, setSavedContent] = useState<Record<string, string>>({});
   const [loadingContent, setLoadingContent] = useState(true);
   const [resultado, setResultado] = useState('');
-  const [generating, setGenerating] = useState(false);
-  const [hasStartedReceiving, setHasStartedReceiving] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [bulkStatus, setBulkStatus] = useState<GenerationStatus>({
+    generating: false, current: 0, total: 0, currentSpecialty: '', completed: [], errors: [],
+  });
   const resultRef = useRef<HTMLDivElement>(null);
 
-  // Load all saved ebooks from DB on mount
   useEffect(() => {
     const loadEbooks = async () => {
       setLoadingContent(true);
@@ -78,11 +87,6 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
     if (content) {
       setSelectedSpecialty(spec);
       setResultado(content);
-      setIsComplete(true);
-      setHasStartedReceiving(true);
-    } else if (isAdmin) {
-      // Admin can generate and save
-      generateAndSave(spec);
     } else {
       toast({
         title: 'Em breve',
@@ -91,41 +95,37 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
     }
   };
 
-  const generateAndSave = async (specialty: Specialty) => {
-    setSelectedSpecialty(specialty);
-    setResultado('');
-    setGenerating(true);
-    setHasStartedReceiving(false);
-    setIsComplete(false);
+  const generateAll = async () => {
+    if (!isAdmin) return;
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({ title: 'Sessão expirada', variant: 'destructive' });
+      return;
+    }
+
+    setBulkStatus({ generating: true, current: 0, total: ENAMED_SPECIALTIES.length, currentSpecialty: 'Iniciando...', completed: [], errors: [] });
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Sessão expirada.');
-
-      const tema = `${specialty.name} — Preparatório ENAMED`;
-      const objetivos = specialty.topics.join('\n');
-
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-fechamento`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-all-ebooks`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ tema, objetivos, mode: 'fechamento' }),
+          body: JSON.stringify({}),
         }
       );
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Erro ao gerar resumo');
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || 'Erro ao gerar ebooks');
       }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
-      let fullText = '';
-      let started = false;
 
       if (reader) {
         while (true) {
@@ -134,51 +134,46 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
           const chunk = decoder.decode(value, { stream: true });
           const lines = chunk.split('\n');
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const jsonStr = line.slice(6).trim();
-              if (jsonStr === '[DONE]') continue;
-              try {
-                const parsed = JSON.parse(jsonStr);
-                const content = parsed.choices?.[0]?.delta?.content;
-                if (content) {
-                  if (!started) { started = true; setHasStartedReceiving(true); }
-                  fullText += content;
-                  setResultado(fullText);
+            if (!line.startsWith('data: ')) continue;
+            try {
+              const parsed = JSON.parse(line.slice(6));
+              if (parsed.type === 'progress') {
+                setBulkStatus(prev => ({
+                  ...prev,
+                  current: parsed.current,
+                  total: parsed.total,
+                  currentSpecialty: parsed.specialty,
+                }));
+              } else if (parsed.type === 'done') {
+                setBulkStatus(prev => ({
+                  ...prev,
+                  completed: [...prev.completed, parsed.specialty_id],
+                }));
+                // Reload content for this specialty
+                const { data } = await supabase
+                  .from('enamed_ebooks')
+                  .select('content')
+                  .eq('specialty_id', parsed.specialty_id)
+                  .maybeSingle();
+                if (data) {
+                  setSavedContent(prev => ({ ...prev, [parsed.specialty_id]: data.content }));
                 }
-              } catch { /* ignore */ }
-            }
+              } else if (parsed.type === 'error') {
+                setBulkStatus(prev => ({
+                  ...prev,
+                  errors: [...prev.errors, parsed.specialty],
+                }));
+              } else if (parsed.type === 'complete') {
+                setBulkStatus(prev => ({ ...prev, generating: false }));
+                toast({ title: 'Todos os ebooks foram gerados!' });
+              }
+            } catch { /* ignore */ }
           }
         }
       }
-
-      setIsComplete(true);
-
-      // Save to enamed_ebooks (upsert)
-      const { error } = await supabase
-        .from('enamed_ebooks')
-        .upsert({
-          specialty_id: specialty.id,
-          specialty_name: specialty.name,
-          content: fullText,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'specialty_id' });
-
-      if (error) {
-        console.error('Error saving ebook:', error);
-        toast({ title: 'Erro ao salvar', description: 'O resumo foi gerado mas não foi salvo.', variant: 'destructive' });
-      } else {
-        setSavedContent(prev => ({ ...prev, [specialty.id]: fullText }));
-        toast({ title: 'Resumo salvo!', description: `${specialty.name} salvo no banco de dados.` });
-      }
-
     } catch (error) {
-      toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Não foi possível gerar.',
-        variant: 'destructive',
-      });
-    } finally {
-      setGenerating(false);
+      toast({ title: 'Erro', description: error instanceof Error ? error.message : 'Falha na geração', variant: 'destructive' });
+      setBulkStatus(prev => ({ ...prev, generating: false }));
     }
   };
 
@@ -196,6 +191,7 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
   };
 
   const availableCount = Object.keys(savedContent).length;
+  const canAccess = hasAccess || isAdmin;
 
   // Specialty selection view
   if (!selectedSpecialty) {
@@ -214,6 +210,57 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
           </p>
         </div>
 
+        {/* Admin: Generate All Button */}
+        {isAdmin && (
+          <div className="flex flex-col items-center gap-3">
+            <Button
+              onClick={generateAll}
+              disabled={bulkStatus.generating}
+              className="gap-2 bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {bulkStatus.generating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4" />
+              )}
+              {bulkStatus.generating
+                ? `Gerando ${bulkStatus.current}/${bulkStatus.total} — ${bulkStatus.currentSpecialty}`
+                : `Gerar Todos os ${ENAMED_SPECIALTIES.length} Resumos`}
+            </Button>
+
+            {bulkStatus.generating && (
+              <div className="w-full max-w-md">
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500 transition-all duration-500"
+                    style={{ width: `${(bulkStatus.current / bulkStatus.total) * 100}%` }}
+                  />
+                </div>
+                <div className="flex gap-2 mt-2 flex-wrap justify-center">
+                  {bulkStatus.completed.map(id => (
+                    <span key={id} className="text-[10px] flex items-center gap-1 text-emerald-600">
+                      <CheckCircle2 className="h-3 w-3" />{ENAMED_SPECIALTIES.find(s => s.id === id)?.name}
+                    </span>
+                  ))}
+                  {bulkStatus.errors.map(name => (
+                    <span key={name} className="text-[10px] flex items-center gap-1 text-destructive">
+                      <AlertCircle className="h-3 w-3" />{name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!canAccess && (
+          <div className="text-center p-4 rounded-xl border border-amber-500/30 bg-amber-500/5">
+            <p className="text-sm text-muted-foreground">
+              🔒 Os resumos do E-Book ENAMED estão disponíveis apenas para assinantes.
+            </p>
+          </div>
+        )}
+
         {loadingContent ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -222,18 +269,17 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {ENAMED_SPECIALTIES.map((spec) => {
               const hasContent = !!savedContent[spec.id];
+              const wasJustCompleted = bulkStatus.completed.includes(spec.id);
               return (
                 <button
                   key={spec.id}
-                  onClick={() => openSpecialty(spec)}
-                  disabled={!hasContent && !isAdmin}
+                  onClick={() => canAccess && hasContent && openSpecialty(spec)}
+                  disabled={!canAccess || !hasContent}
                   className={`group relative rounded-xl border p-4 text-left transition-all duration-300 ${
-                    hasContent
+                    hasContent && canAccess
                       ? 'border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-transparent hover:border-emerald-500/50 hover:shadow-[0_0_20px_hsl(150_50%_40%/0.1)]'
-                      : isAdmin
-                        ? 'border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent hover:border-amber-500/50 cursor-pointer'
-                        : 'border-border/20 bg-muted/10 opacity-50 cursor-not-allowed'
-                  }`}
+                      : 'border-border/20 bg-muted/10 opacity-50 cursor-not-allowed'
+                  } ${wasJustCompleted ? 'ring-2 ring-emerald-500/50 animate-pulse' : ''}`}
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-lg">{spec.icon}</span>
@@ -245,12 +291,10 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
                     </div>
                     {hasContent ? (
                       <ChevronRight className="h-4 w-4 text-emerald-600 shrink-0" />
-                    ) : isAdmin ? (
-                      <Shield className="h-4 w-4 text-amber-600 shrink-0" />
                     ) : null}
                   </div>
                   <p className="text-[11px] text-muted-foreground line-clamp-2">
-                    {hasContent ? 'Resumo disponível — clique para ler' : isAdmin ? 'Admin: clique para gerar e salvar' : 'Em breve'}
+                    {hasContent ? 'Resumo disponível — clique para ler' : 'Em breve'}
                   </p>
                 </button>
               );
@@ -265,7 +309,7 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)]">
       <div className="flex items-center gap-3 mb-4 shrink-0">
-        <Button variant="ghost" size="sm" onClick={() => { setSelectedSpecialty(null); setResultado(''); setIsComplete(false); setGenerating(false); }} className="gap-1">
+        <Button variant="ghost" size="sm" onClick={() => { setSelectedSpecialty(null); setResultado(''); }} className="gap-1">
           <ArrowLeft className="h-4 w-4" />Voltar
         </Button>
         <div className="h-5 w-px bg-border/50" />
@@ -275,44 +319,23 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
           <span className="text-[10px] font-medium text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">{selectedSpecialty.percentage}</span>
         </div>
 
-        {isComplete && (
-          <div className="ml-auto flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(resultado); toast({ title: 'Copiado!' }); }} className="gap-1">
-              <Copy className="h-3.5 w-3.5" />Copiar
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={exporting} className="gap-1">
-              <FileDown className="h-3.5 w-3.5" />{exporting ? 'Exportando...' : 'PDF'}
-            </Button>
-            {isAdmin && (
-              <Button variant="outline" size="sm" onClick={() => generateAndSave(selectedSpecialty)} disabled={generating} className="gap-1 border-amber-500/40 text-amber-600">
-                <Sparkles className="h-3.5 w-3.5" />Regerar
-              </Button>
-            )}
-          </div>
-        )}
+        <div className="ml-auto flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(resultado); toast({ title: 'Copiado!' }); }} className="gap-1">
+            <Copy className="h-3.5 w-3.5" />Copiar
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={exporting} className="gap-1">
+            <FileDown className="h-3.5 w-3.5" />{exporting ? 'Exportando...' : 'PDF'}
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 rounded-xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 overflow-hidden">
         <ScrollArea className="h-full">
           <div className="p-6" ref={resultRef}>
-            {resultado ? (
-              <MarkdownRenderer content={resultado} isTyping={generating} />
-            ) : generating ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                <Loader2 className="h-10 w-10 text-emerald-600 animate-spin" />
-                <p className="text-muted-foreground">Gerando resumo completo de <strong>{selectedSpecialty.name}</strong>...</p>
-                <p className="text-xs text-muted-foreground">Isso pode levar alguns minutos devido à profundidade do conteúdo</p>
-              </div>
-            ) : null}
+            <MarkdownRenderer content={resultado} isTyping={false} />
           </div>
         </ScrollArea>
       </div>
-
-      <GenerationProgress
-        isGenerating={generating}
-        hasStartedReceiving={hasStartedReceiving}
-        isComplete={isComplete}
-      />
     </div>
   );
 };
