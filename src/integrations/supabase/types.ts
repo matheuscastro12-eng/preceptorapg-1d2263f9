@@ -41,6 +41,93 @@ export type Database = {
         }
         Relationships: []
       }
+      enamed_attempts: {
+        Row: {
+          answers: Json
+          area_filter: string | null
+          correct_answers: number
+          created_at: string
+          id: string
+          modo: string
+          percentage: number
+          source: string
+          total_questions: number
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          area_filter?: string | null
+          correct_answers: number
+          created_at?: string
+          id?: string
+          modo: string
+          percentage: number
+          source?: string
+          total_questions: number
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          area_filter?: string | null
+          correct_answers?: number
+          created_at?: string
+          id?: string
+          modo?: string
+          percentage?: number
+          source?: string
+          total_questions?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      enamed_questions: {
+        Row: {
+          alternativa_a: string
+          alternativa_b: string
+          alternativa_c: string
+          alternativa_d: string
+          ano: number
+          anulada: boolean
+          area: string
+          created_at: string
+          enunciado: string
+          explicacao: string | null
+          gabarito: string
+          id: string
+          numero: number
+        }
+        Insert: {
+          alternativa_a: string
+          alternativa_b: string
+          alternativa_c: string
+          alternativa_d: string
+          ano?: number
+          anulada?: boolean
+          area: string
+          created_at?: string
+          enunciado: string
+          explicacao?: string | null
+          gabarito: string
+          id?: string
+          numero: number
+        }
+        Update: {
+          alternativa_a?: string
+          alternativa_b?: string
+          alternativa_c?: string
+          alternativa_d?: string
+          ano?: number
+          anulada?: boolean
+          area?: string
+          created_at?: string
+          enunciado?: string
+          explicacao?: string | null
+          gabarito?: string
+          id?: string
+          numero?: number
+        }
+        Relationships: []
+      }
       fechamentos: {
         Row: {
           created_at: string
