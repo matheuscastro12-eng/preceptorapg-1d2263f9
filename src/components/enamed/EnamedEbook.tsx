@@ -139,7 +139,7 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
     if (!resultRef.current || !selectedSpecialty) return;
     setExporting(true);
     try {
-      await exportToPDF(resultRef.current, `ENAMED_${selectedSpecialty.name}`);
+      await exportToPDF({ tema: `ENAMED — ${selectedSpecialty.name}`, contentElement: resultRef.current });
       toast({ title: 'PDF exportado com sucesso!' });
     } catch {
       toast({ title: 'Erro ao exportar PDF', variant: 'destructive' });
