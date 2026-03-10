@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, BookOpen, Stethoscope } from 'lucide-react';
+import { Loader2, BookOpen, Stethoscope, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 
@@ -28,6 +28,7 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
 
+  const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'login';
   const planType = searchParams.get('plan') as 'monthly' | 'annual' | null;
 
   // Redireciona para checkout automaticamente após login se tiver plano na URL
@@ -187,7 +188,7 @@ const Auth = () => {
           </div>
           
           <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-            <Tabs defaultValue="login" className="w-full">
+            <Tabs defaultValue={defaultTab} className="w-full">
               <CardHeader className="pb-4">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="login">Entrar</TabsTrigger>
@@ -270,10 +271,15 @@ const Auth = () => {
                 
                 {/* Signup Tab */}
                 <TabsContent value="signup" className="mt-0">
-                  <CardTitle className="mb-2 text-xl">Criar conta</CardTitle>
-                  <CardDescription className="mb-6">
-                    Junte-se a outros estudantes de medicina
+                  <CardTitle className="mb-2 text-xl">Criar conta grátis</CardTitle>
+                  <CardDescription className="mb-4">
+                    Comece a usar agora — sem cartão de crédito
                   </CardDescription>
+                  
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mb-5">
+                    <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-primary" />2 perguntas/dia no chat IA</span>
+                    <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-primary" />Acesso imediato</span>
+                  </div>
                   
                   <form onSubmit={handleSignup} className="space-y-4">
                     <div className="space-y-2">

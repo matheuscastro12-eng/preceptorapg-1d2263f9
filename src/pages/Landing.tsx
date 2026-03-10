@@ -97,8 +97,8 @@ const Landing = () => {
               <Button variant="ghost" size="sm" onClick={() => navigate('/auth')}>
                 Entrar
               </Button>
-              <Button size="sm" onClick={() => navigate('/pricing')}>
-                Começar
+              <Button size="sm" onClick={() => navigate('/auth?tab=signup')}>
+                Criar conta grátis
               </Button>
             </div>
           )}
@@ -137,22 +137,25 @@ const Landing = () => {
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <Button 
                     size="lg" 
-                    onClick={() => navigate('/pricing')}
+                    onClick={() => navigate('/auth?tab=signup')}
                     className="w-full sm:w-auto"
                   >
-                    Começar gratuitamente
+                    Criar conta grátis
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                   <Button 
                     size="lg" 
                     variant="outline"
-                    onClick={() => navigate('/auth')}
+                    onClick={() => navigate('/pricing')}
                     className="w-full sm:w-auto gap-2"
                   >
-                    <Play className="h-4 w-4" />
-                    Ver demonstração
+                    Ver planos
                   </Button>
                 </div>
+
+                <p className="text-xs text-muted-foreground mt-4">
+                  ✓ 2 perguntas grátis por dia no chat com IA · Sem cartão de crédito
+                </p>
               </motion.div>
             </div>
           </div>
@@ -259,9 +262,9 @@ const Landing = () => {
 
               <Button 
                 size="lg" 
-                onClick={() => navigate('/pricing')}
+                onClick={() => navigate('/auth?tab=signup')}
               >
-                Começar agora
+                Criar conta grátis
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
