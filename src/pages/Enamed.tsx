@@ -239,6 +239,31 @@ const Enamed = () => {
                 </button>
               </div>
             </div>
+            {/* E-Book Section */}
+            <div className="mt-10">
+              <div className="flex items-center gap-2 mb-4">
+                <BookMarked className="h-4 w-4 text-emerald-600" />
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-emerald-600">E-Book — Resumos por Especialidade</h2>
+              </div>
+
+              <button
+                onClick={() => setMode('ebook')}
+                className="group w-full relative rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent p-5 text-left transition-all duration-300 hover:border-emerald-500/50 hover:shadow-[0_0_30px_hsl(150_50%_40%/0.15)]"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <BookOpen className="h-6 w-6 text-emerald-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-base font-bold text-foreground mb-1">Resumos Completos ENAMED</h3>
+                    <p className="text-xs text-muted-foreground">20 especialidades com os temas mais cobrados pelo INEP — gere resumos detalhados no padrão PBL para cada área</p>
+                  </div>
+                  <div className="flex items-center gap-1 text-emerald-600 text-xs font-medium shrink-0">
+                    Explorar <Sparkles className="h-3.5 w-3.5" />
+                  </div>
+                </div>
+              </button>
+            </div>
           </div>
         </main>
       </PageTransition>
