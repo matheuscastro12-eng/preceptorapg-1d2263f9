@@ -326,9 +326,21 @@ const EnamedEbook = ({ onBack }: { onBack: () => void }) => {
                       <ChevronRight className="h-4 w-4 text-emerald-600 shrink-0" />
                     ) : null}
                   </div>
-                  <p className="text-[11px] text-muted-foreground line-clamp-2">
-                    {hasContent ? 'Resumo disponível — clique para ler' : 'Em breve'}
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] text-muted-foreground line-clamp-2">
+                      {hasContent ? (isShort ? '⚠️ Resumo incompleto' : 'Resumo disponível — clique para ler') : 'Em breve'}
+                    </p>
+                    {isAdmin && hasContent && isShort && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); regenerateSingle(spec); }}
+                        disabled={isRegenerating}
+                        className="ml-2 p-1 rounded-md hover:bg-muted/50 text-amber-600 shrink-0"
+                        title="Regenerar"
+                      >
+                        {isRegenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                      </button>
+                    )}
+                  </div>
                 </button>
               );
             })}
