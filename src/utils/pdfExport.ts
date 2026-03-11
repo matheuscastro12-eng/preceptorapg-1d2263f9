@@ -1,9 +1,8 @@
-// PDF Export utility with cover page and optimized rendering via iframe
-import { marked } from 'marked';
+// PDF Export utility with cover page and optimized page breaks
 
 interface PDFExportOptions {
   tema: string;
-  markdown: string;
+  contentElement: HTMLElement;
 }
 
 const formatDate = (date: Date): string => {
@@ -30,6 +29,7 @@ const stripAIPreamble = (html: string): string => {
     const el = child as HTMLElement;
     const tagName = el.tagName?.toLowerCase();
 
+    // Keep headings, lists, tables, hrs, details — they are real content
     if (tagName && ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'table', 'hr', 'details', 'blockquote'].includes(tagName)) {
       foundContentStart = true;
       break;
@@ -49,7 +49,7 @@ const stripAIPreamble = (html: string): string => {
 
       const preamblePatterns = [
         /^(com certeza|claro|certo|ok|perfeito|vamos|aqui est[áa]|segue|pronto|elabor)/i,
-        /^(como (monitor|preceptor|coordenador|professor|solicitado|seu))/i,
+        /^(como (preceptor|coordenador|professor|solicitado|seu))/i,
         /^(este (caso|material|conte[úu]do|fechamento|semin[áa]rio|documento) (foi|[ée]))/i,
         /^(a seguir|abaixo|conforme solicitado|conforme pedido)/i,
         /^(apresento|segue abaixo|seguem|vou (apresentar|elaborar|gerar))/i,
@@ -57,11 +57,11 @@ const stripAIPreamble = (html: string): string => {
         /^(ol[áa]|boa noite|bom dia|boa tarde)/i,
         /^(preparei|elaborei|criei|gerei|montei|organizei|estruturei)/i,
         /^(segue o|segue a|aqui vai|veja o|veja a)/i,
-        /^(com prazer|sem problemas|sem d[úu]vida|[ée] um prazer|[ée] uma honra)/i,
+        /^(com prazer|sem problemas|sem d[úu]vida)/i,
         /^(esse [ée]|este [ée]|essa [ée]|esta [ée]) (um|uma|o|a) (fechamento|semin[áa]rio|material|conte[úu]do|resumo)/i,
         /^(espero que|qualquer d[úu]vida|fico [àa] disposi[çc][ãa]o)/i,
         /^(prezad[oa]s?\s+(estudantes?|alunos?|colegas?))/i,
-        /^(vamos [àa] explora[çc][ãa]o|vamos explorar|vamos come[çc]ar|vamos dissecar|vamos ao)/i,
+        /^(vamos [àa] explora[çc][ãa]o|vamos explorar|vamos come[çc]ar)/i,
       ];
 
       if (preamblePatterns.some(p => p.test(text))) {
@@ -69,6 +69,7 @@ const stripAIPreamble = (html: string): string => {
         continue;
       }
 
+      // Short introductory paragraph before any heading
       if (text.length < 400 && !foundContentStart) {
         child.remove();
         continue;
@@ -78,12 +79,15 @@ const stripAIPreamble = (html: string): string => {
     }
   }
 
-  // Remove trailing AI closing remarks
+  // Second pass: remove trailing AI closing remarks
   const remainingChildren = Array.from(temp.childNodes);
   for (let i = remainingChildren.length - 1; i >= 0; i--) {
     const child = remainingChildren[i] as HTMLElement;
     const text = (child.textContent || '').trim();
-    if (!text) { child.remove(); continue; }
+    if (!text) {
+      child.remove();
+      continue;
+    }
     const closingPatterns = [
       /^(espero que|qualquer d[úu]vida|fico [àa] disposi[çc][ãa]o|bons estudos|at[ée] a pr[óo]xima)/i,
       /^(caso (tenha|precise|queira)|se (precisar|quiser|tiver))/i,
@@ -99,92 +103,389 @@ const stripAIPreamble = (html: string): string => {
   return temp.innerHTML;
 };
 
-const pdfStyles = `
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: white; color: #1a1a1a; font-family: Georgia, 'Times New Roman', serif; font-size: 11pt; line-height: 1.6; width: 794px; }
-  .cover { display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:100vh; text-align:center; padding:40px; page-break-after:always; }
-  .cover .logo { width:80px;height:80px;background:linear-gradient(135deg,#0d5c4d,#10b981);border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:40px;box-shadow:0 10px 40px rgba(13,92,77,0.3); }
-  .cover .brand { font-size:14pt;color:#0d5c4d;font-weight:600;letter-spacing:4px;text-transform:uppercase;margin-bottom:20px; }
-  .cover .line { width:60px;height:3px;background:linear-gradient(90deg,#0d5c4d,#10b981);margin-bottom:40px;border-radius:2px; }
-  .cover h1 { font-size:28pt;color:#1a1a1a;font-weight:bold;text-transform:uppercase;letter-spacing:3px;line-height:1.3;max-width:80%;margin-bottom:20px; }
-  .cover .subtitle { font-size:12pt;color:#666;margin-top:20px; }
-  .cover .date { font-size:11pt;color:#888;margin-top:60px; }
-  .content { padding: 15px 25px 30px 25px; }
-  .content h1 { color:#0d5c4d;font-size:20pt;font-weight:bold;text-transform:uppercase;letter-spacing:2px;border-bottom:3px solid #0d5c4d;padding-bottom:10px;margin-top:24px;margin-bottom:16px;page-break-after:avoid; }
-  .content h1:first-child { margin-top:0; }
-  .content h2 { color:#0d5c4d;font-size:16pt;font-weight:bold;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #0d5c4d;padding-bottom:8px;margin-top:20px;margin-bottom:12px;page-break-after:avoid; }
-  .content h3 { color:#0d5c4d;font-size:13pt;font-weight:bold;margin-top:16px;margin-bottom:8px;border-left:4px solid #0d5c4d;padding-left:10px;page-break-after:avoid; }
-  .content h4 { color:#0d5c4d;font-size:12pt;font-weight:bold;margin-top:12px;margin-bottom:6px;page-break-after:avoid; }
-  .content p { margin-bottom:6px;text-align:justify;orphans:4;widows:4; }
-  .content strong { color:#0d5c4d;font-weight:bold; }
-  .content ul, .content ol { margin-left:20px;margin-bottom:8px; }
-  .content li { margin-bottom:3px;list-style-position:outside; }
-  .content ul li { list-style-type:disc; }
-  .content blockquote { border-left:4px solid #0d5c4d;padding:8px 12px;margin:8px 0;background:#f8faf9;page-break-inside:avoid; }
-  .content pre { background:#f5f5f5;padding:10px;border-radius:4px;margin:8px 0;font-size:9pt;page-break-inside:avoid;overflow-x:auto; }
-  .content table { width:100%;border-collapse:collapse;margin-bottom:12px;font-size:9pt; }
-  .content th { background:#0d5c4d;color:white;padding:6px 8px;text-align:left;border:1px solid #0d5c4d; }
-  .content td { padding:5px 8px;border:1px solid #ccc;color:#1a1a1a; }
-  .content tr { page-break-inside:avoid; }
-  .content hr { border:none;border-top:1px solid #ddd;margin:12px 0; }
-  .content details { page-break-inside:avoid;margin-bottom:8px;border:1px solid #e0e0e0;border-radius:4px;padding:8px;background:#fafafa; }
-  .content summary { font-weight:bold;color:#0d5c4d; }
-`;
+const createCoverPage = (tema: string): string => {
+  return `
+    <div style="
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      text-align: center;
+      padding: 40px;
+      box-sizing: border-box;
+      page-break-after: always;
+    ">
+      <div style="
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #0d5c4d 0%, #10b981 100%);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 40px;
+        box-shadow: 0 10px 40px rgba(13, 92, 77, 0.3);
+      ">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
+          <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
+          <circle cx="20" cy="10" r="2"/>
+        </svg>
+      </div>
+      
+      <div style="
+        font-size: 14pt;
+        color: #0d5c4d;
+        font-weight: 600;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+      ">
+        PreceptorMED
+      </div>
+      
+      <div style="
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(90deg, #0d5c4d, #10b981);
+        margin-bottom: 40px;
+        border-radius: 2px;
+      "></div>
+      
+      <h1 style="
+        font-size: 28pt;
+        color: #1a1a1a;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        line-height: 1.3;
+        margin: 0 0 20px 0;
+        max-width: 80%;
+      ">
+        ${tema}
+      </h1>
+      
+      <div style="
+        font-size: 12pt;
+        color: #666;
+        margin-top: 20px;
+      ">
+        Fechamento de Objetivos
+      </div>
+      
+      <div style="
+        position: absolute;
+        bottom: 60px;
+        left: 0;
+        right: 0;
+        text-align: center;
+      ">
+        <div style="
+          font-size: 11pt;
+          color: #888;
+        ">
+          ${formatDate(new Date())}
+        </div>
+      </div>
+    </div>
+  `;
+};
 
-export const exportToPDF = async ({ tema, markdown }: PDFExportOptions): Promise<void> => {
+const styleContentElements = (container: HTMLElement): void => {
+  // Reset all elements
+  const allElements = container.querySelectorAll('*');
+  allElements.forEach((el) => {
+    const htmlEl = el as HTMLElement;
+    htmlEl.style.color = '#1a1a1a';
+    htmlEl.style.background = 'transparent';
+    htmlEl.style.maxHeight = 'none';
+    htmlEl.style.overflow = 'visible';
+  });
+
+  // H1 - Main section title
+  const h1s = container.querySelectorAll('h1');
+  h1s.forEach((h1, index) => {
+    (h1 as HTMLElement).style.cssText = `
+      color: #0d5c4d !important;
+      font-size: 20pt !important;
+      font-weight: bold !important;
+      text-transform: uppercase !important;
+      letter-spacing: 2px !important;
+      border-bottom: 3px solid #0d5c4d !important;
+      padding-bottom: 10px !important;
+      margin-top: ${index === 0 ? '0' : '24px'} !important;
+      margin-bottom: 16px !important;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+      ${index > 0 ? 'page-break-before: always !important; break-before: page !important;' : ''}
+    `;
+  });
+
+  // H2 - Section headings
+  const h2s = container.querySelectorAll('h2');
+  h2s.forEach((h2, index) => {
+    (h2 as HTMLElement).style.cssText = `
+      color: #0d5c4d !important;
+      font-size: 16pt !important;
+      font-weight: bold !important;
+      text-transform: uppercase !important;
+      letter-spacing: 1px !important;
+      border-bottom: 2px solid #0d5c4d !important;
+      padding-bottom: 8px !important;
+      margin-top: ${index === 0 ? '0' : '20px'} !important;
+      margin-bottom: 12px !important;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+    `;
+  });
+
+  // H3 - Subsections
+  const h3s = container.querySelectorAll('h3');
+  h3s.forEach((h3) => {
+    (h3 as HTMLElement).style.cssText = `
+      color: #0d5c4d !important;
+      font-size: 13pt !important;
+      margin-top: 16px !important;
+      margin-bottom: 8px !important;
+      font-weight: bold !important;
+      border-left: 4px solid #0d5c4d !important;
+      padding-left: 10px !important;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+    `;
+  });
+
+  // H4
+  const h4s = container.querySelectorAll('h4');
+  h4s.forEach((h4) => {
+    (h4 as HTMLElement).style.cssText = `
+      color: #0d5c4d !important;
+      font-size: 12pt !important;
+      margin-top: 12px !important;
+      margin-bottom: 6px !important;
+      font-weight: bold !important;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+    `;
+  });
+
+  // Strong
+  const strongs = container.querySelectorAll('strong');
+  strongs.forEach((strong) => {
+    (strong as HTMLElement).style.cssText = 'color: #0d5c4d !important; font-weight: bold !important;';
+  });
+
+  // Paragraphs — avoid breaking inside
+  const paragraphs = container.querySelectorAll('p');
+  paragraphs.forEach((p) => {
+    (p as HTMLElement).style.cssText = `
+      color: #1a1a1a !important;
+      margin-bottom: 6px !important;
+      text-align: justify !important;
+      orphans: 4 !important;
+      widows: 4 !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    `;
+  });
+
+  // Lists — the list itself can break, but items cannot
+  const lists = container.querySelectorAll('ul, ol');
+  lists.forEach((list) => {
+    (list as HTMLElement).style.cssText = `
+      color: #1a1a1a !important;
+      margin-left: 20px !important;
+      margin-bottom: 8px !important;
+      page-break-inside: auto !important;
+      break-inside: auto !important;
+    `;
+  });
+
+  // List items — never break inside a single item
+  const listItems = container.querySelectorAll('li');
+  listItems.forEach((li) => {
+    (li as HTMLElement).style.cssText = `
+      color: #1a1a1a !important;
+      margin-bottom: 3px !important;
+      list-style-type: disc !important;
+      list-style-position: outside !important;
+      margin-left: 20px !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    `;
+  });
+
+  // Blockquotes — never break inside
+  const blockquotes = container.querySelectorAll('blockquote');
+  blockquotes.forEach((bq) => {
+    (bq as HTMLElement).style.cssText = `
+      color: #1a1a1a !important;
+      border-left: 4px solid #0d5c4d !important;
+      padding: 8px 12px !important;
+      margin: 8px 0 !important;
+      background: #f8faf9 !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    `;
+  });
+
+  // Pre/code blocks — never break inside
+  const pres = container.querySelectorAll('pre');
+  pres.forEach((pre) => {
+    (pre as HTMLElement).style.cssText = `
+      color: #1a1a1a !important;
+      background: #f5f5f5 !important;
+      padding: 10px !important;
+      border-radius: 4px !important;
+      margin: 8px 0 !important;
+      font-size: 9pt !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      overflow-x: auto !important;
+    `;
+  });
+
+  // Inline elements
+  const spans = container.querySelectorAll('span, em, code, a');
+  spans.forEach((span) => {
+    (span as HTMLElement).style.cssText = 'color: #1a1a1a !important;';
+  });
+
+  // Tables — table can split, rows cannot
+  const tables = container.querySelectorAll('table');
+  tables.forEach((table) => {
+    (table as HTMLElement).style.cssText = `
+      width: 100% !important;
+      border-collapse: collapse !important;
+      margin-bottom: 12px !important;
+      page-break-inside: auto !important;
+      break-inside: auto !important;
+      font-size: 9pt !important;
+    `;
+  });
+
+  const rows = container.querySelectorAll('tr');
+  rows.forEach((row) => {
+    (row as HTMLElement).style.cssText = `
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    `;
+  });
+
+  const ths = container.querySelectorAll('th');
+  ths.forEach((th) => {
+    (th as HTMLElement).style.cssText = `
+      background: #0d5c4d !important;
+      color: white !important;
+      padding: 6px 8px !important;
+      text-align: left !important;
+      font-size: 9pt !important;
+      border: 1px solid #0d5c4d !important;
+    `;
+  });
+
+  const tds = container.querySelectorAll('td');
+  tds.forEach((td) => {
+    (td as HTMLElement).style.cssText = `
+      padding: 5px 8px !important;
+      border: 1px solid #ccc !important;
+      color: #1a1a1a !important;
+      font-size: 9pt !important;
+    `;
+  });
+
+  // Details/summary (gabarito sections) — avoid breaking
+  const details = container.querySelectorAll('details');
+  details.forEach((detail) => {
+    (detail as HTMLElement).setAttribute('open', '');
+    (detail as HTMLElement).style.cssText = `
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      margin-bottom: 8px !important;
+      border: 1px solid #e0e0e0 !important;
+      border-radius: 4px !important;
+      padding: 8px !important;
+      background: #fafafa !important;
+    `;
+  });
+
+  const summaries = container.querySelectorAll('summary');
+  summaries.forEach((summary) => {
+    (summary as HTMLElement).style.cssText = `
+      font-weight: bold !important;
+      color: #0d5c4d !important;
+      cursor: default !important;
+      margin-bottom: 4px !important;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+    `;
+  });
+
+  // Figures / images — never break inside
+  const figures = container.querySelectorAll('figure, img');
+  figures.forEach((fig) => {
+    (fig as HTMLElement).style.cssText += `
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    `;
+  });
+
+  // Horizontal rules
+  const hrs = container.querySelectorAll('hr');
+  hrs.forEach((hr) => {
+    (hr as HTMLElement).style.cssText = `
+      border: none !important;
+      border-top: 1px solid #ddd !important;
+      margin: 12px 0 !important;
+      page-break-after: avoid !important;
+    `;
+  });
+};
+
+export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): Promise<void> => {
   const html2pdf = (await import('html2pdf.js')).default;
 
-  if (!markdown || markdown.trim().length < 10) {
-    throw new Error('Conteúdo não encontrado para exportar.');
-  }
-
-  // Convert markdown to HTML
-  const rawHTML = await marked.parse(markdown);
-  const cleanedHTML = stripAIPreamble(rawHTML);
-
-  // Build full HTML document inside an iframe for isolated, reliable rendering
-  const iframe = document.createElement('iframe');
-  iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;height:1200px;border:none;opacity:0;pointer-events:none;';
-  document.body.appendChild(iframe);
-
-  const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-  if (!iframeDoc) {
-    document.body.removeChild(iframe);
-    throw new Error('Não foi possível criar o documento para exportação.');
-  }
-
-  const coverSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>`;
-
-  const fullHTML = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>${pdfStyles}</style></head><body>
-  <div class="cover">
-    <div class="logo">${coverSVG}</div>
-    <div class="brand">PreceptorMED</div>
-    <div class="line"></div>
-    <h1>${tema}</h1>
-    <div class="subtitle">Fechamento de Objetivos</div>
-    <div class="date">${formatDate(new Date())}</div>
-  </div>
-  <div class="content">${cleanedHTML}</div>
-</body></html>`;
-
-  iframeDoc.open();
-  iframeDoc.write(fullHTML);
-  iframeDoc.close();
-
-  // Wait for iframe to fully render
-  await new Promise(resolve => setTimeout(resolve, 500));
+  // Create main container
+  const pdfContainer = document.createElement('div');
+  
+  // Add cover page
+  pdfContainer.innerHTML = createCoverPage(tema);
+  
+  // Create content wrapper with cleaned HTML
+  const contentWrapper = document.createElement('div');
+  contentWrapper.innerHTML = stripAIPreamble(contentElement.innerHTML);
+  contentWrapper.style.cssText = `
+    background: white !important;
+    color: #1a1a1a !important;
+    padding: 15px 25px 30px 25px !important;
+    font-family: 'Georgia', 'Times New Roman', serif !important;
+    font-size: 11pt !important;
+    line-height: 1.45 !important;
+    width: 100% !important;
+    max-width: none !important;
+    overflow: visible !important;
+  `;
+  
+  // Style content elements
+  styleContentElements(contentWrapper);
+  
+  // Append content after cover
+  pdfContainer.appendChild(contentWrapper);
 
   const opt = {
     margin: [12, 15, 18, 15] as [number, number, number, number],
     filename: `fechamento-${tema.trim().toLowerCase().replace(/\s+/g, '-').substring(0, 50)}.pdf`,
-    image: { type: 'jpeg' as const, quality: 0.98 },
+    image: { type: 'jpeg' as const, quality: 0.96 },
     html2canvas: {
       scale: 2,
       useCORS: true,
       logging: false,
       windowWidth: 794,
+      letterRendering: true,
       backgroundColor: '#ffffff',
+      scrollY: 0,
+      scrollX: 0,
     },
     jsPDF: {
       unit: 'mm' as const,
@@ -194,13 +495,11 @@ export const exportToPDF = async ({ tema, markdown }: PDFExportOptions): Promise
     },
     pagebreak: {
       mode: ['css', 'legacy'] as string[],
-      avoid: ['tr', 'blockquote', 'pre', 'details', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+      before: '.pdf-page-break-before',
+      after: '.pdf-page-break-after',
+      avoid: ['p', 'li', 'blockquote', 'pre', 'code', 'table', 'tr', 'img', 'figure', 'details', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
     }
   };
 
-  try {
-    await html2pdf().set(opt).from(iframeDoc.body).save();
-  } finally {
-    document.body.removeChild(iframe);
-  }
+  await html2pdf().set(opt).from(pdfContainer).save();
 };

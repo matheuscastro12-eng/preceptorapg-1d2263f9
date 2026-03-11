@@ -54,9 +54,17 @@ const AIChat = () => {
   };
 
   const handlePDF = (msg: ChatMessage) => {
+    const container = document.createElement('div');
+    container.className = 'markdown-content';
+    const el = document.getElementById(`msg-${msg.id}`);
+    if (el) {
+      container.innerHTML = el.innerHTML;
+    } else {
+      container.innerText = msg.content;
+    }
     const idx = messages.findIndex(m => m.id === msg.id);
     const question = idx > 0 ? messages[idx - 1]?.content : 'PreceptorMED';
-    exportToPDF({ tema: question.slice(0, 100), markdown: msg.content });
+    exportToPDF({ tema: question.slice(0, 100), contentElement: container });
   };
 
   useEffect(() => {

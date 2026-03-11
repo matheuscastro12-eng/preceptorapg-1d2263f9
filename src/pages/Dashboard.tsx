@@ -202,14 +202,14 @@ const Dashboard = () => {
   };
 
   const handleExportPDF = async () => {
-    if (!resultado) return;
+    if (!resultRef.current || !resultado) return;
     
     setExporting(true);
     
     try {
       await exportToPDF({
         tema: tema.trim(),
-        markdown: resultado
+        contentElement: resultRef.current
       });
       
       toast({
