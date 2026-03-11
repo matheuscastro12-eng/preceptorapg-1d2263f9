@@ -208,7 +208,7 @@ const Feed = () => {
       const { data: commentsData } = await supabase.from('post_comments').select('*').eq('post_id', postId).order('created_at', { ascending: true });
       if (commentsData && commentsData.length > 0) {
         const uids = [...new Set(commentsData.map(c => c.user_id))];
-        const { data: profiles } = await supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url').in('user_id', uids);
+        const { data: profiles } = await (supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url').in('user_id', uids) as any);
         const pMap = new Map((profiles || []).map(p => [p.user_id, p]));
         setComments(prev => ({ ...prev, [postId]: commentsData.map(c => ({ ...c, profile: pMap.get(c.user_id) as any })) }));
       } else {
