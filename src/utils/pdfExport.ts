@@ -14,8 +14,7 @@ const formatDate = (date: Date): string => {
 };
 
 /**
- * Strip AI preamble text that appears before the actual content.
- * Removes conversational intros like "Com certeza...", "Claro...", etc.
+ * Strip AI preamble/closing text that appears before/after actual content.
  */
 const stripAIPreamble = (html: string): string => {
   const temp = document.createElement('div');
@@ -36,7 +35,6 @@ const stripAIPreamble = (html: string): string => {
       break;
     }
 
-    // Check if it's a paragraph that looks like AI preamble
     if (tagName === 'p' || child.nodeType === Node.TEXT_NODE) {
       const text = (child.textContent || '').trim();
       if (!text) {
@@ -44,17 +42,15 @@ const stripAIPreamble = (html: string): string => {
         continue;
       }
 
-      // If the paragraph starts with a question marker or bold "Questão", keep it
       if (/^\*?\*?Quest[ãa]o/i.test(text) || /^\*?\*?\d+[\.\)]/i.test(text)) {
         foundContentStart = true;
         break;
       }
 
-      // Remove conversational preamble paragraphs (AI prompt responses)
       const preamblePatterns = [
         /^(com certeza|claro|certo|ok|perfeito|vamos|aqui est[áa]|segue|pronto|elabor)/i,
-        /^(como (preceptor|coordenador|professor|solicitado))/i,
-        /^(este (caso|material|conte[úu]do|fechamento|semin[áa]rio) foi)/i,
+        /^(como (preceptor|coordenador|professor|solicitado|seu))/i,
+        /^(este (caso|material|conte[úu]do|fechamento|semin[áa]rio|documento) (foi|[ée]))/i,
         /^(a seguir|abaixo|conforme solicitado|conforme pedido)/i,
         /^(apresento|segue abaixo|seguem|vou (apresentar|elaborar|gerar))/i,
         /^(entendido|com base|baseado|de acordo)/i,
@@ -64,6 +60,8 @@ const stripAIPreamble = (html: string): string => {
         /^(com prazer|sem problemas|sem d[úu]vida)/i,
         /^(esse [ée]|este [ée]|essa [ée]|esta [ée]) (um|uma|o|a) (fechamento|semin[áa]rio|material|conte[úu]do|resumo)/i,
         /^(espero que|qualquer d[úu]vida|fico [àa] disposi[çc][ãa]o)/i,
+        /^(prezad[oa]s?\s+(estudantes?|alunos?|colegas?))/i,
+        /^(vamos [àa] explora[çc][ãa]o|vamos explorar|vamos come[çc]ar)/i,
       ];
 
       if (preamblePatterns.some(p => p.test(text))) {
@@ -71,7 +69,7 @@ const stripAIPreamble = (html: string): string => {
         continue;
       }
 
-      // If it's a short introductory paragraph before any heading, remove it
+      // Short introductory paragraph before any heading
       if (text.length < 400 && !foundContentStart) {
         child.remove();
         continue;
@@ -99,7 +97,7 @@ const stripAIPreamble = (html: string): string => {
       child.remove();
       continue;
     }
-    break; // Stop at first non-closing paragraph from the end
+    break;
   }
 
   return temp.innerHTML;
@@ -205,7 +203,7 @@ const styleContentElements = (container: HTMLElement): void => {
     htmlEl.style.overflow = 'visible';
   });
 
-  // H1 - Main section title (inline, no full-page cover)
+  // H1 - Main section title
   const h1s = container.querySelectorAll('h1');
   h1s.forEach((h1, index) => {
     (h1 as HTMLElement).style.cssText = `
@@ -219,11 +217,12 @@ const styleContentElements = (container: HTMLElement): void => {
       margin-top: ${index === 0 ? '0' : '24px'} !important;
       margin-bottom: 16px !important;
       page-break-after: avoid !important;
-      ${index > 0 ? 'page-break-before: always !important;' : ''}
+      break-after: avoid !important;
+      ${index > 0 ? 'page-break-before: always !important; break-before: page !important;' : ''}
     `;
   });
 
-  // H2 - Section headings (inline, page-break only if not first)
+  // H2 - Section headings
   const h2s = container.querySelectorAll('h2');
   h2s.forEach((h2, index) => {
     (h2 as HTMLElement).style.cssText = `
@@ -237,6 +236,7 @@ const styleContentElements = (container: HTMLElement): void => {
       margin-top: ${index === 0 ? '0' : '20px'} !important;
       margin-bottom: 12px !important;
       page-break-after: avoid !important;
+      break-after: avoid !important;
     `;
   });
 
@@ -252,10 +252,11 @@ const styleContentElements = (container: HTMLElement): void => {
       border-left: 4px solid #0d5c4d !important;
       padding-left: 10px !important;
       page-break-after: avoid !important;
+      break-after: avoid !important;
     `;
   });
 
-  // H4 - Sub-subsections
+  // H4
   const h4s = container.querySelectorAll('h4');
   h4s.forEach((h4) => {
     (h4 as HTMLElement).style.cssText = `
@@ -265,30 +266,31 @@ const styleContentElements = (container: HTMLElement): void => {
       margin-bottom: 6px !important;
       font-weight: bold !important;
       page-break-after: avoid !important;
+      break-after: avoid !important;
     `;
   });
 
-  // Strong elements
+  // Strong
   const strongs = container.querySelectorAll('strong');
   strongs.forEach((strong) => {
     (strong as HTMLElement).style.cssText = 'color: #0d5c4d !important; font-weight: bold !important;';
   });
 
-  // Paragraphs
+  // Paragraphs — avoid breaking inside
   const paragraphs = container.querySelectorAll('p');
   paragraphs.forEach((p) => {
     (p as HTMLElement).style.cssText = `
       color: #1a1a1a !important;
       margin-bottom: 6px !important;
       text-align: justify !important;
-      orphans: 3 !important;
-      widows: 3 !important;
-      page-break-inside: auto !important;
-      break-inside: auto !important;
+      orphans: 4 !important;
+      widows: 4 !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
     `;
   });
 
-  // Lists
+  // Lists — the list itself can break, but items cannot
   const lists = container.querySelectorAll('ul, ol');
   lists.forEach((list) => {
     (list as HTMLElement).style.cssText = `
@@ -300,7 +302,7 @@ const styleContentElements = (container: HTMLElement): void => {
     `;
   });
 
-  // List items
+  // List items — never break inside a single item
   const listItems = container.querySelectorAll('li');
   listItems.forEach((li) => {
     (li as HTMLElement).style.cssText = `
@@ -311,13 +313,43 @@ const styleContentElements = (container: HTMLElement): void => {
     `;
   });
 
+  // Blockquotes — never break inside
+  const blockquotes = container.querySelectorAll('blockquote');
+  blockquotes.forEach((bq) => {
+    (bq as HTMLElement).style.cssText = `
+      color: #1a1a1a !important;
+      border-left: 4px solid #0d5c4d !important;
+      padding: 8px 12px !important;
+      margin: 8px 0 !important;
+      background: #f8faf9 !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    `;
+  });
+
+  // Pre/code blocks — never break inside
+  const pres = container.querySelectorAll('pre');
+  pres.forEach((pre) => {
+    (pre as HTMLElement).style.cssText = `
+      color: #1a1a1a !important;
+      background: #f5f5f5 !important;
+      padding: 10px !important;
+      border-radius: 4px !important;
+      margin: 8px 0 !important;
+      font-size: 9pt !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      overflow-x: auto !important;
+    `;
+  });
+
   // Inline elements
   const spans = container.querySelectorAll('span, em, code, a');
   spans.forEach((span) => {
     (span as HTMLElement).style.cssText = 'color: #1a1a1a !important;';
   });
 
-  // Tables - allow table split between pages, but never split rows
+  // Tables — table can split, rows cannot
   const tables = container.querySelectorAll('table');
   tables.forEach((table) => {
     (table as HTMLElement).style.cssText = `
@@ -360,13 +392,13 @@ const styleContentElements = (container: HTMLElement): void => {
     `;
   });
 
-  // Details/summary (gabarito sections)
+  // Details/summary (gabarito sections) — avoid breaking
   const details = container.querySelectorAll('details');
   details.forEach((detail) => {
     (detail as HTMLElement).setAttribute('open', '');
     (detail as HTMLElement).style.cssText = `
-      page-break-inside: auto !important;
-      break-inside: auto !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
       margin-bottom: 8px !important;
       border: 1px solid #e0e0e0 !important;
       border-radius: 4px !important;
@@ -383,10 +415,20 @@ const styleContentElements = (container: HTMLElement): void => {
       cursor: default !important;
       margin-bottom: 4px !important;
       page-break-after: avoid !important;
+      break-after: avoid !important;
     `;
   });
 
-  // Horizontal rules - thin separator, avoid page break near them
+  // Figures / images — never break inside
+  const figures = container.querySelectorAll('figure, img');
+  figures.forEach((fig) => {
+    (fig as HTMLElement).style.cssText += `
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    `;
+  });
+
+  // Horizontal rules
   const hrs = container.querySelectorAll('hr');
   hrs.forEach((hr) => {
     (hr as HTMLElement).style.cssText = `
@@ -413,7 +455,7 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   contentWrapper.style.cssText = `
     background: white !important;
     color: #1a1a1a !important;
-    padding: 15px 25px !important;
+    padding: 15px 25px 30px 25px !important;
     font-family: 'Georgia', 'Times New Roman', serif !important;
     font-size: 11pt !important;
     line-height: 1.45 !important;
@@ -429,7 +471,7 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   pdfContainer.appendChild(contentWrapper);
 
   const opt = {
-    margin: [12, 15, 15, 15] as [number, number, number, number],
+    margin: [12, 15, 18, 15] as [number, number, number, number],
     filename: `fechamento-${tema.trim().toLowerCase().replace(/\s+/g, '-').substring(0, 50)}.pdf`,
     image: { type: 'jpeg' as const, quality: 0.96 },
     html2canvas: {
@@ -452,7 +494,7 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
       mode: ['css', 'legacy'] as string[],
       before: '.pdf-page-break-before',
       after: '.pdf-page-break-after',
-      avoid: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'tr', 'table', 'details', 'img', 'figure', 'blockquote', 'pre'],
+      avoid: ['p', 'li', 'blockquote', 'pre', 'code', 'table', 'tr', 'img', 'figure', 'details', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
     }
   };
 
