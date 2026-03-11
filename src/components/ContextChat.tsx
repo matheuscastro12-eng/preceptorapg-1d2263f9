@@ -271,6 +271,7 @@ interface ChatContentProps {
   input: string;
   setInput: (v: string) => void;
   contextLabel: string;
+  suggestions: string[];
   scrollContainerRef: React.RefObject<HTMLDivElement>;
   messagesEndRef: React.RefObject<HTMLDivElement>;
   onClose: () => void;
@@ -283,7 +284,7 @@ interface ChatContentProps {
 
 const ChatContent = ({
   isEmpty, messages, isStreaming, copiedId, input, setInput,
-  contextLabel, scrollContainerRef, messagesEndRef,
+  contextLabel, suggestions, scrollContainerRef, messagesEndRef,
   onClose, onSend, onKeyDown, onCopy, onClear, onSuggestion,
 }: ChatContentProps) => (
   <>
