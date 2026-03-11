@@ -165,7 +165,7 @@ const ContextChat = ({ context, contextLabel = 'conteúdo gerado' }: ContextChat
   if (!isOpen) {
     return (
       <>
-        {/* Mobile: floating button */}
+        {/* Mobile: floating button with pulse */}
         <motion.button
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -173,19 +173,29 @@ const ContextChat = ({ context, contextLabel = 'conteúdo gerado' }: ContextChat
           className="fixed right-4 bottom-4 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center lg:hidden"
           title="Tirar dúvidas"
         >
-          <MessageCircle className="h-6 w-6" />
+          <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-30" />
+          <MessageCircle className="h-6 w-6 relative" />
         </motion.button>
 
-        {/* Desktop: vertical tab on the edge */}
-        <button
+        {/* Desktop: prominent sidebar tab */}
+        <motion.button
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.5, type: 'spring', damping: 20 }}
           onClick={() => setIsOpen(true)}
-          className="hidden lg:flex flex-col items-center gap-2 px-2 py-6 rounded-l-xl border border-r-0 border-border/30 bg-card hover:bg-primary/10 transition-colors cursor-pointer h-fit self-center"
+          className="hidden lg:flex items-center gap-3 px-4 py-3 rounded-2xl border border-primary/30 bg-primary/5 hover:bg-primary/15 hover:border-primary/50 transition-all cursor-pointer h-fit self-start shadow-sm hover:shadow-md group"
         >
-          <MessageCircle className="h-5 w-5 text-primary" />
-          <span className="text-[10px] font-medium text-muted-foreground" style={{ writingMode: 'vertical-rl' }}>
-            Tire Dúvidas
-          </span>
-        </button>
+          <div className="relative">
+            <div className="h-9 w-9 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
+              <MessageCircle className="h-5 w-5 text-primary" />
+            </div>
+            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-primary animate-pulse" />
+          </div>
+          <div className="text-left">
+            <span className="text-sm font-semibold text-foreground block leading-tight">Tire Dúvidas</span>
+            <span className="text-[11px] text-muted-foreground">Chat com IA sobre o {contextLabel}</span>
+          </div>
+        </motion.button>
       </>
     );
   }
