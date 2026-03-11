@@ -446,6 +446,10 @@ const styleContentElements = (container: HTMLElement): void => {
 export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): Promise<void> => {
   const html2pdf = (await import('html2pdf.js')).default;
 
+  // Find the actual markdown content inside the panel
+  const markdownEl = contentElement.querySelector('.markdown-content');
+  const sourceHTML = markdownEl ? markdownEl.innerHTML : contentElement.innerHTML;
+
   // Create main container
   const pdfContainer = document.createElement('div');
   pdfContainer.style.cssText = `
@@ -462,7 +466,7 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   
   // Create content wrapper with cleaned HTML
   const contentWrapper = document.createElement('div');
-  contentWrapper.innerHTML = stripAIPreamble(contentElement.innerHTML);
+  contentWrapper.innerHTML = stripAIPreamble(sourceHTML);
   contentWrapper.style.cssText = `
     background: white !important;
     color: #1a1a1a !important;
