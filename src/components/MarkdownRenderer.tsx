@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface MarkdownRendererProps {
   content: string;
@@ -10,6 +11,7 @@ const MarkdownRenderer = ({ content, className = '', isTyping = false }: Markdow
   return (
     <div className={`markdown-content ${className} ${isTyping ? 'typing-cursor' : ''}`}>
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           // Remove images from rendered content
           img: () => null,
