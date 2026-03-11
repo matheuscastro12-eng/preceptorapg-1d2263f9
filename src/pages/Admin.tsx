@@ -427,6 +427,9 @@ const Admin = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* ENAMED Bank Population */}
+        <EnamedPopulator />
       </main>
     </div>
   );
