@@ -245,14 +245,7 @@ const Exam = () => {
 
             {/* Chat sidebar for exam */}
             {resultado && (
-              <div className="hidden lg:block shrink-0">
-                <ContextChat context={resultado} contextLabel="simulado" />
-              </div>
-            )}
-            {resultado && (
-              <div className="lg:hidden">
-                <ContextChat context={resultado} contextLabel="simulado" />
-              </div>
+              <ContextChat context={resultado} contextLabel="simulado" />
             )}
           </div>
         ) : (
