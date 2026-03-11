@@ -125,7 +125,7 @@ const Messages = () => {
       supabase.from('direct_messages').select('*')
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${chatUserId}),and(sender_id.eq.${chatUserId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true }),
-      supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url').eq('user_id', chatUserId).single(),
+      supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url').eq('user_id', chatUserId).single() as any,
     ]);
     setMessages(msgs || []);
     setChatProfile(profile);

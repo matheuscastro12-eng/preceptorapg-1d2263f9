@@ -85,11 +85,11 @@ const Discover = () => {
     if (!query.trim()) { setSearchResults([]); return; }
     setSearching(true);
     
-    const { data } = await supabase
+    const { data } = await (supabase
       .from('public_profiles' as any)
       .select('user_id, full_name, avatar_url, university, semester')
       .or(`full_name.ilike.%${query}%,university.ilike.%${query}%`)
-      .neq('user_id', user?.id || '')
+      .neq('user_id', user?.id || '') as any);
       .limit(20);
 
     setSearchResults((data || []).map(p => ({

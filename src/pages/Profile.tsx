@@ -51,13 +51,14 @@ const Profile = () => {
   }, [targetUserId, user]);
 
   const fetchProfile = async () => {
-    const table = isOwnProfile ? 'profiles' : ('public_profiles' as any);
-    const cols = isOwnProfile ? '*' : 'user_id, full_name, bio, avatar_url, university, semester';
-    const { data } = await supabase
-      .from(table)
-      .select(cols)
-      .eq('user_id', targetUserId!)
-      .single();
+    let data: any;
+    if (isOwnProfile) {
+      const res = await supabase.from('profiles').select('*').eq('user_id', targetUserId!).single();
+      data = res.data;
+    } else {
+      const res = await (supabase.from('public_profiles' as any).select('user_id, full_name, bio, avatar_url, university, semester').eq('user_id', targetUserId!).single() as any);
+      data = res.data;
+    }
     if (data) {
       setProfile(data as ProfileData);
       setEditForm({

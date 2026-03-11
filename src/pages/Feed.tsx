@@ -715,9 +715,9 @@ const DiscoverSection = ({ user, navigate }: { user: any; navigate: any }) => {
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
     if (!query.trim()) { setResults([]); return; }
-    const { data } = await supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url, university')
+    const { data } = await (supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url, university')
       .or(`full_name.ilike.%${query}%,university.ilike.%${query}%`)
-      .neq('user_id', user.id).limit(20);
+      .neq('user_id', user.id).limit(20) as any);
     setResults(data || []);
   };
 
