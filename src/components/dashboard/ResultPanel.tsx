@@ -69,6 +69,8 @@ const ResultPanel = ({
 }: ResultPanelProps) => {
   const showActions = resultado && !generating;
   const isSeminario = modo === 'seminario';
+  const cleanedResult = useMemo(() => resultado ? stripMarkdownPreamble(resultado) : '', [resultado]);
+  const isSeminario = modo === 'seminario';
 
   return (
     <div 
