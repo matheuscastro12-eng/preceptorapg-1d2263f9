@@ -1,8 +1,10 @@
 // PDF Export utility with cover page and optimized page breaks
+import { marked } from 'marked';
 
 interface PDFExportOptions {
   tema: string;
-  contentElement: HTMLElement;
+  contentElement?: HTMLElement;
+  markdown?: string;
 }
 
 const formatDate = (date: Date): string => {
