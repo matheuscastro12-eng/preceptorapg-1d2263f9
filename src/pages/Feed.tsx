@@ -692,7 +692,7 @@ const DiscoverSection = ({ user, navigate }: { user: any; navigate: any }) => {
 
   const fetchRanking = async () => {
     const [profilesRes, fechamentosRes, followsRes] = await Promise.all([
-      supabase.from('profiles').select('user_id, email, full_name, avatar_url, university, semester'),
+      supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url, university, semester'),
       supabase.from('fechamentos').select('user_id'),
       supabase.from('follows').select('following_id'),
     ]);
