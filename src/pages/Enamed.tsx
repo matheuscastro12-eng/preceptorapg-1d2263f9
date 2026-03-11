@@ -46,6 +46,20 @@ const Enamed = () => {
   const [source, setSource] = useState<EnamedSource>('banco');
   const [showIaSimulation, setShowIaSimulation] = useState(false);
 
+  const bankQuestionsContext = useMemo(() => {
+    if (!questions || questions.length === 0) return '';
+    return questions.map((q, i) => {
+      return `## Questão ${i + 1} (${AREA_LABELS[q.area] || q.area} — ENAMED ${q.ano})\n\n${q.enunciado}\n\n**A)** ${q.alternativa_a}\n**B)** ${q.alternativa_b}\n**C)** ${q.alternativa_c}\n**D)** ${q.alternativa_d}\n\n**Gabarito:** ${q.gabarito}${q.explicacao ? `\n**Explicação:** ${q.explicacao}` : ''}`;
+    }).join('\n\n---\n\n');
+  }, [questions]);
+
+  const enamedChatSuggestions = useMemo(() => [
+    'Por que a alternativa correta está certa?',
+    'Quais são os diagnósticos diferenciais?',
+    'Explique a fisiopatologia envolvida',
+    'Que pegadinhas comuns caem sobre esse tema?',
+  ], []);
+
   if (authLoading || subLoading || adminLoading) return <PageSkeleton variant="exam" />;
   if (!user) return <Navigate to="/auth" replace />;
   if (!hasAccess && !isAdmin) return <Navigate to="/pricing" replace />;
