@@ -166,7 +166,7 @@ const ResultPanel = ({
         {resultado ? (
           <>
             <MarkdownRenderer 
-              content={resultado} 
+              content={generating ? resultado : cleanedResult} 
               isTyping={generating && resultado.length > 0}
             />
             {/* Disclaimer after result */}
