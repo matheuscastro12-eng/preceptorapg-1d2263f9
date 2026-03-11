@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { 
   Library, 
   Star, 
@@ -54,6 +55,7 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
   const [searchTerm, setSearchTerm] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [selectedType, setSelectedType] = useState<'all' | 'fechamento' | 'prova' | 'caso_clinico'>('all');
+  const [deleteTarget, setDeleteTarget] = useState<Fechamento | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -329,7 +331,7 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive sm:opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={() => deleteFechamento(fechamento.id)}
+                      onClick={() => setDeleteTarget(fechamento)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -340,6 +342,32 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
           </ScrollArea>
         )}
       </CardContent>
+
+      {/* Confirmação de exclusão */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover da biblioteca?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O item "<span className="font-medium">{deleteTarget?.tema}</span>" será excluído permanentemente. Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) {
+                  deleteFechamento(deleteTarget.id);
+                  setDeleteTarget(null);
+                }
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
