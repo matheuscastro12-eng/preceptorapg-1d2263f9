@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +20,10 @@ import {
   UserCheck,
   UserX,
   ArrowLeft,
-  Clock
+  Clock,
+  Database,
+  Play,
+  CheckCircle2
 } from 'lucide-react';
 
 interface UserWithSubscription {
@@ -34,6 +38,14 @@ interface UserWithSubscription {
 }
 
 type AccessDuration = 'unlimited' | '4h' | '1d' | '3d' | '7d' | '15d' | '30d';
+
+const ENAMED_AREAS = [
+  "Clínica Médica",
+  "Cirurgia",
+  "Ginecologia e Obstetrícia",
+  "Pediatria",
+  "Saúde Coletiva",
+];
 
 const Admin = () => {
   const { user, loading: authLoading, signOut } = useAuth();
