@@ -100,7 +100,7 @@ const Messages = () => {
     const partnerIds = [...convMap.keys()];
     if (partnerIds.length === 0) { setConversations([]); setLoading(false); return; }
 
-    const { data: profiles } = await supabase.from('profiles').select('user_id, full_name, avatar_url, email').in('user_id', partnerIds);
+    const { data: profiles } = await supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url').in('user_id', partnerIds);
     const pMap = new Map((profiles || []).map(p => [p.user_id, p]));
 
     const convs: Conversation[] = partnerIds.map(id => {
