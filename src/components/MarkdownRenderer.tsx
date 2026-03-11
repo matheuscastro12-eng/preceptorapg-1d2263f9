@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface MarkdownRendererProps {
   content: string;
@@ -10,6 +11,7 @@ const MarkdownRenderer = ({ content, className = '', isTyping = false }: Markdow
   return (
     <div className={`markdown-content ${className} ${isTyping ? 'typing-cursor' : ''}`}>
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           // Remove images from rendered content
           img: () => null,
@@ -40,7 +42,7 @@ const MarkdownRenderer = ({ content, className = '', isTyping = false }: Markdow
             </p>
           ),
           ul: ({ children }) => (
-            <ul className="mb-5 ml-2 space-y-2 text-foreground/90">
+            <ul className="mb-5 ml-4 space-y-2 text-foreground/90 list-disc">
               {children}
             </ul>
           ),
@@ -50,9 +52,8 @@ const MarkdownRenderer = ({ content, className = '', isTyping = false }: Markdow
             </ol>
           ),
           li: ({ children }) => (
-            <li className="leading-relaxed flex items-start gap-3 pl-2">
-              <span className="mt-2.5 min-w-[6px] h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-              <span className="flex-1">{children}</span>
+            <li className="leading-relaxed pl-2 list-disc ml-4">
+              {children}
             </li>
           ),
           strong: ({ children }) => (

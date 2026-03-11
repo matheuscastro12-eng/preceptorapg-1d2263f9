@@ -308,6 +308,9 @@ const styleContentElements = (container: HTMLElement): void => {
     (li as HTMLElement).style.cssText = `
       color: #1a1a1a !important;
       margin-bottom: 3px !important;
+      list-style-type: disc !important;
+      list-style-position: outside !important;
+      margin-left: 20px !important;
       page-break-inside: avoid !important;
       break-inside: avoid !important;
     `;
