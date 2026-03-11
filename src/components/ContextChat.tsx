@@ -2,11 +2,10 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
-import { Send, Bot, User, MessageCircle, X, Sparkles, Copy, Check } from 'lucide-react';
+import { Send, Bot, User, MessageCircle, X, Sparkles, Copy, Check, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface ChatMessage {
   id: string;
@@ -33,14 +32,17 @@ const ContextChat = ({ context, contextLabel = 'conteúdo gerado' }: ContextChat
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  // Scroll only within the chat container, not the page
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
   }, [messages]);
 
-  // Reset chat when context changes significantly
   useEffect(() => {
     setMessages([]);
   }, [context]);
@@ -153,158 +155,258 @@ const ContextChat = ({ context, contextLabel = 'conteúdo gerado' }: ContextChat
     }
   }, [handleSend]);
 
+  const clearChat = useCallback(() => {
+    if (isStreaming) abortRef.current?.abort();
+    setMessages([]);
+    setIsStreaming(false);
+  }, [isStreaming]);
+
+  // --- Closed state ---
   if (!isOpen) {
     return (
-      <motion.button
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        onClick={() => setIsOpen(true)}
-        className="fixed right-4 bottom-4 z-50 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center lg:relative lg:right-auto lg:bottom-auto lg:h-auto lg:w-auto lg:rounded-none lg:bg-transparent lg:shadow-none lg:text-foreground lg:hover:scale-100"
-        title="Tirar dúvidas"
-      >
+      <>
         {/* Mobile: floating button */}
-        <MessageCircle className="h-5 w-5 lg:hidden" />
-        {/* Desktop: sidebar trigger */}
-        <div className="hidden lg:flex flex-col items-center gap-1 px-2 py-4 rounded-l-xl border border-r-0 border-border/30 bg-card/80 backdrop-blur-sm hover:bg-primary/10 transition-colors cursor-pointer">
-          <MessageCircle className="h-4 w-4 text-primary" />
-          <span className="text-[10px] font-medium text-muted-foreground writing-mode-vertical" style={{ writingMode: 'vertical-rl' }}>
-            Dúvidas
+        <motion.button
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          onClick={() => setIsOpen(true)}
+          className="fixed right-4 bottom-4 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center lg:hidden"
+          title="Tirar dúvidas"
+        >
+          <MessageCircle className="h-6 w-6" />
+        </motion.button>
+
+        {/* Desktop: vertical tab on the edge */}
+        <button
+          onClick={() => setIsOpen(true)}
+          className="hidden lg:flex flex-col items-center gap-2 px-2 py-6 rounded-l-xl border border-r-0 border-border/30 bg-card hover:bg-primary/10 transition-colors cursor-pointer h-fit self-center"
+        >
+          <MessageCircle className="h-5 w-5 text-primary" />
+          <span className="text-[10px] font-medium text-muted-foreground" style={{ writingMode: 'vertical-rl' }}>
+            Tire Dúvidas
           </span>
-        </div>
-      </motion.button>
+        </button>
+      </>
     );
   }
 
   const isEmpty = messages.length === 0;
 
+  // --- Open state ---
   return (
-    <motion.div
-      initial={{ x: 300, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: 300, opacity: 0 }}
-      transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-      className="fixed right-0 top-0 bottom-0 z-50 w-[340px] sm:w-[380px] border-l border-border/30 bg-background/95 backdrop-blur-xl flex flex-col shadow-2xl lg:relative lg:w-[340px] lg:shadow-none lg:z-auto"
-    >
-      {/* Header */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border/20">
-        <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-primary/20 flex items-center justify-center">
-            <Bot className="h-3.5 w-3.5 text-primary" />
-          </div>
-          <div>
-            <span className="text-sm font-semibold">Tire Dúvidas</span>
-            <p className="text-[10px] text-muted-foreground leading-none">sobre o {contextLabel}</p>
-          </div>
+    <>
+      {/* Mobile: full-screen overlay */}
+      <motion.div
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+        className="fixed inset-0 z-50 bg-background flex flex-col lg:hidden"
+      >
+        <ChatContent
+          isEmpty={isEmpty}
+          messages={messages}
+          isStreaming={isStreaming}
+          copiedId={copiedId}
+          input={input}
+          setInput={setInput}
+          contextLabel={contextLabel}
+          scrollContainerRef={scrollContainerRef}
+          messagesEndRef={messagesEndRef}
+          onClose={() => setIsOpen(false)}
+          onSend={handleSend}
+          onKeyDown={handleKeyDown}
+          onCopy={handleCopy}
+          onClear={clearChat}
+          onSuggestion={streamChat}
+        />
+      </motion.div>
+
+      {/* Desktop: sidebar panel */}
+      <motion.div
+        initial={{ width: 0, opacity: 0 }}
+        animate={{ width: 420, opacity: 1 }}
+        exit={{ width: 0, opacity: 0 }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+        className="hidden lg:flex shrink-0 h-full rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm flex-col overflow-hidden"
+      >
+        <ChatContent
+          isEmpty={isEmpty}
+          messages={messages}
+          isStreaming={isStreaming}
+          copiedId={copiedId}
+          input={input}
+          setInput={setInput}
+          contextLabel={contextLabel}
+          scrollContainerRef={scrollContainerRef}
+          messagesEndRef={messagesEndRef}
+          onClose={() => setIsOpen(false)}
+          onSend={handleSend}
+          onKeyDown={handleKeyDown}
+          onCopy={handleCopy}
+          onClear={clearChat}
+          onSuggestion={streamChat}
+        />
+      </motion.div>
+    </>
+  );
+};
+
+// --- Extracted inner content to avoid duplication ---
+interface ChatContentProps {
+  isEmpty: boolean;
+  messages: ChatMessage[];
+  isStreaming: boolean;
+  copiedId: string | null;
+  input: string;
+  setInput: (v: string) => void;
+  contextLabel: string;
+  scrollContainerRef: React.RefObject<HTMLDivElement>;
+  messagesEndRef: React.RefObject<HTMLDivElement>;
+  onClose: () => void;
+  onSend: () => void;
+  onKeyDown: (e: React.KeyboardEvent) => void;
+  onCopy: (msg: ChatMessage) => void;
+  onClear: () => void;
+  onSuggestion: (s: string) => void;
+}
+
+const ChatContent = ({
+  isEmpty, messages, isStreaming, copiedId, input, setInput,
+  contextLabel, scrollContainerRef, messagesEndRef,
+  onClose, onSend, onKeyDown, onCopy, onClear, onSuggestion,
+}: ChatContentProps) => (
+  <>
+    {/* Header */}
+    <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border/20">
+      <div className="flex items-center gap-2.5">
+        <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
+          <Bot className="h-4 w-4 text-primary" />
         </div>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsOpen(false)}>
+        <div>
+          <span className="text-sm font-semibold">Tire Dúvidas</span>
+          <p className="text-[10px] text-muted-foreground leading-none">sobre o {contextLabel}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1">
+        {!isEmpty && (
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={onClear} title="Limpar chat">
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
       </div>
+    </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="px-3 py-3 space-y-3">
-          {isEmpty ? (
-            <div className="text-center py-8 px-2">
-              <Sparkles className="h-8 w-8 text-primary/40 mx-auto mb-3" />
-              <p className="text-sm font-medium text-foreground/80 mb-1">
-                Dúvidas sobre o conteúdo?
-              </p>
-              <p className="text-xs text-muted-foreground mb-4">
-                Pergunte e o PreceptorMED responde com base no {contextLabel}.
-              </p>
-              <div className="space-y-1.5">
-                {CONTEXT_SUGGESTIONS.map((s, i) => (
-                  <button
-                    key={i}
-                    onClick={() => streamChat(s)}
-                    className="w-full text-left p-2.5 rounded-lg border border-border/30 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/30 transition-all text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <>
-              {messages.map(m => (
-                <div
-                  key={m.id}
-                  className={`flex gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+    {/* Messages — own scroll container, isolated from page */}
+    <div
+      ref={scrollContainerRef}
+      className="flex-1 overflow-y-auto overscroll-contain min-h-0"
+    >
+      <div className="px-4 py-4 space-y-4">
+        {isEmpty ? (
+          <div className="text-center py-10 px-4">
+            <Sparkles className="h-10 w-10 text-primary/30 mx-auto mb-4" />
+            <p className="text-base font-medium text-foreground/80 mb-2">
+              Dúvidas sobre o conteúdo?
+            </p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Pergunte e o PreceptorMED responde com base no {contextLabel}.
+            </p>
+            <div className="space-y-2">
+              {CONTEXT_SUGGESTIONS.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => onSuggestion(s)}
+                  className="w-full text-left p-3 rounded-xl border border-border/30 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/30 transition-all text-sm text-muted-foreground hover:text-foreground"
                 >
-                  {m.role === 'assistant' && (
-                    <div className="shrink-0 h-6 w-6 rounded-md bg-primary/20 flex items-center justify-center mt-0.5">
-                      <Bot className="h-3 w-3 text-primary" />
-                    </div>
-                  )}
-                  <div className={`max-w-[85%] group/msg ${
-                    m.role === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-xl rounded-br-sm px-3 py-2'
-                      : 'bg-secondary/30 border border-border/30 rounded-xl rounded-bl-sm px-3 py-2'
-                  }`}>
-                    {m.role === 'assistant' ? (
-                      <>
-                        {!m.content && isStreaming && m.id === messages[messages.length - 1]?.id && (
-                          <div className="flex items-center gap-2 py-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-[wave_1.2s_ease-in-out_infinite]" />
-                            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-[wave_1.2s_ease-in-out_0.2s_infinite]" />
-                            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-[wave_1.2s_ease-in-out_0.4s_infinite]" />
-                          </div>
-                        )}
-                        {m.content && (
-                          <div className="prose prose-sm dark:prose-invert max-w-none text-xs">
-                            <MarkdownRenderer content={m.content} isTyping={isStreaming && m.id === messages[messages.length - 1]?.id} />
-                          </div>
-                        )}
-                        {m.content && !(isStreaming && m.id === messages[messages.length - 1]?.id) && (
-                          <div className="flex items-center gap-1 mt-1 pt-1 border-t border-border/10 opacity-0 group-hover/msg:opacity-100 transition-opacity">
-                            <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={() => handleCopy(m)}>
-                              {copiedId === m.id ? <Check className="h-2.5 w-2.5" /> : <Copy className="h-2.5 w-2.5" />}
-                            </Button>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-xs whitespace-pre-wrap">{m.content}</p>
-                    )}
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            {messages.map(m => (
+              <div
+                key={m.id}
+                className={`flex gap-2.5 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {m.role === 'assistant' && (
+                  <div className="shrink-0 h-7 w-7 rounded-lg bg-primary/20 flex items-center justify-center mt-0.5">
+                    <Bot className="h-3.5 w-3.5 text-primary" />
                   </div>
-                  {m.role === 'user' && (
-                    <div className="shrink-0 h-6 w-6 rounded-md bg-muted flex items-center justify-center mt-0.5">
-                      <User className="h-3 w-3 text-muted-foreground" />
-                    </div>
+                )}
+                <div className={`max-w-[88%] group/msg ${
+                  m.role === 'user'
+                    ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2.5'
+                    : 'bg-secondary/30 border border-border/30 rounded-2xl rounded-bl-md px-4 py-2.5'
+                }`}>
+                  {m.role === 'assistant' ? (
+                    <>
+                      {!m.content && isStreaming && m.id === messages[messages.length - 1]?.id && (
+                        <div className="flex items-center gap-2 py-2">
+                          <span className="h-2 w-2 rounded-full bg-primary animate-[wave_1.2s_ease-in-out_infinite]" />
+                          <span className="h-2 w-2 rounded-full bg-primary animate-[wave_1.2s_ease-in-out_0.2s_infinite]" />
+                          <span className="h-2 w-2 rounded-full bg-primary animate-[wave_1.2s_ease-in-out_0.4s_infinite]" />
+                        </div>
+                      )}
+                      {m.content && (
+                        <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+                          <MarkdownRenderer content={m.content} isTyping={isStreaming && m.id === messages[messages.length - 1]?.id} />
+                        </div>
+                      )}
+                      {m.content && !(isStreaming && m.id === messages[messages.length - 1]?.id) && (
+                        <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/10 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                          <Button variant="ghost" size="sm" className="h-6 px-2 text-[11px] gap-1" onClick={() => onCopy(m)}>
+                            {copiedId === m.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                            {copiedId === m.id ? 'Copiado' : 'Copiar'}
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap">{m.content}</p>
                   )}
                 </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </>
-          )}
-        </div>
-      </ScrollArea>
-
-      {/* Input */}
-      <div className="shrink-0 border-t border-border/20 p-3">
-        <div className="flex gap-2 items-end">
-          <Textarea
-            placeholder="Pergunte sobre o conteúdo..."
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="flex-1 min-h-[36px] max-h-[80px] resize-none text-xs"
-            rows={1}
-            disabled={isStreaming}
-          />
-          <Button
-            onClick={handleSend}
-            disabled={!input.trim() || isStreaming}
-            size="icon"
-            className="shrink-0 h-9 w-9 rounded-lg"
-          >
-            <Send className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+                {m.role === 'user' && (
+                  <div className="shrink-0 h-7 w-7 rounded-lg bg-muted flex items-center justify-center mt-0.5">
+                    <User className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </>
+        )}
       </div>
-    </motion.div>
-  );
-};
+    </div>
+
+    {/* Input */}
+    <div className="shrink-0 border-t border-border/20 p-3">
+      <div className="flex gap-2 items-end">
+        <Textarea
+          placeholder="Pergunte sobre o conteúdo..."
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={onKeyDown}
+          className="flex-1 min-h-[40px] max-h-[100px] resize-none text-sm"
+          rows={1}
+          disabled={isStreaming}
+        />
+        <Button
+          onClick={onSend}
+          disabled={!input.trim() || isStreaming}
+          size="icon"
+          className="shrink-0 h-10 w-10 rounded-xl"
+        >
+          <Send className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  </>
+);
 
 export default ContextChat;

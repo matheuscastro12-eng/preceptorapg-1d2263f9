@@ -321,7 +321,7 @@ const Dashboard = () => {
       <main className="flex-1 container relative py-6 px-4">
         {showResult ? (
           /* Full-width result view with chat sidebar */
-          <div className="flex gap-4 lg:h-[calc(100vh-8rem)]">
+          <div className="flex gap-0 lg:gap-4 lg:h-[calc(100vh-8rem)]">
             <div className="flex-1 flex flex-col min-w-0">
               {/* Back button */}
               <div className="flex items-center gap-3 mb-4">
@@ -358,17 +358,9 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Chat sidebar - only when we have content */}
+            {/* Chat sidebar */}
             {resultado && (
-              <div className="hidden lg:block shrink-0">
-                <ContextChat context={resultado} contextLabel="fechamento" />
-              </div>
-            )}
-            {/* Mobile: floating chat button */}
-            {resultado && (
-              <div className="lg:hidden">
-                <ContextChat context={resultado} contextLabel="fechamento" />
-              </div>
+              <ContextChat context={resultado} contextLabel="fechamento" />
             )}
           </div>
         ) : (
