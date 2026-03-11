@@ -52,9 +52,8 @@ const MarkdownRenderer = ({ content, className = '', isTyping = false }: Markdow
             </ol>
           ),
           li: ({ children }) => (
-            <li className="leading-relaxed flex items-start gap-3 pl-2">
-              <span className="mt-2.5 min-w-[6px] h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-              <span className="flex-1">{children}</span>
+            <li className="leading-relaxed pl-2 list-disc ml-4">
+              {children}
             </li>
           ),
           strong: ({ children }) => (
