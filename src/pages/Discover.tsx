@@ -89,8 +89,8 @@ const Discover = () => {
       .from('public_profiles' as any)
       .select('user_id, full_name, avatar_url, university, semester')
       .or(`full_name.ilike.%${query}%,university.ilike.%${query}%`)
-      .neq('user_id', user?.id || '') as any);
-      .limit(20);
+      .neq('user_id', user?.id || '')
+      .limit(20) as any);
 
     setSearchResults((data || []).map(p => ({
       ...p,
