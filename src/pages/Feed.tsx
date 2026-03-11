@@ -146,7 +146,7 @@ const Feed = () => {
     const fechamentoIds = postsData.filter(p => p.fechamento_id).map(p => p.fechamento_id!);
 
     const [profilesRes, likesRes, commentCountsRes, fechsRes] = await Promise.all([
-      supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url, university').in('user_id', userIds),
+      supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url, university').in('user_id', userIds) as any,
       supabase.from('post_likes').select('post_id, user_id').in('post_id', postIds),
       supabase.from('post_comments').select('post_id').in('post_id', postIds),
       fechamentoIds.length > 0
