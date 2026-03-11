@@ -357,11 +357,15 @@ const styleContentElements = (container: HTMLElement): void => {
   tables.forEach((table) => {
     (table as HTMLElement).style.cssText = `
       width: 100% !important;
+      max-width: 100% !important;
       border-collapse: collapse !important;
       margin-bottom: 12px !important;
       page-break-inside: auto !important;
       break-inside: auto !important;
-      font-size: 9pt !important;
+      font-size: 8.5pt !important;
+      table-layout: fixed !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
     `;
   });
 
