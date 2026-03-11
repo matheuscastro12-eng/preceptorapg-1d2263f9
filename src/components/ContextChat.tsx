@@ -227,6 +227,7 @@ const ContextChat = ({ context, contextLabel = 'conteúdo gerado', suggestions =
           onCopy={handleCopy}
           onClear={clearChat}
           onSuggestion={streamChat}
+          suggestions={suggestions}
         />
       </motion.div>
 
