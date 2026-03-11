@@ -157,13 +157,13 @@ const Exam = () => {
   };
 
   const handleExportPDF = async () => {
-    if (!resultRef.current || !resultado) return;
+    if (!resultado) return;
     setExporting(true);
     try {
       const title = config.practiceMode === 'caso_clinico'
         ? `Caso Clínico - ${config.nivel === 'basico' ? 'Ciclo Básico' : 'Residência'}`
         : `Prova - ${config.nivel === 'basico' ? 'Ciclo Básico' : 'Residência'} (${config.quantidade}Q)`;
-      await exportToPDF({ tema: title, contentElement: resultRef.current });
+      await exportToPDF({ tema: title, markdown: resultado });
       toast({ title: 'PDF exportado!', description: 'Conteúdo salvo como PDF.' });
     } catch (error) {
       console.error('PDF export error:', error);

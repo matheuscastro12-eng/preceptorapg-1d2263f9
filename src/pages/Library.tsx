@@ -53,12 +53,9 @@ const Library = () => {
     setExporting(true);
     
     try {
-      const contentElement = document.getElementById('fechamento-content');
-      if (!contentElement) throw new Error('Content not found');
-      
       await exportToPDF({
         tema: selectedFechamento.tema,
-        contentElement
+        markdown: selectedFechamento.resultado
       });
       
       toast({

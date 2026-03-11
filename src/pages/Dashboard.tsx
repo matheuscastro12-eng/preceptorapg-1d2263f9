@@ -209,7 +209,7 @@ const Dashboard = () => {
     try {
       await exportToPDF({
         tema: tema.trim(),
-        contentElement: resultRef.current
+        markdown: resultado
       });
       
       toast({
