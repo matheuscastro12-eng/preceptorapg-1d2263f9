@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import EnamedEbook from '@/components/enamed/EnamedEbook';
+
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useEnamedBank, type EnamedArea, AREA_LABELS } from '@/hooks/useEnamedBank';
 import { useEnamedGenerator } from '@/hooks/useEnamedGenerator';
 import { Navigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, BookOpen, GraduationCap, ClipboardList, Zap, Target, Shuffle, LayoutList, Brain, Stethoscope, Baby, Scissors, HeartPulse, BookMarked } from 'lucide-react';
+import { ArrowLeft, Sparkles, GraduationCap, ClipboardList, Zap, Target, Shuffle, LayoutList, Brain, Stethoscope, Baby, Scissors, HeartPulse } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import EnamedBankSimulation from '@/components/enamed/EnamedBankSimulation';
@@ -18,7 +18,7 @@ import ExamResultPanel from '@/components/exam/ExamResultPanel';
 import SimulationView from '@/components/exam/SimulationView';
 import GenerationProgress from '@/components/GenerationProgress';
 
-type EnamedMode = 'menu' | 'completo' | 'area' | 'revisao' | 'ia_completo' | 'ia_area' | 'ebook';
+type EnamedMode = 'menu' | 'completo' | 'area' | 'revisao' | 'ia_completo' | 'ia_area';
 type EnamedSource = 'banco' | 'ia';
 
 const AREA_OPTIONS: { value: EnamedArea; label: string; icon: React.ReactNode }[] = [
@@ -239,65 +239,12 @@ const Enamed = () => {
                 </button>
               </div>
             </div>
-            {/* E-Book Section */}
-            <div className="mt-10">
-              <div className="flex items-center gap-2 mb-4">
-                <BookMarked className="h-4 w-4 text-emerald-600" />
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-emerald-600">E-Book — Resumos por Especialidade</h2>
-              </div>
-
-              <button
-                onClick={() => setMode('ebook')}
-                className="group w-full relative rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent p-5 text-left transition-all duration-300 hover:border-emerald-500/50 hover:shadow-[0_0_30px_hsl(150_50%_40%/0.15)]"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <BookOpen className="h-6 w-6 text-emerald-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-base font-bold text-foreground mb-1">Resumos Completos ENAMED</h3>
-                    <p className="text-xs text-muted-foreground">20 especialidades com os temas mais cobrados pelo INEP — gere resumos detalhados no padrão PBL para cada área</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-emerald-600 text-xs font-medium shrink-0">
-                    Explorar <Sparkles className="h-3.5 w-3.5" />
-                  </div>
-                </div>
-              </button>
-            </div>
           </div>
         </main>
       </PageTransition>
     );
   }
 
-  // E-Book mode
-  if (mode === 'ebook') {
-    return (
-      <PageTransition className="min-h-screen bg-background flex flex-col">
-        <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80">
-          <div className="container flex h-16 items-center justify-between px-4">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={handleBackToMenu} className="gap-2">
-                <ArrowLeft className="h-4 w-4" />Voltar
-              </Button>
-              <div className="h-6 w-px bg-border/50" />
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                  <BookOpen className="h-4 w-4 text-emerald-600" />
-                </div>
-                <span className="text-lg font-bold text-emerald-600">E-Book ENAMED</span>
-              </div>
-            </div>
-            <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
-          </div>
-        </header>
-
-        <main className="flex-1 container relative py-6 px-4">
-          <EnamedEbook onBack={handleBackToMenu} />
-        </main>
-      </PageTransition>
-    );
-  }
 
   // Area selection view (for both banco and ia)
   if (mode === 'area' || mode === 'ia_area') {
