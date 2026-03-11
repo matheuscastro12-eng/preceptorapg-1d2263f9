@@ -1,10 +1,44 @@
-import { RefObject } from 'react';
+import { RefObject, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import SeminarActions from './SeminarActions';
 import type { GenerationMode } from './ModeToggle';
 import { Loader2, Copy, Download, Save, Sparkles, FileText, CheckCircle2, Presentation, GraduationCap } from 'lucide-react';
+
+/** Strip AI preamble/closing from raw markdown text */
+const stripMarkdownPreamble = (md: string): string => {
+  const lines = md.split('\n');
+  
+  // Strip leading preamble lines
+  let startIdx = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (!trimmed) { startIdx = i + 1; continue; }
+    // Keep headings, lists, tables, hrs
+    if (/^#{1,6}\s/.test(trimmed) || /^[-*+]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed) || /^\|/.test(trimmed) || /^---/.test(trimmed)) break;
+    // Check preamble patterns
+    const isPreamble = [
+      /^(com certeza|claro|certo|ok|perfeito|vamos|aqui est[áa]|segue|pronto|elabor)/i,
+      /^(como (monitor|preceptor|coordenador|professor|solicitado|seu))/i,
+      /^(este (caso|material|conte[úu]do|fechamento|semin[áa]rio|documento))/i,
+      /^(a seguir|abaixo|conforme solicitado|conforme pedido)/i,
+      /^(apresento|segue abaixo|seguem|vou (apresentar|elaborar|gerar))/i,
+      /^(entendido|com base|baseado|de acordo)/i,
+      /^(ol[áa]|boa noite|bom dia|boa tarde)/i,
+      /^(preparei|elaborei|criei|gerei|montei|organizei|estruturei)/i,
+      /^(com prazer|sem problemas|sem d[úu]vida|[ée] um prazer|[ée] uma honra)/i,
+      /^(prezad[oa]s?\s+(estudantes?|alunos?|colegas?))/i,
+      /^(vamos [àa] explora[çc][ãa]o|vamos explorar|vamos come[çc]ar|vamos dissecar|vamos ao)/i,
+    ].some(p => p.test(trimmed));
+    if (isPreamble) { startIdx = i + 1; continue; }
+    // Short intro paragraph before any heading
+    if (trimmed.length < 400 && !trimmed.startsWith('#')) { startIdx = i + 1; continue; }
+    break;
+  }
+  
+  return lines.slice(startIdx).join('\n').trim();
+};
 
 interface ResultPanelProps {
   resultado: string;
@@ -35,6 +69,7 @@ const ResultPanel = ({
 }: ResultPanelProps) => {
   const showActions = resultado && !generating;
   const isSeminario = modo === 'seminario';
+  const cleanedResult = useMemo(() => resultado ? stripMarkdownPreamble(resultado) : '', [resultado]);
 
   return (
     <div 
@@ -130,7 +165,7 @@ const ResultPanel = ({
         {resultado ? (
           <>
             <MarkdownRenderer 
-              content={resultado} 
+              content={generating ? resultado : cleanedResult} 
               isTyping={generating && resultado.length > 0}
             />
             {/* Disclaimer after result */}
