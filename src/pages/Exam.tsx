@@ -245,7 +245,16 @@ const Exam = () => {
 
             {/* Chat sidebar for exam */}
             {resultado && (
-              <ContextChat context={resultado} contextLabel="simulado" />
+              <ContextChat
+                context={resultado}
+                contextLabel="simulado"
+                suggestions={[
+                  'Por que a alternativa correta está certa?',
+                  'Quais são os diagnósticos diferenciais?',
+                  'Explique a fisiopatologia envolvida',
+                  'Que pegadinhas comuns caem sobre esse tema?',
+                ]}
+              />
             )}
           </div>
         ) : (

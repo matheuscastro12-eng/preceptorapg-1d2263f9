@@ -16,16 +16,17 @@ interface ChatMessage {
 interface ContextChatProps {
   context: string;
   contextLabel?: string;
+  suggestions?: string[];
 }
 
-const CONTEXT_SUGGESTIONS = [
+const DEFAULT_SUGGESTIONS = [
   'Resuma os pontos principais',
   'O que eu preciso memorizar?',
   'Explique o primeiro tópico com mais detalhes',
   'Quais são as aplicações clínicas?',
 ];
 
-const ContextChat = ({ context, contextLabel = 'conteúdo gerado' }: ContextChatProps) => {
+const ContextChat = ({ context, contextLabel = 'conteúdo gerado', suggestions = DEFAULT_SUGGESTIONS }: ContextChatProps) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -226,6 +227,7 @@ const ContextChat = ({ context, contextLabel = 'conteúdo gerado' }: ContextChat
           onCopy={handleCopy}
           onClear={clearChat}
           onSuggestion={streamChat}
+          suggestions={suggestions}
         />
       </motion.div>
 
@@ -253,6 +255,7 @@ const ContextChat = ({ context, contextLabel = 'conteúdo gerado' }: ContextChat
           onCopy={handleCopy}
           onClear={clearChat}
           onSuggestion={streamChat}
+          suggestions={suggestions}
         />
       </motion.div>
     </>
@@ -268,6 +271,7 @@ interface ChatContentProps {
   input: string;
   setInput: (v: string) => void;
   contextLabel: string;
+  suggestions: string[];
   scrollContainerRef: React.RefObject<HTMLDivElement>;
   messagesEndRef: React.RefObject<HTMLDivElement>;
   onClose: () => void;
@@ -280,7 +284,7 @@ interface ChatContentProps {
 
 const ChatContent = ({
   isEmpty, messages, isStreaming, copiedId, input, setInput,
-  contextLabel, scrollContainerRef, messagesEndRef,
+  contextLabel, suggestions, scrollContainerRef, messagesEndRef,
   onClose, onSend, onKeyDown, onCopy, onClear, onSuggestion,
 }: ChatContentProps) => (
   <>
@@ -323,7 +327,7 @@ const ChatContent = ({
               Pergunte e o PreceptorMED responde com base no {contextLabel}.
             </p>
             <div className="space-y-2">
-              {CONTEXT_SUGGESTIONS.map((s, i) => (
+              {suggestions.map((s, i) => (
                 <button
                   key={i}
                   onClick={() => onSuggestion(s)}
