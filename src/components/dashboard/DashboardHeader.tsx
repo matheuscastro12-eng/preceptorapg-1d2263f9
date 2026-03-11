@@ -47,15 +47,6 @@ const DashboardHeader = ({ userEmail, onLogout }: DashboardHeaderProps) => {
             <BookOpen className="h-4 w-4" />
             <span className="hidden sm:inline">Biblioteca</span>
           </Button>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate('/exam')}
-            className="gap-2 hover:bg-destructive/10 hover:text-destructive transition-colors"
-          >
-            <Dumbbell className="h-4 w-4" />
-            <span className="hidden sm:inline">Prática</span>
-          </Button>
           <ProfileDropdown userEmail={userEmail} onLogout={onLogout} />
         </div>
       </div>

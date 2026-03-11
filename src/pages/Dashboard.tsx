@@ -8,13 +8,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useGenerationGuard } from '@/hooks/useGenerationGuard';
-import { Stethoscope } from 'lucide-react';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import InputPanel from '@/components/dashboard/InputPanel';
 import ResultPanel from '@/components/dashboard/ResultPanel';
+import ContextChat from '@/components/ContextChat';
 import { exportToPDF } from '@/utils/pdfExport';
 import type { GenerationMode } from '@/components/dashboard/ModeToggle';
 import OnboardingTour, { type TourStep } from '@/components/OnboardingTour';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const dashboardTourSteps: TourStep[] = [
   {
@@ -59,6 +61,7 @@ const Dashboard = () => {
   const [isComplete, setIsComplete] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showResult, setShowResult] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
   const { canGenerate, cooldown } = useGenerationGuard(generating);
 
@@ -71,6 +74,13 @@ const Dashboard = () => {
       }
     }
   }, [resultado, generating]);
+
+  // Switch to full-width result view when generation starts receiving
+  useEffect(() => {
+    if (hasStartedReceiving && !showResult) {
+      setShowResult(true);
+    }
+  }, [hasStartedReceiving, showResult]);
 
   if (authLoading || subLoading || adminLoading) {
     return <PageSkeleton variant="dashboard" />;
@@ -94,7 +104,6 @@ const Dashboard = () => {
       return;
     }
 
-    console.log('[Dashboard] Starting generation for tema:', tema.trim());
     setGenerating(true);
     setResultado('');
     setHasStartedReceiving(false);
@@ -171,20 +180,19 @@ const Dashboard = () => {
   };
 
   const handleCopy = () => {
-    // Strip markdown syntax for clean paste into Word
     const cleanText = resultado
-      .replace(/^#{1,6}\s+/gm, '')           // headings
-      .replace(/\*\*\*(.*?)\*\*\*/g, '$1')    // bold+italic
-      .replace(/\*\*(.*?)\*\*/g, '$1')        // bold
-      .replace(/\*(.*?)\*/g, '$1')            // italic
-      .replace(/~~(.*?)~~/g, '$1')            // strikethrough
-      .replace(/`{1,3}(.*?)`{1,3}/gs, '$1')  // code
-      .replace(/^\s*[-*+]\s+/gm, '• ')       // unordered lists
-      .replace(/^\s*\d+\.\s+/gm, (m) => m.trim() + ' ') // ordered lists
-      .replace(/^>\s+/gm, '')                // blockquotes
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // links
-      .replace(/^---+$/gm, '')               // hr
-      .replace(/\n{3,}/g, '\n\n');            // excess blank lines
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/\*\*\*(.*?)\*\*\*/g, '$1')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/~~(.*?)~~/g, '$1')
+      .replace(/`{1,3}(.*?)`{1,3}/gs, '$1')
+      .replace(/^\s*[-*+]\s+/gm, '• ')
+      .replace(/^\s*\d+\.\s+/gm, (m) => m.trim() + ' ')
+      .replace(/^>\s+/gm, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/^---+$/gm, '')
+      .replace(/\n{3,}/g, '\n\n');
 
     navigator.clipboard.writeText(cleanText.trim());
     toast({
@@ -256,9 +264,8 @@ const Dashboard = () => {
   const handleGenerateExam = async () => {
     if (!resultado || !user) return;
     
-    // Save first if not already saved
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('fechamentos')
         .insert({
           user_id: user.id,
@@ -276,7 +283,6 @@ const Dashboard = () => {
         description: 'Fechamento salvo. Redirecionando para o Modo Prática...',
       });
 
-      // Navigate to exam with the new fechamento pre-selected
       navigate('/exam');
     } catch (error) {
       console.error('Save before exam error:', error);
@@ -288,12 +294,23 @@ const Dashboard = () => {
     }
   };
 
+  const handleBackToInput = () => {
+    setShowResult(false);
+  };
+
+  const handleNewGeneration = () => {
+    setShowResult(false);
+    setResultado('');
+    setIsComplete(false);
+    setHasStartedReceiving(false);
+    setTema('');
+    setObjetivos('');
+  };
+
   return (
     <PageTransition className="min-h-screen bg-background flex flex-col">
-      {/* Onboarding Tour */}
       <OnboardingTour steps={dashboardTourSteps} tourKey="dashboard" />
       
-      {/* Subtle background decorations - hidden on mobile/iOS to avoid rendering bugs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 hidden md:block">
         <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-primary/3 rounded-full opacity-50 will-change-transform" />
         <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-accent/3 rounded-full opacity-50 will-change-transform" />
@@ -302,36 +319,91 @@ const Dashboard = () => {
       <DashboardHeader userEmail={user.email || ''} onLogout={signOut} />
 
       <main className="flex-1 container relative py-6 px-4">
-        <div className="grid lg:grid-cols-2 gap-6 lg:h-[calc(100vh-8rem)]">
-          <InputPanel
-            tema={tema}
-            setTema={setTema}
-            objetivos={objetivos}
-            setObjetivos={setObjetivos}
-            modo={modo}
-            setModo={setModo}
-            generating={generating}
-            hasStartedReceiving={hasStartedReceiving}
-            isComplete={isComplete}
-            onGenerate={handleGenerate}
-            canGenerate={canGenerate}
-            cooldown={cooldown}
-          />
+        {showResult ? (
+          /* Full-width result view with chat sidebar */
+          <div className="flex gap-4 lg:h-[calc(100vh-8rem)]">
+            <div className="flex-1 flex flex-col min-w-0">
+              {/* Back button */}
+              <div className="flex items-center gap-3 mb-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleBackToInput}
+                  className="gap-1.5 text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Novo Fechamento
+                </Button>
+                {isComplete && (
+                  <span className="text-xs text-muted-foreground">
+                    Tema: <span className="font-medium text-foreground">{tema}</span>
+                  </span>
+                )}
+              </div>
 
-          <ResultPanel
-            resultado={resultado}
-            generating={generating}
-            saving={saving}
-            exporting={exporting}
-            resultRef={resultRef}
-            modo={modo}
-            tema={tema}
-            onSave={handleSave}
-            onCopy={handleCopy}
-            onExportPDF={handleExportPDF}
-            onGenerateExam={handleGenerateExam}
-          />
-        </div>
+              <div className="flex-1 min-h-0">
+                <ResultPanel
+                  resultado={resultado}
+                  generating={generating}
+                  saving={saving}
+                  exporting={exporting}
+                  resultRef={resultRef}
+                  modo={modo}
+                  tema={tema}
+                  onSave={handleSave}
+                  onCopy={handleCopy}
+                  onExportPDF={handleExportPDF}
+                  onGenerateExam={handleGenerateExam}
+                />
+              </div>
+            </div>
+
+            {/* Chat sidebar - only when we have content */}
+            {resultado && (
+              <div className="hidden lg:block shrink-0">
+                <ContextChat context={resultado} contextLabel="fechamento" />
+              </div>
+            )}
+            {/* Mobile: floating chat button */}
+            {resultado && (
+              <div className="lg:hidden">
+                <ContextChat context={resultado} contextLabel="fechamento" />
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Two-column input view */
+          <div className="grid lg:grid-cols-2 gap-6 lg:h-[calc(100vh-8rem)]">
+            <InputPanel
+              tema={tema}
+              setTema={setTema}
+              objetivos={objetivos}
+              setObjetivos={setObjetivos}
+              modo={modo}
+              setModo={setModo}
+              generating={generating}
+              hasStartedReceiving={hasStartedReceiving}
+              isComplete={isComplete}
+              onGenerate={handleGenerate}
+              canGenerate={canGenerate}
+              cooldown={cooldown}
+            />
+
+            <ResultPanel
+              resultado={resultado}
+              generating={generating}
+              saving={saving}
+              exporting={exporting}
+              resultRef={resultRef}
+              modo={modo}
+              tema={tema}
+              onSave={handleSave}
+              onCopy={handleCopy}
+              onExportPDF={handleExportPDF}
+              onGenerateExam={handleGenerateExam}
+            />
+          </div>
+        )}
       </main>
     </PageTransition>
   );
