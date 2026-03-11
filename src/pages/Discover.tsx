@@ -86,9 +86,9 @@ const Discover = () => {
     setSearching(true);
     
     const { data } = await supabase
-      .from('profiles')
-      .select('user_id, email, full_name, avatar_url, university, semester')
-      .or(`full_name.ilike.%${query}%,email.ilike.%${query}%,university.ilike.%${query}%`)
+      .from('public_profiles' as any)
+      .select('user_id, full_name, avatar_url, university, semester')
+      .or(`full_name.ilike.%${query}%,university.ilike.%${query}%`)
       .neq('user_id', user?.id || '')
       .limit(20);
 

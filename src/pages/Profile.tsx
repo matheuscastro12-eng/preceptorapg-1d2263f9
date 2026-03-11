@@ -51,9 +51,11 @@ const Profile = () => {
   }, [targetUserId, user]);
 
   const fetchProfile = async () => {
+    const table = isOwnProfile ? 'profiles' : ('public_profiles' as any);
+    const cols = isOwnProfile ? '*' : 'user_id, full_name, bio, avatar_url, university, semester';
     const { data } = await supabase
-      .from('profiles')
-      .select('*')
+      .from(table)
+      .select(cols)
       .eq('user_id', targetUserId!)
       .single();
     if (data) {
