@@ -1,7 +1,7 @@
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
+
 import GenerationProgress from '@/components/GenerationProgress';
 import ContentSelector from './ContentSelector';
 import type { ExamConfig, PracticeMode } from '@/hooks/useExamGenerator';
