@@ -5,7 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import GenerationProgress from '@/components/GenerationProgress';
 import ContentSelector from './ContentSelector';
 import type { ExamConfig, PracticeMode } from '@/hooks/useExamGenerator';
-import { Loader2, Sparkles, GraduationCap, Brain, Target, ToggleLeft, FileQuestion, Stethoscope, Dumbbell, FlaskConical } from 'lucide-react';
+import { Loader2, Sparkles, GraduationCap, Brain, Target, FileQuestion, Stethoscope, Dumbbell, FlaskConical } from 'lucide-react';
 
 interface ExamConfigPanelProps {
   selectedIds: string[];

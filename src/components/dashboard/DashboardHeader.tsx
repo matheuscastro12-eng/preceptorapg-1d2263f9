@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ProfileDropdown from '@/components/ProfileDropdown';
-import { Stethoscope, BookOpen, Zap, Dumbbell, ArrowLeft } from 'lucide-react';
+import { Stethoscope, BookOpen, Zap, ArrowLeft } from 'lucide-react';
 
 interface DashboardHeaderProps {
   userEmail: string;
