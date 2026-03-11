@@ -42,17 +42,17 @@ const MarkdownRenderer = ({ content, className = '', isTyping = false }: Markdow
             </p>
           ),
           ul: ({ children }) => (
-            <ul className="mb-5 ml-4 space-y-2 text-foreground/90 list-disc">
+            <ul className="mb-5 ml-6 space-y-2 text-foreground/90 list-disc">
               {children}
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="mb-5 ml-2 space-y-2 text-foreground/90 list-decimal list-inside">
+            <ol className="mb-5 ml-6 space-y-2 text-foreground/90 list-decimal">
               {children}
             </ol>
           ),
           li: ({ children }) => (
-            <li className="leading-relaxed pl-2 list-disc ml-4">
+            <li className="leading-relaxed">
               {children}
             </li>
           ),
