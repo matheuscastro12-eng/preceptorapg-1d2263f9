@@ -327,7 +327,7 @@ const ChatContent = ({
               Pergunte e o PreceptorMED responde com base no {contextLabel}.
             </p>
             <div className="space-y-2">
-              {CONTEXT_SUGGESTIONS.map((s, i) => (
+              {suggestions.map((s, i) => (
                 <button
                   key={i}
                   onClick={() => onSuggestion(s)}
