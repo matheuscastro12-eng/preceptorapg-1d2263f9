@@ -450,15 +450,22 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   const markdownEl = contentElement.querySelector('.markdown-content');
   const sourceHTML = markdownEl ? markdownEl.innerHTML : contentElement.innerHTML;
 
-  // Create main container
+  if (!sourceHTML || sourceHTML.trim().length < 10) {
+    console.warn('PDF export: no content found');
+    throw new Error('Conteúdo não encontrado para exportar.');
+  }
+
+  // Create an off-screen but layoutable container
   const pdfContainer = document.createElement('div');
   pdfContainer.style.cssText = `
-    position: fixed;
+    position: absolute;
     left: -9999px;
     top: 0;
     width: 794px;
     background: white;
     z-index: -1;
+    opacity: 0;
+    pointer-events: none;
   `;
   
   // Add cover page
@@ -466,7 +473,8 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   
   // Create content wrapper with cleaned HTML
   const contentWrapper = document.createElement('div');
-  contentWrapper.innerHTML = stripAIPreamble(sourceHTML);
+  const cleanedHTML = stripAIPreamble(sourceHTML);
+  contentWrapper.innerHTML = cleanedHTML;
   contentWrapper.style.cssText = `
     background: white !important;
     color: #1a1a1a !important;
@@ -485,8 +493,11 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   // Append content after cover
   pdfContainer.appendChild(contentWrapper);
 
-  // Attach to DOM for proper measurement by html2canvas
+  // Attach to DOM FIRST so layout is computed
   document.body.appendChild(pdfContainer);
+
+  // Wait for layout to settle
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
   const opt = {
     margin: [12, 15, 18, 15] as [number, number, number, number],
@@ -501,6 +512,17 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
       backgroundColor: '#ffffff',
       scrollY: 0,
       scrollX: 0,
+      x: 0,
+      y: 0,
+      width: 794,
+      onclone: (clonedDoc: Document) => {
+        const clonedEl = clonedDoc.querySelector('[data-pdf-container]') as HTMLElement;
+        if (clonedEl) {
+          clonedEl.style.position = 'static';
+          clonedEl.style.left = '0';
+          clonedEl.style.opacity = '1';
+        }
+      },
     },
     jsPDF: {
       unit: 'mm' as const,
@@ -515,6 +537,9 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
       avoid: ['tr', 'blockquote', 'pre', 'code', 'img', 'figure', 'details', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
     }
   };
+
+  // Tag container for onclone
+  pdfContainer.setAttribute('data-pdf-container', 'true');
 
   try {
     await html2pdf().set(opt).from(pdfContainer).save();
