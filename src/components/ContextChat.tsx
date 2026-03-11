@@ -177,24 +177,21 @@ const ContextChat = ({ context, contextLabel = 'conteúdo gerado' }: ContextChat
           <MessageCircle className="h-6 w-6 relative" />
         </motion.button>
 
-        {/* Desktop: prominent sidebar tab */}
+        {/* Desktop: vertical tab flush to the result panel edge */}
         <motion.button
-          initial={{ x: 20, opacity: 0 }}
+          initial={{ x: 10, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.5, type: 'spring', damping: 20 }}
+          transition={{ delay: 0.3, type: 'spring', damping: 25 }}
           onClick={() => setIsOpen(true)}
-          className="hidden lg:flex items-center gap-3 px-4 py-3 rounded-2xl border border-primary/30 bg-primary/5 hover:bg-primary/15 hover:border-primary/50 transition-all cursor-pointer h-fit self-start shadow-sm hover:shadow-md group"
+          className="hidden lg:flex shrink-0 flex-col items-center justify-center gap-2 w-10 self-stretch rounded-r-2xl border border-l-0 border-primary/25 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all cursor-pointer group"
         >
           <div className="relative">
-            <div className="h-9 w-9 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-              <MessageCircle className="h-5 w-5 text-primary" />
-            </div>
-            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-primary animate-pulse" />
+            <MessageCircle className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
+            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
           </div>
-          <div className="text-left">
-            <span className="text-sm font-semibold text-foreground block leading-tight">Tire Dúvidas</span>
-            <span className="text-[11px] text-muted-foreground">Chat com IA sobre o {contextLabel}</span>
-          </div>
+          <span className="text-[10px] font-semibold text-primary/80 group-hover:text-primary transition-colors" style={{ writingMode: 'vertical-rl' }}>
+            Tire Dúvidas
+          </span>
         </motion.button>
       </>
     );
