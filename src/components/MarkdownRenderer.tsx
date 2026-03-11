@@ -42,7 +42,7 @@ const MarkdownRenderer = ({ content, className = '', isTyping = false }: Markdow
             </p>
           ),
           ul: ({ children }) => (
-            <ul className="mb-5 ml-2 space-y-2 text-foreground/90">
+            <ul className="mb-5 ml-4 space-y-2 text-foreground/90 list-disc">
               {children}
             </ul>
           ),
