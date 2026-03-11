@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { Tables } from '@/integrations/supabase/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft, Heart, MessageCircle, Send, Trash2,
   Stethoscope, Camera, Edit2, Users, FileText, Star,
@@ -21,6 +21,18 @@ import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
 
 // ===== TYPES =====
+type Profile = Tables<'profiles'>;
+type DbPost = Tables<'posts'>;
+type PostComment = Tables<'post_comments'>;
+
+interface PublicProfile {
+  user_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  university?: string | null;
+  semester?: string | null;
+}
+
 interface ProfileData {
   user_id: string;
   email: string;
@@ -31,41 +43,46 @@ interface ProfileData {
   semester: string | null;
 }
 
-interface Post {
+interface FeedPost {
   id: string;
   user_id: string;
   content: string;
   fechamento_id: string | null;
   created_at: string;
-  profile?: { full_name: string | null; avatar_url: string | null; email: string; university: string | null };
+  profile?: PublicProfile;
   likes_count: number;
   comments_count: number;
   is_liked: boolean;
   fechamento_tema?: string | null;
 }
 
-interface Comment {
-  id: string;
-  user_id: string;
-  content: string;
-  created_at: string;
-  profile?: { full_name: string | null; avatar_url: string | null; email: string };
+interface FeedComment extends PostComment {
+  profile?: PublicProfile;
 }
 
 type ActiveTab = 'feed' | 'discover' | 'profile';
+
+const timeAgo = (date: string) => {
+  const mins = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
+  if (mins < 1) return 'agora';
+  if (mins < 60) return `${mins}min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  return `${Math.floor(hrs / 24)}d`;
+};
 
 const Feed = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ActiveTab>('feed');
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState('');
   const [posting, setPosting] = useState(false);
   const [fechamentos, setFechamentos] = useState<{ id: string; tema: string }[]>([]);
   const [selectedFechamento, setSelectedFechamento] = useState<string>('none');
   const [expandedComments, setExpandedComments] = useState<string | null>(null);
-  const [comments, setComments] = useState<Record<string, Comment[]>>({});
+  const [comments, setComments] = useState<Record<string, FeedComment[]>>({});
   const [newComment, setNewComment] = useState('');
   const [myProfile, setMyProfile] = useState<ProfileData | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
@@ -85,19 +102,20 @@ const Feed = () => {
 
   const fetchMyProfile = async () => {
     if (!user) return;
-    const { data } = await supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle();
+    const { data, error } = await supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle();
+    if (error) { toast.error('Erro ao carregar perfil'); return; }
     if (data) {
       setMyProfile(data as ProfileData);
       setEditForm({
-        full_name: (data as any).full_name || '',
-        bio: (data as any).bio || '',
-        university: (data as any).university || '',
-        semester: (data as any).semester || '',
+        full_name: data.full_name || '',
+        bio: data.bio || '',
+        university: data.university || '',
+        semester: data.semester || '',
       });
     }
   };
 
-  const fetchMyStats = async () => {
+  const fetchMyStats = useCallback(async () => {
     if (!user) return;
     const [fechRes, favRes, followersRes, followingRes] = await Promise.all([
       supabase.from('fechamentos').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
@@ -111,7 +129,7 @@ const Feed = () => {
       followers: followersRes.count || 0,
       following: followingRes.count || 0,
     });
-  };
+  }, [user]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -122,7 +140,8 @@ const Feed = () => {
     const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true });
     if (uploadError) { toast.error('Erro ao enviar foto'); setUploading(false); return; }
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
-    await supabase.from('profiles').update({ avatar_url: publicUrl } as any).eq('user_id', user.id);
+    const { error } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('user_id', user.id);
+    if (error) { toast.error('Erro ao atualizar avatar'); setUploading(false); return; }
     setMyProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : prev);
     toast.success('Foto atualizada!');
     setUploading(false);
@@ -130,7 +149,12 @@ const Feed = () => {
 
   const handleSaveProfile = async () => {
     if (!user) return;
-    const { error } = await supabase.from('profiles').update(editForm as any).eq('user_id', user.id);
+    const { error } = await supabase.from('profiles').update({
+      full_name: editForm.full_name,
+      bio: editForm.bio,
+      university: editForm.university,
+      semester: editForm.semester,
+    }).eq('user_id', user.id);
     if (error) { toast.error('Erro ao salvar perfil'); return; }
     setMyProfile(prev => prev ? { ...prev, ...editForm } : prev);
     setEditingProfile(false);
@@ -138,7 +162,8 @@ const Feed = () => {
   };
 
   const fetchPosts = async () => {
-    const { data: postsData } = await supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(50);
+    const { data: postsData, error: postsError } = await supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(50);
+    if (postsError) { toast.error('Erro ao carregar posts'); setLoading(false); return; }
     if (!postsData || postsData.length === 0) { setPosts([]); setLoading(false); return; }
 
     const userIds = [...new Set(postsData.map(p => p.user_id))];
@@ -151,20 +176,29 @@ const Feed = () => {
       supabase.from('post_comments').select('post_id').in('post_id', postIds),
       fechamentoIds.length > 0
         ? supabase.from('fechamentos').select('id, tema').in('id', fechamentoIds)
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [] as { id: string; tema: string }[] }),
     ]);
 
-    const profileMap = new Map((profilesRes.data || []).map(p => [p.user_id, p]));
-    const fechamentoMap = new Map((fechsRes.data || []).map(f => [f.id, f.tema]));
+    const profileMap = new Map<string, PublicProfile>(
+      (profilesRes.data || []).map((p: PublicProfile) => [p.user_id, p])
+    );
+    const fechamentoMap = new Map<string, string>(
+      (fechsRes.data || []).map((f: { id: string; tema: string }) => [f.id, f.tema])
+    );
     const likesMap = new Map<string, number>();
     const userLikesSet = new Set<string>();
-    (likesRes.data || []).forEach(l => { likesMap.set(l.post_id, (likesMap.get(l.post_id) || 0) + 1); if (l.user_id === user?.id) userLikesSet.add(l.post_id); });
+    (likesRes.data || []).forEach((l: Tables<'post_likes'>) => {
+      likesMap.set(l.post_id, (likesMap.get(l.post_id) || 0) + 1);
+      if (l.user_id === user?.id) userLikesSet.add(l.post_id);
+    });
     const commentsMap = new Map<string, number>();
-    (commentCountsRes.data || []).forEach(c => { commentsMap.set(c.post_id, (commentsMap.get(c.post_id) || 0) + 1); });
+    (commentCountsRes.data || []).forEach((c: { post_id: string }) => {
+      commentsMap.set(c.post_id, (commentsMap.get(c.post_id) || 0) + 1);
+    });
 
     setPosts(postsData.map(p => ({
       ...p,
-      profile: profileMap.get(p.user_id) as any,
+      profile: profileMap.get(p.user_id),
       likes_count: likesMap.get(p.id) || 0,
       comments_count: commentsMap.get(p.id) || 0,
       is_liked: userLikesSet.has(p.id),
@@ -175,7 +209,8 @@ const Feed = () => {
 
   const fetchMyFechamentos = async () => {
     if (!user) return;
-    const { data } = await supabase.from('fechamentos').select('id, tema').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20);
+    const { data, error } = await supabase.from('fechamentos').select('id, tema').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20);
+    if (error) { toast.error('Erro ao carregar fechamentos'); return; }
     setFechamentos(data || []);
   };
 
@@ -196,7 +231,8 @@ const Feed = () => {
   };
 
   const handleDelete = async (postId: string) => {
-    await supabase.from('posts').delete().eq('id', postId);
+    const { error } = await supabase.from('posts').delete().eq('id', postId);
+    if (error) { toast.error('Erro ao remover post'); return; }
     setPosts(prev => prev.filter(p => p.id !== postId));
     toast.success('Post removido');
   };
@@ -205,12 +241,13 @@ const Feed = () => {
     if (expandedComments === postId) { setExpandedComments(null); return; }
     setExpandedComments(postId);
     if (!comments[postId]) {
-      const { data: commentsData } = await supabase.from('post_comments').select('*').eq('post_id', postId).order('created_at', { ascending: true });
+      const { data: commentsData, error } = await supabase.from('post_comments').select('*').eq('post_id', postId).order('created_at', { ascending: true });
+      if (error) { toast.error('Erro ao carregar comentários'); return; }
       if (commentsData && commentsData.length > 0) {
         const uids = [...new Set(commentsData.map(c => c.user_id))];
         const { data: profiles } = await (supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url').in('user_id', uids) as any);
-        const pMap = new Map((profiles || []).map(p => [p.user_id, p]));
-        setComments(prev => ({ ...prev, [postId]: commentsData.map(c => ({ ...c, profile: pMap.get(c.user_id) as any })) }));
+        const pMap = new Map<string, PublicProfile>((profiles || []).map((p: PublicProfile) => [p.user_id, p]));
+        setComments(prev => ({ ...prev, [postId]: commentsData.map(c => ({ ...c, profile: pMap.get(c.user_id) })) }));
       } else {
         setComments(prev => ({ ...prev, [postId]: [] }));
       }
@@ -222,25 +259,17 @@ const Feed = () => {
     const { data: commentData, error } = await supabase.from('post_comments').insert({ post_id: postId, user_id: user.id, content: newComment.trim() }).select().single();
     if (error) { toast.error('Erro ao comentar'); return; }
     const { data: prof } = await supabase.from('profiles').select('user_id, full_name, avatar_url').eq('user_id', user.id).single();
-    setComments(prev => ({ ...prev, [postId]: [...(prev[postId] || []), { ...commentData, profile: prof as any }] }));
+    const profile: PublicProfile | undefined = prof ? { user_id: prof.user_id, full_name: prof.full_name, avatar_url: prof.avatar_url } : undefined;
+    setComments(prev => ({ ...prev, [postId]: [...(prev[postId] || []), { ...commentData, profile }] }));
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments_count: p.comments_count + 1 } : p));
     setNewComment('');
   };
 
+  const myPosts = useMemo(() => posts.filter(p => p.user_id === user?.id), [posts, user?.id]);
+  const initials = useMemo(() => (myProfile?.full_name || myProfile?.email || user?.email || '?').slice(0, 2).toUpperCase(), [myProfile, user?.email]);
+
   if (authLoading || loading) return <PageSkeleton variant="menu" />;
   if (!user) return <Navigate to="/auth" replace />;
-
-  const timeAgo = (date: string) => {
-    const mins = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
-    if (mins < 1) return 'agora';
-    if (mins < 60) return `${mins}min`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h`;
-    return `${Math.floor(hrs / 24)}d`;
-  };
-
-  const initials = (myProfile?.full_name || myProfile?.email || user.email || '?').slice(0, 2).toUpperCase();
-  const myPosts = posts.filter(p => p.user_id === user.id);
 
   return (
     <PageTransition className="min-h-screen bg-background">
@@ -357,7 +386,7 @@ const Feed = () => {
                       <Avatar className="h-9 w-9 cursor-pointer ring-1 ring-border/20" onClick={() => navigate(`/profile/${post.user_id}`)}>
                         <AvatarImage src={post.profile?.avatar_url || undefined} />
                         <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-bold">
-                          {(post.profile?.full_name || post.profile?.email || '?').slice(0, 2).toUpperCase()}
+                          {(post.profile?.full_name || 'U').slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
@@ -366,7 +395,7 @@ const Feed = () => {
                             className="text-sm font-bold text-foreground cursor-pointer hover:text-primary transition-colors truncate"
                             onClick={() => navigate(`/profile/${post.user_id}`)}
                           >
-                            {post.profile?.full_name || post.profile?.email || 'Usuário'}
+                            {post.profile?.full_name || 'Usuário'}
                           </span>
                           {post.profile?.university && (
                             <span className="text-[10px] text-muted-foreground bg-secondary/40 px-1.5 py-0.5 rounded-full hidden sm:inline">
@@ -424,16 +453,16 @@ const Feed = () => {
                     {/* Comments */}
                     {expandedComments === post.id && (
                       <div className="mt-3 ml-12 space-y-2.5">
-                        {(comments[post.id] || []).map((c: any) => (
+                        {(comments[post.id] || []).map((c) => (
                           <div key={c.id} className="flex gap-2 items-start">
                             <Avatar className="h-6 w-6 shrink-0 cursor-pointer" onClick={() => navigate(`/profile/${c.user_id}`)}>
                               <AvatarImage src={c.profile?.avatar_url || undefined} />
                               <AvatarFallback className="text-[8px] bg-secondary text-muted-foreground">
-                                {(c.profile?.full_name || c.profile?.email || '?').slice(0, 2).toUpperCase()}
+                                {(c.profile?.full_name || 'U').slice(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <div className="bg-secondary/30 rounded-xl px-3 py-1.5">
-                              <span className="text-xs font-bold text-foreground mr-1">{c.profile?.full_name || c.profile?.email}</span>
+                              <span className="text-xs font-bold text-foreground mr-1">{c.profile?.full_name || 'Usuário'}</span>
                               <span className="text-xs text-muted-foreground">{c.content}</span>
                             </div>
                           </div>
@@ -673,10 +702,20 @@ const Feed = () => {
 };
 
 /* ===== DISCOVER SECTION ===== */
-const DiscoverSection = ({ user, navigate }: { user: any; navigate: any }) => {
+interface DiscoverUser {
+  user_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  university: string | null;
+  semester?: string | null;
+  fechamentos_count?: number;
+  followers_count?: number;
+}
+
+const DiscoverSection = ({ user, navigate }: { user: { id: string; email?: string }; navigate: (path: string) => void }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
-  const [ranking, setRanking] = useState<any[]>([]);
+  const [results, setResults] = useState<DiscoverUser[]>([]);
+  const [ranking, setRanking] = useState<DiscoverUser[]>([]);
   const [myFollowing, setMyFollowing] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
@@ -687,7 +726,7 @@ const DiscoverSection = ({ user, navigate }: { user: any; navigate: any }) => {
 
   const fetchFollowing = async () => {
     const { data } = await supabase.from('follows').select('following_id').eq('follower_id', user.id);
-    setMyFollowing(new Set((data || []).map((f: any) => f.following_id)));
+    setMyFollowing(new Set((data || []).map(f => f.following_id)));
   };
 
   const fetchRanking = async () => {
@@ -697,17 +736,17 @@ const DiscoverSection = ({ user, navigate }: { user: any; navigate: any }) => {
       supabase.from('follows').select('following_id'),
     ]);
 
-    const profiles = profilesRes.data || [];
+    const profiles: DiscoverUser[] = profilesRes.data || [];
     const fechMap = new Map<string, number>();
-    (fechamentosRes.data || []).forEach((f: any) => fechMap.set(f.user_id, (fechMap.get(f.user_id) || 0) + 1));
+    (fechamentosRes.data || []).forEach((f: { user_id: string }) => fechMap.set(f.user_id, (fechMap.get(f.user_id) || 0) + 1));
     const followMap = new Map<string, number>();
-    (followsRes.data || []).forEach((f: any) => followMap.set(f.following_id, (followMap.get(f.following_id) || 0) + 1));
+    (followsRes.data || []).forEach((f: { following_id: string }) => followMap.set(f.following_id, (followMap.get(f.following_id) || 0) + 1));
 
     setRanking(
       profiles
         .filter(p => p.user_id !== user.id)
         .map(p => ({ ...p, fechamentos_count: fechMap.get(p.user_id) || 0, followers_count: followMap.get(p.user_id) || 0 }))
-        .sort((a, b) => b.fechamentos_count - a.fechamentos_count)
+        .sort((a, b) => (b.fechamentos_count || 0) - (a.fechamentos_count || 0))
     );
     setLoading(false);
   };
@@ -762,7 +801,7 @@ const DiscoverSection = ({ user, navigate }: { user: any; navigate: any }) => {
           <div className="text-center py-8 text-muted-foreground text-sm">Carregando...</div>
         ) : (
           <div className="space-y-1">
-            {dataToShow.map((u: any, i: number) => (
+            {dataToShow.map((u, i) => (
               <div key={u.user_id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/10 transition-colors">
                 {!searchQuery && (
                   <span className={`text-sm font-bold w-7 text-center shrink-0 ${i < 3 ? 'text-primary' : 'text-muted-foreground'}`}>
@@ -772,14 +811,14 @@ const DiscoverSection = ({ user, navigate }: { user: any; navigate: any }) => {
                 <Avatar className="h-10 w-10 cursor-pointer shrink-0" onClick={() => navigate(`/profile/${u.user_id}`)}>
                   <AvatarImage src={u.avatar_url || undefined} />
                   <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
-                    {(u.full_name || u.email).slice(0, 2).toUpperCase()}
+                    {(u.full_name || 'U').slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/profile/${u.user_id}`)}>
-                  <p className="text-sm font-semibold text-foreground truncate">{u.full_name || u.email}</p>
+                  <p className="text-sm font-semibold text-foreground truncate">{u.full_name || 'Usuário'}</p>
                   <p className="text-[10px] text-muted-foreground truncate">
-                    {u.university || u.email}
-                    {!searchQuery && ` · ${u.fechamentos_count} fechamentos · ${u.followers_count} seguidores`}
+                    {u.university || 'Estudante'}
+                    {!searchQuery && ` · ${u.fechamentos_count || 0} fechamentos · ${u.followers_count || 0} seguidores`}
                   </p>
                 </div>
                 <Button
