@@ -496,12 +496,12 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   contentWrapper.style.cssText = `
     background: white !important;
     color: #1a1a1a !important;
-    padding: 10px 15px 30px 15px !important;
+    padding: 10px 0 30px 0 !important;
     font-family: 'Georgia', 'Times New Roman', serif !important;
     font-size: 11pt !important;
     line-height: 1.45 !important;
-    width: 794px !important;
-    max-width: 794px !important;
+    width: 100% !important;
+    max-width: 100% !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
     word-wrap: break-word !important;
@@ -517,15 +517,19 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   // Append content after cover
   pdfContainer.appendChild(contentWrapper);
 
+  // A4 = 210mm wide. margins = 18mm each side. printable = 174mm ≈ 658px at 96dpi
+  // html2canvas windowWidth must match the content width we render at
+  const printableWidthPx = 660;
+
   const opt = {
-    margin: [12, 15, 18, 15] as [number, number, number, number],
+    margin: [12, 18, 18, 18] as [number, number, number, number],
     filename: `fechamento-${tema.trim().toLowerCase().replace(/\s+/g, '-').substring(0, 50)}.pdf`,
     image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: {
       scale: 2,
       useCORS: true,
       logging: false,
-      windowWidth: 794,
+      windowWidth: printableWidthPx,
       letterRendering: true,
       backgroundColor: '#ffffff',
       scrollY: 0,
