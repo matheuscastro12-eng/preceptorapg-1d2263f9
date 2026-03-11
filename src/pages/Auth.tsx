@@ -307,10 +307,57 @@ const Auth = () => {
                     className="h-11 rounded-xl bg-secondary/30 border-border/40 focus:border-primary/50"
                   />
                 </div>
-                <Button type="submit" className="w-full h-11 rounded-xl font-medium" disabled={loading}>
-                  {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Entrando...</> : 'Entrar'}
-                </Button>
+                <div className="flex items-center justify-between">
+                  <Button type="submit" className="flex-1 h-11 rounded-xl font-medium" disabled={loading}>
+                    {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Entrando...</> : 'Entrar'}
+                  </Button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-xs text-primary hover:text-primary/80 hover:underline transition-colors w-fit"
+                >
+                  Esqueci minha senha
+                </button>
               </form>
+
+              {/* Forgot password modal */}
+              <AnimatePresence>
+                {showForgotPassword && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="rounded-xl border border-border/40 bg-secondary/20 p-5 space-y-4">
+                      <div>
+                        <h3 className="text-sm font-semibold text-foreground">Recuperar senha</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">Enviaremos um link para redefinir sua senha.</p>
+                      </div>
+                      <form onSubmit={handleForgotPassword} className="space-y-3">
+                        <Input
+                          type="email"
+                          placeholder="seu@email.com"
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          required
+                          disabled={forgotLoading}
+                          className="h-10 rounded-xl bg-background border-border/40 focus:border-primary/50"
+                        />
+                        <div className="flex gap-2">
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setShowForgotPassword(false)} className="rounded-lg">
+                            Cancelar
+                          </Button>
+                          <Button type="submit" size="sm" disabled={forgotLoading} className="rounded-lg flex-1">
+                            {forgotLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Enviar link'}
+                          </Button>
+                        </div>
+                      </form>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </TabsContent>
 
             {/* Signup */}
