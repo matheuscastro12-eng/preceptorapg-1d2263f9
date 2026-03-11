@@ -492,13 +492,16 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   contentWrapper.style.cssText = `
     background: white !important;
     color: #1a1a1a !important;
-    padding: 15px 25px 30px 25px !important;
+    padding: 10px 15px 30px 15px !important;
     font-family: 'Georgia', 'Times New Roman', serif !important;
     font-size: 11pt !important;
     line-height: 1.45 !important;
-    width: 100% !important;
-    max-width: none !important;
-    overflow: visible !important;
+    width: 794px !important;
+    max-width: 794px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
   `;
   
   // Style content elements
