@@ -49,7 +49,7 @@ const stripAIPreamble = (html: string): string => {
 
       const preamblePatterns = [
         /^(com certeza|claro|certo|ok|perfeito|vamos|aqui est[áa]|segue|pronto|elabor)/i,
-        /^(como (preceptor|coordenador|professor|solicitado|seu))/i,
+        /^(como (monitor|preceptor|coordenador|professor|solicitado|seu))/i,
         /^(este (caso|material|conte[úu]do|fechamento|semin[áa]rio|documento) (foi|[ée]))/i,
         /^(a seguir|abaixo|conforme solicitado|conforme pedido)/i,
         /^(apresento|segue abaixo|seguem|vou (apresentar|elaborar|gerar))/i,
@@ -57,11 +57,11 @@ const stripAIPreamble = (html: string): string => {
         /^(ol[áa]|boa noite|bom dia|boa tarde)/i,
         /^(preparei|elaborei|criei|gerei|montei|organizei|estruturei)/i,
         /^(segue o|segue a|aqui vai|veja o|veja a)/i,
-        /^(com prazer|sem problemas|sem d[úu]vida)/i,
+        /^(com prazer|sem problemas|sem d[úu]vida|[ée] um prazer|[ée] uma honra)/i,
         /^(esse [ée]|este [ée]|essa [ée]|esta [ée]) (um|uma|o|a) (fechamento|semin[áa]rio|material|conte[úu]do|resumo)/i,
         /^(espero que|qualquer d[úu]vida|fico [àa] disposi[çc][ãa]o)/i,
         /^(prezad[oa]s?\s+(estudantes?|alunos?|colegas?))/i,
-        /^(vamos [àa] explora[çc][ãa]o|vamos explorar|vamos come[çc]ar)/i,
+        /^(vamos [àa] explora[çc][ãa]o|vamos explorar|vamos come[çc]ar|vamos dissecar|vamos ao)/i,
       ];
 
       if (preamblePatterns.some(p => p.test(text))) {
