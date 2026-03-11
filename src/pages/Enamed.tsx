@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
@@ -17,6 +17,7 @@ import EnamedBankSimulation from '@/components/enamed/EnamedBankSimulation';
 import ExamResultPanel from '@/components/exam/ExamResultPanel';
 import SimulationView from '@/components/exam/SimulationView';
 import GenerationProgress from '@/components/GenerationProgress';
+import ContextChat from '@/components/ContextChat';
 
 type EnamedMode = 'menu' | 'completo' | 'area' | 'revisao' | 'ia_completo' | 'ia_area';
 type EnamedSource = 'banco' | 'ia';
@@ -293,6 +294,21 @@ const Enamed = () => {
   }
 
   // Bank simulation modes
+  // Build context string from bank questions for the chat sidebar
+  const bankQuestionsContext = useMemo(() => {
+    if (!questions || questions.length === 0) return '';
+    return questions.map((q, i) => {
+      return `## Questão ${i + 1} (${AREA_LABELS[q.area] || q.area} — ENAMED ${q.ano})\n\n${q.enunciado}\n\n**A)** ${q.alternativa_a}\n**B)** ${q.alternativa_b}\n**C)** ${q.alternativa_c}\n**D)** ${q.alternativa_d}\n\n**Gabarito:** ${q.gabarito}${q.explicacao ? `\n**Explicação:** ${q.explicacao}` : ''}`;
+    }).join('\n\n---\n\n');
+  }, [questions]);
+
+  const enamedChatSuggestions = [
+    'Por que a alternativa correta está certa?',
+    'Quais são os diagnósticos diferenciais?',
+    'Explique a fisiopatologia envolvida',
+    'Que pegadinhas comuns caem sobre esse tema?',
+  ];
+
   if (source === 'banco' && (mode === 'completo' || mode === 'revisao' || (mode as string).startsWith('area'))) {
     return (
       <PageTransition className="min-h-screen bg-background flex flex-col">
@@ -312,8 +328,8 @@ const Enamed = () => {
         </header>
 
         <main className="flex-1 container relative py-6 px-4">
-          <div className="max-w-3xl mx-auto h-[calc(100vh-8rem)]">
-            <div className="rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-6 h-full flex flex-col overflow-hidden">
+          <div className="flex gap-4 lg:h-[calc(100vh-8rem)]">
+            <div className="flex-1 min-w-0 rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-6 flex flex-col overflow-hidden">
               <EnamedBankSimulation
                 questions={questions}
                 onFinish={handleFinishBank}
@@ -321,6 +337,14 @@ const Enamed = () => {
                 loading={bankLoading}
               />
             </div>
+
+            {bankQuestionsContext && (
+              <ContextChat
+                context={bankQuestionsContext}
+                contextLabel="simulado ENAMED"
+                suggestions={enamedChatSuggestions}
+              />
+            )}
           </div>
         </main>
       </PageTransition>
@@ -346,8 +370,8 @@ const Enamed = () => {
       </header>
 
       <main className="flex-1 container relative py-6 px-4">
-        <div className="max-w-4xl mx-auto h-[calc(100vh-8rem)]">
-          <div className="rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-6 h-full flex flex-col overflow-hidden">
+        <div className="flex gap-4 lg:h-[calc(100vh-8rem)]">
+          <div className="flex-1 min-w-0 rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-6 flex flex-col overflow-hidden">
             {showIaSimulation && hasIaQuestions ? (
               <SimulationView
                 resultado={resultado}
@@ -393,6 +417,14 @@ const Enamed = () => {
               </>
             )}
           </div>
+
+          {resultado && (
+            <ContextChat
+              context={resultado}
+              contextLabel="simulado ENAMED IA"
+              suggestions={enamedChatSuggestions}
+            />
+          )}
         </div>
       </main>
     </PageTransition>
