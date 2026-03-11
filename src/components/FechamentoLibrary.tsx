@@ -55,6 +55,7 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
   const [searchTerm, setSearchTerm] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [selectedType, setSelectedType] = useState<'all' | 'fechamento' | 'prova' | 'caso_clinico'>('all');
+  const [deleteTarget, setDeleteTarget] = useState<Fechamento | null>(null);
 
   useEffect(() => {
     if (user) {
