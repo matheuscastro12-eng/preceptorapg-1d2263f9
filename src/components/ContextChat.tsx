@@ -26,7 +26,7 @@ const DEFAULT_SUGGESTIONS = [
   'Quais são as aplicações clínicas?',
 ];
 
-const ContextChat = ({ context, contextLabel = 'conteúdo gerado' }: ContextChatProps) => {
+const ContextChat = ({ context, contextLabel = 'conteúdo gerado', suggestions = DEFAULT_SUGGESTIONS }: ContextChatProps) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
