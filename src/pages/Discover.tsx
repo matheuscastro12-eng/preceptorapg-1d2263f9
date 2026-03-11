@@ -51,7 +51,7 @@ const Discover = () => {
 
   const fetchRanking = async () => {
     // Get all profiles
-    const { data: profiles } = await supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url, university, semester');
+    const { data: profiles } = await (supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url, university, semester') as any);
     if (!profiles) { setLoading(false); return; }
 
     const userIds = profiles.map(p => p.user_id);
