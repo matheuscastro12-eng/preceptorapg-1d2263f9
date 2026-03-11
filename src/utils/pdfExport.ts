@@ -458,7 +458,7 @@ const wrapBlocksForPageBreak = (container: HTMLElement): void => {
   container.style.position = 'absolute';
   container.style.left = '-9999px';
   container.style.top = '0';
-  container.style.width = '794px';
+  container.style.width = '660px';
   document.body.appendChild(container);
 
   const MAX_BLOCK_HEIGHT = 900; // px — roughly one printable page area
