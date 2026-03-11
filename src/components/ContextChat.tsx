@@ -16,9 +16,10 @@ interface ChatMessage {
 interface ContextChatProps {
   context: string;
   contextLabel?: string;
+  suggestions?: string[];
 }
 
-const CONTEXT_SUGGESTIONS = [
+const DEFAULT_SUGGESTIONS = [
   'Resuma os pontos principais',
   'O que eu preciso memorizar?',
   'Explique o primeiro tópico com mais detalhes',
