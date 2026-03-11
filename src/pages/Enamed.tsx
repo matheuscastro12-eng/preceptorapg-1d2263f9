@@ -245,7 +245,6 @@ const Enamed = () => {
     );
   }
 
-  }
 
   // Area selection view (for both banco and ia)
   if (mode === 'area' || mode === 'ia_area') {
