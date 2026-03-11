@@ -129,7 +129,7 @@ const Discover = () => {
       <Avatar className="h-10 w-10 cursor-pointer shrink-0" onClick={() => navigate(`/profile/${u.user_id}`)}>
         <AvatarImage src={u.avatar_url || undefined} />
         <AvatarFallback className="text-xs bg-primary/20 text-primary">
-          {(u.full_name || u.email).slice(0, 2).toUpperCase()}
+          {(u.full_name || 'Usuário').slice(0, 2).toUpperCase()}
         </AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/profile/${u.user_id}`)}>
