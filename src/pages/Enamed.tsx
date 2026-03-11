@@ -17,6 +17,7 @@ import EnamedBankSimulation from '@/components/enamed/EnamedBankSimulation';
 import ExamResultPanel from '@/components/exam/ExamResultPanel';
 import SimulationView from '@/components/exam/SimulationView';
 import GenerationProgress from '@/components/GenerationProgress';
+import ContextChat from '@/components/ContextChat';
 
 type EnamedMode = 'menu' | 'completo' | 'area' | 'revisao' | 'ia_completo' | 'ia_area';
 type EnamedSource = 'banco' | 'ia';
