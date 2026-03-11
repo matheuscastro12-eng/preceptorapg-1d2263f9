@@ -357,8 +357,16 @@ O formato EXATO deve ser:
     }
 
     const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error("Empty response from Gemini");
+
+    // Remove control characters that break JSON parsing (tabs, newlines inside strings, etc.)
+    text = text.replace(/[\x00-\x1F\x7F]/g, (ch: string) => {
+      if (ch === '\n') return '\\n';
+      if (ch === '\r') return '\\r';
+      if (ch === '\t') return '\\t';
+      return '';
+    });
 
     const questions = JSON.parse(text);
     if (!Array.isArray(questions)) throw new Error("Response is not an array");
