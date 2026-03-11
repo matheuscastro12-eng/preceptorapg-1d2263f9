@@ -18,7 +18,7 @@ import ExamResultPanel from '@/components/exam/ExamResultPanel';
 import SimulationView from '@/components/exam/SimulationView';
 import GenerationProgress from '@/components/GenerationProgress';
 
-type EnamedMode = 'menu' | 'completo' | 'area' | 'revisao' | 'ia_completo' | 'ia_area' | 'ebook';
+type EnamedMode = 'menu' | 'completo' | 'area' | 'revisao' | 'ia_completo' | 'ia_area';
 type EnamedSource = 'banco' | 'ia';
 
 const AREA_OPTIONS: { value: EnamedArea; label: string; icon: React.ReactNode }[] = [
