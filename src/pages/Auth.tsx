@@ -19,6 +19,9 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [redirectingToCheckout, setRedirectingToCheckout] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
   
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -91,6 +94,21 @@ const Auth = () => {
     setLoading(false);
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Email enviado!', description: 'Verifique sua caixa de entrada para redefinir a senha.' });
+      setShowForgotPassword(false);
+    }
+    setForgotLoading(false);
+  };
+
   const handleGoogleSignIn = async () => {
     setLoading(true);
     const { error } = await lovable.auth.signInWithOAuth("google", {
@@ -111,24 +129,24 @@ const Auth = () => {
   return (
     <div className="flex min-h-screen relative overflow-hidden">
       {/* Left Panel - Visual Branding */}
-      <div className="hidden lg:flex lg:w-[55%] relative gradient-medical items-center justify-center p-12 overflow-hidden">
-        {/* Animated background shapes */}
+      <div className="hidden lg:flex lg:w-[55%] relative items-center justify-center p-12 overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(168,76%,22%) 0%, hsl(168,76%,36%) 50%, hsl(160,60%,30%) 100%)' }}>
+        {/* Animated background shapes — all green tones */}
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
             className="absolute -top-20 -left-20 w-72 h-72 rounded-full"
-            style={{ background: 'radial-gradient(circle, hsla(168,76%,50%,0.15) 0%, transparent 70%)' }}
+            style={{ background: 'radial-gradient(circle, hsla(168,76%,50%,0.2) 0%, transparent 70%)' }}
             animate={{ scale: [1, 1.2, 1], x: [0, 30, 0], y: [0, -20, 0] }}
             transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
             className="absolute bottom-10 right-10 w-96 h-96 rounded-full"
-            style={{ background: 'radial-gradient(circle, hsla(210,90%,60%,0.1) 0%, transparent 70%)' }}
+            style={{ background: 'radial-gradient(circle, hsla(160,70%,40%,0.12) 0%, transparent 70%)' }}
             animate={{ scale: [1, 1.15, 1], x: [0, -20, 0], y: [0, 20, 0] }}
             transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
           />
           <motion.div
             className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full"
-            style={{ background: 'radial-gradient(circle, hsla(180,60%,50%,0.08) 0%, transparent 70%)' }}
+            style={{ background: 'radial-gradient(circle, hsla(168,60%,45%,0.1) 0%, transparent 70%)' }}
             animate={{ scale: [1, 1.3, 1] }}
             transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
           />
@@ -289,10 +307,57 @@ const Auth = () => {
                     className="h-11 rounded-xl bg-secondary/30 border-border/40 focus:border-primary/50"
                   />
                 </div>
-                <Button type="submit" className="w-full h-11 rounded-xl font-medium" disabled={loading}>
-                  {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Entrando...</> : 'Entrar'}
-                </Button>
+                <div className="flex items-center justify-between">
+                  <Button type="submit" className="flex-1 h-11 rounded-xl font-medium" disabled={loading}>
+                    {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Entrando...</> : 'Entrar'}
+                  </Button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-xs text-primary hover:text-primary/80 hover:underline transition-colors w-fit"
+                >
+                  Esqueci minha senha
+                </button>
               </form>
+
+              {/* Forgot password modal */}
+              <AnimatePresence>
+                {showForgotPassword && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="rounded-xl border border-border/40 bg-secondary/20 p-5 space-y-4">
+                      <div>
+                        <h3 className="text-sm font-semibold text-foreground">Recuperar senha</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">Enviaremos um link para redefinir sua senha.</p>
+                      </div>
+                      <form onSubmit={handleForgotPassword} className="space-y-3">
+                        <Input
+                          type="email"
+                          placeholder="seu@email.com"
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          required
+                          disabled={forgotLoading}
+                          className="h-10 rounded-xl bg-background border-border/40 focus:border-primary/50"
+                        />
+                        <div className="flex gap-2">
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setShowForgotPassword(false)} className="rounded-lg">
+                            Cancelar
+                          </Button>
+                          <Button type="submit" size="sm" disabled={forgotLoading} className="rounded-lg flex-1">
+                            {forgotLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Enviar link'}
+                          </Button>
+                        </div>
+                      </form>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </TabsContent>
 
             {/* Signup */}

@@ -17,6 +17,7 @@ import Subscription from "./pages/Subscription";
 import Profile from "./pages/Profile";
 import AIChat from "./pages/AIChat";
 import Enamed from "./pages/Enamed";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/ai-chat" element={<AIChat />} />
               <Route path="/enamed" element={<Enamed />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
