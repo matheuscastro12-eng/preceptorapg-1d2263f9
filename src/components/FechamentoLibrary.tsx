@@ -331,7 +331,7 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive sm:opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={() => deleteFechamento(fechamento.id)}
+                      onClick={() => setDeleteTarget(fechamento)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
