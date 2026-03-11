@@ -1,11 +1,11 @@
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
+
 import GenerationProgress from '@/components/GenerationProgress';
 import ContentSelector from './ContentSelector';
 import type { ExamConfig, PracticeMode } from '@/hooks/useExamGenerator';
-import { Loader2, Sparkles, GraduationCap, Brain, Target, ToggleLeft, FileQuestion, Stethoscope, Dumbbell, FlaskConical } from 'lucide-react';
+import { Loader2, Sparkles, GraduationCap, Brain, Target, FileQuestion, Stethoscope, Dumbbell, FlaskConical } from 'lucide-react';
 
 interface ExamConfigPanelProps {
   selectedIds: string[];
@@ -157,23 +157,6 @@ const ExamConfigPanel = ({
           </div>
         </div>
 
-        {/* Simulation Mode — only for prova mode */}
-        {isProva && (
-          <div className="flex items-center justify-between p-3 rounded-xl border border-border/30 bg-background/40" data-tour="simulation-toggle">
-            <div className="flex items-center gap-2">
-              <ToggleLeft className="h-4 w-4 text-accent" />
-              <div>
-                <Label className="text-sm font-medium cursor-pointer">Modo Simulação</Label>
-                <p className="text-xs text-muted-foreground">Gabaritos ocultos, uma questão por vez</p>
-              </div>
-            </div>
-            <Switch
-              checked={config.simulationMode}
-              onCheckedChange={(v) => onConfigChange({ ...config, simulationMode: v })}
-              disabled={generating}
-            />
-          </div>
-        )}
       </div>
 
       <div className="space-y-4 mt-6 relative" data-tour="generate-exam-btn">

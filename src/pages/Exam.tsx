@@ -9,12 +9,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useExamGenerator, type ExamConfig, type PracticeMode } from '@/hooks/useExamGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate } from 'react-router-dom';
-import { Stethoscope, ArrowLeft, Sparkles, BookOpen, ToggleLeft, Dumbbell, PanelLeftOpen } from 'lucide-react';
+import { Sparkles, ArrowLeft, BookOpen, PanelLeftOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import ExamConfigPanel from '@/components/exam/ExamConfigPanel';
-import ExamResultPanel from '@/components/exam/ExamResultPanel';
 import SimulationView from '@/components/exam/SimulationView';
+import ContextChat from '@/components/ContextChat';
 import { exportToPDF } from '@/utils/pdfExport';
 import OnboardingTour, { type TourStep } from '@/components/OnboardingTour';
 
@@ -32,20 +32,13 @@ const examTourSteps: TourStep[] = [
     placement: 'right',
   },
   {
-    target: '[data-tour="simulation-toggle"]',
-    title: 'Modo Simulação',
-    description: 'Ative para fazer a prova em tempo real, uma questão por vez, como em um simulado de verdade!',
-    placement: 'right',
-  },
-  {
     target: '[data-tour="generate-exam-btn"]',
     title: 'Gerar Prova',
-    description: 'Clique para a IA elaborar as questões. Você pode salvar na biblioteca depois.',
+    description: 'Clique para a IA elaborar as questões no modo simulação.',
     placement: 'right',
   },
 ];
 
-// Helper to check if there's at least 1 parseable question in the streaming result
 function hasParseableQuestion(text: string): boolean {
   const blocks = text.split(/(?=##\s*Questão\s+\d+)/i);
   for (const block of blocks) {
@@ -76,7 +69,7 @@ const Exam = () => {
   const [config, setConfig] = useState<ExamConfig>({
     quantidade: 30,
     nivel: 'residencia',
-    simulationMode: false,
+    simulationMode: true, // Always true now
     practiceMode: lockedMode || 'prova',
   });
   const [exporting, setExporting] = useState(false);
@@ -84,12 +77,18 @@ const Exam = () => {
   const [examStarted, setExamStarted] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
 
-  // Keep config in sync if URL mode changes
   useEffect(() => {
     if (lockedMode && config.practiceMode !== lockedMode) {
       setConfig(prev => ({ ...prev, practiceMode: lockedMode }));
     }
   }, [lockedMode]);
+
+  // Force simulationMode to always be true
+  useEffect(() => {
+    if (!config.simulationMode) {
+      setConfig(prev => ({ ...prev, simulationMode: true }));
+    }
+  }, [config.simulationMode]);
 
   const {
     resultado,
@@ -102,20 +101,9 @@ const Exam = () => {
     reset,
   } = useExamGenerator();
 
-  // Auto-scroll for non-simulation mode
-  useEffect(() => {
-    if (resultRef.current && generating && !showSimulation) {
-      const scrollArea = resultRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollArea) {
-        scrollArea.scrollTop = scrollArea.scrollHeight;
-      }
-    }
-  }, [resultado, generating, showSimulation]);
-
   // Progressive activation: enter simulation as soon as we have at least 1 complete question
   useEffect(() => {
     if (
-      config.simulationMode &&
       config.practiceMode === 'prova' &&
       hasStartedReceiving &&
       resultado &&
@@ -124,7 +112,7 @@ const Exam = () => {
     ) {
       setShowSimulation(true);
     }
-  }, [hasStartedReceiving, resultado, config.simulationMode, config.practiceMode, showSimulation]);
+  }, [hasStartedReceiving, resultado, config.practiceMode, showSimulation]);
 
   if (authLoading || subLoading || adminLoading) {
     return <PageSkeleton variant="exam" />;
@@ -153,11 +141,7 @@ const Exam = () => {
       .join('\n\n---\n\n');
 
     setShowSimulation(false);
-
-    // Enter full-screen mode for simulation
-    if (config.simulationMode && config.practiceMode === 'prova') {
-      setExamStarted(true);
-    }
+    setExamStarted(true);
 
     await generate(conteudo, config);
   };
@@ -190,18 +174,11 @@ const Exam = () => {
   };
 
   const isProva = config.practiceMode === 'prova';
-  const resultTitle = isProva ? 'Prova Gerada' : 'Caso Clínico';
-  const generatingLabel = isProva ? 'Elaborando questões...' : 'Elaborando caso clínico...';
-
-  // Full-screen simulation mode: hide config panel
-  const isFullScreen = examStarted && config.simulationMode && isProva;
 
   return (
     <PageTransition className="min-h-screen bg-background flex flex-col">
-      {/* Onboarding Tour */}
       <OnboardingTour steps={examTourSteps} tourKey="exam" />
 
-      {/* Background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-destructive/5 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-accent/5 rounded-full blur-3xl animate-pulse delay-1000" />
@@ -211,7 +188,7 @@ const Exam = () => {
       <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            {isFullScreen ? (
+            {examStarted ? (
               <Button variant="ghost" size="sm" onClick={handleBackToMenu} className="gap-2">
                 <PanelLeftOpen className="h-4 w-4" />
                 Voltar ao Menu
@@ -247,74 +224,53 @@ const Exam = () => {
       </header>
 
       <main className="flex-1 container relative py-6 px-4">
-        <div className={`grid gap-6 lg:h-[calc(100vh-8rem)] ${isFullScreen ? 'grid-cols-1' : 'lg:grid-cols-2'}`}>
-          {/* Left panel — hidden in full-screen simulation */}
-          {!isFullScreen && (
+        {examStarted ? (
+          /* Full-screen simulation with chat sidebar */
+          <div className="flex gap-4 lg:h-[calc(100vh-8rem)]">
+            <div className="flex-1 min-w-0 relative rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-6 flex flex-col overflow-hidden">
+              {showSimulation && isProva ? (
+                <SimulationView
+                  resultado={resultado}
+                  onExit={handleBackToMenu}
+                  isGenerating={generating}
+                  isComplete={isComplete}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full py-16 text-center space-y-4">
+                  <div className="h-10 w-10 text-primary animate-spin border-2 border-primary border-t-transparent rounded-full" />
+                  <p className="text-muted-foreground">Gerando as questões... aguarde um momento.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Chat sidebar for exam */}
+            {resultado && (
+              <div className="hidden lg:block shrink-0">
+                <ContextChat context={resultado} contextLabel="simulado" />
+              </div>
+            )}
+            {resultado && (
+              <div className="lg:hidden">
+                <ContextChat context={resultado} contextLabel="simulado" />
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Config panel - single column */
+          <div className="max-w-2xl mx-auto lg:h-[calc(100vh-8rem)]">
             <ExamConfigPanel
               selectedIds={selectedIds}
               onSelectionChange={setSelectedIds}
               config={config}
-              onConfigChange={setConfig}
+              onConfigChange={(c) => setConfig({ ...c, simulationMode: true })}
               generating={generating}
               hasStartedReceiving={hasStartedReceiving}
               isComplete={isComplete}
               onGenerate={handleGenerate}
               lockedMode={lockedMode}
             />
-          )}
-
-          {/* Right panel */}
-          <div className="relative rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-6 flex flex-col overflow-hidden">
-            {showSimulation && isProva ? (
-              <>
-                <div className="flex items-center justify-between mb-4 shrink-0">
-                  <div className="flex items-center gap-2">
-                    <ToggleLeft className="h-5 w-5 text-accent" />
-                    <h2 className="text-lg font-semibold">Modo Simulação</h2>
-                  </div>
-                  {isComplete && (
-                    <Button variant="outline" size="sm" onClick={() => setShowSimulation(false)} className="text-xs">
-                      Ver Completa
-                    </Button>
-                  )}
-                </div>
-                <SimulationView
-                  resultado={resultado}
-                  onExit={() => setShowSimulation(false)}
-                  isGenerating={generating}
-                  isComplete={isComplete}
-                />
-              </>
-            ) : (
-              <ExamResultPanel
-                resultado={resultado}
-                generating={generating}
-                exporting={exporting}
-                resultRef={resultRef}
-                onCopy={handleCopy}
-                onExportPDF={handleExportPDF}
-                onSave={isComplete ? saveToLibrary : undefined}
-                title={resultTitle}
-                generatingLabel={generatingLabel}
-              />
-            )}
-
-            {/* Toggle simulation button — prova mode only, only when complete and not already in simulation */}
-            {isComplete && resultado && !showSimulation && isProva && (
-              <div className="pt-3 border-t border-border/20 mt-3 shrink-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowSimulation(true)}
-                  className="w-full gap-2 border-accent/40 hover:bg-accent/10 hover:text-accent"
-                >
-                  <ToggleLeft className="h-4 w-4" />
-                  Entrar no Modo Simulação
-                </Button>
-              </div>
-            )}
           </div>
-        </div>
+        )}
       </main>
     </PageTransition>
   );
