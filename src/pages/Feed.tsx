@@ -146,7 +146,7 @@ const Feed = () => {
     const fechamentoIds = postsData.filter(p => p.fechamento_id).map(p => p.fechamento_id!);
 
     const [profilesRes, likesRes, commentCountsRes, fechsRes] = await Promise.all([
-      supabase.from('profiles').select('user_id, full_name, avatar_url, email, university').in('user_id', userIds),
+      supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url, university').in('user_id', userIds) as any,
       supabase.from('post_likes').select('post_id, user_id').in('post_id', postIds),
       supabase.from('post_comments').select('post_id').in('post_id', postIds),
       fechamentoIds.length > 0
@@ -208,7 +208,7 @@ const Feed = () => {
       const { data: commentsData } = await supabase.from('post_comments').select('*').eq('post_id', postId).order('created_at', { ascending: true });
       if (commentsData && commentsData.length > 0) {
         const uids = [...new Set(commentsData.map(c => c.user_id))];
-        const { data: profiles } = await supabase.from('profiles').select('user_id, full_name, avatar_url, email').in('user_id', uids);
+        const { data: profiles } = await (supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url').in('user_id', uids) as any);
         const pMap = new Map((profiles || []).map(p => [p.user_id, p]));
         setComments(prev => ({ ...prev, [postId]: commentsData.map(c => ({ ...c, profile: pMap.get(c.user_id) as any })) }));
       } else {
@@ -221,7 +221,7 @@ const Feed = () => {
     if (!user || !newComment.trim()) return;
     const { data: commentData, error } = await supabase.from('post_comments').insert({ post_id: postId, user_id: user.id, content: newComment.trim() }).select().single();
     if (error) { toast.error('Erro ao comentar'); return; }
-    const { data: prof } = await supabase.from('profiles').select('user_id, full_name, avatar_url, email').eq('user_id', user.id).single();
+    const { data: prof } = await supabase.from('profiles').select('user_id, full_name, avatar_url').eq('user_id', user.id).single();
     setComments(prev => ({ ...prev, [postId]: [...(prev[postId] || []), { ...commentData, profile: prof as any }] }));
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments_count: p.comments_count + 1 } : p));
     setNewComment('');
@@ -692,7 +692,7 @@ const DiscoverSection = ({ user, navigate }: { user: any; navigate: any }) => {
 
   const fetchRanking = async () => {
     const [profilesRes, fechamentosRes, followsRes] = await Promise.all([
-      supabase.from('profiles').select('user_id, email, full_name, avatar_url, university, semester'),
+      supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url, university, semester') as any,
       supabase.from('fechamentos').select('user_id'),
       supabase.from('follows').select('following_id'),
     ]);
@@ -715,9 +715,9 @@ const DiscoverSection = ({ user, navigate }: { user: any; navigate: any }) => {
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
     if (!query.trim()) { setResults([]); return; }
-    const { data } = await supabase.from('profiles').select('user_id, email, full_name, avatar_url, university')
-      .or(`full_name.ilike.%${query}%,email.ilike.%${query}%,university.ilike.%${query}%`)
-      .neq('user_id', user.id).limit(20);
+    const { data } = await (supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url, university')
+      .or(`full_name.ilike.%${query}%,university.ilike.%${query}%`)
+      .neq('user_id', user.id).limit(20) as any);
     setResults(data || []);
   };
 

@@ -96,42 +96,47 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Auth: check for service role key OR valid admin user
+    // Auth: require valid admin user
     const authHeader = req.headers.get("Authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.replace("Bearer ", "");
-      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+    // Only skip user validation if using the service role key (server-to-server)
+    if (token !== serviceRoleKey) {
       const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-      
-      // If not service role key and not anon key, validate as user
-      if (token !== serviceRoleKey && token !== anonKey) {
-        const supabaseClient = createClient(
-          Deno.env.get("SUPABASE_URL") ?? "",
-          anonKey,
-          { global: { headers: { Authorization: authHeader } } }
+      const supabaseClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        anonKey,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+      if (userError || !user?.id) {
+        return new Response(
+          JSON.stringify({ error: "Token inválido" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
+      }
 
-        const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-        if (userError || !user?.id) {
-          return new Response(
-            JSON.stringify({ error: "Token inválido" }),
-            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+      const { data: adminRole } = await serviceClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
 
-        const { data: adminRole } = await serviceClient
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .eq("role", "admin")
-          .maybeSingle();
-
-        if (!adminRole) {
-          return new Response(
-            JSON.stringify({ error: "Apenas administradores podem gerar ebooks" }),
-            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+      if (!adminRole) {
+        return new Response(
+          JSON.stringify({ error: "Apenas administradores podem gerar ebooks" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     }
 

@@ -100,17 +100,17 @@ const Messages = () => {
     const partnerIds = [...convMap.keys()];
     if (partnerIds.length === 0) { setConversations([]); setLoading(false); return; }
 
-    const { data: profiles } = await supabase.from('profiles').select('user_id, full_name, avatar_url, email').in('user_id', partnerIds);
+    const { data: profiles } = await (supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url').in('user_id', partnerIds) as any);
     const pMap = new Map((profiles || []).map(p => [p.user_id, p]));
 
     const convs: Conversation[] = partnerIds.map(id => {
-      const p = pMap.get(id);
+      const p = pMap.get(id) as any;
       const c = convMap.get(id)!;
       return {
         user_id: id,
         full_name: p?.full_name || null,
         avatar_url: p?.avatar_url || null,
-        email: p?.email || '',
+        email: '',
         ...c,
       };
     }).sort((a, b) => new Date(b.last_time).getTime() - new Date(a.last_time).getTime());
@@ -125,7 +125,7 @@ const Messages = () => {
       supabase.from('direct_messages').select('*')
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${chatUserId}),and(sender_id.eq.${chatUserId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true }),
-      supabase.from('profiles').select('user_id, full_name, avatar_url, email').eq('user_id', chatUserId).single(),
+      supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url').eq('user_id', chatUserId).single() as any,
     ]);
     setMessages(msgs || []);
     setChatProfile(profile);

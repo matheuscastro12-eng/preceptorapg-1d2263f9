@@ -14,7 +14,6 @@ import PageSkeleton from '@/components/PageSkeleton';
 
 interface UserProfile {
   user_id: string;
-  email: string;
   full_name: string | null;
   avatar_url: string | null;
   university: string | null;
@@ -52,7 +51,7 @@ const Discover = () => {
 
   const fetchRanking = async () => {
     // Get all profiles
-    const { data: profiles } = await supabase.from('profiles').select('user_id, email, full_name, avatar_url, university, semester');
+    const { data: profiles } = await (supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url, university, semester') as any);
     if (!profiles) { setLoading(false); return; }
 
     const userIds = profiles.map(p => p.user_id);
@@ -86,12 +85,12 @@ const Discover = () => {
     if (!query.trim()) { setSearchResults([]); return; }
     setSearching(true);
     
-    const { data } = await supabase
-      .from('profiles')
-      .select('user_id, email, full_name, avatar_url, university, semester')
-      .or(`full_name.ilike.%${query}%,email.ilike.%${query}%,university.ilike.%${query}%`)
+    const { data } = await (supabase
+      .from('public_profiles' as any)
+      .select('user_id, full_name, avatar_url, university, semester')
+      .or(`full_name.ilike.%${query}%,university.ilike.%${query}%`)
       .neq('user_id', user?.id || '')
-      .limit(20);
+      .limit(20) as any);
 
     setSearchResults((data || []).map(p => ({
       ...p,
@@ -130,11 +129,11 @@ const Discover = () => {
       <Avatar className="h-10 w-10 cursor-pointer shrink-0" onClick={() => navigate(`/profile/${u.user_id}`)}>
         <AvatarImage src={u.avatar_url || undefined} />
         <AvatarFallback className="text-xs bg-primary/20 text-primary">
-          {(u.full_name || u.email).slice(0, 2).toUpperCase()}
+          {(u.full_name || 'Usuário').slice(0, 2).toUpperCase()}
         </AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/profile/${u.user_id}`)}>
-        <p className="text-sm font-semibold text-foreground truncate">{u.full_name || u.email}</p>
+        <p className="text-sm font-semibold text-foreground truncate">{u.full_name || 'Usuário'}</p>
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
           {u.university && <span>{u.university}</span>}
           {rank !== undefined && (
