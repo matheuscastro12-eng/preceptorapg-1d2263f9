@@ -221,7 +221,7 @@ const Feed = () => {
     if (!user || !newComment.trim()) return;
     const { data: commentData, error } = await supabase.from('post_comments').insert({ post_id: postId, user_id: user.id, content: newComment.trim() }).select().single();
     if (error) { toast.error('Erro ao comentar'); return; }
-    const { data: prof } = await supabase.from('profiles').select('user_id, full_name, avatar_url, email').eq('user_id', user.id).single();
+    const { data: prof } = await supabase.from('profiles').select('user_id, full_name, avatar_url').eq('user_id', user.id).single();
     setComments(prev => ({ ...prev, [postId]: [...(prev[postId] || []), { ...commentData, profile: prof as any }] }));
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments_count: p.comments_count + 1 } : p));
     setNewComment('');
