@@ -448,6 +448,14 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
 
   // Create main container
   const pdfContainer = document.createElement('div');
+  pdfContainer.style.cssText = `
+    position: fixed;
+    left: -9999px;
+    top: 0;
+    width: 794px;
+    background: white;
+    z-index: -1;
+  `;
   
   // Add cover page
   pdfContainer.innerHTML = createCoverPage(tema);
@@ -461,7 +469,7 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
     padding: 15px 25px 30px 25px !important;
     font-family: 'Georgia', 'Times New Roman', serif !important;
     font-size: 11pt !important;
-    line-height: 1.45 !important;
+    line-height: 1.6 !important;
     width: 100% !important;
     max-width: none !important;
     overflow: visible !important;
@@ -473,10 +481,13 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   // Append content after cover
   pdfContainer.appendChild(contentWrapper);
 
+  // Attach to DOM for proper measurement by html2canvas
+  document.body.appendChild(pdfContainer);
+
   const opt = {
     margin: [12, 15, 18, 15] as [number, number, number, number],
     filename: `fechamento-${tema.trim().toLowerCase().replace(/\s+/g, '-').substring(0, 50)}.pdf`,
-    image: { type: 'jpeg' as const, quality: 0.96 },
+    image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: {
       scale: 2,
       useCORS: true,
@@ -497,9 +508,13 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
       mode: ['css', 'legacy'] as string[],
       before: '.pdf-page-break-before',
       after: '.pdf-page-break-after',
-      avoid: ['p', 'li', 'blockquote', 'pre', 'code', 'table', 'tr', 'img', 'figure', 'details', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+      avoid: ['tr', 'blockquote', 'pre', 'code', 'img', 'figure', 'details', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
     }
   };
 
-  await html2pdf().set(opt).from(pdfContainer).save();
+  try {
+    await html2pdf().set(opt).from(pdfContainer).save();
+  } finally {
+    document.body.removeChild(pdfContainer);
+  }
 };
