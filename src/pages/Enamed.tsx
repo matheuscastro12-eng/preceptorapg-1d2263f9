@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useEnamedBank, type EnamedArea, AREA_LABELS } from '@/hooks/useEnamedBank';
 import { useEnamedGenerator } from '@/hooks/useEnamedGenerator';
 import { Navigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, BookOpen, GraduationCap, ClipboardList, Zap, Target, Shuffle, LayoutList, Brain, Stethoscope, Baby, Scissors, HeartPulse, BookMarked } from 'lucide-react';
+import { ArrowLeft, Sparkles, GraduationCap, ClipboardList, Zap, Target, Shuffle, LayoutList, Brain, Stethoscope, Baby, Scissors, HeartPulse } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import EnamedBankSimulation from '@/components/enamed/EnamedBankSimulation';
