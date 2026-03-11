@@ -133,7 +133,7 @@ const Discover = () => {
         </AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/profile/${u.user_id}`)}>
-        <p className="text-sm font-semibold text-foreground truncate">{u.full_name || u.email}</p>
+        <p className="text-sm font-semibold text-foreground truncate">{u.full_name || 'Usuário'}</p>
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
           {u.university && <span>{u.university}</span>}
           {rank !== undefined && (

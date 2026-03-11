@@ -104,13 +104,13 @@ const Messages = () => {
     const pMap = new Map((profiles || []).map(p => [p.user_id, p]));
 
     const convs: Conversation[] = partnerIds.map(id => {
-      const p = pMap.get(id);
+      const p = pMap.get(id) as any;
       const c = convMap.get(id)!;
       return {
         user_id: id,
         full_name: p?.full_name || null,
         avatar_url: p?.avatar_url || null,
-        email: p?.email || '',
+        email: '',
         ...c,
       };
     }).sort((a, b) => new Date(b.last_time).getTime() - new Date(a.last_time).getTime());
