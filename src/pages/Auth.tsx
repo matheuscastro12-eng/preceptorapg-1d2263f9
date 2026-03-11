@@ -129,24 +129,24 @@ const Auth = () => {
   return (
     <div className="flex min-h-screen relative overflow-hidden">
       {/* Left Panel - Visual Branding */}
-      <div className="hidden lg:flex lg:w-[55%] relative gradient-medical items-center justify-center p-12 overflow-hidden">
-        {/* Animated background shapes */}
+      <div className="hidden lg:flex lg:w-[55%] relative items-center justify-center p-12 overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(168,76%,22%) 0%, hsl(168,76%,36%) 50%, hsl(160,60%,30%) 100%)' }}>
+        {/* Animated background shapes — all green tones */}
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
             className="absolute -top-20 -left-20 w-72 h-72 rounded-full"
-            style={{ background: 'radial-gradient(circle, hsla(168,76%,50%,0.15) 0%, transparent 70%)' }}
+            style={{ background: 'radial-gradient(circle, hsla(168,76%,50%,0.2) 0%, transparent 70%)' }}
             animate={{ scale: [1, 1.2, 1], x: [0, 30, 0], y: [0, -20, 0] }}
             transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
             className="absolute bottom-10 right-10 w-96 h-96 rounded-full"
-            style={{ background: 'radial-gradient(circle, hsla(210,90%,60%,0.1) 0%, transparent 70%)' }}
+            style={{ background: 'radial-gradient(circle, hsla(160,70%,40%,0.12) 0%, transparent 70%)' }}
             animate={{ scale: [1, 1.15, 1], x: [0, -20, 0], y: [0, 20, 0] }}
             transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
           />
           <motion.div
             className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full"
-            style={{ background: 'radial-gradient(circle, hsla(180,60%,50%,0.08) 0%, transparent 70%)' }}
+            style={{ background: 'radial-gradient(circle, hsla(168,60%,45%,0.1) 0%, transparent 70%)' }}
             animate={{ scale: [1, 1.3, 1] }}
             transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
           />
