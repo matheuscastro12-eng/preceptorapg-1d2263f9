@@ -370,8 +370,8 @@ const Enamed = () => {
       </header>
 
       <main className="flex-1 container relative py-6 px-4">
-        <div className="max-w-4xl mx-auto h-[calc(100vh-8rem)]">
-          <div className="rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-6 h-full flex flex-col overflow-hidden">
+        <div className="flex gap-4 lg:h-[calc(100vh-8rem)]">
+          <div className="flex-1 min-w-0 rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-6 flex flex-col overflow-hidden">
             {showIaSimulation && hasIaQuestions ? (
               <SimulationView
                 resultado={resultado}
@@ -417,6 +417,14 @@ const Enamed = () => {
               </>
             )}
           </div>
+
+          {resultado && (
+            <ContextChat
+              context={resultado}
+              contextLabel="simulado ENAMED IA"
+              suggestions={enamedChatSuggestions}
+            />
+          )}
         </div>
       </main>
     </PageTransition>
