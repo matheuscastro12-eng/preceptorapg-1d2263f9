@@ -443,6 +443,40 @@ const styleContentElements = (container: HTMLElement): void => {
   });
 };
 
+/**
+ * Wrap each block-level child of the content in a div with break-inside:avoid
+ * so html2pdf will never slice through a single paragraph / list-item / row.
+ * For very tall elements (> ~900px ≈ roughly one A4 page minus margins) we
+ * skip wrapping so the library can still split them.
+ */
+const wrapBlocksForPageBreak = (container: HTMLElement): void => {
+  // Temporarily attach off-screen to measure heights
+  container.style.position = 'absolute';
+  container.style.left = '-9999px';
+  container.style.top = '0';
+  container.style.width = '794px';
+  document.body.appendChild(container);
+
+  const MAX_BLOCK_HEIGHT = 900; // px — roughly one printable page area
+
+  const children = Array.from(container.children) as HTMLElement[];
+  for (const child of children) {
+    const h = child.getBoundingClientRect().height;
+    if (h > 0 && h < MAX_BLOCK_HEIGHT) {
+      // Wrap in a non-breaking container
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'page-break-inside: avoid !important; break-inside: avoid !important;';
+      child.parentNode?.insertBefore(wrapper, child);
+      wrapper.appendChild(child);
+    }
+  }
+
+  document.body.removeChild(container);
+  container.style.position = '';
+  container.style.left = '';
+  container.style.top = '';
+};
+
 export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): Promise<void> => {
   const html2pdf = (await import('html2pdf.js')).default;
 
@@ -469,6 +503,9 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   
   // Style content elements
   styleContentElements(contentWrapper);
+
+  // Wrap block-level elements so page breaks happen between them
+  wrapBlocksForPageBreak(contentWrapper);
   
   // Append content after cover
   pdfContainer.appendChild(contentWrapper);
@@ -476,7 +513,7 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
   const opt = {
     margin: [12, 15, 18, 15] as [number, number, number, number],
     filename: `fechamento-${tema.trim().toLowerCase().replace(/\s+/g, '-').substring(0, 50)}.pdf`,
-    image: { type: 'jpeg' as const, quality: 0.96 },
+    image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: {
       scale: 2,
       useCORS: true,
@@ -494,10 +531,10 @@ export const exportToPDF = async ({ tema, contentElement }: PDFExportOptions): P
       compress: true,
     },
     pagebreak: {
-      mode: ['css', 'legacy'] as string[],
+      mode: ['avoid-all', 'css', 'legacy'] as string[],
       before: '.pdf-page-break-before',
       after: '.pdf-page-break-after',
-      avoid: ['p', 'li', 'blockquote', 'pre', 'code', 'table', 'tr', 'img', 'figure', 'details', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+      avoid: ['div', 'p', 'li', 'blockquote', 'pre', 'code', 'tr', 'img', 'figure', 'details', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
     }
   };
 
