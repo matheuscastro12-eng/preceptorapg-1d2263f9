@@ -435,4 +435,102 @@ const Admin = () => {
   );
 };
 
+const EnamedPopulator = () => {
+  const { toast } = useToast();
+  const [populating, setPopulating] = useState(false);
+  const [progress, setProgress] = useState<Record<string, { done: number; total: number; status: 'idle' | 'running' | 'done' | 'error' }>>(() =>
+    Object.fromEntries(ENAMED_AREAS.map(a => [a, { done: 0, total: 50, status: 'idle' as const }]))
+  );
+
+  const populateArea = async (area: string) => {
+    const BATCH_SIZE = 5;
+    const TOTAL = 50;
+    
+    for (let start = 0; start < TOTAL; start += BATCH_SIZE) {
+      setProgress(prev => ({ ...prev, [area]: { ...prev[area], done: start, status: 'running' } }));
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('populate-enamed-bank', {
+          body: { area, batch_start: start, batch_size: BATCH_SIZE },
+        });
+        
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        
+        setProgress(prev => ({ ...prev, [area]: { ...prev[area], done: start + (data?.inserted || BATCH_SIZE) } }));
+      } catch (err: any) {
+        console.error(`Error populating ${area} at batch ${start}:`, err);
+        setProgress(prev => ({ ...prev, [area]: { ...prev[area], status: 'error' } }));
+        toast({ title: `Erro em ${area}`, description: err.message, variant: 'destructive' });
+        return false;
+      }
+    }
+    
+    setProgress(prev => ({ ...prev, [area]: { done: TOTAL, total: TOTAL, status: 'done' } }));
+    return true;
+  };
+
+  const handlePopulate = async () => {
+    setPopulating(true);
+    setProgress(Object.fromEntries(ENAMED_AREAS.map(a => [a, { done: 0, total: 50, status: 'idle' as const }])));
+    
+    for (const area of ENAMED_AREAS) {
+      const ok = await populateArea(area);
+      if (!ok) break;
+    }
+    
+    setPopulating(false);
+    toast({ title: 'Concluído!', description: 'Banco de questões ENAMED populado.' });
+  };
+
+  const totalDone = Object.values(progress).reduce((acc, p) => acc + p.done, 0);
+  const totalAll = ENAMED_AREAS.length * 50;
+
+  return (
+    <Card className="glass mt-8">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Database className="h-5 w-5 text-primary" />
+          Popular Banco ENAMED
+        </CardTitle>
+        <CardDescription>
+          Gera 50 questões por área (250 total) usando IA no padrão INEP/Revalida. Processo leva ~15-20 minutos.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Button onClick={handlePopulate} disabled={populating} className="gap-2">
+          {populating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+          {populating ? 'Gerando questões...' : 'Iniciar População'}
+        </Button>
+
+        {populating && (
+          <div className="space-y-1">
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Progresso geral</span>
+              <span>{totalDone}/{totalAll}</span>
+            </div>
+            <Progress value={(totalDone / totalAll) * 100} className="h-2" />
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {ENAMED_AREAS.map(area => {
+            const p = progress[area];
+            return (
+              <div key={area} className="flex items-center gap-3">
+                <div className="w-56 text-sm font-medium truncate">{area}</div>
+                <Progress value={(p.done / p.total) * 100} className="flex-1 h-2" />
+                <div className="w-16 text-xs text-right text-muted-foreground">{p.done}/{p.total}</div>
+                {p.status === 'done' && <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />}
+                {p.status === 'running' && <Loader2 className="h-4 w-4 animate-spin text-primary flex-shrink-0" />}
+                {p.status === 'error' && <span className="text-xs text-destructive">Erro</span>}
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 export default Admin;
