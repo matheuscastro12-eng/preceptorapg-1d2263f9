@@ -2,32 +2,32 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { Tables } from '@/integrations/supabase/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, Send, MessageCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
+
+type DirectMessage = Tables<'direct_messages'>;
+
+interface PublicProfile {
+  user_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+}
 
 interface Conversation {
   user_id: string;
   full_name: string | null;
   avatar_url: string | null;
-  email: string;
   last_message: string;
   last_time: string;
   unread: number;
-}
-
-interface Message {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  content: string;
-  created_at: string;
-  read: boolean;
 }
 
 const Messages = () => {
@@ -35,8 +35,8 @@ const Messages = () => {
   const { chatUserId } = useParams();
   const navigate = useNavigate();
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [chatProfile, setChatProfile] = useState<any>(null);
+  const [messages, setMessages] = useState<DirectMessage[]>([]);
+  const [chatProfile, setChatProfile] = useState<PublicProfile | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -52,13 +52,15 @@ const Messages = () => {
     const channel = supabase
       .channel(`dm-${chatUserId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'direct_messages' }, (payload) => {
-        const msg = payload.new as Message;
+        const msg = payload.new as DirectMessage;
         if ((msg.sender_id === user.id && msg.receiver_id === chatUserId) ||
             (msg.sender_id === chatUserId && msg.receiver_id === user.id)) {
           setMessages(prev => [...prev, msg]);
           // Mark as read
           if (msg.sender_id === chatUserId) {
-            supabase.from('direct_messages').update({ read: true } as any).eq('id', msg.id);
+            supabase.from('direct_messages').update({ read: true }).eq('id', msg.id).then(({ error }) => {
+              if (error) console.error('Error marking message as read:', error);
+            });
           }
         }
       })
@@ -72,12 +74,13 @@ const Messages = () => {
 
   const fetchConversations = async () => {
     if (!user) return;
-    const { data: allMessages } = await supabase
+    const { data: allMessages, error } = await supabase
       .from('direct_messages')
       .select('*')
       .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
       .order('created_at', { ascending: false });
 
+    if (error) { toast.error('Erro ao carregar conversas'); setLoading(false); return; }
     if (!allMessages) { setLoading(false); return; }
 
     // Group by conversation partner
@@ -101,16 +104,15 @@ const Messages = () => {
     if (partnerIds.length === 0) { setConversations([]); setLoading(false); return; }
 
     const { data: profiles } = await (supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url').in('user_id', partnerIds) as any);
-    const pMap = new Map((profiles || []).map(p => [p.user_id, p]));
+    const pMap = new Map<string, PublicProfile>((profiles || []).map((p: PublicProfile) => [p.user_id, p]));
 
     const convs: Conversation[] = partnerIds.map(id => {
-      const p = pMap.get(id) as any;
+      const p = pMap.get(id);
       const c = convMap.get(id)!;
       return {
         user_id: id,
         full_name: p?.full_name || null,
         avatar_url: p?.avatar_url || null,
-        email: '',
         ...c,
       };
     }).sort((a, b) => new Date(b.last_time).getTime() - new Date(a.last_time).getTime());
@@ -121,32 +123,35 @@ const Messages = () => {
 
   const fetchChat = async () => {
     if (!user || !chatUserId) return;
-    const [{ data: msgs }, { data: profile }] = await Promise.all([
+    const [{ data: msgs, error: msgsError }, { data: profile }] = await Promise.all([
       supabase.from('direct_messages').select('*')
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${chatUserId}),and(sender_id.eq.${chatUserId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true }),
-      supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url').eq('user_id', chatUserId).single() as any,
+      supabase.from('public_profiles' as any).select('user_id, full_name, avatar_url').eq('user_id', chatUserId).maybeSingle() as any,
     ]);
+    if (msgsError) { toast.error('Erro ao carregar mensagens'); }
     setMessages(msgs || []);
-    setChatProfile(profile);
+    setChatProfile(profile as PublicProfile | null);
     setLoading(false);
 
     // Mark unread as read
     if (msgs) {
       const unreadIds = msgs.filter(m => m.receiver_id === user.id && !m.read).map(m => m.id);
       if (unreadIds.length > 0) {
-        await supabase.from('direct_messages').update({ read: true } as any).in('id', unreadIds);
+        const { error } = await supabase.from('direct_messages').update({ read: true }).in('id', unreadIds);
+        if (error) { toast.error('Erro ao marcar mensagens como lidas'); }
       }
     }
   };
 
   const handleSend = async () => {
     if (!user || !chatUserId || !newMessage.trim()) return;
-    await supabase.from('direct_messages').insert({
+    const { error } = await supabase.from('direct_messages').insert({
       sender_id: user.id,
       receiver_id: chatUserId,
       content: newMessage.trim(),
     });
+    if (error) { toast.error('Erro ao enviar mensagem'); return; }
     setNewMessage('');
   };
 
@@ -176,10 +181,10 @@ const Messages = () => {
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={chatProfile.avatar_url || undefined} />
                   <AvatarFallback className="text-xs bg-primary/20 text-primary">
-                    {(chatProfile.full_name || chatProfile.email).slice(0, 2).toUpperCase()}
+                    {(chatProfile.full_name || 'U').slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-semibold text-foreground">{chatProfile.full_name || chatProfile.email}</span>
+                <span className="text-sm font-semibold text-foreground">{chatProfile.full_name || 'Usuário'}</span>
               </div>
             )}
           </div>
@@ -261,12 +266,12 @@ const Messages = () => {
               <Avatar className="h-11 w-11">
                 <AvatarImage src={c.avatar_url || undefined} />
                 <AvatarFallback className="text-xs bg-primary/20 text-primary">
-                  {(c.full_name || c.email).slice(0, 2).toUpperCase()}
+                  {(c.full_name || 'U').slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-foreground truncate">{c.full_name || c.email}</p>
+                  <p className="text-sm font-semibold text-foreground truncate">{c.full_name || 'Usuário'}</p>
                   <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo(c.last_time)}</span>
                 </div>
                 <p className="text-xs text-muted-foreground truncate">{c.last_message}</p>

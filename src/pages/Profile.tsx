@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { Tables } from '@/integrations/supabase/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,9 +16,11 @@ import { motion } from 'framer-motion';
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
 
+type Profile = Tables<'profiles'>;
+
 interface ProfileData {
   user_id: string;
-  email: string;
+  email?: string;
   full_name: string | null;
   bio: string | null;
   avatar_url: string | null;
@@ -25,7 +28,7 @@ interface ProfileData {
   semester: string | null;
 }
 
-const Profile = () => {
+const ProfilePage = () => {
   const { user, loading: authLoading } = useAuth();
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -36,7 +39,7 @@ const Profile = () => {
   const [editForm, setEditForm] = useState({ full_name: '', bio: '', university: '', semester: '' });
   const [stats, setStats] = useState({ fechamentos: 0, favoritos: 0, followers: 0, following: 0 });
   const [isFollowing, setIsFollowing] = useState(false);
-  const [publicFechamentos, setPublicFechamentos] = useState<any[]>([]);
+  const [publicFechamentos, setPublicFechamentos] = useState<Array<{ id: string; content: string; fechamentos: { tema: string } | null }>>([]);
 
   const targetUserId = userId || user?.id;
   const isOwnProfile = !userId || userId === user?.id;
@@ -51,22 +54,39 @@ const Profile = () => {
   }, [targetUserId, user]);
 
   const fetchProfile = async () => {
-    let data: any;
     if (isOwnProfile) {
-      const res = await supabase.from('profiles').select('*').eq('user_id', targetUserId!).single();
-      data = res.data;
+      const { data, error } = await supabase.from('profiles').select('*').eq('user_id', targetUserId!).maybeSingle();
+      if (error) { toast.error('Erro ao carregar perfil'); setLoading(false); return; }
+      if (data) {
+        setProfile({
+          user_id: data.user_id,
+          email: data.email,
+          full_name: data.full_name,
+          bio: data.bio,
+          avatar_url: data.avatar_url,
+          university: data.university,
+          semester: data.semester,
+        });
+        setEditForm({
+          full_name: data.full_name || '',
+          bio: data.bio || '',
+          university: data.university || '',
+          semester: data.semester || '',
+        });
+      }
     } else {
-      const res = await (supabase.from('public_profiles' as any).select('user_id, full_name, bio, avatar_url, university, semester').eq('user_id', targetUserId!).single() as any);
-      data = res.data;
-    }
-    if (data) {
-      setProfile(data as ProfileData);
-      setEditForm({
-        full_name: (data as any).full_name || '',
-        bio: (data as any).bio || '',
-        university: (data as any).university || '',
-        semester: (data as any).semester || '',
-      });
+      const { data, error } = await (supabase.from('public_profiles' as any).select('user_id, full_name, bio, avatar_url, university, semester').eq('user_id', targetUserId!).maybeSingle() as any);
+      if (error) { toast.error('Erro ao carregar perfil'); setLoading(false); return; }
+      if (data) {
+        setProfile({
+          user_id: data.user_id,
+          full_name: data.full_name,
+          bio: data.bio,
+          avatar_url: data.avatar_url,
+          university: data.university,
+          semester: data.semester,
+        });
+      }
     }
     setLoading(false);
   };
@@ -97,14 +117,15 @@ const Profile = () => {
   };
 
   const fetchPublicFechamentos = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('posts')
       .select('*, fechamentos(*)')
       .eq('user_id', targetUserId!)
       .not('fechamento_id', 'is', null)
       .order('created_at', { ascending: false })
       .limit(10);
-    setPublicFechamentos(data || []);
+    if (error) { console.error('Error fetching fechamentos:', error); }
+    setPublicFechamentos((data || []) as any);
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,7 +148,8 @@ const Profile = () => {
 
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
 
-    await supabase.from('profiles').update({ avatar_url: publicUrl } as any).eq('user_id', user.id);
+    const { error } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('user_id', user.id);
+    if (error) { toast.error('Erro ao atualizar avatar'); setUploading(false); return; }
     setProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : prev);
     toast.success('Foto atualizada!');
     setUploading(false);
@@ -137,7 +159,12 @@ const Profile = () => {
     if (!user) return;
     const { error } = await supabase
       .from('profiles')
-      .update(editForm as any)
+      .update({
+        full_name: editForm.full_name,
+        bio: editForm.bio,
+        university: editForm.university,
+        semester: editForm.semester,
+      })
       .eq('user_id', user.id);
 
     if (error) {
@@ -162,11 +189,11 @@ const Profile = () => {
     }
   };
 
-  if (authLoading || loading) return <PageSkeleton variant="menu" />;
-  if (!user) { navigate('/auth'); return null; }
-  if (!profile) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Perfil não encontrado</div>;
+  const initials = useMemo(() => (profile?.full_name || profile?.email || '?').slice(0, 2).toUpperCase(), [profile]);
 
-  const initials = (profile.full_name || profile.email || '?').slice(0, 2).toUpperCase();
+  if (authLoading || loading) return <PageSkeleton variant="menu" />;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (!profile) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Perfil não encontrado</div>;
 
   return (
     <PageTransition className="min-h-screen bg-background">
@@ -224,7 +251,7 @@ const Profile = () => {
             </div>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-foreground">{profile.full_name || profile.email}</h1>
+              <h1 className="text-2xl font-bold text-foreground">{profile.full_name || profile.email || 'Usuário'}</h1>
               {profile.bio && <p className="text-sm text-muted-foreground mt-1 max-w-md">{profile.bio}</p>}
               <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                 {profile.university && (
@@ -289,4 +316,4 @@ const Profile = () => {
   );
 };
 
-export default Profile;
+export default ProfilePage;

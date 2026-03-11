@@ -146,12 +146,13 @@ const AIChat = () => {
           } catch { /* partial json */ }
         }
       }
-    } catch (e: any) {
-      if (e.name === 'AbortError') return;
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name === 'AbortError') return;
       console.error('Chat error:', e);
+      const message = e instanceof Error ? e.message : 'Erro ao processar sua pergunta. Tente novamente.';
       setMessages(prev => [
         ...prev.filter(m => m.id !== assistantId),
-        { id: assistantId, role: 'assistant', content: `⚠️ ${e.message || 'Erro ao processar sua pergunta. Tente novamente.'}` },
+        { id: assistantId, role: 'assistant', content: `⚠️ ${message}` },
       ]);
     } finally {
       setIsStreaming(false);
