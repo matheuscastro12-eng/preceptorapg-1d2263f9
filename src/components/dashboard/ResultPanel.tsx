@@ -38,11 +38,11 @@ const ResultPanel = ({
 
   return (
     <div 
-      className="relative rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-6 flex flex-col overflow-hidden" 
+      className="relative rounded-2xl border border-border/30 bg-card p-6 flex flex-col overflow-hidden" 
       ref={resultRef}
     >
-      {/* Decorative gradient */}
-      <div className={`absolute top-0 left-0 w-32 h-32 bg-gradient-to-br ${isSeminario ? 'from-accent/10' : 'from-accent/10'} to-transparent rounded-br-full pointer-events-none`} />
+      {/* Decorative gradient — hidden on mobile to avoid iOS WebKit render crashes */}
+      <div className={`absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-accent/10 to-transparent rounded-br-full pointer-events-none hidden md:block`} />
       
       <div className="flex items-center justify-between mb-4 relative">
         <div className="flex items-center gap-3">
