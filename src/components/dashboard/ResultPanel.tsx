@@ -147,7 +147,7 @@ const ResultPanel = ({
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center py-16">
             <div className="relative mb-6">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 opacity-50 animate-pulse" />
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 opacity-50 animate-pulse hidden md:block" />
               <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-muted/80 to-muted/40 flex items-center justify-center ring-1 ring-border/30">
                 {isSeminario ? (
                   <Presentation className="h-10 w-10 text-muted-foreground/40" />
