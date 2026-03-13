@@ -119,7 +119,7 @@ const InteractiveQuestion = ({ question, index }: InteractiveQuestionProps) => {
                           : 'from-muted/50 to-muted/30 text-muted-foreground'
                       : isSelected
                         ? 'from-primary/30 to-primary/10 text-primary ring-2 ring-primary/30'
-                        : `${letterColors[alt.letter] || 'from-muted/50 to-muted/30 text-muted-foreground'} group-hover:ring-1 group-hover:ring-accent/30`
+                        : `${defaultLetterStyle} group-hover:ring-1 group-hover:ring-accent/30`
                   }`}
                 >
                   {alt.letter}
