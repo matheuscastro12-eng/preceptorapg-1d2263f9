@@ -264,9 +264,8 @@ const Enamed = () => {
   }
 
 
-  // Area selection view (for both banco and ia)
+  // Area selection view (banco only)
   if (mode === 'area') {
-    const isIa = mode === 'ia_area';
     return (
       <PageTransition className="min-h-screen bg-background flex flex-col">
         <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80">
@@ -285,23 +284,21 @@ const Enamed = () => {
         <main className="flex-1 container relative py-8 px-4">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold">Escolha a Área</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {isIa ? 'A IA gerará 20 questões ENAMED na área escolhida' : 'Questões do banco filtradas por área'}
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">Questões do banco filtradas por área</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-3xl mx-auto">
             {AREA_OPTIONS.map(({ value, label, icon }) => (
               <button
                 key={value}
-                onClick={() => isIa ? startIaMode('ia_area', value) : startBankMode('area', value)}
+                onClick={() => startBankMode('area', value)}
                 className="group rounded-2xl border border-border/40 bg-gradient-to-br from-muted/30 to-transparent p-6 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_20px_hsl(var(--primary)/0.1)]"
               >
                 <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform text-primary">
                   {icon}
                 </div>
                 <h3 className="text-base font-bold">{label}</h3>
-                <p className="text-xs text-muted-foreground mt-1">{isIa ? '20 questões IA' : 'Questões do banco'}</p>
+                <p className="text-xs text-muted-foreground mt-1">Questões do banco</p>
               </button>
             ))}
           </div>
