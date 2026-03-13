@@ -11,8 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
 import ProfileDropdown from '@/components/ProfileDropdown';
+import logoPreceptor from '@/assets/logo-preceptor.png';
 import {
-  Stethoscope,
   CreditCard,
   Calendar,
   CheckCircle2,
