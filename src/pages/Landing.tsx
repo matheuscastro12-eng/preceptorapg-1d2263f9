@@ -15,8 +15,11 @@ import {
   Users,
   Shield,
   Play,
-  ChevronRight
+  ChevronRight,
+  Mail,
+  Instagram
 } from 'lucide-react';
+import logoIcon from '@/assets/logo-icon.png';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -310,19 +313,73 @@ const Landing = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border/30 py-8 bg-background">
-        <div className="container px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center">
-              <img 
-                src={logoPreceptor} 
-                alt="PreceptorMED" 
-                className="h-6 w-auto opacity-70"
-              />
+      <footer className="border-t border-border/30 bg-background">
+        <div className="container px-4 py-12 sm:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-16">
+            {/* Brand */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2.5">
+                <img src={logoIcon} alt="PreceptorMED" className="h-8 w-8" />
+                <span className="text-lg font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  Preceptor<span className="text-primary">MED</span>
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+                Plataforma premium para estudantes de medicina em PBL. Fechamentos, casos clínicos e simulados potencializados por IA.
+              </p>
             </div>
+
+            {/* Links */}
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <h4 className="font-semibold text-sm mb-3">Produto</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li><button onClick={() => navigate('/pricing')} className="hover:text-foreground transition-colors">Preços</button></li>
+                  <li><button onClick={() => navigate('/auth?tab=signup')} className="hover:text-foreground transition-colors">Criar Conta</button></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold text-sm mb-3">Contato</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5" />
+                    <a href="mailto:preceptormed@gmail.com" className="hover:text-foreground transition-colors">preceptormed@gmail.com</a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Social */}
+            <div className="flex md:justify-end items-start">
+              <a
+                href="https://instagram.com/preceptor.med"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Instagram className="h-5 w-5" />
+                @preceptor.med
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="border-t border-border/30">
+          <div className="container px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} PreceptorMED. Uso educacional.
+              © {new Date().getFullYear()} PreceptorMED. Todos os direitos reservados.
             </p>
+            <div className="flex items-center gap-4">
+              <a
+                href="https://instagram.com/preceptor.med"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Instagram className="h-4 w-4" />
+              </a>
+            </div>
           </div>
         </div>
       </footer>
