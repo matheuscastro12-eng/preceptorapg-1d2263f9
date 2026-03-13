@@ -16,6 +16,7 @@ import ExamConfigPanel from '@/components/exam/ExamConfigPanel';
 import SimulationView from '@/components/exam/SimulationView';
 import ContextChat from '@/components/ContextChat';
 import { exportToPDF } from '@/utils/pdfExport';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 import OnboardingTour, { type TourStep } from '@/components/OnboardingTour';
 
 const examTourSteps: TourStep[] = [
