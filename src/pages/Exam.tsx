@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -9,13 +9,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useExamGenerator, type ExamConfig, type PracticeMode } from '@/hooks/useExamGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate } from 'react-router-dom';
-import { Sparkles, ArrowLeft, BookOpen, PanelLeftOpen } from 'lucide-react';
+import { Sparkles, ArrowLeft, BookOpen, PanelLeftOpen, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import ExamConfigPanel from '@/components/exam/ExamConfigPanel';
 import SimulationView from '@/components/exam/SimulationView';
 import ContextChat from '@/components/ContextChat';
 import { exportToPDF } from '@/utils/pdfExport';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 import OnboardingTour, { type TourStep } from '@/components/OnboardingTour';
 
 const examTourSteps: TourStep[] = [
@@ -102,14 +103,14 @@ const Exam = () => {
   } = useExamGenerator();
 
   // Progressive activation: enter simulation as soon as we have at least 1 complete question
+  // For prova: wait for parseable question; for caso_clinico: show as soon as content arrives
   useEffect(() => {
-    if (
-      config.practiceMode === 'prova' &&
-      hasStartedReceiving &&
-      resultado &&
-      hasParseableQuestion(resultado) &&
-      !showSimulation
-    ) {
+    if (showSimulation) return;
+    if (!hasStartedReceiving || !resultado) return;
+
+    if (config.practiceMode === 'prova' && hasParseableQuestion(resultado)) {
+      setShowSimulation(true);
+    } else if (config.practiceMode === 'caso_clinico' && resultado.length > 100) {
       setShowSimulation(true);
     }
   }, [hasStartedReceiving, resultado, config.practiceMode, showSimulation]);
@@ -235,10 +236,25 @@ const Exam = () => {
                   isGenerating={generating}
                   isComplete={isComplete}
                 />
+              ) : showSimulation && !isProva ? (
+                /* Caso clínico: render markdown directly */
+                <div className="flex-1 overflow-y-auto">
+                  <div ref={resultRef} className="prose prose-sm dark:prose-invert max-w-none">
+                    <MarkdownRenderer content={resultado} isTyping={generating} />
+                  </div>
+                  {generating && (
+                    <div className="flex items-center gap-2 mt-4 text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm">Elaborando caso clínico...</span>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full py-16 text-center space-y-4">
                   <div className="h-10 w-10 text-primary animate-spin border-2 border-primary border-t-transparent rounded-full" />
-                  <p className="text-muted-foreground">Gerando as questões... aguarde um momento.</p>
+                  <p className="text-muted-foreground">
+                    {isProva ? 'Gerando as questões...' : 'Elaborando o caso clínico...'} aguarde um momento.
+                  </p>
                 </div>
               )}
             </div>
