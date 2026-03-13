@@ -265,7 +265,7 @@ const Enamed = () => {
 
 
   // Area selection view (for both banco and ia)
-  if (mode === 'area' || mode === 'ia_area') {
+  if (mode === 'area') {
     const isIa = mode === 'ia_area';
     return (
       <PageTransition className="min-h-screen bg-background flex flex-col">
