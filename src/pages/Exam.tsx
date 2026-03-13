@@ -102,14 +102,14 @@ const Exam = () => {
   } = useExamGenerator();
 
   // Progressive activation: enter simulation as soon as we have at least 1 complete question
+  // For prova: wait for parseable question; for caso_clinico: show as soon as content arrives
   useEffect(() => {
-    if (
-      config.practiceMode === 'prova' &&
-      hasStartedReceiving &&
-      resultado &&
-      hasParseableQuestion(resultado) &&
-      !showSimulation
-    ) {
+    if (showSimulation) return;
+    if (!hasStartedReceiving || !resultado) return;
+
+    if (config.practiceMode === 'prova' && hasParseableQuestion(resultado)) {
+      setShowSimulation(true);
+    } else if (config.practiceMode === 'caso_clinico' && resultado.length > 100) {
       setShowSimulation(true);
     }
   }, [hasStartedReceiving, resultado, config.practiceMode, showSimulation]);
