@@ -6,6 +6,7 @@ import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { BookOpen, Brain, FlaskConical, GraduationCap, Library, Shield, AlertTriangle, MessageSquare, ChevronRight, Zap, Lock, Crown, ClipboardList } from 'lucide-react';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import logoPreceptor from '@/assets/logo-preceptor.png';
+import logoIcon from '@/assets/logo-icon.png';
 import { motion } from 'framer-motion';
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
@@ -145,20 +146,23 @@ const MainMenu = () => {
       {/* Main Content */}
       <main className="flex-1 container relative py-6 sm:py-10 px-4">
         {/* Title area */}
+        {/* Logo centered */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
-          className="text-center mb-8 sm:mb-12"
+          className="flex flex-col items-center mb-8 sm:mb-12"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-4">
-            <Zap className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs font-medium text-primary">Menu Principal</span>
+          <div className="flex items-center gap-3 mb-5">
+            <img src={logoIcon} alt="PreceptorMED" className="h-12 w-12 sm:h-14 sm:w-14" />
+            <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              Preceptor<span className="text-primary">MED</span>
+            </span>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-bold text-foreground">
+          <h1 className="text-xl sm:text-3xl font-bold text-foreground text-center">
             O que deseja <span className="text-gradient-medical">estudar</span> hoje?
           </h1>
-          <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
+          <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto text-center">
             {isFreeUser ? 'Experimente o chat acadêmico grátis ou assine para acesso completo' : 'Escolha uma das opções abaixo para começar sua jornada de aprendizado'}
           </p>
         </motion.div>
