@@ -160,7 +160,7 @@ const MainMenu = () => {
             </span>
           </div>
           <h1 className="text-xl sm:text-3xl font-bold text-foreground text-center">
-            O que deseja <span className="text-gradient-medical">estudar</span> hoje?
+            O que deseja <span className="text-primary">estudar</span> hoje?
           </h1>
           <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto text-center">
             {isFreeUser ? 'Experimente o chat acadêmico grátis ou assine para acesso completo' : 'Escolha uma das opções abaixo para começar sua jornada de aprendizado'}
