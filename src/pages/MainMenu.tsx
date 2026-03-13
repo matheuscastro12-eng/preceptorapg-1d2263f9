@@ -114,7 +114,7 @@ const MainMenu = () => {
             <img 
               src={logoPreceptor} 
               alt="PreceptorMED" 
-              className="h-8 w-auto"
+              className="h-12 sm:h-14 w-auto"
             />
           </div>
           <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
