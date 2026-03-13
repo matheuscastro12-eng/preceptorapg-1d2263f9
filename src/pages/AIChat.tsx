@@ -200,13 +200,11 @@ const AIChat = () => {
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <img 
-              src={logoPreceptor} 
-              alt="PreceptorMED" 
-              className="h-8 w-auto"
-            />
+            <img src={logoIcon} alt="PreceptorMED" className="h-8 w-8" />
             <div>
-              <span className="font-bold text-foreground text-sm">PreceptorMED</span>
+              <span className="font-bold text-foreground text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                Preceptor<span className="text-primary">MED</span>
+              </span>
               <span className="text-[10px] text-muted-foreground block leading-none">Chat Acadêmico</span>
             </div>
           </div>
