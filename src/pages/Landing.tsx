@@ -3,8 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import { motion } from 'framer-motion';
+import logoPreceptor from '@/assets/logo-preceptor.png';
 import { 
-  Stethoscope, 
   BookOpen, 
   Download, 
   ArrowRight,
