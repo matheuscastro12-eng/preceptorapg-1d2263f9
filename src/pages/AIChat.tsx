@@ -289,8 +289,8 @@ const AIChat = () => {
                   className={`flex gap-3 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   {m.role === 'assistant' && (
-                    <div className="shrink-0 h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center mt-1">
-                      <Bot className="h-4 w-4 text-primary" />
+                    <div className="shrink-0 h-8 w-8 rounded-lg overflow-hidden mt-1">
+                      <img src={logoIcon} alt="PreceptorMED" className="h-8 w-8" />
                     </div>
                   )}
                   <div className={`max-w-[85%] sm:max-w-[75%] group/msg ${
