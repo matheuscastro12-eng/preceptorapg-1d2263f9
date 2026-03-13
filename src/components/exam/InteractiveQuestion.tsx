@@ -19,13 +19,7 @@ interface InteractiveQuestionProps {
   index: number;
 }
 
-const letterColors: Record<string, string> = {
-  A: 'from-primary/30 to-primary/10 text-primary',
-  B: 'from-accent/30 to-accent/10 text-accent',
-  C: 'from-destructive/30 to-destructive/10 text-destructive',
-  D: 'from-secondary/50 to-secondary/20 text-secondary-foreground',
-  E: 'from-muted-foreground/20 to-muted-foreground/10 text-muted-foreground',
-};
+const defaultLetterStyle = 'from-muted/50 to-muted/30 text-muted-foreground';
 
 const InteractiveQuestion = ({ question, index }: InteractiveQuestionProps) => {
   const [selected, setSelected] = useState<string | null>(null);
@@ -125,7 +119,7 @@ const InteractiveQuestion = ({ question, index }: InteractiveQuestionProps) => {
                           : 'from-muted/50 to-muted/30 text-muted-foreground'
                       : isSelected
                         ? 'from-primary/30 to-primary/10 text-primary ring-2 ring-primary/30'
-                        : `${letterColors[alt.letter] || 'from-muted/50 to-muted/30 text-muted-foreground'} group-hover:ring-1 group-hover:ring-accent/30`
+                        : `${defaultLetterStyle} group-hover:ring-1 group-hover:ring-accent/30`
                   }`}
                 >
                   {alt.letter}
