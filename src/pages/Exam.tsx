@@ -186,8 +186,8 @@ const Exam = () => {
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80">
-        <div className="container flex h-16 items-center justify-between px-4">
+      <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80 safe-area-top">
+        <div className="container flex h-14 sm:h-16 items-center justify-between px-4">
           <div className="flex items-center gap-3">
             {examStarted ? (
               <Button variant="ghost" size="sm" onClick={handleBackToMenu} className="gap-2">
