@@ -6,6 +6,7 @@ import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { BookOpen, Brain, FlaskConical, GraduationCap, Library, Shield, AlertTriangle, MessageSquare, ChevronRight, Zap, Lock, Crown, ClipboardList } from 'lucide-react';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import logoPreceptor from '@/assets/logo-preceptor.png';
+import logoIcon from '@/assets/logo-icon.png';
 import { motion } from 'framer-motion';
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
