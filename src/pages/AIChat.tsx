@@ -204,7 +204,7 @@ const AIChat = () => {
               alt="PreceptorMED" 
               className="h-8 w-auto"
             />
-          </div>
+            <div>
               <span className="font-bold text-foreground text-sm">PreceptorMED</span>
               <span className="text-[10px] text-muted-foreground block leading-none">Chat Acadêmico</span>
             </div>
