@@ -6,9 +6,9 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ProfileDropdown from '@/components/ProfileDropdown';
+import logoPreceptor from '@/assets/logo-preceptor.png';
 import { motion } from 'framer-motion';
 import { 
-  Stethoscope, 
   Check, 
   Loader2,
   Sparkles,
@@ -86,11 +86,12 @@ const Pricing = () => {
       <header className="sticky top-0 z-50 border-b border-border/30 bg-background/95 backdrop-blur-sm">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2.5">
-            <button onClick={() => navigate('/')} className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Stethoscope className="h-5 w-5 text-primary" />
-              </div>
-              <span className="text-lg font-bold">PreceptorMED</span>
+            <button onClick={() => navigate('/')} className="flex items-center">
+              <img 
+                src={logoPreceptor} 
+                alt="PreceptorMED" 
+                className="h-8 w-auto"
+              />
             </button>
           </div>
 
@@ -256,9 +257,12 @@ const Pricing = () => {
       <footer className="border-t border-border/30 py-8 bg-background">
         <div className="container px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Stethoscope className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">PreceptorMED</span>
+            <div className="flex items-center">
+              <img 
+                src={logoPreceptor} 
+                alt="PreceptorMED" 
+                className="h-4 w-auto opacity-70"
+              />
             </div>
             <p className="text-xs text-muted-foreground">
               © {new Date().getFullYear()} PreceptorMED. Uso educacional.

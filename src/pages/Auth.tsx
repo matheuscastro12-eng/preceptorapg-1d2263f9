@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle2, Stethoscope, BookOpen, Brain, FileText, ArrowLeft } from 'lucide-react';
+import { Loader2, CheckCircle2, BookOpen, Brain, FileText, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -203,7 +203,11 @@ const Auth = () => {
             transition={{ delay: 1.2 }}
             className="mt-10 flex items-center gap-3 text-white/50 text-sm"
           >
-            <Stethoscope className="h-4 w-4" />
+            <img 
+              src={logoPreceptor} 
+              alt="PreceptorMED" 
+              className="h-4 w-auto opacity-50"
+            />
             <span>Usado por estudantes de medicina em todo o Brasil</span>
           </motion.div>
         </div>

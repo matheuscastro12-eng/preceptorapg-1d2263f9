@@ -3,8 +3,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAdmin } from '@/hooks/useAdmin';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { Stethoscope, BookOpen, Brain, FlaskConical, GraduationCap, Library, Shield, AlertTriangle, MessageSquare, ChevronRight, Zap, Lock, Crown, ClipboardList } from 'lucide-react';
+import { BookOpen, Brain, FlaskConical, GraduationCap, Library, Shield, AlertTriangle, MessageSquare, ChevronRight, Zap, Lock, Crown, ClipboardList } from 'lucide-react';
 import ProfileDropdown from '@/components/ProfileDropdown';
+import logoPreceptor from '@/assets/logo-preceptor.png';
 import { motion } from 'framer-motion';
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
@@ -108,14 +109,12 @@ const MainMenu = () => {
         className="sticky top-0 z-50 border-b border-border/20 bg-background/90 backdrop-blur-xl"
       >
         <div className="container flex h-14 sm:h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary/20 to-accent/10 flex items-center justify-center ring-1 ring-primary/20">
-              <Stethoscope className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <span className="text-lg font-bold text-gradient-medical">PreceptorMED</span>
-              <p className="text-[10px] text-muted-foreground hidden sm:block">Sua plataforma de estudos</p>
-            </div>
+          <div className="flex items-center">
+            <img 
+              src={logoPreceptor} 
+              alt="PreceptorMED" 
+              className="h-8 w-auto"
+            />
           </div>
           <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
         </div>
