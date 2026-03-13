@@ -95,9 +95,11 @@ const Subscription = () => {
             <Button variant="ghost" size="icon" onClick={() => navigate('/menu')}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
-              <Stethoscope className="h-4 w-4 text-primary" />
-            </div>
+            <img 
+              src={logoPreceptor} 
+              alt="PreceptorMED" 
+              className="h-6 w-auto"
+            />
             <span className="text-lg font-bold text-gradient-medical">Minha Assinatura</span>
           </div>
           <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />

@@ -199,10 +199,12 @@ const AIChat = () => {
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
-              <Stethoscope className="h-4 w-4 text-primary" />
-            </div>
-            <div>
+            <img 
+              src={logoPreceptor} 
+              alt="PreceptorMED" 
+              className="h-8 w-auto"
+            />
+          </div>
               <span className="font-bold text-foreground text-sm">PreceptorMED</span>
               <span className="text-[10px] text-muted-foreground block leading-none">Chat Acadêmico</span>
             </div>
