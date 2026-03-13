@@ -289,21 +289,21 @@ const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = 
   return (
     <div className="flex flex-col h-full">
       {/* Progress */}
-      <div className="mb-4 shrink-0">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-muted-foreground">
+      <div className="mb-3 sm:mb-4 shrink-0">
+        <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+          <span className="text-[11px] sm:text-xs text-muted-foreground">
             Questão {currentIndex + 1} de {isComplete ? totalQuestions : `${totalQuestions}+`}
           </span>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-[11px] sm:text-xs text-muted-foreground">
             {answeredCount} respondida{answeredCount !== 1 ? 's' : ''}
             {isGenerating && (
-              <span className="ml-2 text-primary">
+              <span className="ml-1.5 sm:ml-2 text-primary">
                 • Gerando...
               </span>
             )}
           </span>
         </div>
-        <Progress value={progress} className="h-2" />
+        <Progress value={progress} className="h-1.5 sm:h-2" />
       </div>
 
       {/* Scrollable content */}
