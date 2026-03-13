@@ -6,9 +6,9 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ProfileDropdown from '@/components/ProfileDropdown';
+import logoPreceptor from '@/assets/logo-preceptor.png';
 import { motion } from 'framer-motion';
 import { 
-  Stethoscope, 
   Check, 
   Loader2,
   Sparkles,
