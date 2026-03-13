@@ -289,21 +289,21 @@ const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = 
   return (
     <div className="flex flex-col h-full">
       {/* Progress */}
-      <div className="mb-4 shrink-0">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-muted-foreground">
+      <div className="mb-3 sm:mb-4 shrink-0">
+        <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+          <span className="text-[11px] sm:text-xs text-muted-foreground">
             Questão {currentIndex + 1} de {isComplete ? totalQuestions : `${totalQuestions}+`}
           </span>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-[11px] sm:text-xs text-muted-foreground">
             {answeredCount} respondida{answeredCount !== 1 ? 's' : ''}
             {isGenerating && (
-              <span className="ml-2 text-primary">
+              <span className="ml-1.5 sm:ml-2 text-primary">
                 • Gerando...
               </span>
             )}
           </span>
         </div>
-        <Progress value={progress} className="h-2" />
+        <Progress value={progress} className="h-1.5 sm:h-2" />
       </div>
 
       {/* Scrollable content */}
@@ -423,25 +423,26 @@ const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = 
       </ScrollArea>
 
       {/* Navigation — always visible, outside ScrollArea */}
-      <div className="flex items-center justify-between pt-4 border-t border-border/30 shrink-0">
+      <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-border/30 shrink-0 gap-2">
         <Button
           variant="outline"
           size="sm"
           onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
           disabled={currentIndex === 0}
-          className="gap-1"
+          className="gap-1 h-9 sm:h-10 px-3 sm:px-4 text-xs sm:text-sm"
         >
-          <ChevronLeft className="h-4 w-4" />
-          Anterior
+          <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span className="hidden sm:inline">Anterior</span>
+          <span className="sm:hidden">Ant.</span>
         </Button>
 
         {showFinishButton ? (
           <Button
             size="sm"
             onClick={finishExam}
-            className="gap-1 bg-gradient-to-r from-primary to-primary/80"
+            className="gap-1 bg-gradient-to-r from-primary to-primary/80 h-9 sm:h-10 px-3 sm:px-4 text-xs sm:text-sm"
           >
-            <Trophy className="h-4 w-4" />
+            <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Finalizar ({answeredCount}/{totalQuestions})
           </Button>
         ) : (

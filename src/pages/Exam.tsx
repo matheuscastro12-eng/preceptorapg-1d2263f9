@@ -186,8 +186,8 @@ const Exam = () => {
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80">
-        <div className="container flex h-16 items-center justify-between px-4">
+      <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80 safe-area-top">
+        <div className="container flex h-14 sm:h-16 items-center justify-between px-4">
           <div className="flex items-center gap-3">
             {examStarted ? (
               <Button variant="ghost" size="sm" onClick={handleBackToMenu} className="gap-2">
@@ -224,11 +224,11 @@ const Exam = () => {
         </div>
       </header>
 
-      <main className="flex-1 container relative py-6 px-4">
+      <main className="flex-1 container relative py-3 sm:py-6 px-3 sm:px-4">
         {examStarted ? (
           /* Full-screen simulation with chat sidebar */
-          <div className="flex gap-4 lg:h-[calc(100vh-8rem)]">
-            <div className="flex-1 min-w-0 relative rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-6 flex flex-col overflow-hidden">
+          <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:h-[calc(100vh-8rem)]">
+            <div className="flex-1 min-w-0 relative rounded-xl sm:rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 p-3 sm:p-6 flex flex-col overflow-hidden min-h-[60vh] lg:min-h-0">
               {showSimulation && isProva ? (
                 <SimulationView
                   resultado={resultado}

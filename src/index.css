@@ -248,4 +248,27 @@
   .typing-dot:nth-child(1) { animation-delay: 0ms; }
   .typing-dot:nth-child(2) { animation-delay: 160ms; }
   .typing-dot:nth-child(3) { animation-delay: 320ms; }
+
+  /* Safe area insets for mobile */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Hide scrollbar for horizontal scroll on mobile */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Touch feedback */
+  .touch-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
 }
