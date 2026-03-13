@@ -216,7 +216,7 @@ const Enamed = () => {
                 <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold">NOVO</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <button
                   onClick={() => startIaMode('ia_completo')}
                   className="group relative rounded-2xl border border-border/40 bg-gradient-to-br from-muted/40 to-muted/10 p-5 text-left transition-all duration-300 hover:border-primary/40 hover:bg-primary/5"
@@ -227,7 +227,7 @@ const Enamed = () => {
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-foreground">Simulado IA (50q)</h3>
-                      <p className="text-xs text-muted-foreground">Questões inéditas geradas pela IA</p>
+                      <p className="text-xs text-muted-foreground">Todas as áreas</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 text-primary text-xs font-medium">
@@ -235,23 +235,26 @@ const Enamed = () => {
                   </div>
                 </button>
 
-                <button
-                  onClick={() => setMode('ia_area')}
-                  className="group relative rounded-2xl border border-border/40 bg-gradient-to-br from-muted/40 to-muted/10 p-5 text-left transition-all duration-300 hover:border-primary/40 hover:bg-primary/5"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Target className="h-5 w-5 text-accent" />
+                {AREA_OPTIONS.map(({ value, label, icon }) => (
+                  <button
+                    key={value}
+                    onClick={() => startIaMode('ia_area', value)}
+                    className="group relative rounded-2xl border border-border/40 bg-gradient-to-br from-muted/40 to-muted/10 p-5 text-left transition-all duration-300 hover:border-primary/40 hover:bg-primary/5"
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center group-hover:scale-110 transition-transform text-accent">
+                        {icon}
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-foreground">{label}</h3>
+                        <p className="text-xs text-muted-foreground">20 questões IA</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-foreground">IA por Área (20q)</h3>
-                      <p className="text-xs text-muted-foreground">Foque em uma área com IA</p>
+                    <div className="flex items-center gap-1 text-accent text-xs font-medium">
+                      Gerar <Sparkles className="h-3.5 w-3.5" />
                     </div>
-                  </div>
-                  <div className="flex items-center gap-1 text-accent text-xs font-medium">
-                    Escolher <Sparkles className="h-3.5 w-3.5" />
-                  </div>
-                </button>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
