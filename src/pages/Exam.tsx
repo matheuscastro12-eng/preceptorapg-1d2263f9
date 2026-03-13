@@ -235,10 +235,25 @@ const Exam = () => {
                   isGenerating={generating}
                   isComplete={isComplete}
                 />
+              ) : showSimulation && !isProva ? (
+                /* Caso clínico: render markdown directly */
+                <div className="flex-1 overflow-y-auto">
+                  <div ref={resultRef} className="prose prose-sm dark:prose-invert max-w-none">
+                    <MarkdownRenderer content={resultado} isTyping={generating} />
+                  </div>
+                  {generating && (
+                    <div className="flex items-center gap-2 mt-4 text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm">Elaborando caso clínico...</span>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full py-16 text-center space-y-4">
                   <div className="h-10 w-10 text-primary animate-spin border-2 border-primary border-t-transparent rounded-full" />
-                  <p className="text-muted-foreground">Gerando as questões... aguarde um momento.</p>
+                  <p className="text-muted-foreground">
+                    {isProva ? 'Gerando as questões...' : 'Elaborando o caso clínico...'} aguarde um momento.
+                  </p>
                 </div>
               )}
             </div>
