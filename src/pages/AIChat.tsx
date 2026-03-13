@@ -5,8 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Send, Sparkles, Trash2, Bot, User, Copy, FileDown, Check } from 'lucide-react';
+import { ArrowLeft, Send, Trash2, Bot, User, Copy, FileDown, Check } from 'lucide-react';
 import logoPreceptor from '@/assets/logo-preceptor.png';
+import logoIcon from '@/assets/logo-icon.png';
 import { useToast } from '@/hooks/use-toast';
 import { exportToPDF } from '@/utils/pdfExport';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -199,13 +200,11 @@ const AIChat = () => {
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <img 
-              src={logoPreceptor} 
-              alt="PreceptorMED" 
-              className="h-8 w-auto"
-            />
+            <img src={logoIcon} alt="PreceptorMED" className="h-8 w-8" />
             <div>
-              <span className="font-bold text-foreground text-sm">PreceptorMED</span>
+              <span className="font-bold text-foreground text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                Preceptor<span className="text-primary">MED</span>
+              </span>
               <span className="text-[10px] text-muted-foreground block leading-none">Chat Acadêmico</span>
             </div>
           </div>
@@ -243,9 +242,7 @@ const AIChat = () => {
               transition={{ duration: 0.5 }}
               className="text-center max-w-lg"
             >
-              <div className="h-16 w-16 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-5">
-                <Sparkles className="h-8 w-8 text-primary" />
-              </div>
+              <img src={logoIcon} alt="PreceptorMED" className="h-16 w-16 mx-auto mb-5" />
               <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
                 Olá! Sou o <span className="text-primary">PreceptorMED</span>
               </h2>
@@ -292,8 +289,8 @@ const AIChat = () => {
                   className={`flex gap-3 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   {m.role === 'assistant' && (
-                    <div className="shrink-0 h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center mt-1">
-                      <Bot className="h-4 w-4 text-primary" />
+                    <div className="shrink-0 h-8 w-8 rounded-lg overflow-hidden mt-1">
+                      <img src={logoIcon} alt="PreceptorMED" className="h-8 w-8" />
                     </div>
                   )}
                   <div className={`max-w-[85%] sm:max-w-[75%] group/msg ${
