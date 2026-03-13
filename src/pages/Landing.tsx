@@ -15,8 +15,11 @@ import {
   Users,
   Shield,
   Play,
-  ChevronRight
+  ChevronRight,
+  Mail,
+  Instagram
 } from 'lucide-react';
+import logoIcon from '@/assets/logo-icon.png';
 
 const Landing = () => {
   const navigate = useNavigate();
