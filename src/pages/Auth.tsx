@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle2, Stethoscope, BookOpen, Brain, FileText, ArrowLeft } from 'lucide-react';
+import { Loader2, CheckCircle2, BookOpen, Brain, FileText, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import { motion, AnimatePresence } from 'framer-motion';
