@@ -242,9 +242,7 @@ const AIChat = () => {
               transition={{ duration: 0.5 }}
               className="text-center max-w-lg"
             >
-              <div className="h-16 w-16 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-5">
-                <Sparkles className="h-8 w-8 text-primary" />
-              </div>
+              <img src={logoIcon} alt="PreceptorMED" className="h-16 w-16 mx-auto mb-5" />
               <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
                 Olá! Sou o <span className="text-primary">PreceptorMED</span>
               </h2>
