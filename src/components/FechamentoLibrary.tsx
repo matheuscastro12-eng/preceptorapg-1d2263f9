@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { 
@@ -13,16 +12,14 @@ import {
   Star, 
   Trash2, 
   Search, 
-  Loader2,
   Calendar,
-  Eye,
   FileText,
   ClipboardList,
   Stethoscope,
-  Play
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { motion } from 'framer-motion';
 
 interface ExamConfigData {
   quantidade: number;
@@ -30,7 +27,7 @@ interface ExamConfigData {
   simulationMode: boolean;
 }
 
-interface Fechamento {
+export interface Fechamento {
   id: string;
   tema: string;
   objetivos: string | null;
@@ -43,11 +40,9 @@ interface Fechamento {
 
 interface FechamentoLibraryProps {
   onSelect: (fechamento: Fechamento) => void;
-  onFavoriteChange?: () => void;
-  onRedoExam?: (fechamento: Fechamento) => void;
 }
 
-const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: FechamentoLibraryProps) => {
+const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [fechamentos, setFechamentos] = useState<Fechamento[]>([]);
@@ -58,9 +53,7 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
   const [deleteTarget, setDeleteTarget] = useState<Fechamento | null>(null);
 
   useEffect(() => {
-    if (user) {
-      fetchFechamentos();
-    }
+    if (user) fetchFechamentos();
   }, [user]);
 
   const fetchFechamentos = async () => {
@@ -76,97 +69,43 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
         const tipo = item.tipo === 'prova' || item.tipo === 'caso_clinico' ? item.tipo : 'fechamento';
         const config = item.exam_config;
         const examConfig =
-          config &&
-          typeof config === 'object' &&
-          !Array.isArray(config) &&
-          'quantidade' in config &&
-          'nivel' in config &&
-          'simulationMode' in config
-            ? {
-                quantidade: Number(config.quantidade),
-                nivel: String(config.nivel),
-                simulationMode: Boolean(config.simulationMode),
-              }
+          config && typeof config === 'object' && !Array.isArray(config) &&
+          'quantidade' in config && 'nivel' in config && 'simulationMode' in config
+            ? { quantidade: Number(config.quantidade), nivel: String(config.nivel), simulationMode: Boolean(config.simulationMode) }
             : null;
 
-        return {
-          id: item.id,
-          tema: item.tema,
-          objetivos: item.objetivos,
-          resultado: item.resultado,
-          favorito: item.favorito,
-          created_at: item.created_at,
-          tipo,
-          exam_config: examConfig,
-        };
+        return { id: item.id, tema: item.tema, objetivos: item.objetivos, resultado: item.resultado, favorito: item.favorito, created_at: item.created_at, tipo, exam_config: examConfig };
       });
 
       setFechamentos(normalized);
     } catch (error) {
       console.error('Error fetching fechamentos:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível carregar a biblioteca.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro', description: 'Não foi possível carregar a biblioteca.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleFavorite = async (id: string, currentValue: boolean) => {
+  const toggleFavorite = async (e: React.MouseEvent, id: string, currentValue: boolean) => {
+    e.stopPropagation();
     try {
-      const { error } = await supabase
-        .from('fechamentos')
-        .update({ favorito: !currentValue })
-        .eq('id', id);
-
+      const { error } = await supabase.from('fechamentos').update({ favorito: !currentValue }).eq('id', id);
       if (error) throw error;
-
-      setFechamentos(prev =>
-        prev.map(f => (f.id === id ? { ...f, favorito: !currentValue } : f))
-      );
-
-      onFavoriteChange?.();
-
-      toast({
-        title: currentValue ? 'Removido dos favoritos' : 'Adicionado aos favoritos',
-        description: currentValue 
-          ? 'Fechamento removido dos favoritos.' 
-          : 'Fechamento marcado como favorito.',
-      });
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível atualizar o favorito.',
-        variant: 'destructive',
-      });
+      setFechamentos(prev => prev.map(f => (f.id === id ? { ...f, favorito: !currentValue } : f)));
+      toast({ title: currentValue ? 'Removido dos favoritos' : 'Adicionado aos favoritos' });
+    } catch {
+      toast({ title: 'Erro', description: 'Não foi possível atualizar o favorito.', variant: 'destructive' });
     }
   };
 
   const deleteFechamento = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('fechamentos')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('fechamentos').delete().eq('id', id);
       if (error) throw error;
-
       setFechamentos(prev => prev.filter(f => f.id !== id));
-
-      toast({
-        title: 'Excluído',
-        description: 'Fechamento removido da biblioteca.',
-      });
-    } catch (error) {
-      console.error('Error deleting fechamento:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível excluir o fechamento.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Excluído', description: 'Item removido da biblioteca.' });
+    } catch {
+      toast({ title: 'Erro', description: 'Não foi possível excluir.', variant: 'destructive' });
     }
   };
 
@@ -186,189 +125,159 @@ const FechamentoLibrary = ({ onSelect, onFavoriteChange, onRedoExam }: Fechament
     }
   };
 
+  const getTypeColor = (tipo: string) => {
+    switch (tipo) {
+      case 'prova': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+      case 'caso_clinico': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+      default: return 'bg-primary/10 text-primary border-primary/20';
+    }
+  };
+
   const filteredFechamentos = fechamentos.filter(f => {
-    const matchesSearch = f.tema.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      f.objetivos?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = f.tema.toLowerCase().includes(searchTerm.toLowerCase()) || f.objetivos?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFavorites = showFavoritesOnly ? f.favorito : true;
     const matchesType = selectedType === 'all' ? true : f.tipo === selectedType;
     return matchesSearch && matchesFavorites && matchesType;
   });
 
   return (
-    <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center">
           <Library className="h-5 w-5 text-primary" />
-          Biblioteca Pessoal
-        </CardTitle>
-        <CardDescription>
-          Seus conteúdos salvos ({fechamentos.length} itens)
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Search and Filters */}
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por tema..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Button
-              variant={showFavoritesOnly ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-              className="shrink-0"
-            >
-              <Star className={`mr-2 h-4 w-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-              Favoritos
-            </Button>
-          </div>
-          
-          {/* Type Filter */}
-          <div className="flex flex-wrap gap-2">
-            {[
-              { value: 'all', label: 'Todos' },
-              { value: 'fechamento', label: 'Fechamentos' },
-              { value: 'prova', label: 'Provas' },
-              { value: 'caso_clinico', label: 'Casos Clínicos' }
-            ].map((type) => (
-              <Button
-                key={type.value}
-                variant={selectedType === type.value ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedType(type.value as typeof selectedType)}
-                className="text-xs"
-              >
-                {type.label}
-              </Button>
-            ))}
-          </div>
         </div>
+        <div>
+          <h2 className="text-xl font-bold">Biblioteca Pessoal</h2>
+          <p className="text-sm text-muted-foreground">{fechamentos.length} itens salvos</p>
+        </div>
+      </div>
 
-        {/* Fechamentos List */}
-        {loading ? (
-          <div className="space-y-2 py-2">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex items-center justify-between rounded-lg border border-border/20 p-3 animate-pulse">
-                <div className="space-y-1.5 flex-1">
-                  <div className="h-4 w-48 bg-muted rounded" />
-                  <div className="h-3 w-28 bg-muted rounded" />
-                </div>
-                <div className="flex gap-1">
-                  <div className="h-8 w-8 bg-muted rounded" />
-                  <div className="h-8 w-8 bg-muted rounded" />
-                </div>
-              </div>
-            ))}
+      {/* Search and Filters */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Buscar por tema..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9" />
           </div>
-        ) : filteredFechamentos.length === 0 ? (
-          <div className="py-8 text-center text-muted-foreground">
-            {searchTerm || showFavoritesOnly || selectedType !== 'all'
-              ? 'Nenhum conteúdo encontrado.'
-              : 'Nenhum conteúdo salvo ainda.'}
-          </div>
-        ) : (
-          <ScrollArea className="h-[300px]">
-            <div className="space-y-2">
-              {filteredFechamentos.map((fechamento) => (
-                <div
-                  key={fechamento.id}
-                  className="group flex items-center justify-between rounded-lg border border-border/50 bg-background/50 p-3 transition-colors hover:bg-accent/50"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="truncate font-medium">{fechamento.tema}</h4>
-                      <Badge variant="secondary" className="text-xs">
-                        {getTypeIcon(fechamento.tipo)}
-                        <span className="ml-1">{getTypeLabel(fechamento.tipo)}</span>
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
-                      {format(new Date(fechamento.created_at), "dd 'de' MMM, yyyy", { locale: ptBR })}
-                      {fechamento.exam_config && (
-                        <>
-                          <span>•</span>
-                          <span>{fechamento.exam_config.quantidade}Q • {fechamento.exam_config.nivel}</span>
-                        </>
-                      )}
-                    </div>
+          <Button variant={showFavoritesOnly ? 'default' : 'outline'} size="sm" onClick={() => setShowFavoritesOnly(!showFavoritesOnly)} className="shrink-0">
+            <Star className={`mr-2 h-4 w-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+            Favoritos
+          </Button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { value: 'all', label: 'Todos' },
+            { value: 'fechamento', label: 'Fechamentos' },
+            { value: 'prova', label: 'Provas' },
+            { value: 'caso_clinico', label: 'Casos Clínicos' }
+          ].map((type) => (
+            <Button key={type.value} variant={selectedType === type.value ? 'default' : 'outline'} size="sm" onClick={() => setSelectedType(type.value as typeof selectedType)} className="text-xs">
+              {type.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Cards Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-44 rounded-xl border border-border/20 bg-muted/30 animate-pulse" />
+          ))}
+        </div>
+      ) : filteredFechamentos.length === 0 ? (
+        <div className="py-16 text-center text-muted-foreground">
+          <Library className="h-12 w-12 mx-auto mb-4 opacity-30" />
+          <p className="text-lg font-medium">
+            {searchTerm || showFavoritesOnly || selectedType !== 'all' ? 'Nenhum conteúdo encontrado.' : 'Nenhum conteúdo salvo ainda.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredFechamentos.map((fechamento, index) => (
+            <motion.div
+              key={fechamento.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.03, duration: 0.3 }}
+            >
+              <Card
+                className="group relative cursor-pointer border-border/50 bg-card/80 backdrop-blur-sm hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 h-full flex flex-col"
+                onClick={() => onSelect(fechamento)}
+              >
+                <div className="p-4 flex flex-col flex-1">
+                  {/* Type badge */}
+                  <div className="flex items-center justify-between mb-3">
+                    <Badge variant="outline" className={`text-[10px] font-medium ${getTypeColor(fechamento.tipo)}`}>
+                      {getTypeIcon(fechamento.tipo)}
+                      <span className="ml-1">{getTypeLabel(fechamento.tipo)}</span>
+                    </Badge>
+                    {fechamento.favorito && (
+                      <Star className="h-3.5 w-3.5 fill-primary text-primary" />
+                    )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    {(fechamento.tipo === 'prova' || fechamento.tipo === 'caso_clinico') && onRedoExam && (
+
+                  {/* Title */}
+                  <h3 className="font-semibold text-sm leading-snug mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                    {fechamento.tema}
+                  </h3>
+
+                  {/* Preview text */}
+                  <p className="text-xs text-muted-foreground line-clamp-3 flex-1 mb-3">
+                    {fechamento.resultado.replace(/[#*`>-]/g, '').slice(0, 150)}
+                  </p>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between mt-auto pt-3 border-t border-border/30">
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      {format(new Date(fechamento.created_at), "dd MMM yyyy", { locale: ptBR })}
+                    </div>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-primary"
-                        onClick={() => onRedoExam(fechamento)}
-                        title="Refazer"
+                        className="h-7 w-7"
+                        onClick={(e) => toggleFavorite(e, fechamento.id, fechamento.favorito)}
                       >
-                        <Play className="h-4 w-4" />
+                        <Star className={`h-3.5 w-3.5 ${fechamento.favorito ? 'fill-primary text-primary' : ''}`} />
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onSelect(fechamento)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => toggleFavorite(fechamento.id, fechamento.favorito)}
-                    >
-                      <Star className={`h-4 w-4 ${fechamento.favorito ? 'fill-primary text-primary' : ''}`} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive sm:opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={() => setDeleteTarget(fechamento)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive"
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(fechamento); }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
-        )}
-      </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      )}
 
-      {/* Confirmação de exclusão */}
+      {/* Delete confirmation */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remover da biblioteca?</AlertDialogTitle>
             <AlertDialogDescription>
-              O item "<span className="font-medium">{deleteTarget?.tema}</span>" será excluído permanentemente. Essa ação não pode ser desfeita.
+              O item "<span className="font-medium">{deleteTarget?.tema}</span>" será excluído permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                if (deleteTarget) {
-                  deleteFechamento(deleteTarget.id);
-                  setDeleteTarget(null);
-                }
-              }}
-            >
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => { if (deleteTarget) { deleteFechamento(deleteTarget.id); setDeleteTarget(null); } }}>
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+    </div>
   );
 };
 
