@@ -282,7 +282,7 @@ const Enamed = () => {
 
   // Bank simulation modes
 
-  if (source === 'banco' && (mode === 'completo' || mode === 'revisao' || (mode as string).startsWith('area'))) {
+  if (source === 'banco' && (mode === 'completo' || mode === 'revisao')) {
     return (
       <PageTransition className="min-h-screen bg-background flex flex-col">
         <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80">
