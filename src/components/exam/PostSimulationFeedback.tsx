@@ -54,7 +54,7 @@ const PostSimulationFeedback = ({
 
     steps.push({
       icon: <Target className="h-4 w-4" />,
-      text: 'Atualize seu checklist de Top 20 Temas',
+      text: 'Revise mais flashcards para fixar o conteúdo',
       action: onGoToTopics,
       priority: 'medium',
     });
