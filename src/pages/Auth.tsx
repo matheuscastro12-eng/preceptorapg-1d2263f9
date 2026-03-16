@@ -176,7 +176,7 @@ const Auth = () => {
               </span>
             </h2>
             <p className="text-lg text-white/80 leading-relaxed">
-              Fechamentos, simulados e casos clínicos gerados por IA — tudo integrado para a metodologia PBL.
+              Resumos, simulados e casos clínicos gerados por IA — tudo integrado para o seu estudo médico.
             </p>
           </motion.div>
 
