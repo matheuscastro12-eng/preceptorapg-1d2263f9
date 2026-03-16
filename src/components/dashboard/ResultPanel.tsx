@@ -156,13 +156,13 @@ const ResultPanel = ({
                 )}
               </div>
             </div>
-            <h3 className="text-lg font-medium text-foreground/80 mb-2">
-              {isSeminario ? 'Nenhum roteiro gerado' : 'Nenhum fechamento gerado'}
+             <h3 className="text-lg font-medium text-foreground/80 mb-2">
+              {isSeminario ? 'Nenhum roteiro gerado' : 'Nenhum resumo gerado'}
             </h3>
             <p className="text-sm text-muted-foreground max-w-[280px]">
               {isSeminario 
                 ? 'Insira um tema e clique em "Gerar Roteiro de Slides" para criar seu seminário'
-                : 'Insira um tema médico e clique em "Gerar Fechamento" para começar'}
+                : 'Insira um tema médico e clique em "Gerar Resumo" para começar'}
             </p>
           </div>
         )}

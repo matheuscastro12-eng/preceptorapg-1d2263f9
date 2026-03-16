@@ -86,7 +86,7 @@ const Library = () => {
               </div>
             </ScrollArea>
           </div>
-          <ContextChat context={selectedFechamento.resultado} contextLabel="fechamento" />
+          <ContextChat context={selectedFechamento.resultado} contextLabel="resumo" />
         </div>
       </PageTransition>
     );

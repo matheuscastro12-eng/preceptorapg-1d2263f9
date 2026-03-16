@@ -78,7 +78,7 @@ const Landing = () => {
     {
       name: 'Estudante de Medicina',
       university: '4º período',
-      text: 'Os casos clínicos gerados a partir dos meus fechamentos são muito realistas. Me ajudou muito na preparação para as provas práticas.',
+      text: 'Os casos clínicos gerados a partir dos meus resumos são muito realistas. Me ajudou muito na preparação para as provas práticas.',
     },
     {
       name: 'Estudante de Medicina',

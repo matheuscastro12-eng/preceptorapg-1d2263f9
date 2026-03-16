@@ -166,7 +166,7 @@ const InputPanel = ({
           ) : (
             <>
               <Sparkles className="mr-2 h-5 w-5 group-hover:animate-pulse" />
-              {isSeminario ? 'Gerar Roteiro de Slides' : 'Gerar Fechamento'}
+              {isSeminario ? 'Gerar Roteiro de Slides' : 'Gerar Resumo'}
             </>
           )}
         </Button>

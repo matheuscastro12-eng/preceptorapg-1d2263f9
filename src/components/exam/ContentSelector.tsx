@@ -138,7 +138,7 @@ const ContentSelector = ({ selectedIds, onSelectionChange, disabled }: ContentSe
       ) : filtered.length === 0 ? (
         <div className="py-8 text-center text-muted-foreground text-sm">
           {fechamentos.length === 0
-            ? 'Nenhum fechamento salvo. Gere e salve conteúdo no Dashboard primeiro.'
+            ? 'Nenhum resumo salvo. Gere e salve conteúdo no Dashboard primeiro.'
             : 'Nenhum resultado encontrado.'}
         </div>
       ) : (

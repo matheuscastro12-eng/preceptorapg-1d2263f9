@@ -24,7 +24,7 @@ export const useExamGenerator = () => {
     if (!conteudo.trim()) {
       toast({
         title: 'Conteúdo obrigatório',
-        description: 'Selecione pelo menos um fechamento ou seminário da biblioteca.',
+        description: 'Selecione pelo menos um resumo ou seminário da biblioteca.',
         variant: 'destructive',
       });
       return;

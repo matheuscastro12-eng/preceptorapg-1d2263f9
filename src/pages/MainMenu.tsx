@@ -197,10 +197,10 @@ const MainMenu = () => {
             </div>
             
             <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground mb-1 sm:mb-2">ESTUDO COM IA</h2>
-            <p className="text-xs sm:text-sm font-medium text-primary mb-1.5 sm:mb-3">Fechamentos & Seminários</p>
+            <p className="text-xs sm:text-sm font-medium text-primary mb-1.5 sm:mb-3">Resumos & Seminários</p>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-md hidden sm:block">
-              Gere fechamentos de objetivos e seminários completos com IA acadêmica. 
-              A ferramenta perfeita para seu estudo dirigido em PBL/ABP.
+              Gere resumos estruturados e seminários completos com IA acadêmica. 
+              A ferramenta perfeita para seu estudo dirigido.
             </p>
 
             <div className="flex items-center gap-1.5 mt-3 sm:mt-6 text-primary text-xs sm:text-sm font-medium">

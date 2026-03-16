@@ -360,7 +360,7 @@ const Dashboard = () => {
 
             {/* Chat sidebar */}
             {resultado && (
-              <ContextChat context={resultado} contextLabel="fechamento" />
+              <ContextChat context={resultado} contextLabel="resumo" />
             )}
           </div>
         ) : (
