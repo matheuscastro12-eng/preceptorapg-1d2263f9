@@ -19,7 +19,7 @@ import SimulationView from '@/components/exam/SimulationView';
 import GenerationProgress from '@/components/GenerationProgress';
 import ContextChat from '@/components/ContextChat';
 
-type EnamedMode = 'menu' | 'completo' | 'area' | 'revisao' | 'ia_completo' | 'ia_area';
+type EnamedMode = 'menu' | 'completo' | 'revisao' | 'ia_completo' | 'ia_area';
 type EnamedSource = 'banco' | 'ia';
 
 const AREA_OPTIONS: { value: EnamedArea; label: string; icon: React.ReactNode }[] = [
