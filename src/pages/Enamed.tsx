@@ -19,7 +19,7 @@ import SimulationView from '@/components/exam/SimulationView';
 import GenerationProgress from '@/components/GenerationProgress';
 import ContextChat from '@/components/ContextChat';
 
-type EnamedMode = 'menu' | 'completo' | 'area' | 'revisao' | 'ia_completo' | 'ia_area';
+type EnamedMode = 'menu' | 'completo' | 'revisao' | 'ia_completo' | 'ia_area';
 type EnamedSource = 'banco' | 'ia';
 
 const AREA_OPTIONS: { value: EnamedArea; label: string; icon: React.ReactNode }[] = [
@@ -64,13 +64,12 @@ const Enamed = () => {
   if (!user) return <Navigate to="/auth" replace />;
   if (!hasAccess && !isAdmin) return <Navigate to="/pricing" replace />;
 
-  const startBankMode = async (m: 'completo' | 'area' | 'revisao', area?: EnamedArea) => {
+  const startBankMode = async (m: 'completo' | 'revisao', area?: EnamedArea) => {
     setSource('banco');
     setMode(m);
     setSelectedArea(area || null);
 
     const opts: { area?: EnamedArea; limit?: number; shuffle?: boolean } = {};
-    if (m === 'area' && area) opts.area = area;
     if (m === 'revisao') { opts.shuffle = true; opts.limit = 20; }
     await fetchQuestions(opts);
   };
@@ -89,7 +88,7 @@ const Enamed = () => {
 
   const handleFinishBank = (score: { correct: number; total: number; percentage: number; answers: Record<string, string> }) => {
     saveAttempt({
-      modo: mode === 'completo' ? 'completo' : mode === 'area' ? 'area' : 'revisao',
+      modo: mode === 'completo' ? 'completo' : 'revisao',
       area_filter: selectedArea || undefined,
       total_questions: score.total,
       correct_answers: score.correct,
@@ -161,7 +160,7 @@ const Enamed = () => {
               <h2 className="text-sm font-semibold uppercase tracking-wider text-amber-600">Banco de Questões ENAMED</h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Simulado Completo */}
               <button
                 onClick={() => startBankMode('completo')}
@@ -174,21 +173,6 @@ const Enamed = () => {
                 <p className="text-xs text-muted-foreground">Todas as questões do banco, todas as áreas</p>
                 <div className="flex items-center gap-1 mt-3 text-amber-600 text-xs font-medium">
                   Iniciar <Sparkles className="h-3.5 w-3.5" />
-                </div>
-              </button>
-
-              {/* Por Área */}
-              <button
-                onClick={() => setMode('area')}
-                className="group relative rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-5 text-left transition-all duration-300 hover:border-primary/50 hover:shadow-[0_0_30px_hsl(var(--primary)/0.15)]"
-              >
-                <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Target className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-base font-bold text-foreground mb-1">Por Área</h3>
-                <p className="text-xs text-muted-foreground">Foque em uma especialidade específica</p>
-                <div className="flex items-center gap-1 mt-3 text-primary text-xs font-medium">
-                  Escolher <Sparkles className="h-3.5 w-3.5" />
                 </div>
               </button>
 
@@ -216,45 +200,34 @@ const Enamed = () => {
                 <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold">NOVO</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
                   onClick={() => startIaMode('ia_completo')}
-                  className="group relative rounded-2xl border border-border/40 bg-gradient-to-br from-muted/40 to-muted/10 p-5 text-left transition-all duration-300 hover:border-primary/40 hover:bg-primary/5"
+                  className="group relative rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-5 text-left transition-all duration-300 hover:border-primary/50 hover:shadow-[0_0_30px_hsl(var(--primary)/0.15)]"
                 >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Brain className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-foreground">Simulado IA (50q)</h3>
-                      <p className="text-xs text-muted-foreground">Todas as áreas</p>
-                    </div>
+                  <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Brain className="h-6 w-6 text-primary" />
                   </div>
-                  <div className="flex items-center gap-1 text-primary text-xs font-medium">
+                  <h3 className="text-base font-bold text-foreground mb-1">Simulado IA (50q)</h3>
+                  <p className="text-xs text-muted-foreground">Todas as áreas — questões inéditas geradas por IA</p>
+                  <div className="flex items-center gap-1 mt-3 text-primary text-xs font-medium">
                     Gerar <Sparkles className="h-3.5 w-3.5" />
                   </div>
                 </button>
 
-                {AREA_OPTIONS.map(({ value, label, icon }) => (
-                  <button
-                    key={value}
-                    onClick={() => startIaMode('ia_area', value)}
-                    className="group relative rounded-2xl border border-border/40 bg-gradient-to-br from-muted/40 to-muted/10 p-5 text-left transition-all duration-300 hover:border-primary/40 hover:bg-primary/5"
-                  >
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center group-hover:scale-110 transition-transform text-accent">
-                        {icon}
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-foreground">{label}</h3>
-                        <p className="text-xs text-muted-foreground">20 questões IA</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 text-accent text-xs font-medium">
-                      Gerar <Sparkles className="h-3.5 w-3.5" />
-                    </div>
-                  </button>
-                ))}
+                <button
+                  onClick={() => setMode('ia_area')}
+                  className="group relative rounded-2xl border border-accent/30 bg-gradient-to-br from-accent/15 via-accent/5 to-transparent p-5 text-left transition-all duration-300 hover:border-accent/50 hover:shadow-[0_0_30px_hsl(var(--accent)/0.15)]"
+                >
+                  <div className="h-12 w-12 rounded-xl bg-accent/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Target className="h-6 w-6 text-accent" />
+                  </div>
+                  <h3 className="text-base font-bold text-foreground mb-1">Por Área</h3>
+                  <p className="text-xs text-muted-foreground">Foque em uma especialidade — 20 questões IA</p>
+                  <div className="flex items-center gap-1 mt-3 text-accent text-xs font-medium">
+                    Escolher <Sparkles className="h-3.5 w-3.5" />
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -264,8 +237,8 @@ const Enamed = () => {
   }
 
 
-  // Area selection view (banco only)
-  if (mode === 'area') {
+  // Area selection view (IA por área)
+  if (mode === 'ia_area' && !generating && !resultado) {
     return (
       <PageTransition className="min-h-screen bg-background flex flex-col">
         <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80">
@@ -275,7 +248,7 @@ const Enamed = () => {
                 <ArrowLeft className="h-4 w-4" />Voltar
               </Button>
               <div className="h-6 w-px bg-border/50" />
-              <span className="text-lg font-bold bg-gradient-to-r from-amber-600 to-amber-500 bg-clip-text text-transparent">ENAMED</span>
+              <span className="text-lg font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">ENAMED IA</span>
             </div>
             <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
           </div>
@@ -284,21 +257,21 @@ const Enamed = () => {
         <main className="flex-1 container relative py-8 px-4">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold">Escolha a Área</h1>
-            <p className="text-sm text-muted-foreground mt-1">Questões do banco filtradas por área</p>
+            <p className="text-sm text-muted-foreground mt-1">20 questões inéditas geradas por IA na área escolhida</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-3xl mx-auto">
             {AREA_OPTIONS.map(({ value, label, icon }) => (
               <button
                 key={value}
-                onClick={() => startBankMode('area', value)}
+                onClick={() => startIaMode('ia_area', value)}
                 className="group rounded-2xl border border-border/40 bg-gradient-to-br from-muted/30 to-transparent p-6 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_20px_hsl(var(--primary)/0.1)]"
               >
                 <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform text-primary">
                   {icon}
                 </div>
                 <h3 className="text-base font-bold">{label}</h3>
-                <p className="text-xs text-muted-foreground mt-1">Questões do banco</p>
+                <p className="text-xs text-muted-foreground mt-1">20 questões IA</p>
               </button>
             ))}
           </div>
@@ -309,7 +282,7 @@ const Enamed = () => {
 
   // Bank simulation modes
 
-  if (source === 'banco' && (mode === 'completo' || mode === 'revisao' || (mode as string).startsWith('area'))) {
+  if (source === 'banco' && (mode === 'completo' || mode === 'revisao')) {
     return (
       <PageTransition className="min-h-screen bg-background flex flex-col">
         <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80">
@@ -320,7 +293,7 @@ const Enamed = () => {
               </Button>
               <div className="h-6 w-px bg-border/50" />
               <span className="text-lg font-bold bg-gradient-to-r from-amber-600 to-amber-500 bg-clip-text text-transparent">
-                ENAMED {mode === 'completo' ? '— Simulado' : mode === 'revisao' ? '— Revisão' : `— ${AREA_LABELS[selectedArea || ''] || ''}`}
+                ENAMED {mode === 'completo' ? '— Simulado' : '— Revisão'}
               </span>
             </div>
             <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
