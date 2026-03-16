@@ -64,13 +64,12 @@ const Enamed = () => {
   if (!user) return <Navigate to="/auth" replace />;
   if (!hasAccess && !isAdmin) return <Navigate to="/pricing" replace />;
 
-  const startBankMode = async (m: 'completo' | 'area' | 'revisao', area?: EnamedArea) => {
+  const startBankMode = async (m: 'completo' | 'revisao', area?: EnamedArea) => {
     setSource('banco');
     setMode(m);
     setSelectedArea(area || null);
 
     const opts: { area?: EnamedArea; limit?: number; shuffle?: boolean } = {};
-    if (m === 'area' && area) opts.area = area;
     if (m === 'revisao') { opts.shuffle = true; opts.limit = 20; }
     await fetchQuestions(opts);
   };
