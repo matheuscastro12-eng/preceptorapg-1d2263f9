@@ -98,7 +98,7 @@ const Dashboard = () => {
     if (!tema.trim()) {
       toast({
         title: 'Tema obrigatório',
-        description: 'Por favor, insira o tema central para gerar o fechamento.',
+        description: 'Por favor, insira o tema central para gerar o resumo.',
         variant: 'destructive',
       });
       return;
