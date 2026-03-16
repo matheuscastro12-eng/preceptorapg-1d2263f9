@@ -214,7 +214,7 @@ const Dashboard = () => {
       
       toast({
         title: 'PDF exportado!',
-        description: 'O fechamento foi salvo como PDF.',
+        description: 'O resumo foi salvo como PDF.',
       });
     } catch (error) {
       console.error('PDF export error:', error);
