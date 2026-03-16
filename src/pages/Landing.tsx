@@ -73,7 +73,7 @@ const Landing = () => {
     {
       name: 'Estudante de Medicina',
       university: '6º período',
-      text: 'O PreceptorMED reduziu meu tempo de fechamento de 2 horas para menos de 10 minutos. A qualidade é impressionante.',
+      text: 'O PreceptorMED reduziu meu tempo de estudo de 2 horas para menos de 10 minutos. A qualidade é impressionante.',
     },
     {
       name: 'Estudante de Medicina',
