@@ -10,6 +10,7 @@ import { useExamGenerator, type ExamConfig, type PracticeMode } from '@/hooks/us
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate } from 'react-router-dom';
 import { Sparkles, ArrowLeft, BookOpen, PanelLeftOpen, Loader2 } from 'lucide-react';
+import GenerationProgress from '@/components/GenerationProgress';
 import { Button } from '@/components/ui/button';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import ExamConfigPanel from '@/components/exam/ExamConfigPanel';
@@ -250,11 +251,22 @@ const Exam = () => {
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full py-16 text-center space-y-4">
-                  <div className="h-10 w-10 text-primary animate-spin border-2 border-primary border-t-transparent rounded-full" />
-                  <p className="text-muted-foreground">
-                    {isProva ? 'Gerando as questões...' : 'Elaborando o caso clínico...'} aguarde um momento.
-                  </p>
+                <div className="flex flex-col items-center justify-center h-full py-16 text-center space-y-6 max-w-md mx-auto">
+                  <GenerationProgress
+                    isGenerating={generating}
+                    hasStartedReceiving={hasStartedReceiving}
+                    isComplete={isComplete}
+                  />
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">
+                      {isProva ? 'Elaborando questões...' : 'Elaborando caso clínico...'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {hasStartedReceiving
+                        ? 'Recebendo conteúdo — as questões aparecerão automaticamente.'
+                        : 'Conectando com a IA, aguarde um momento.'}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

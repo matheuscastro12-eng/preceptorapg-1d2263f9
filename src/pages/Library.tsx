@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import PageTransition from '@/components/PageTransition';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Download, Loader2, Play } from 'lucide-react';
+import { ArrowLeft, Sparkles, Download, Loader2, Play, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import FechamentoLibrary from '@/components/FechamentoLibrary';
@@ -12,6 +12,7 @@ import MarkdownRenderer from '@/components/MarkdownRenderer';
 import ContextChat from '@/components/ContextChat';
 import { useToast } from '@/hooks/use-toast';
 import { exportToPDF } from '@/utils/pdfExport';
+import { supabase } from '@/integrations/supabase/client';
 
 const Library = () => {
   const { user, signOut } = useAuth();
@@ -19,6 +20,7 @@ const Library = () => {
   const { toast } = useToast();
   const [selectedFechamento, setSelectedFechamento] = useState<Fechamento | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [generatingFlashcards, setGeneratingFlashcards] = useState(false);
 
   if (!user) return <Navigate to="/auth" replace />;
 
@@ -44,11 +46,53 @@ const Library = () => {
     navigate(`/exam?mode=${mode}`);
   };
 
+  const handleGenerateFlashcards = async () => {
+    if (!selectedFechamento) return;
+    setGeneratingFlashcards(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Sessão expirada');
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-flashcards`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            content: selectedFechamento.resultado,
+            source_id: selectedFechamento.id,
+            source_type: 'resumo',
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Erro ao gerar flashcards');
+
+      toast({
+        title: '🃏 Flashcards criados!',
+        description: `${result.count} flashcards gerados a partir deste resumo.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Não foi possível gerar flashcards.',
+        variant: 'destructive',
+      });
+    } finally {
+      setGeneratingFlashcards(false);
+    }
+  };
+
   // Full-page detail view
   if (selectedFechamento) {
+    const isResumo = selectedFechamento.tipo === 'fechamento';
+
     return (
       <PageTransition className="min-h-screen bg-background flex flex-col">
-        {/* Header */}
         <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl safe-area-top">
           <div className="container mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-4">
@@ -61,7 +105,25 @@ const Library = () => {
                 {selectedFechamento.tema}
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {isResumo && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateFlashcards}
+                  disabled={generatingFlashcards}
+                  className="gap-1.5"
+                >
+                  {generatingFlashcards ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Layers className="h-3.5 w-3.5" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {generatingFlashcards ? 'Gerando...' : 'Flashcards'}
+                  </span>
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={handleGoToExam} className="gap-1.5">
                 <Play className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Fazer Prova</span>
@@ -75,7 +137,6 @@ const Library = () => {
           </div>
         </header>
 
-        {/* Content + Chat */}
         <div className="flex-1 flex">
           <div className="flex-1 min-w-0">
             <ScrollArea className="h-[calc(100vh-4rem)]">
