@@ -161,7 +161,7 @@ const Enamed = () => {
               <h2 className="text-sm font-semibold uppercase tracking-wider text-amber-600">Banco de Questões ENAMED</h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Simulado Completo */}
               <button
                 onClick={() => startBankMode('completo')}
@@ -174,21 +174,6 @@ const Enamed = () => {
                 <p className="text-xs text-muted-foreground">Todas as questões do banco, todas as áreas</p>
                 <div className="flex items-center gap-1 mt-3 text-amber-600 text-xs font-medium">
                   Iniciar <Sparkles className="h-3.5 w-3.5" />
-                </div>
-              </button>
-
-              {/* Por Área */}
-              <button
-                onClick={() => setMode('area')}
-                className="group relative rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-5 text-left transition-all duration-300 hover:border-primary/50 hover:shadow-[0_0_30px_hsl(var(--primary)/0.15)]"
-              >
-                <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Target className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-base font-bold text-foreground mb-1">Por Área</h3>
-                <p className="text-xs text-muted-foreground">Foque em uma especialidade específica</p>
-                <div className="flex items-center gap-1 mt-3 text-primary text-xs font-medium">
-                  Escolher <Sparkles className="h-3.5 w-3.5" />
                 </div>
               </button>
 
