@@ -197,7 +197,7 @@ const Dashboard = () => {
     navigator.clipboard.writeText(cleanText.trim());
     toast({
       title: 'Copiado!',
-      description: 'Fechamento copiado para a área de transferência.',
+      description: 'Resumo copiado para a área de transferência.',
     });
   };
 
