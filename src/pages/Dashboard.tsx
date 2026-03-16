@@ -247,7 +247,7 @@ const Dashboard = () => {
 
       toast({
         title: 'Salvo!',
-        description: 'Fechamento salvo na sua biblioteca.',
+        description: 'Resumo salvo na sua biblioteca.',
       });
     } catch (error) {
       console.error('Save error:', error);
