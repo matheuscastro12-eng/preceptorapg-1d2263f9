@@ -36,7 +36,7 @@ const menuTourSteps: TourStep[] = [
   {
     target: '[data-tour="biblioteca"]',
     title: 'Sua Biblioteca',
-    description: 'Todos os seus fechamentos, provas e casos clínicos ficam salvos aqui para consulta futura.',
+    description: 'Todos os seus resumos, provas e casos clínicos ficam salvos aqui para consulta futura.',
     placement: 'top',
   },
   {
