@@ -18,7 +18,7 @@ const menuTourSteps: TourStep[] = [
   {
     target: '[data-tour="estudo"]',
     title: 'Estudo com IA',
-    description: 'Aqui você gera fechamentos e seminários completos sobre qualquer tema médico. É a principal ferramenta de estudo!',
+    description: 'Aqui você gera resumos e seminários completos sobre qualquer tema médico. É a principal ferramenta de estudo!',
     placement: 'bottom',
   },
   {
