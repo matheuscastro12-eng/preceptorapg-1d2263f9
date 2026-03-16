@@ -21,8 +21,8 @@ import { Button } from '@/components/ui/button';
 const dashboardTourSteps: TourStep[] = [
   {
     target: '[data-tour="tema-input"]',
-    title: 'Tema do Estudo',
-    description: 'Digite o tema central do seu estudo. Use os chips de sugestão abaixo para temas comuns ou digite livremente.',
+    title: 'Tema do Resumo',
+    description: 'Digite o tema central do seu resumo. Use os chips de sugestão abaixo para temas comuns ou digite livremente.',
     placement: 'right',
   },
   {
