@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAdmin } from '@/hooks/useAdmin';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { BookOpen, Brain, FlaskConical, GraduationCap, Library, Shield, AlertTriangle, MessageSquare, ChevronRight, Zap, Lock, Crown, ClipboardList } from 'lucide-react';
+import { BookOpen, Brain, FlaskConical, GraduationCap, Library, Shield, AlertTriangle, MessageSquare, ChevronRight, Zap, Lock, Crown, ClipboardList, Layers, Target, BarChart3 } from 'lucide-react';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import logoPreceptor from '@/assets/logo-preceptor.png';
 import logoIcon from '@/assets/logo-icon.png';
