@@ -121,7 +121,7 @@ const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
     switch (tipo) {
       case 'prova': return 'Prova';
       case 'caso_clinico': return 'Caso Clínico';
-      default: return 'Fechamento';
+      default: return 'Resumo';
     }
   };
 
