@@ -10,6 +10,7 @@ import { useExamGenerator, type ExamConfig, type PracticeMode } from '@/hooks/us
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate } from 'react-router-dom';
 import { Sparkles, ArrowLeft, BookOpen, PanelLeftOpen, Loader2 } from 'lucide-react';
+import GenerationProgress from '@/components/GenerationProgress';
 import { Button } from '@/components/ui/button';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import ExamConfigPanel from '@/components/exam/ExamConfigPanel';
