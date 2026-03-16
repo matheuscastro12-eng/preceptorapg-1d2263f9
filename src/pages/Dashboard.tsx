@@ -34,7 +34,7 @@ const dashboardTourSteps: TourStep[] = [
   {
     target: '[data-tour="mode-toggle"]',
     title: 'Tipo de Conteúdo',
-    description: 'Escolha entre Fechamento (resumo focado) ou Seminário (apresentação completa).',
+    description: 'Escolha entre Resumo (conteúdo focado) ou Seminário (apresentação completa).',
     placement: 'right',
   },
   {
