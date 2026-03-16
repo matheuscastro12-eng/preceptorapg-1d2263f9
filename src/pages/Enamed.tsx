@@ -231,6 +231,7 @@ const Enamed = () => {
                 </button>
               </div>
             </div>
+          </div>
         </main>
       </PageTransition>
     );
