@@ -33,7 +33,7 @@ const Landing = () => {
   const features = [
     { 
       icon: FileText, 
-      title: 'Fechamentos Estruturados', 
+      title: 'Resumos Estruturados', 
       description: 'Conteúdo organizado: definição, epidemiologia, fisiopatologia, quadro clínico, diagnóstico e tratamento.',
       gradient: 'from-primary/20 to-primary/5',
     },
