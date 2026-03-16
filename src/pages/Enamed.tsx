@@ -293,7 +293,7 @@ const Enamed = () => {
               </Button>
               <div className="h-6 w-px bg-border/50" />
               <span className="text-lg font-bold bg-gradient-to-r from-amber-600 to-amber-500 bg-clip-text text-transparent">
-                ENAMED {mode === 'completo' ? '— Simulado' : mode === 'revisao' ? '— Revisão' : `— ${AREA_LABELS[selectedArea || ''] || ''}`}
+                ENAMED {mode === 'completo' ? '— Simulado' : '— Revisão'}
               </span>
             </div>
             <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
