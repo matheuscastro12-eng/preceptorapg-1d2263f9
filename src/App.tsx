@@ -19,8 +19,6 @@ import AIChat from "./pages/AIChat";
 import Enamed from "./pages/Enamed";
 import ResetPassword from "./pages/ResetPassword";
 import Flashcards from "./pages/Flashcards";
-import TopicsChecklist from "./pages/TopicsChecklist";
-import Evolution from "./pages/Evolution";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,9 +45,10 @@ const App = () => (
               <Route path="/ai-chat" element={<AIChat />} />
               <Route path="/enamed" element={<Enamed />} />
               <Route path="/flashcards" element={<Flashcards />} />
-              <Route path="/topics" element={<TopicsChecklist />} />
-              <Route path="/evolution" element={<Evolution />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              {/* Redirect old routes */}
+              <Route path="/topics" element={<Navigate to="/profile" replace />} />
+              <Route path="/evolution" element={<Navigate to="/profile" replace />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
