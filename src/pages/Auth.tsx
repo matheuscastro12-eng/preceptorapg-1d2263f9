@@ -121,7 +121,7 @@ const Auth = () => {
   };
 
   const features = [
-    { icon: FileText, text: 'Fechamentos estruturados com IA' },
+    { icon: FileText, text: 'Resumos estruturados com IA' },
     { icon: Brain, text: 'Simulados no estilo residência' },
     { icon: BookOpen, text: 'Biblioteca pessoal organizada' },
   ];
