@@ -61,8 +61,8 @@ const InputPanel = ({
           )}
         </div>
         <div>
-          <h2 className="text-lg font-semibold">
-            {isSeminario ? 'Roteiro de Seminário' : 'Novo Fechamento'}
+           <h2 className="text-lg font-semibold">
+            {isSeminario ? 'Roteiro de Seminário' : 'Novo Resumo'}
           </h2>
           <p className="text-sm text-muted-foreground">
             {isSeminario 
