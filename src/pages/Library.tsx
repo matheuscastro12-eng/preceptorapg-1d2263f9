@@ -29,7 +29,7 @@ const Library = () => {
       const contentElement = document.getElementById('fechamento-content');
       if (!contentElement) throw new Error('Content not found');
       await exportToPDF({ tema: selectedFechamento.tema, contentElement });
-      toast({ title: 'PDF exportado!', description: 'O fechamento foi salvo como PDF.' });
+      toast({ title: 'PDF exportado!', description: 'O resumo foi salvo como PDF.' });
     } catch (error) {
       console.error('PDF export error:', error);
       toast({ title: 'Erro ao exportar', description: 'Não foi possível exportar o PDF.', variant: 'destructive' });
