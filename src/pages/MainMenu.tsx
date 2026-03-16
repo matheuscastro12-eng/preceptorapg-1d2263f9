@@ -363,6 +363,60 @@ const MainMenu = () => {
           </motion.button>
         </div>
 
+        {/* Study tools row */}
+        <div className="grid grid-cols-3 gap-3 max-w-5xl mx-auto mt-3 sm:mt-5">
+          {/* FLASHCARDS */}
+          <motion.button
+            custom={5}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            whileTap={{ scale: 0.97 }}
+            onClick={() => isFreeUser ? navigate('/pricing') : navigate('/flashcards')}
+            className={`group relative rounded-xl border border-border/40 bg-gradient-to-br from-muted/30 to-transparent p-3 sm:p-4 text-center transition-all duration-300 cursor-pointer active:bg-muted/30 ${isFreeUser ? 'opacity-70' : ''}`}
+          >
+            <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+              <Layers className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            </div>
+            <h3 className="text-[11px] sm:text-xs font-bold text-foreground">Flashcards</h3>
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5 hidden sm:block">Revisão espaçada</p>
+          </motion.button>
+
+          {/* TOP 20 TEMAS */}
+          <motion.button
+            custom={6}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            whileTap={{ scale: 0.97 }}
+            onClick={() => isFreeUser ? navigate('/pricing') : navigate('/topics')}
+            className={`group relative rounded-xl border border-border/40 bg-gradient-to-br from-muted/30 to-transparent p-3 sm:p-4 text-center transition-all duration-300 cursor-pointer active:bg-muted/30 ${isFreeUser ? 'opacity-70' : ''}`}
+          >
+            <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-accent/10 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+              <Target className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
+            </div>
+            <h3 className="text-[11px] sm:text-xs font-bold text-foreground">Top 20</h3>
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5 hidden sm:block">Checklist de temas</p>
+          </motion.button>
+
+          {/* EVOLUÇÃO */}
+          <motion.button
+            custom={7}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            whileTap={{ scale: 0.97 }}
+            onClick={() => isFreeUser ? navigate('/pricing') : navigate('/evolution')}
+            className={`group relative rounded-xl border border-border/40 bg-gradient-to-br from-muted/30 to-transparent p-3 sm:p-4 text-center transition-all duration-300 cursor-pointer active:bg-muted/30 ${isFreeUser ? 'opacity-70' : ''}`}
+          >
+            <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+              <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            </div>
+            <h3 className="text-[11px] sm:text-xs font-bold text-foreground">Evolução</h3>
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5 hidden sm:block">Dashboard de desempenho</p>
+          </motion.button>
+        </div>
+
         {/* Legal Disclaimers */}
         <motion.div
           initial={{ opacity: 0 }}
