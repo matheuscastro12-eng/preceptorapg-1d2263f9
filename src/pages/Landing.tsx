@@ -33,7 +33,7 @@ const Landing = () => {
   const features = [
     { 
       icon: FileText, 
-      title: 'Fechamentos Estruturados', 
+      title: 'Resumos Estruturados', 
       description: 'Conteúdo organizado: definição, epidemiologia, fisiopatologia, quadro clínico, diagnóstico e tratamento.',
       gradient: 'from-primary/20 to-primary/5',
     },
@@ -64,7 +64,7 @@ const Landing = () => {
     { 
       icon: Download, 
       title: 'Exportação em PDF', 
-      description: 'Baixe seus fechamentos formatados profissionalmente para impressão ou compartilhamento.',
+      description: 'Baixe seus resumos formatados profissionalmente para impressão ou compartilhamento.',
       gradient: 'from-accent/20 to-accent/5',
     },
   ];
@@ -73,12 +73,12 @@ const Landing = () => {
     {
       name: 'Estudante de Medicina',
       university: '6º período',
-      text: 'O PreceptorMED reduziu meu tempo de fechamento de 2 horas para menos de 10 minutos. A qualidade é impressionante.',
+      text: 'O PreceptorMED reduziu meu tempo de estudo de 2 horas para menos de 10 minutos. A qualidade é impressionante.',
     },
     {
       name: 'Estudante de Medicina',
       university: '4º período',
-      text: 'Os casos clínicos gerados a partir dos meus fechamentos são muito realistas. Me ajudou muito na preparação para as provas práticas.',
+      text: 'Os casos clínicos gerados a partir dos meus resumos são muito realistas. Me ajudou muito na preparação para as provas práticas.',
     },
     {
       name: 'Estudante de Medicina',

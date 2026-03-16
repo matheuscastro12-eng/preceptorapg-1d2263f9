@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAdmin } from '@/hooks/useAdmin';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { BookOpen, Brain, FlaskConical, GraduationCap, Library, Shield, AlertTriangle, MessageSquare, ChevronRight, Zap, Lock, Crown, ClipboardList } from 'lucide-react';
+import { BookOpen, Brain, FlaskConical, GraduationCap, Library, Shield, AlertTriangle, MessageSquare, ChevronRight, Zap, Lock, Crown, ClipboardList, Layers, Target, BarChart3 } from 'lucide-react';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import logoPreceptor from '@/assets/logo-preceptor.png';
 import logoIcon from '@/assets/logo-icon.png';
@@ -18,7 +18,7 @@ const menuTourSteps: TourStep[] = [
   {
     target: '[data-tour="estudo"]',
     title: 'Estudo com IA',
-    description: 'Aqui você gera fechamentos e seminários completos sobre qualquer tema médico. É a principal ferramenta de estudo!',
+    description: 'Aqui você gera resumos e seminários completos sobre qualquer tema médico. É a principal ferramenta de estudo!',
     placement: 'bottom',
   },
   {
@@ -36,7 +36,7 @@ const menuTourSteps: TourStep[] = [
   {
     target: '[data-tour="biblioteca"]',
     title: 'Sua Biblioteca',
-    description: 'Todos os seus fechamentos, provas e casos clínicos ficam salvos aqui para consulta futura.',
+    description: 'Todos os seus resumos, provas e casos clínicos ficam salvos aqui para consulta futura.',
     placement: 'top',
   },
   {
@@ -197,10 +197,10 @@ const MainMenu = () => {
             </div>
             
             <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground mb-1 sm:mb-2">ESTUDO COM IA</h2>
-            <p className="text-xs sm:text-sm font-medium text-primary mb-1.5 sm:mb-3">Fechamentos & Seminários</p>
+            <p className="text-xs sm:text-sm font-medium text-primary mb-1.5 sm:mb-3">Resumos & Seminários</p>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-md hidden sm:block">
-              Gere fechamentos de objetivos e seminários completos com IA acadêmica. 
-              A ferramenta perfeita para seu estudo dirigido em PBL/ABP.
+              Gere resumos estruturados e seminários completos com IA acadêmica. 
+              A ferramenta perfeita para seu estudo dirigido.
             </p>
 
             <div className="flex items-center gap-1.5 mt-3 sm:mt-6 text-primary text-xs sm:text-sm font-medium">
@@ -360,6 +360,60 @@ const MainMenu = () => {
               <p className="text-[11px] sm:text-xs text-muted-foreground truncate">Acesse seus conteúdos salvos</p>
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform shrink-0" />
+          </motion.button>
+        </div>
+
+        {/* Study tools row */}
+        <div className="grid grid-cols-3 gap-3 max-w-5xl mx-auto mt-3 sm:mt-5">
+          {/* FLASHCARDS */}
+          <motion.button
+            custom={5}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            whileTap={{ scale: 0.97 }}
+            onClick={() => isFreeUser ? navigate('/pricing') : navigate('/flashcards')}
+            className={`group relative rounded-xl border border-border/40 bg-gradient-to-br from-muted/30 to-transparent p-3 sm:p-4 text-center transition-all duration-300 cursor-pointer active:bg-muted/30 ${isFreeUser ? 'opacity-70' : ''}`}
+          >
+            <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+              <Layers className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            </div>
+            <h3 className="text-[11px] sm:text-xs font-bold text-foreground">Flashcards</h3>
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5 hidden sm:block">Revisão espaçada</p>
+          </motion.button>
+
+          {/* TOP 20 TEMAS */}
+          <motion.button
+            custom={6}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            whileTap={{ scale: 0.97 }}
+            onClick={() => isFreeUser ? navigate('/pricing') : navigate('/topics')}
+            className={`group relative rounded-xl border border-border/40 bg-gradient-to-br from-muted/30 to-transparent p-3 sm:p-4 text-center transition-all duration-300 cursor-pointer active:bg-muted/30 ${isFreeUser ? 'opacity-70' : ''}`}
+          >
+            <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-accent/10 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+              <Target className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
+            </div>
+            <h3 className="text-[11px] sm:text-xs font-bold text-foreground">Top 20</h3>
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5 hidden sm:block">Checklist de temas</p>
+          </motion.button>
+
+          {/* EVOLUÇÃO */}
+          <motion.button
+            custom={7}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            whileTap={{ scale: 0.97 }}
+            onClick={() => isFreeUser ? navigate('/pricing') : navigate('/evolution')}
+            className={`group relative rounded-xl border border-border/40 bg-gradient-to-br from-muted/30 to-transparent p-3 sm:p-4 text-center transition-all duration-300 cursor-pointer active:bg-muted/30 ${isFreeUser ? 'opacity-70' : ''}`}
+          >
+            <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+              <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            </div>
+            <h3 className="text-[11px] sm:text-xs font-bold text-foreground">Evolução</h3>
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5 hidden sm:block">Dashboard de desempenho</p>
           </motion.button>
         </div>
 

@@ -138,7 +138,7 @@ const Discover = () => {
           {u.university && <span>{u.university}</span>}
           {rank !== undefined && (
             <>
-              <span>• {u.fechamentos_count} fechamentos</span>
+              <span>• {u.fechamentos_count} resumos</span>
               <span>• {u.followers_count} seguidores</span>
             </>
           )}

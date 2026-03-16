@@ -21,8 +21,8 @@ import { Button } from '@/components/ui/button';
 const dashboardTourSteps: TourStep[] = [
   {
     target: '[data-tour="tema-input"]',
-    title: 'Tema do Estudo',
-    description: 'Digite o tema central do seu estudo. Use os chips de sugestão abaixo para temas comuns ou digite livremente.',
+    title: 'Tema do Resumo',
+    description: 'Digite o tema central do seu resumo. Use os chips de sugestão abaixo para temas comuns ou digite livremente.',
     placement: 'right',
   },
   {
@@ -34,7 +34,7 @@ const dashboardTourSteps: TourStep[] = [
   {
     target: '[data-tour="mode-toggle"]',
     title: 'Tipo de Conteúdo',
-    description: 'Escolha entre Fechamento (resumo focado) ou Seminário (apresentação completa).',
+    description: 'Escolha entre Resumo (conteúdo focado) ou Seminário (apresentação completa).',
     placement: 'right',
   },
   {
@@ -98,7 +98,7 @@ const Dashboard = () => {
     if (!tema.trim()) {
       toast({
         title: 'Tema obrigatório',
-        description: 'Por favor, insira o tema central para gerar o fechamento.',
+        description: 'Por favor, insira o tema central para gerar o resumo.',
         variant: 'destructive',
       });
       return;
@@ -197,7 +197,7 @@ const Dashboard = () => {
     navigator.clipboard.writeText(cleanText.trim());
     toast({
       title: 'Copiado!',
-      description: 'Fechamento copiado para a área de transferência.',
+      description: 'Resumo copiado para a área de transferência.',
     });
   };
 
@@ -214,7 +214,7 @@ const Dashboard = () => {
       
       toast({
         title: 'PDF exportado!',
-        description: 'O fechamento foi salvo como PDF.',
+        description: 'O resumo foi salvo como PDF.',
       });
     } catch (error) {
       console.error('PDF export error:', error);
@@ -247,7 +247,7 @@ const Dashboard = () => {
 
       toast({
         title: 'Salvo!',
-        description: 'Fechamento salvo na sua biblioteca.',
+        description: 'Resumo salvo na sua biblioteca.',
       });
     } catch (error) {
       console.error('Save error:', error);
@@ -325,14 +325,14 @@ const Dashboard = () => {
             <div className="flex-1 flex flex-col min-w-0">
               {/* Back button */}
               <div className="flex items-center gap-3 mb-4">
-                <Button
+                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleBackToInput}
                   className="gap-1.5 text-muted-foreground hover:text-foreground"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Novo Fechamento
+                  Novo Resumo
                 </Button>
                 {isComplete && (
                   <span className="text-xs text-muted-foreground">
@@ -360,7 +360,7 @@ const Dashboard = () => {
 
             {/* Chat sidebar */}
             {resultado && (
-              <ContextChat context={resultado} contextLabel="fechamento" />
+              <ContextChat context={resultado} contextLabel="resumo" />
             )}
           </div>
         ) : (

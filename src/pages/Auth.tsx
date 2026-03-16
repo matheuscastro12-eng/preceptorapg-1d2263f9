@@ -121,7 +121,7 @@ const Auth = () => {
   };
 
   const features = [
-    { icon: FileText, text: 'Fechamentos estruturados com IA' },
+    { icon: FileText, text: 'Resumos estruturados com IA' },
     { icon: Brain, text: 'Simulados no estilo residência' },
     { icon: BookOpen, text: 'Biblioteca pessoal organizada' },
   ];
@@ -176,7 +176,7 @@ const Auth = () => {
               </span>
             </h2>
             <p className="text-lg text-white/80 leading-relaxed">
-              Fechamentos, simulados e casos clínicos gerados por IA — tudo integrado para a metodologia PBL.
+              Resumos, simulados e casos clínicos gerados por IA — tudo integrado para o seu estudo médico.
             </p>
           </motion.div>
 
@@ -233,7 +233,7 @@ const Auth = () => {
             <img src={logoPreceptor} alt="PreceptorMED" className="h-10 w-10 rounded-xl" />
           </div>
           <h1 className="font-display text-2xl font-bold text-gradient-medical">PreceptorMED</h1>
-          <p className="text-sm text-muted-foreground mt-1">Fechamentos com IA para medicina</p>
+          <p className="text-sm text-muted-foreground mt-1">Resumos com IA para medicina</p>
         </motion.div>
 
         <motion.div

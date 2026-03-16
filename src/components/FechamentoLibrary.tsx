@@ -121,7 +121,7 @@ const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
     switch (tipo) {
       case 'prova': return 'Prova';
       case 'caso_clinico': return 'Caso Clínico';
-      default: return 'Fechamento';
+      default: return 'Resumo';
     }
   };
 
@@ -168,7 +168,7 @@ const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
         <div className="flex flex-wrap gap-2">
           {[
             { value: 'all', label: 'Todos' },
-            { value: 'fechamento', label: 'Fechamentos' },
+            { value: 'fechamento', label: 'Resumos' },
             { value: 'prova', label: 'Provas' },
             { value: 'caso_clinico', label: 'Casos Clínicos' }
           ].map((type) => (

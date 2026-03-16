@@ -21,7 +21,7 @@ const ModeToggle = ({ mode, onChange, disabled = false }: ModeToggleProps) => {
         } disabled:opacity-50 disabled:cursor-not-allowed`}
       >
         <BookOpen className="h-4 w-4" />
-        <span>Fechamento</span>
+        <span>Resumo</span>
       </button>
       <button
         onClick={() => onChange('seminario')}

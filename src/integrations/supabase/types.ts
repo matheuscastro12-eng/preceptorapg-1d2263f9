@@ -194,6 +194,51 @@ export type Database = {
         }
         Relationships: []
       }
+      flashcards: {
+        Row: {
+          area: string | null
+          back: string
+          created_at: string
+          ease_factor: number
+          front: string
+          id: string
+          interval_days: number
+          next_review: string
+          repetitions: number
+          source_id: string | null
+          source_type: string
+          user_id: string
+        }
+        Insert: {
+          area?: string | null
+          back: string
+          created_at?: string
+          ease_factor?: number
+          front: string
+          id?: string
+          interval_days?: number
+          next_review?: string
+          repetitions?: number
+          source_id?: string | null
+          source_type?: string
+          user_id: string
+        }
+        Update: {
+          area?: string | null
+          back?: string
+          created_at?: string
+          ease_factor?: number
+          front?: string
+          id?: string
+          interval_days?: number
+          next_review?: string
+          repetitions?: number
+          source_id?: string | null
+          source_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       follows: {
         Row: {
           created_at: string
@@ -406,6 +451,42 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      topic_progress: {
+        Row: {
+          created_at: string
+          exam_count: number
+          id: string
+          last_studied_at: string | null
+          resumo_count: number
+          studied: boolean
+          topic_key: string
+          topic_name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exam_count?: number
+          id?: string
+          last_studied_at?: string | null
+          resumo_count?: number
+          studied?: boolean
+          topic_key: string
+          topic_name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exam_count?: number
+          id?: string
+          last_studied_at?: string | null
+          resumo_count?: number
+          studied?: boolean
+          topic_key?: string
+          topic_name?: string
           user_id?: string
         }
         Relationships: []
