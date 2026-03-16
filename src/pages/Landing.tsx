@@ -64,7 +64,7 @@ const Landing = () => {
     { 
       icon: Download, 
       title: 'Exportação em PDF', 
-      description: 'Baixe seus fechamentos formatados profissionalmente para impressão ou compartilhamento.',
+      description: 'Baixe seus resumos formatados profissionalmente para impressão ou compartilhamento.',
       gradient: 'from-accent/20 to-accent/5',
     },
   ];
