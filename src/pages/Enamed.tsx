@@ -88,7 +88,7 @@ const Enamed = () => {
 
   const handleFinishBank = (score: { correct: number; total: number; percentage: number; answers: Record<string, string> }) => {
     saveAttempt({
-      modo: mode === 'completo' ? 'completo' : mode === 'area' ? 'area' : 'revisao',
+      modo: mode === 'completo' ? 'completo' : 'revisao',
       area_filter: selectedArea || undefined,
       total_questions: score.total,
       correct_answers: score.correct,
