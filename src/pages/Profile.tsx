@@ -10,13 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Camera, Edit2, Save, X, Users, FileText, Star, MapPin, GraduationCap, UserPlus, UserMinus, MessageCircle, TrendingUp, Target, Brain, BookOpen, Calendar, BarChart3, Layers } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { ArrowLeft, Camera, Edit2, Save, X, Users, FileText, Star, MapPin, GraduationCap, UserPlus, UserMinus, MessageCircle, TrendingUp, Target, Brain, BookOpen, Calendar, BarChart3, Layers, Award, Flame, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
 type Profile = Tables<'profiles'>;
 
@@ -50,6 +51,11 @@ const chartConfig: ChartConfig = {
   acertos: { label: 'Acertos', color: 'hsl(var(--primary))' },
   total: { label: 'Total', color: 'hsl(var(--muted-foreground))' },
   percentage: { label: '% Acerto', color: 'hsl(var(--primary))' },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  show: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.06, duration: 0.4 } }),
 };
 
 const ProfilePage = () => {
@@ -172,7 +178,6 @@ const ProfilePage = () => {
     }
   };
 
-  // Evolution computations
   const weeklyData = useMemo<WeeklyData[]>(() => {
     if (attempts.length === 0) return [];
     const weeks = new Map<string, { acertos: number; total: number }>();
@@ -221,222 +226,289 @@ const ProfilePage = () => {
 
   return (
     <PageTransition className="min-h-screen bg-background">
+      {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80">
-        <div className="container flex h-14 items-center justify-between px-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-1">
+        <div className="container flex h-14 items-center justify-between px-4 max-w-2xl">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-1.5 text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" /> Voltar
           </Button>
-          {isOwnProfile && !editing && (
-            <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="gap-1">
-              <Edit2 className="h-4 w-4" /> Editar
+          <span className="text-sm font-semibold text-foreground">Perfil</span>
+          {isOwnProfile && !editing ? (
+            <Button variant="ghost" size="sm" onClick={() => setEditing(true)} className="gap-1.5 text-muted-foreground hover:text-foreground">
+              <Edit2 className="h-3.5 w-3.5" /> Editar
             </Button>
+          ) : (
+            <div className="w-20" />
           )}
         </div>
       </header>
 
-      <main className="container max-w-2xl px-4 py-6 sm:py-8">
-        {/* Avatar & Basic Info */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center text-center mb-6">
-          <div className="relative group mb-4">
-            <Avatar className="h-24 w-24 sm:h-28 sm:w-28 ring-4 ring-primary/20">
+      <main className="container max-w-2xl px-4 pb-12">
+        {/* Hero Banner */}
+        <div className="relative -mx-4 overflow-hidden">
+          <div className="h-28 sm:h-36 bg-gradient-to-br from-primary/20 via-accent/10 to-primary/5" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--primary)/0.15),transparent_70%)]" />
+        </div>
+
+        {/* Avatar overlapping banner */}
+        <motion.div
+          initial="hidden" animate="show" custom={0} variants={fadeUp}
+          className="relative -mt-14 sm:-mt-16 flex flex-col items-center text-center px-4"
+        >
+          <div className="relative group">
+            <div className="absolute -inset-1 rounded-full bg-background" />
+            <Avatar className="relative h-24 w-24 sm:h-28 sm:w-28 ring-4 ring-background shadow-xl">
               <AvatarImage src={profile.avatar_url || undefined} />
-              <AvatarFallback className="text-2xl bg-primary/20 text-primary">{initials}</AvatarFallback>
+              <AvatarFallback className="text-2xl font-bold bg-primary/15 text-primary">{initials}</AvatarFallback>
             </Avatar>
             {isOwnProfile && (
-              <label className="absolute bottom-0 right-0 h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer shadow-lg hover:bg-primary/90 transition-colors">
-                <Camera className="h-4 w-4" />
+              <label className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer shadow-lg hover:bg-primary/90 transition-all hover:scale-105 active:scale-95">
+                <Camera className="h-3.5 w-3.5" />
                 <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={uploading} />
               </label>
             )}
           </div>
 
           {editing ? (
-            <div className="w-full space-y-4">
-              <div><Label>Nome Completo</Label><Input value={editForm.full_name} onChange={e => setEditForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Seu nome" /></div>
-              <div><Label>Bio</Label><Textarea value={editForm.bio} onChange={e => setEditForm(f => ({ ...f, bio: e.target.value }))} placeholder="Conte sobre você..." maxLength={200} /></div>
-              <div><Label>Faculdade</Label><Input value={editForm.university} onChange={e => setEditForm(f => ({ ...f, university: e.target.value }))} placeholder="Ex: UFMG" /></div>
-              <div><Label>Período/Semestre</Label><Input value={editForm.semester} onChange={e => setEditForm(f => ({ ...f, semester: e.target.value }))} placeholder="Ex: 8º período" /></div>
-              <div className="flex gap-2">
-                <Button onClick={handleSaveProfile} className="flex-1 gap-1"><Save className="h-4 w-4" /> Salvar</Button>
-                <Button variant="outline" onClick={() => setEditing(false)}><X className="h-4 w-4" /></Button>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full mt-6 space-y-4 max-w-sm">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Nome Completo</Label>
+                <Input value={editForm.full_name} onChange={e => setEditForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Seu nome" />
               </div>
-            </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Bio</Label>
+                <Textarea value={editForm.bio} onChange={e => setEditForm(f => ({ ...f, bio: e.target.value }))} placeholder="Conte sobre você..." maxLength={200} className="resize-none" rows={3} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Faculdade</Label>
+                  <Input value={editForm.university} onChange={e => setEditForm(f => ({ ...f, university: e.target.value }))} placeholder="Ex: UFMG" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Período</Label>
+                  <Input value={editForm.semester} onChange={e => setEditForm(f => ({ ...f, semester: e.target.value }))} placeholder="Ex: 8º" />
+                </div>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button onClick={handleSaveProfile} className="flex-1 gap-1.5"><Save className="h-4 w-4" /> Salvar</Button>
+                <Button variant="outline" onClick={() => setEditing(false)} size="icon"><X className="h-4 w-4" /></Button>
+              </div>
+            </motion.div>
           ) : (
-            <>
-              <h1 className="text-2xl font-bold text-foreground">{profile.full_name || profile.email || 'Usuário'}</h1>
-              {profile.bio && <p className="text-sm text-muted-foreground mt-1 max-w-md">{profile.bio}</p>}
-              <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                {profile.university && <span className="flex items-center gap-1"><GraduationCap className="h-3.5 w-3.5" /> {profile.university}</span>}
-                {profile.semester && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {profile.semester}</span>}
+            <div className="mt-3 space-y-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{profile.full_name || profile.email || 'Usuário'}</h1>
+              {profile.bio && <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">{profile.bio}</p>}
+              <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground">
+                {profile.university && (
+                  <span className="flex items-center gap-1 bg-secondary/50 px-2.5 py-1 rounded-full">
+                    <GraduationCap className="h-3 w-3" /> {profile.university}
+                  </span>
+                )}
+                {profile.semester && (
+                  <span className="flex items-center gap-1 bg-secondary/50 px-2.5 py-1 rounded-full">
+                    <MapPin className="h-3 w-3" /> {profile.semester}
+                  </span>
+                )}
               </div>
               {!isOwnProfile && (
-                <div className="flex gap-2 mt-4">
-                  <Button onClick={handleFollow} variant={isFollowing ? 'outline' : 'default'} size="sm" className="gap-1">
-                    {isFollowing ? <><UserMinus className="h-4 w-4" /> Seguindo</> : <><UserPlus className="h-4 w-4" /> Seguir</>}
+                <div className="flex gap-2 pt-2 justify-center">
+                  <Button onClick={handleFollow} variant={isFollowing ? 'outline' : 'default'} size="sm" className="gap-1.5 rounded-full px-5">
+                    {isFollowing ? <><UserMinus className="h-3.5 w-3.5" /> Seguindo</> : <><UserPlus className="h-3.5 w-3.5" /> Seguir</>}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => navigate(`/messages/${targetUserId}`)} className="gap-1">
-                    <MessageCircle className="h-4 w-4" /> Mensagem
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/messages/${targetUserId}`)} className="gap-1.5 rounded-full px-5">
+                    <MessageCircle className="h-3.5 w-3.5" /> Mensagem
                   </Button>
                 </div>
               )}
-            </>
+            </div>
           )}
         </motion.div>
 
-        {/* Stats */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-4 gap-2 sm:gap-3 mb-6">
-          {[
-            { label: 'Resumos', value: stats.fechamentos, icon: FileText },
-            { label: 'Favoritos', value: stats.favoritos, icon: Star },
-            { label: 'Seguidores', value: stats.followers, icon: Users },
-            { label: 'Seguindo', value: stats.following, icon: Users },
-          ].map((s) => (
-            <Card key={s.label} className="p-2.5 sm:p-3 text-center bg-secondary/30 border-border/30">
-              <s.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mx-auto text-primary mb-1" />
-              <p className="text-lg sm:text-xl font-bold text-foreground">{s.value}</p>
-              <p className="text-[9px] sm:text-[10px] text-muted-foreground">{s.label}</p>
-            </Card>
-          ))}
+        {/* Stats Row */}
+        <motion.div initial="hidden" animate="show" custom={1} variants={fadeUp} className="mt-6 mb-6">
+          <div className="flex items-center justify-center gap-0 divide-x divide-border/40">
+            {[
+              { label: 'Resumos', value: stats.fechamentos },
+              { label: 'Favoritos', value: stats.favoritos },
+              { label: 'Seguidores', value: stats.followers },
+              { label: 'Seguindo', value: stats.following },
+            ].map((s) => (
+              <div key={s.label} className="flex-1 text-center py-2 px-3">
+                <p className="text-lg sm:text-xl font-bold text-foreground">{s.value}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">{s.label}</p>
+              </div>
+            ))}
+          </div>
         </motion.div>
 
         {/* Tabs */}
-        <Tabs defaultValue={isOwnProfile ? 'evolucao' : 'posts'} className="w-full">
-          <TabsList className="w-full grid grid-cols-2">
-            {isOwnProfile && <TabsTrigger value="evolucao" className="gap-1.5 text-xs sm:text-sm"><BarChart3 className="h-3.5 w-3.5" /> Evolução</TabsTrigger>}
-            <TabsTrigger value="posts" className="gap-1.5 text-xs sm:text-sm"><FileText className="h-3.5 w-3.5" /> Resumos Públicos</TabsTrigger>
-          </TabsList>
+        <motion.div initial="hidden" animate="show" custom={2} variants={fadeUp}>
+          <Tabs defaultValue={isOwnProfile ? 'evolucao' : 'posts'} className="w-full">
+            <TabsList className={`w-full ${isOwnProfile ? 'grid grid-cols-2' : ''} bg-secondary/40 rounded-xl p-1`}>
+              {isOwnProfile && (
+                <TabsTrigger value="evolucao" className="gap-1.5 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                  <BarChart3 className="h-3.5 w-3.5" /> Evolução
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="posts" className="gap-1.5 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <FileText className="h-3.5 w-3.5" /> Resumos Públicos
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Evolution Tab */}
-          {isOwnProfile && (
-            <TabsContent value="evolucao" className="space-y-4 mt-4">
-              {evoLoading ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {[...Array(4)].map((_, i) => <div key={i} className="h-20 rounded-xl bg-muted/30 animate-pulse" />)}
-                </div>
-              ) : (
-                <>
-                  {/* Quick stats */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                    <Card className="p-3 border-border/30">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Target className="h-3.5 w-3.5 text-primary" />
-                        <span className="text-[10px] text-muted-foreground">Média</span>
-                      </div>
-                      <p className="text-xl font-bold text-primary">{overallStats.avg}%</p>
-                    </Card>
-                    <Card className="p-3 border-border/30">
-                      <div className="flex items-center gap-2 mb-1">
-                        <TrendingUp className="h-3.5 w-3.5 text-accent" />
-                        <span className="text-[10px] text-muted-foreground">Tendência</span>
-                      </div>
-                      <p className={`text-xl font-bold ${overallStats.trend >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                        {overallStats.trend >= 0 ? '+' : ''}{overallStats.trend}%
-                      </p>
-                    </Card>
-                    <Card className="p-3 border-border/30">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Brain className="h-3.5 w-3.5 text-primary" />
-                        <span className="text-[10px] text-muted-foreground">Questões</span>
-                      </div>
-                      <p className="text-xl font-bold">{overallStats.total}</p>
-                    </Card>
-                    <Card className="p-3 border-border/30">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Layers className="h-3.5 w-3.5 text-accent" />
-                        <span className="text-[10px] text-muted-foreground">Flashcards</span>
-                      </div>
-                      <p className="text-xl font-bold">{flashcardCount}</p>
-                    </Card>
+            {/* Evolution Tab */}
+            {isOwnProfile && (
+              <TabsContent value="evolucao" className="space-y-4 mt-5">
+                {evoLoading ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-2xl bg-muted/30 animate-pulse" />)}
                   </div>
+                ) : (
+                  <>
+                    {/* Metric Cards */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      <MetricCard icon={Target} label="Média Geral" value={`${overallStats.avg}%`} color="primary" />
+                      <MetricCard
+                        icon={TrendingUp}
+                        label="Tendência"
+                        value={`${overallStats.trend >= 0 ? '+' : ''}${overallStats.trend}%`}
+                        color={overallStats.trend >= 0 ? 'primary' : 'destructive'}
+                      />
+                      <MetricCard icon={Brain} label="Questões" value={String(overallStats.total)} color="accent" />
+                      <MetricCard icon={Layers} label="Flashcards" value={String(flashcardCount)} color="accent" />
+                    </div>
 
-                  {/* Prediction */}
-                  {prediction && (
-                    <Card className="p-4 border-border/30 bg-gradient-to-r from-primary/5 to-transparent">
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-xl bg-primary/20 flex items-center justify-center">
-                          <TrendingUp className="h-4 w-4 text-primary" />
+                    {/* Prediction */}
+                    {prediction && (
+                      <Card className="p-4 border-border/20 bg-gradient-to-r from-primary/5 via-primary/3 to-transparent rounded-2xl">
+                        <div className="flex items-start gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                            {prediction.improving ? <Flame className="h-5 w-5 text-primary" /> : <Target className="h-5 w-5 text-primary" />}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <h3 className="text-sm font-semibold text-foreground">Previsão de Desempenho</h3>
+                              {prediction.improving && (
+                                <span className="text-[10px] font-medium bg-primary/15 text-primary px-2 py-0.5 rounded-full">Em alta</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              {prediction.improving
+                                ? `Excelente progresso! Previsão: ~${prediction.predicted}% na próxima semana.`
+                                : `Sua média recuou. Revise os temas com mais erros para recuperar.`}
+                            </p>
+                            <div className="mt-2.5 flex items-center gap-3">
+                              <div className="flex-1">
+                                <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                                  <span>Atual: {prediction.current}%</span>
+                                  <span>Meta: {prediction.predicted}%</span>
+                                </div>
+                                <Progress value={prediction.current} className="h-1.5" />
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="text-xs font-semibold">Previsão de Desempenho</h3>
-                          <p className="text-[11px] text-muted-foreground">
-                            {prediction.improving
-                              ? `Você está melhorando! Previsão: ~${prediction.predicted}% na próxima semana.`
-                              : `Atenção — sua média caiu. Revise os temas com mais erros.`}
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Charts */}
-                  {weeklyData.length > 0 ? (
-                    <>
-                      <Card className="p-4 border-border/30">
-                        <h3 className="text-xs font-semibold mb-3 flex items-center gap-2">
-                          <Calendar className="h-3.5 w-3.5 text-primary" /> Acertos por Semana
-                        </h3>
-                        <ChartContainer config={chartConfig} className="h-[200px] w-full">
-                          <BarChart data={weeklyData}>
-                            <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
-                            <XAxis dataKey="week" className="text-xs" />
-                            <YAxis className="text-xs" />
-                            <ChartTooltip content={<ChartTooltipContent />} />
-                            <Bar dataKey="acertos" fill="var(--color-acertos)" radius={[4, 4, 0, 0]} />
-                            <Bar dataKey="total" fill="var(--color-total)" radius={[4, 4, 0, 0]} opacity={0.3} />
-                          </BarChart>
-                        </ChartContainer>
                       </Card>
+                    )}
 
-                      {weeklyData.length > 1 && (
-                        <Card className="p-4 border-border/30">
-                          <h3 className="text-xs font-semibold mb-3 flex items-center gap-2">
-                            <TrendingUp className="h-3.5 w-3.5 text-primary" /> Curva de Aprendizado
+                    {/* Charts */}
+                    {weeklyData.length > 0 ? (
+                      <div className="space-y-4">
+                        <Card className="p-4 sm:p-5 border-border/20 rounded-2xl">
+                          <h3 className="text-sm font-semibold mb-4 flex items-center gap-2 text-foreground">
+                            <Calendar className="h-4 w-4 text-primary" /> Acertos por Semana
                           </h3>
-                          <ChartContainer config={chartConfig} className="h-[180px] w-full">
-                            <LineChart data={weeklyData}>
-                              <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
-                              <XAxis dataKey="week" className="text-xs" />
-                              <YAxis domain={[0, 100]} className="text-xs" />
+                          <ChartContainer config={chartConfig} className="h-[200px] w-full">
+                            <BarChart data={weeklyData} barGap={4}>
+                              <CartesianGrid strokeDasharray="3 3" className="stroke-border/20" vertical={false} />
+                              <XAxis dataKey="week" className="text-xs" tickLine={false} axisLine={false} />
+                              <YAxis className="text-xs" tickLine={false} axisLine={false} width={30} />
                               <ChartTooltip content={<ChartTooltipContent />} />
-                              <Line type="monotone" dataKey="percentage" stroke="var(--color-percentage)" strokeWidth={2} dot={{ fill: 'var(--color-percentage)', r: 4 }} />
-                            </LineChart>
+                              <Bar dataKey="total" fill="hsl(var(--muted))" radius={[6, 6, 0, 0]} />
+                              <Bar dataKey="acertos" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                            </BarChart>
                           </ChartContainer>
                         </Card>
-                      )}
-                    </>
-                  ) : (
-                    <Card className="p-8 border-border/30 text-center">
-                      <BarChart3 className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                      <h3 className="text-sm font-semibold mb-1">Sem dados ainda</h3>
-                      <p className="text-xs text-muted-foreground mb-4">Complete simulados para ver sua evolução.</p>
-                      <Button size="sm" onClick={() => navigate('/enamed')} className="gap-2">
-                        <Brain className="h-4 w-4" /> Fazer Simulado
-                      </Button>
+
+                        {weeklyData.length > 1 && (
+                          <Card className="p-4 sm:p-5 border-border/20 rounded-2xl">
+                            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2 text-foreground">
+                              <TrendingUp className="h-4 w-4 text-primary" /> Curva de Aprendizado
+                            </h3>
+                            <ChartContainer config={chartConfig} className="h-[180px] w-full">
+                              <AreaChart data={weeklyData}>
+                                <defs>
+                                  <linearGradient id="gradPercentage" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
+                                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" className="stroke-border/20" vertical={false} />
+                                <XAxis dataKey="week" className="text-xs" tickLine={false} axisLine={false} />
+                                <YAxis domain={[0, 100]} className="text-xs" tickLine={false} axisLine={false} width={30} />
+                                <ChartTooltip content={<ChartTooltipContent />} />
+                                <Area type="monotone" dataKey="percentage" stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#gradPercentage)" dot={{ fill: 'hsl(var(--primary))', r: 3.5, strokeWidth: 2, stroke: 'hsl(var(--background))' }} />
+                              </AreaChart>
+                            </ChartContainer>
+                          </Card>
+                        )}
+                      </div>
+                    ) : (
+                      <Card className="p-10 border-border/20 text-center rounded-2xl bg-secondary/20">
+                        <div className="h-14 w-14 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                          <BarChart3 className="h-7 w-7 text-muted-foreground/40" />
+                        </div>
+                        <h3 className="text-sm font-semibold mb-1 text-foreground">Sem dados ainda</h3>
+                        <p className="text-xs text-muted-foreground mb-5 max-w-xs mx-auto">Complete simulados e pratique para visualizar sua evolução aqui.</p>
+                        <Button size="sm" onClick={() => navigate('/enamed')} className="gap-2 rounded-full px-6">
+                          <Brain className="h-4 w-4" /> Começar Agora
+                        </Button>
+                      </Card>
+                    )}
+                  </>
+                )}
+              </TabsContent>
+            )}
+
+            <TabsContent value="posts" className="mt-5">
+              {publicFechamentos.length === 0 ? (
+                <Card className="p-10 border-border/20 text-center rounded-2xl bg-secondary/20">
+                  <div className="h-14 w-14 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                    <FileText className="h-7 w-7 text-muted-foreground/40" />
+                  </div>
+                  <h3 className="text-sm font-semibold mb-1 text-foreground">Nenhum resumo compartilhado</h3>
+                  <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                    {isOwnProfile ? 'Compartilhe seus resumos no feed para que apareçam aqui.' : 'Este usuário ainda não compartilhou resumos.'}
+                  </p>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {publicFechamentos.map((post) => (
+                    <Card key={post.id} className="p-4 bg-secondary/20 border-border/20 rounded-2xl hover:bg-secondary/30 transition-colors">
+                      <h3 className="font-semibold text-foreground text-sm">{post.fechamentos?.tema}</h3>
+                      <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">{post.content}</p>
                     </Card>
-                  )}
-                </>
+                  ))}
+                </div>
               )}
             </TabsContent>
-          )}
-
-          <TabsContent value="posts">
-            {publicFechamentos.length === 0 ? (
-              <p className="text-center text-sm text-muted-foreground py-8">Nenhum resumo compartilhado ainda.</p>
-            ) : (
-              <div className="space-y-3 mt-4">
-                {publicFechamentos.map((post) => (
-                  <Card key={post.id} className="p-4 bg-secondary/20 border-border/30">
-                    <h3 className="font-semibold text-foreground text-sm">{post.fechamentos?.tema}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">{post.content}</p>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+          </Tabs>
+        </motion.div>
       </main>
     </PageTransition>
   );
 };
+
+/* Reusable metric card */
+const MetricCard = ({ icon: Icon, label, value, color }: { icon: any; label: string; value: string; color: string }) => (
+  <Card className="p-3.5 border-border/20 rounded-2xl bg-secondary/20 hover:bg-secondary/30 transition-colors">
+    <div className="flex items-center gap-2 mb-2">
+      <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${color === 'primary' ? 'bg-primary/15' : color === 'destructive' ? 'bg-destructive/15' : 'bg-accent/15'}`}>
+        <Icon className={`h-3.5 w-3.5 ${color === 'primary' ? 'text-primary' : color === 'destructive' ? 'text-destructive' : 'text-accent'}`} />
+      </div>
+      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
+    </div>
+    <p className={`text-xl font-bold ${color === 'destructive' ? 'text-destructive' : 'text-foreground'}`}>{value}</p>
+  </Card>
+);
 
 export default ProfilePage;
