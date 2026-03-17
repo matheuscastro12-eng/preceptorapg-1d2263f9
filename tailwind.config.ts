@@ -15,7 +15,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Playfair Display', 'Georgia', 'serif'],
+        display: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -51,10 +51,10 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        legal: {
-          gold: "hsl(var(--legal-gold))",
-          charcoal: "hsl(var(--legal-charcoal))",
-          parchment: "hsl(var(--legal-parchment))",
+        medical: {
+          green: "hsl(var(--medical-green))",
+          blue: "hsl(var(--medical-blue))",
+          teal: "hsl(var(--medical-teal))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -82,8 +82,16 @@ export default {
           to: { height: "0" },
         },
         "pulse-glow": {
-          "0%, 100%": { boxShadow: "0 0 10px hsl(var(--legal-gold) / 0.2)" },
-          "50%": { boxShadow: "0 0 25px hsl(var(--legal-gold) / 0.4)" },
+          "0%, 100%": { boxShadow: "0 0 10px hsl(var(--medical-green) / 0.3)" },
+          "50%": { boxShadow: "0 0 25px hsl(var(--medical-green) / 0.5)" },
+        },
+        "wave": {
+          "0%, 100%": { transform: "translateY(0)", opacity: "0.4" },
+          "50%": { transform: "translateY(-6px)", opacity: "1" },
+        },
+        "shimmer": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
         },
       },
       animation: {
