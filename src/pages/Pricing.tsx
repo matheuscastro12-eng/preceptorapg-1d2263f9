@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import PixPaymentModal from '@/components/PixPaymentModal';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -21,6 +22,7 @@ import {
   ArrowLeft,
   CheckCircle2
 } from 'lucide-react';
+import { QrCode as QrCodeIcon } from 'lucide-react';
 
 const Pricing = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -28,6 +30,7 @@ const Pricing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [pixModal, setPixModal] = useState<{ open: boolean; plan: 'monthly' | 'annual' }>({ open: false, plan: 'monthly' });
 
   if (authLoading || subLoading) {
     return (
@@ -171,6 +174,14 @@ const Pricing = () => {
                     )}
                     Assinar Mensal
                   </Button>
+                  <Button 
+                    variant="ghost"
+                    className="w-full mt-2 gap-2 text-sm"
+                    onClick={() => setPixModal({ open: true, plan: 'monthly' })}
+                  >
+                    <QrCodeIcon className="h-4 w-4" />
+                    Pagar com Pix
+                  </Button>
                 </div>
 
                 {/* Annual */}
@@ -213,6 +224,14 @@ const Pricing = () => {
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
                     Assinar Anual
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    className="w-full mt-2 gap-2 text-sm"
+                    onClick={() => setPixModal({ open: true, plan: 'annual' })}
+                  >
+                    <QrCodeIcon className="h-4 w-4" />
+                    Pagar com Pix
                   </Button>
                 </div>
               </motion.div>
@@ -270,6 +289,13 @@ const Pricing = () => {
           </div>
         </div>
       </footer>
+
+      <PixPaymentModal
+        open={pixModal.open}
+        onClose={() => setPixModal({ ...pixModal, open: false })}
+        planLabel={pixModal.plan === 'annual' ? 'Plano Anual' : 'Plano Mensal'}
+        planPrice={pixModal.plan === 'annual' ? 'R$ 299,00' : 'R$ 39,90'}
+      />
     </div>
   );
 };
