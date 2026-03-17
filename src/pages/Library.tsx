@@ -154,15 +154,23 @@ const Library = () => {
 
         <div className="flex-1 flex">
           <div className="flex-1 min-w-0">
-            <ScrollArea className="h-[calc(100vh-4rem)]">
-              <div id="fechamento-content" className="container mx-auto px-4 sm:px-8 py-8 max-w-4xl">
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <MarkdownRenderer content={selectedFechamento.resultado} />
-                </div>
+            {showMindMap ? (
+              <div className="h-[calc(100vh-4rem)] p-4">
+                <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
+                  <MindMapView content={selectedFechamento.resultado} topic={selectedFechamento.tema} />
+                </Suspense>
               </div>
-            </ScrollArea>
+            ) : (
+              <ScrollArea className="h-[calc(100vh-4rem)]">
+                <div id="fechamento-content" className="container mx-auto px-4 sm:px-8 py-8 max-w-4xl">
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <MarkdownRenderer content={selectedFechamento.resultado} />
+                  </div>
+                </div>
+              </ScrollArea>
+            )}
           </div>
-          <ContextChat context={selectedFechamento.resultado} contextLabel="resumo" />
+          {!showMindMap && <ContextChat context={selectedFechamento.resultado} contextLabel="resumo" />}
         </div>
       </PageTransition>
     );
