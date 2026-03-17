@@ -289,6 +289,13 @@ const Pricing = () => {
           </div>
         </div>
       </footer>
+
+      <PixPaymentModal
+        open={pixModal.open}
+        onClose={() => setPixModal({ ...pixModal, open: false })}
+        planLabel={pixModal.plan === 'annual' ? 'Plano Anual' : 'Plano Mensal'}
+        planPrice={pixModal.plan === 'annual' ? 'R$ 299,00' : 'R$ 39,90'}
+      />
     </div>
   );
 };
