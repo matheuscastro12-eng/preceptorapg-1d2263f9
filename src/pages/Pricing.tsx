@@ -225,14 +225,6 @@ const Pricing = () => {
                     )}
                     Assinar Anual
                   </Button>
-                  <Button 
-                    variant="ghost"
-                    className="w-full mt-2 gap-2 text-sm"
-                    onClick={() => setPixModal({ open: true, plan: 'annual' })}
-                  >
-                    <QrCodeIcon className="h-4 w-4" />
-                    Pagar com Pix
-                  </Button>
                 </div>
               </motion.div>
 
