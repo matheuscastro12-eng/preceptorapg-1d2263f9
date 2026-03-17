@@ -84,10 +84,6 @@ const PixPaymentModal = ({ open, onClose, planLabel, planPrice }: PixPaymentModa
             </Button>
           </div>
 
-          {/* Pix key info */}
-          <p className="text-xs text-muted-foreground text-center">
-            Chave Pix: <span className="font-medium text-foreground">{PIX_KEY}</span>
-          </p>
 
           {/* WhatsApp */}
           <div className="border-t border-border pt-4 space-y-2">
