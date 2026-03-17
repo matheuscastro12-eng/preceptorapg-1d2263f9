@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import PageTransition from '@/components/PageTransition';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Download, Loader2, Play, Layers } from 'lucide-react';
+import { ArrowLeft, Sparkles, Download, Loader2, Play, Layers, Network } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import FechamentoLibrary from '@/components/FechamentoLibrary';
@@ -13,6 +13,9 @@ import ContextChat from '@/components/ContextChat';
 import { useToast } from '@/hooks/use-toast';
 import { exportToPDF } from '@/utils/pdfExport';
 import { supabase } from '@/integrations/supabase/client';
+import { lazy, Suspense } from 'react';
+
+const MindMapView = lazy(() => import('@/components/mindmap/MindMapView'));
 
 const Library = () => {
   const { user, signOut } = useAuth();
@@ -21,6 +24,7 @@ const Library = () => {
   const [selectedFechamento, setSelectedFechamento] = useState<Fechamento | null>(null);
   const [exporting, setExporting] = useState(false);
   const [generatingFlashcards, setGeneratingFlashcards] = useState(false);
+  const [showMindMap, setShowMindMap] = useState(false);
 
   if (!user) return <Navigate to="/auth" replace />;
 
@@ -96,9 +100,9 @@ const Library = () => {
         <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl safe-area-top">
           <div className="container mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-4">
-              <Button variant="ghost" size="sm" onClick={() => setSelectedFechamento(null)} className="gap-1.5">
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedFechamento(null); setShowMindMap(false); }} className="gap-1.5">
                 <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Biblioteca</span>
+                <span className="hidden sm:inline">{showMindMap ? 'Voltar' : 'Biblioteca'}</span>
               </Button>
               <div className="h-6 w-px bg-border/50 hidden sm:block" />
               <span className="text-sm font-medium text-muted-foreground truncate max-w-[200px] sm:max-w-none">
@@ -106,6 +110,17 @@ const Library = () => {
               </span>
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
+              {isResumo && (
+                <Button
+                  variant={showMindMap ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setShowMindMap(!showMindMap)}
+                  className="gap-1.5"
+                >
+                  <Network className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Mapa Mental</span>
+                </Button>
+              )}
               {isResumo && (
                 <Button
                   variant="outline"
@@ -139,15 +154,23 @@ const Library = () => {
 
         <div className="flex-1 flex">
           <div className="flex-1 min-w-0">
-            <ScrollArea className="h-[calc(100vh-4rem)]">
-              <div id="fechamento-content" className="container mx-auto px-4 sm:px-8 py-8 max-w-4xl">
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <MarkdownRenderer content={selectedFechamento.resultado} />
-                </div>
+            {showMindMap ? (
+              <div className="h-[calc(100vh-4rem)] p-4">
+                <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
+                  <MindMapView content={selectedFechamento.resultado} topic={selectedFechamento.tema} />
+                </Suspense>
               </div>
-            </ScrollArea>
+            ) : (
+              <ScrollArea className="h-[calc(100vh-4rem)]">
+                <div id="fechamento-content" className="container mx-auto px-4 sm:px-8 py-8 max-w-4xl">
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <MarkdownRenderer content={selectedFechamento.resultado} />
+                  </div>
+                </div>
+              </ScrollArea>
+            )}
           </div>
-          <ContextChat context={selectedFechamento.resultado} contextLabel="resumo" />
+          {!showMindMap && <ContextChat context={selectedFechamento.resultado} contextLabel="resumo" />}
         </div>
       </PageTransition>
     );
