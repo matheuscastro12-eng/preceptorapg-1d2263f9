@@ -7,7 +7,7 @@ import { Copy, CheckCircle2, MessageCircle, QrCode } from 'lucide-react';
 
 const PIX_PAYLOAD = '00020126480014BR.GOV.BCB.PIX0126kamikazematheus7@gmail.com520400005303986540539.905802BR5923Matheus da Cunha Castro6009SAO PAULO62140510n5fzPTYcQ963044EDF';
 const PIX_KEY = 'kamikazematheus7@gmail.com';
-const WHATSAPP_NUMBER = '5500000000000'; // TODO: replace with real number
+const WHATSAPP_NUMBER = '5535920004855';
 
 interface PixPaymentModalProps {
   open: boolean;
