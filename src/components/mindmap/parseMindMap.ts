@@ -41,7 +41,7 @@ export function parseMindMap(
       if (bulletMatch) {
         const text = bulletMatch[1].replace(/[*_`]/g, '').trim();
         if (text && currentSection.children.length < 5) {
-          currentSection.children.push(text.length > 60 ? text.slice(0, 57) + '...' : text);
+          currentSection.children.push(text);
         }
       }
     }
