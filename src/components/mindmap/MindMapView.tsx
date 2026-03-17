@@ -146,6 +146,7 @@ export default function MindMapView({ content, topic }: MindMapViewProps) {
         onEdgesChange={onEdgesChange}
         onInit={onInit}
         onNodeClick={onNodeClick}
+        onPaneClick={() => { setLeafPopup(null); setSelectedSection(null); }}
         nodeTypes={nodeTypes}
         fitView
         minZoom={0.2}
@@ -165,6 +166,19 @@ export default function MindMapView({ content, topic }: MindMapViewProps) {
       </ReactFlow>
       {selectedSection && (
         <DetailPanel section={selectedSection} onClose={() => setSelectedSection(null)} />
+      )}
+      {leafPopup && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-md bg-card border border-border rounded-xl shadow-2xl px-5 py-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="flex items-start gap-3">
+            <p className="text-sm text-foreground leading-relaxed">{leafPopup.text}</p>
+            <button
+              onClick={() => setLeafPopup(null)}
+              className="shrink-0 h-6 w-6 rounded-md flex items-center justify-center hover:bg-muted transition-colors"
+            >
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
