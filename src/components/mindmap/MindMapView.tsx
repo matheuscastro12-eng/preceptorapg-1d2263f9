@@ -47,12 +47,14 @@ function TopicNode({ data }: NodeProps) {
 }
 
 function LeafNode({ data }: NodeProps) {
+  const d = data as { label: string; fullText?: string };
+  const isTruncated = d.fullText && d.fullText !== d.label;
   return (
-    <div className="px-3 py-1.5 rounded-lg bg-muted/80 border border-border text-muted-foreground text-[11px] text-center max-w-[180px] leading-tight">
+    <div className={`px-3 py-1.5 rounded-lg bg-muted/80 border border-border text-muted-foreground text-[11px] text-center max-w-[180px] leading-tight ${isTruncated ? 'cursor-pointer hover:border-primary/40 hover:bg-muted transition-all' : ''}`}>
       <Handle type="target" position={Position.Top} className="!bg-muted-foreground/40 !w-1.5 !h-1.5" />
       <Handle type="target" position={Position.Left} className="!bg-muted-foreground/40 !w-1.5 !h-1.5" />
       <Handle type="target" position={Position.Right} className="!bg-muted-foreground/40 !w-1.5 !h-1.5" />
-      {(data as { label: string }).label}
+      {d.label}
     </div>
   );
 }
