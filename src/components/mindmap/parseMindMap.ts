@@ -1,63 +1,70 @@
 import type { Node, Edge } from '@xyflow/react';
 
-interface Section {
+export interface Section {
   title: string;
   children: string[];
+  fullText: string;
 }
 
 /**
  * Parses markdown content from a fechamento into sections
- * based on H2/H3 headers. Returns ReactFlow nodes and edges.
+ * based on H2/H3 headers. Returns ReactFlow nodes, edges, and section data.
  */
 export function parseMindMap(
   markdown: string,
   centralTopic: string
-): { nodes: Node[]; edges: Edge[] } {
+): { nodes: Node[]; edges: Edge[]; sections: Section[] } {
   const sections: Section[] = [];
   const lines = markdown.split('\n');
 
   let currentSection: Section | null = null;
+  const contentLines: string[] = [];
 
   for (const line of lines) {
     const h2Match = line.match(/^##\s+(.+)/);
     const h3Match = line.match(/^###\s+(.+)/);
 
     if (h2Match || h3Match) {
+      // Save previous section's full text
+      if (currentSection) {
+        currentSection.fullText = contentLines.join('\n').trim();
+        contentLines.length = 0;
+      }
       const title = (h2Match?.[1] || h3Match?.[1] || '').replace(/[*_`]/g, '').trim();
       if (title) {
-        currentSection = { title, children: [] };
+        currentSection = { title, children: [], fullText: '' };
         sections.push(currentSection);
       }
     } else if (currentSection) {
-      // Capture bullet points as children
+      contentLines.push(line);
       const bulletMatch = line.match(/^[-*]\s+\*?\*?(.+?)\*?\*?\s*$/);
       if (bulletMatch) {
         const text = bulletMatch[1].replace(/[*_`]/g, '').trim();
-        if (text && currentSection.children.length < 4) {
+        if (text && currentSection.children.length < 5) {
           currentSection.children.push(text.length > 60 ? text.slice(0, 57) + '...' : text);
         }
       }
     }
   }
+  // Save last section
+  if (currentSection) {
+    currentSection.fullText = contentLines.join('\n').trim();
+  }
 
-  // If no sections found, create generic ones from first few lines
   if (sections.length === 0) {
     const headings = lines
       .filter((l) => l.startsWith('#'))
       .map((l) => l.replace(/^#+\s*/, '').replace(/[*_`]/g, '').trim())
       .filter(Boolean)
       .slice(0, 6);
-
     for (const h of headings) {
-      sections.push({ title: h, children: [] });
+      sections.push({ title: h, children: [], fullText: '' });
     }
   }
 
-  // Build nodes & edges
   const nodes: Node[] = [];
   const edges: Edge[] = [];
 
-  // Central node
   const centralLabel = centralTopic.length > 40 ? centralTopic.slice(0, 37) + '...' : centralTopic;
   nodes.push({
     id: 'center',
@@ -79,7 +86,7 @@ export function parseMindMap(
       id: sectionId,
       type: 'topic',
       position: { x, y },
-      data: { label: section.title },
+      data: { label: section.title, sectionIndex: i, hasChildren: section.children.length > 0 },
     });
 
     edges.push({
@@ -90,7 +97,6 @@ export function parseMindMap(
       style: { strokeWidth: 2 },
     });
 
-    // Child nodes
     const childRadius = 140;
     const spreadAngle = Math.PI / 3;
     section.children.forEach((child, ci) => {
@@ -116,5 +122,5 @@ export function parseMindMap(
     });
   });
 
-  return { nodes, edges };
+  return { nodes, edges, sections };
 }

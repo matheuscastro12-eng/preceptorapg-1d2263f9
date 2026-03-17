@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -11,7 +11,10 @@ import {
   Position,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { parseMindMap } from './parseMindMap';
+import { parseMindMap, type Section } from './parseMindMap';
+import { X, ChevronRight } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 
 /* ── Custom node types ── */
 
@@ -28,13 +31,17 @@ function CentralNode({ data }: NodeProps) {
 }
 
 function TopicNode({ data }: NodeProps) {
+  const d = data as { label: string; hasChildren: boolean };
   return (
-    <div className="px-4 py-2.5 rounded-xl bg-card border-2 border-primary/40 text-foreground font-semibold text-xs text-center shadow-md max-w-[200px]">
+    <div className="px-4 py-2.5 rounded-xl bg-card border-2 border-primary/40 text-foreground font-semibold text-xs text-center shadow-md max-w-[200px] cursor-pointer hover:border-primary hover:shadow-lg transition-all group">
       <Handle type="target" position={Position.Top} className="!bg-primary/60 !w-2 !h-2" />
       <Handle type="source" position={Position.Bottom} className="!bg-primary/60 !w-2 !h-2" />
       <Handle type="target" position={Position.Left} className="!bg-primary/60 !w-2 !h-2" />
       <Handle type="source" position={Position.Right} className="!bg-primary/60 !w-2 !h-2" />
-      {(data as { label: string }).label}
+      <div className="flex items-center gap-1 justify-center">
+        {d.label}
+        <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
+      </div>
     </div>
   );
 }
@@ -56,6 +63,37 @@ const nodeTypes = {
   leaf: LeafNode,
 };
 
+/* ── Detail Panel ── */
+
+function DetailPanel({ section, onClose }: { section: Section; onClose: () => void }) {
+  return (
+    <div className="absolute top-4 right-4 z-50 w-[360px] max-h-[calc(100%-2rem)] bg-card border border-border rounded-xl shadow-2xl flex flex-col animate-in slide-in-from-right-4 duration-200">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <h3 className="font-bold text-sm text-foreground truncate">{section.title}</h3>
+        <button
+          onClick={onClose}
+          className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-muted transition-colors"
+        >
+          <X className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </div>
+      <ScrollArea className="flex-1 max-h-[400px]">
+        <div className="px-4 py-3 prose prose-sm dark:prose-invert max-w-none text-xs">
+          {section.fullText ? (
+            <MarkdownRenderer content={section.fullText} />
+          ) : (
+            <ul className="space-y-1.5">
+              {section.children.map((c, i) => (
+                <li key={i} className="text-muted-foreground">{c}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
 /* ── Main component ── */
 
 interface MindMapViewProps {
@@ -64,26 +102,38 @@ interface MindMapViewProps {
 }
 
 export default function MindMapView({ content, topic }: MindMapViewProps) {
-  const { nodes: initialNodes, edges: initialEdges } = useMemo(
+  const { nodes: initialNodes, edges: initialEdges, sections } = useMemo(
     () => parseMindMap(content, topic),
     [content, topic]
   );
 
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, , onEdgesChange] = useEdgesState(initialEdges);
+  const [selectedSection, setSelectedSection] = useState<Section | null>(null);
 
   const onInit = useCallback((instance: any) => {
     setTimeout(() => instance.fitView({ padding: 0.3 }), 100);
   }, []);
 
+  const onNodeClick = useCallback(
+    (_: any, node: any) => {
+      if (node.type === 'topic' && node.data.sectionIndex !== undefined) {
+        const section = sections[node.data.sectionIndex as number];
+        setSelectedSection((prev) => (prev?.title === section.title ? null : section));
+      }
+    },
+    [sections]
+  );
+
   return (
-    <div className="w-full h-full bg-background rounded-xl border border-border overflow-hidden">
+    <div className="relative w-full h-full bg-background rounded-xl border border-border overflow-hidden">
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onInit={onInit}
+        onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
         fitView
         minZoom={0.2}
@@ -101,6 +151,9 @@ export default function MindMapView({ content, topic }: MindMapViewProps) {
           maskColor="hsl(var(--background) / 0.8)"
         />
       </ReactFlow>
+      {selectedSection && (
+        <DetailPanel section={selectedSection} onClose={() => setSelectedSection(null)} />
+      )}
     </div>
   );
 }
