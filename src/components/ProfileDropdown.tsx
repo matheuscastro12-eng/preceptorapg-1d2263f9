@@ -1,4 +1,4 @@
-import { User, LogOut, Star, FileText, Calendar, Sun, Moon, Shield, CreditCard } from 'lucide-react';
+import { User, LogOut, Sun, Moon, Shield, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -6,7 +6,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { useUserStats } from '@/hooks/useUserStats';
 import { useTheme } from 'next-themes';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useNavigate } from 'react-router-dom';
@@ -17,8 +16,6 @@ interface ProfileDropdownProps {
 }
 
 const ProfileDropdown = ({ userEmail, onLogout }: ProfileDropdownProps) => {
-  const { stats } = useUserStats();
-  const loading = stats.loading;
   const { theme, setTheme } = useTheme();
   const { isAdmin } = useAdmin();
   const navigate = useNavigate();
@@ -34,30 +31,53 @@ const ProfileDropdown = ({ userEmail, onLogout }: ProfileDropdownProps) => {
           <User className="h-5 w-5" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-4 glass-strong" align="end">
-        <div className="space-y-4">
+      <PopoverContent className="w-64 p-2 glass-strong" align="end">
+        <div className="space-y-1">
           {/* User Info */}
-          <div className="flex items-center gap-3 pb-3 border-b border-border/50 p-2 -m-1">
-            <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-              <User className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
-                {userEmail}
-              </p>
-              <p className="text-xs text-muted-foreground">Conta ativa</p>
-            </div>
+          <div className="px-3 py-2.5 border-b border-border/30 mb-1">
+            <p className="text-sm font-medium text-foreground truncate">
+              {userEmail}
+            </p>
+            <p className="text-[11px] text-muted-foreground">Conta ativa</p>
           </div>
 
+          {/* Profile Link */}
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-sm h-9 px-3 text-foreground hover:bg-secondary/50"
+            onClick={() => navigate('/profile')}
+          >
+            <User className="h-4 w-4 mr-2.5 text-muted-foreground" />
+            Meu Perfil
+          </Button>
+
+          {/* Subscription Link */}
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-sm h-9 px-3 text-foreground hover:bg-secondary/50"
+            onClick={() => navigate('/subscription')}
+          >
+            <CreditCard className="h-4 w-4 mr-2.5 text-muted-foreground" />
+            Minha Assinatura
+          </Button>
+
+          {/* Admin Link */}
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-sm h-9 px-3 text-foreground hover:bg-secondary/50"
+              onClick={() => navigate('/admin')}
+            >
+              <Shield className="h-4 w-4 mr-2.5 text-muted-foreground" />
+              Painel Admin
+            </Button>
+          )}
+
           {/* Theme Toggle */}
-          <div className="flex items-center justify-between py-2 px-1 border-b border-border/50">
-            <div className="flex items-center gap-2">
-              {theme === 'dark' ? (
-                <Moon className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <Sun className="h-4 w-4 text-muted-foreground" />
-              )}
-              <span className="text-sm text-foreground">Modo Claro</span>
+          <div className="flex items-center justify-between px-3 py-2 border-t border-border/30 mt-1">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              {theme === 'dark' ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
+              Modo Claro
             </div>
             <Switch
               checked={theme === 'light'}
@@ -65,81 +85,17 @@ const ProfileDropdown = ({ userEmail, onLogout }: ProfileDropdownProps) => {
             />
           </div>
 
-          {/* Stats */}
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Suas Estatísticas
-            </p>
-            <div className="grid grid-cols-1 gap-2">
-              <div className="flex items-center gap-3 p-2 rounded-lg bg-secondary/30">
-                <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                  <FileText className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-foreground">
-                    {loading ? '...' : stats.totalFechamentos}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Total Gerados</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3 p-2 rounded-lg bg-secondary/30">
-                <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                  <Star className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-foreground">
-                    {loading ? '...' : stats.totalFavoritos}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Favoritos</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3 p-2 rounded-lg bg-secondary/30">
-                <div className="h-8 w-8 rounded-lg bg-accent/20 flex items-center justify-center">
-                  <Calendar className="h-4 w-4 text-accent" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-foreground">
-                    {loading ? '...' : stats.thisMonth}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Este Mês</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Admin Link */}
-          {isAdmin && (
+          {/* Logout */}
+          <div className="border-t border-border/30 pt-1">
             <Button
               variant="ghost"
-              className="w-full justify-start text-primary hover:text-primary hover:bg-primary/10"
-              onClick={() => navigate('/admin')}
+              className="w-full justify-start text-sm h-9 px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={onLogout}
             >
-              <Shield className="h-4 w-4 mr-2" />
-              Painel Admin
+              <LogOut className="h-4 w-4 mr-2.5" />
+              Sair da Conta
             </Button>
-          )}
-
-          {/* Subscription Link */}
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-foreground hover:bg-secondary/50"
-            onClick={() => navigate('/subscription')}
-          >
-            <CreditCard className="h-4 w-4 mr-2" />
-            Minha Assinatura
-          </Button>
-
-          {/* Logout */}
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={onLogout}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sair da Conta
-          </Button>
+          </div>
         </div>
       </PopoverContent>
     </Popover>
