@@ -109,7 +109,7 @@ export function parseMindMap(
         id: childId,
         type: 'leaf',
         position: { x: cx, y: cy },
-        data: { label: child },
+        data: { label: child.length > 50 ? child.slice(0, 47) + '...' : child, fullText: child },
       });
 
       edges.push({
