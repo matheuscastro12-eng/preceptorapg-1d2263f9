@@ -13,6 +13,9 @@ import ContextChat from '@/components/ContextChat';
 import { useToast } from '@/hooks/use-toast';
 import { exportToPDF } from '@/utils/pdfExport';
 import { supabase } from '@/integrations/supabase/client';
+import { lazy, Suspense } from 'react';
+
+const MindMapView = lazy(() => import('@/components/mindmap/MindMapView'));
 
 const Library = () => {
   const { user, signOut } = useAuth();
