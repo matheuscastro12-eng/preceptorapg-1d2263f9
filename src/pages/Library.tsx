@@ -100,9 +100,9 @@ const Library = () => {
         <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl safe-area-top">
           <div className="container mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-4">
-              <Button variant="ghost" size="sm" onClick={() => setSelectedFechamento(null)} className="gap-1.5">
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedFechamento(null); setShowMindMap(false); }} className="gap-1.5">
                 <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Biblioteca</span>
+                <span className="hidden sm:inline">{showMindMap ? 'Voltar' : 'Biblioteca'}</span>
               </Button>
               <div className="h-6 w-px bg-border/50 hidden sm:block" />
               <span className="text-sm font-medium text-muted-foreground truncate max-w-[200px] sm:max-w-none">
