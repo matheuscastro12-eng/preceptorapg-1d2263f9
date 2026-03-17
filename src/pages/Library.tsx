@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import PageTransition from '@/components/PageTransition';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Download, Loader2, Play, Layers } from 'lucide-react';
+import { ArrowLeft, Sparkles, Download, Loader2, Play, Layers, Network } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import FechamentoLibrary from '@/components/FechamentoLibrary';
