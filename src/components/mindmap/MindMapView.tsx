@@ -47,12 +47,14 @@ function TopicNode({ data }: NodeProps) {
 }
 
 function LeafNode({ data }: NodeProps) {
+  const d = data as { label: string; fullText?: string };
+  const isTruncated = d.fullText && d.fullText !== d.label;
   return (
-    <div className="px-3 py-1.5 rounded-lg bg-muted/80 border border-border text-muted-foreground text-[11px] text-center max-w-[180px] leading-tight">
+    <div className={`px-3 py-1.5 rounded-lg bg-muted/80 border border-border text-muted-foreground text-[11px] text-center max-w-[180px] leading-tight ${isTruncated ? 'cursor-pointer hover:border-primary/40 hover:bg-muted transition-all' : ''}`}>
       <Handle type="target" position={Position.Top} className="!bg-muted-foreground/40 !w-1.5 !h-1.5" />
       <Handle type="target" position={Position.Left} className="!bg-muted-foreground/40 !w-1.5 !h-1.5" />
       <Handle type="target" position={Position.Right} className="!bg-muted-foreground/40 !w-1.5 !h-1.5" />
-      {(data as { label: string }).label}
+      {d.label}
     </div>
   );
 }
@@ -115,11 +117,21 @@ export default function MindMapView({ content, topic }: MindMapViewProps) {
     setTimeout(() => instance.fitView({ padding: 0.3 }), 100);
   }, []);
 
+  const [leafPopup, setLeafPopup] = useState<{ text: string; x: number; y: number } | null>(null);
+
   const onNodeClick = useCallback(
     (_: any, node: any) => {
+      setLeafPopup(null);
       if (node.type === 'topic' && node.data.sectionIndex !== undefined) {
         const section = sections[node.data.sectionIndex as number];
         setSelectedSection((prev) => (prev?.title === section.title ? null : section));
+      } else if (node.type === 'leaf' && node.data.fullText) {
+        setSelectedSection(null);
+        setLeafPopup({
+          text: node.data.fullText as string,
+          x: node.position.x,
+          y: node.position.y,
+        });
       }
     },
     [sections]
@@ -134,6 +146,7 @@ export default function MindMapView({ content, topic }: MindMapViewProps) {
         onEdgesChange={onEdgesChange}
         onInit={onInit}
         onNodeClick={onNodeClick}
+        onPaneClick={() => { setLeafPopup(null); setSelectedSection(null); }}
         nodeTypes={nodeTypes}
         fitView
         minZoom={0.2}
@@ -153,6 +166,19 @@ export default function MindMapView({ content, topic }: MindMapViewProps) {
       </ReactFlow>
       {selectedSection && (
         <DetailPanel section={selectedSection} onClose={() => setSelectedSection(null)} />
+      )}
+      {leafPopup && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-md bg-card border border-border rounded-xl shadow-2xl px-5 py-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="flex items-start gap-3">
+            <p className="text-sm text-foreground leading-relaxed">{leafPopup.text}</p>
+            <button
+              onClick={() => setLeafPopup(null)}
+              className="shrink-0 h-6 w-6 rounded-md flex items-center justify-center hover:bg-muted transition-colors"
+            >
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

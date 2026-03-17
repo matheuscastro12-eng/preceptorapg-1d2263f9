@@ -41,7 +41,7 @@ export function parseMindMap(
       if (bulletMatch) {
         const text = bulletMatch[1].replace(/[*_`]/g, '').trim();
         if (text && currentSection.children.length < 5) {
-          currentSection.children.push(text.length > 60 ? text.slice(0, 57) + '...' : text);
+          currentSection.children.push(text);
         }
       }
     }
@@ -109,7 +109,7 @@ export function parseMindMap(
         id: childId,
         type: 'leaf',
         position: { x: cx, y: cy },
-        data: { label: child },
+        data: { label: child.length > 50 ? child.slice(0, 47) + '...' : child, fullText: child },
       });
 
       edges.push({
