@@ -89,8 +89,13 @@ const ProfilePage = () => {
 
   const fetchProfile = async () => {
     if (isOwnProfile) {
-      const { data, error } = await supabase.from('profiles').select('*').eq('user_id', targetUserId!).maybeSingle();
+      let { data, error } = await supabase.from('profiles').select('*').eq('user_id', targetUserId!).maybeSingle();
       if (error) { toast.error('Erro ao carregar perfil'); setLoading(false); return; }
+      // Auto-create profile if missing (for users created before trigger)
+      if (!data && user) {
+        const { data: newProfile, error: insertErr } = await supabase.from('profiles').insert({ user_id: user.id, email: user.email || '' }).select().single();
+        if (!insertErr && newProfile) data = newProfile;
+      }
       if (data) {
         setProfile({ user_id: data.user_id, email: data.email, full_name: data.full_name, bio: data.bio, avatar_url: data.avatar_url, university: data.university, semester: data.semester });
         setEditForm({ full_name: data.full_name || '', bio: data.bio || '', university: data.university || '', semester: data.semester || '' });
