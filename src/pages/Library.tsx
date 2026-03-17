@@ -112,6 +112,17 @@ const Library = () => {
             <div className="flex items-center gap-1.5 sm:gap-2">
               {isResumo && (
                 <Button
+                  variant={showMindMap ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setShowMindMap(!showMindMap)}
+                  className="gap-1.5"
+                >
+                  <Network className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Mapa Mental</span>
+                </Button>
+              )}
+              {isResumo && (
+                <Button
                   variant="outline"
                   size="sm"
                   onClick={handleGenerateFlashcards}
