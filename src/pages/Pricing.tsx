@@ -22,6 +22,7 @@ import {
   ArrowLeft,
   CheckCircle2
 } from 'lucide-react';
+import { QrCode as QrCodeIcon } from 'lucide-react';
 
 const Pricing = () => {
   const { user, loading: authLoading, signOut } = useAuth();
