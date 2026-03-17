@@ -29,6 +29,7 @@ const Pricing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [pixModal, setPixModal] = useState<{ open: boolean; plan: 'monthly' | 'annual' }>({ open: false, plan: 'monthly' });
 
   if (authLoading || subLoading) {
     return (
