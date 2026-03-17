@@ -117,11 +117,21 @@ export default function MindMapView({ content, topic }: MindMapViewProps) {
     setTimeout(() => instance.fitView({ padding: 0.3 }), 100);
   }, []);
 
+  const [leafPopup, setLeafPopup] = useState<{ text: string; x: number; y: number } | null>(null);
+
   const onNodeClick = useCallback(
     (_: any, node: any) => {
+      setLeafPopup(null);
       if (node.type === 'topic' && node.data.sectionIndex !== undefined) {
         const section = sections[node.data.sectionIndex as number];
         setSelectedSection((prev) => (prev?.title === section.title ? null : section));
+      } else if (node.type === 'leaf' && node.data.fullText) {
+        setSelectedSection(null);
+        setLeafPopup({
+          text: node.data.fullText as string,
+          x: node.position.x,
+          y: node.position.y,
+        });
       }
     },
     [sections]
