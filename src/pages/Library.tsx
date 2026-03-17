@@ -21,6 +21,7 @@ const Library = () => {
   const [selectedFechamento, setSelectedFechamento] = useState<Fechamento | null>(null);
   const [exporting, setExporting] = useState(false);
   const [generatingFlashcards, setGeneratingFlashcards] = useState(false);
+  const [showMindMap, setShowMindMap] = useState(false);
 
   if (!user) return <Navigate to="/auth" replace />;
 
