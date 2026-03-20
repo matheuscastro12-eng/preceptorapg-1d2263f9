@@ -270,7 +270,7 @@ const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = 
           )}
 
           {/* Question text */}
-          <div className="prose prose-sm dark:prose-invert max-w-none text-[14px] leading-relaxed">
+          <div className="prose prose-sm max-w-none text-[14px] leading-relaxed">
             <MarkdownRenderer content={currentQ.enunciado} />
           </div>
 
@@ -351,7 +351,7 @@ const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = 
                       </button>
                     </div>
                     {currentQ.explanation && (
-                      <div className="prose prose-sm dark:prose-invert max-w-none text-sm border-t border-emerald-200/40 pt-3">
+                      <div className="prose prose-sm max-w-none text-sm border-t border-emerald-200/40 pt-3">
                         <MarkdownRenderer content={currentQ.explanation} />
                       </div>
                     )}

@@ -106,7 +106,7 @@ const ExamResultPanel = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-1.5 border-border/40 hover:bg-green-50 hover:text-green-700 dark:hover:bg-green-950 dark:hover:text-green-400 hover:border-green-400/40 transition-all"
+                    className="gap-1.5 border-border/40 hover:bg-green-50 hover:text-green-700 hover:border-green-400/40 transition-all"
                   >
                     <Save className="h-4 w-4" />
                     <span className="hidden sm:inline">Salvar</span>

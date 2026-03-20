@@ -80,7 +80,7 @@ function DetailPanel({ section, onClose }: { section: Section; onClose: () => vo
         </button>
       </div>
       <ScrollArea className="flex-1 max-h-[400px]">
-        <div className="px-4 py-3 prose prose-sm dark:prose-invert max-w-none text-xs">
+        <div className="px-4 py-3 prose prose-sm max-w-none text-xs">
           {section.fullText ? (
             <MarkdownRenderer content={section.fullText} />
           ) : (

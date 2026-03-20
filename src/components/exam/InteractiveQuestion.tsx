@@ -75,7 +75,7 @@ const InteractiveQuestion = ({ question, index }: InteractiveQuestionProps) => {
       </div>
 
       {/* Enunciado */}
-      <div className="prose prose-sm dark:prose-invert max-w-none">
+      <div className="prose prose-sm max-w-none">
         <MarkdownRenderer content={question.enunciado} />
       </div>
 
@@ -180,7 +180,7 @@ const InteractiveQuestion = ({ question, index }: InteractiveQuestionProps) => {
               </Button>
             </div>
             {question.explanation && (
-              <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+              <div className="prose prose-sm max-w-none text-sm">
                 <MarkdownRenderer content={question.explanation} />
               </div>
             )}

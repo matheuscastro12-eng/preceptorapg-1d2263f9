@@ -50,43 +50,7 @@
     --sidebar-ring: 168 70% 34%;
   }
 
-  .dark {
-    /* Dark — OLED black canvas */
-    --background: 240 10% 4%;
-    --foreground: 240 5% 93%;
-    --card: 240 10% 7%;
-    --card-foreground: 240 5% 93%;
-    --popover: 240 10% 7%;
-    --popover-foreground: 240 5% 93%;
-    --primary: 168 65% 40%;
-    --primary-foreground: 240 10% 4%;
-    --secondary: 240 8% 11%;
-    --secondary-foreground: 240 5% 85%;
-    --muted: 240 8% 11%;
-    --muted-foreground: 240 5% 52%;
-    --accent: 192 65% 43%;
-    --accent-foreground: 240 10% 4%;
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 240 8% 14%;
-    --input: 240 8% 14%;
-    --ring: 168 65% 40%;
-
-    /* Medical accent colors — Dark */
-    --medical-green: 168 65% 40%;
-    --medical-blue: 200 72% 46%;
-    --medical-teal: 192 65% 43%;
-
-    /* Sidebar — Dark */
-    --sidebar-background: 240 10% 5%;
-    --sidebar-foreground: 240 5% 88%;
-    --sidebar-primary: 168 65% 40%;
-    --sidebar-primary-foreground: 240 10% 4%;
-    --sidebar-accent: 240 8% 10%;
-    --sidebar-accent-foreground: 240 5% 88%;
-    --sidebar-border: 240 8% 12%;
-    --sidebar-ring: 168 65% 40%;
-  }
+  /* Dark mode removed — PreceptorMED is light-only */
 }
 
 @layer base {
@@ -116,12 +80,6 @@
 .glass-nav.scrolled {
   background-color: rgba(255, 255, 255, 0.96);
   box-shadow: 0 4px 24px 0 rgba(44, 52, 52, 0.08);
-}
-.dark .glass-nav {
-  background-color: rgba(11, 15, 15, 0.88);
-}
-.dark .glass-nav.scrolled {
-  background-color: rgba(11, 15, 15, 0.96);
 }
 
 /* ── Stagger delays for list items ─────────────────────── */

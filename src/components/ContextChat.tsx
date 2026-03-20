@@ -376,7 +376,7 @@ const ChatContent = ({
                         </div>
                       )}
                       {m.content && (
-                        <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+                        <div className="prose prose-sm max-w-none text-sm">
                           <MarkdownRenderer content={m.content} isTyping={isStreaming && m.id === messages[messages.length - 1]?.id} />
                         </div>
                       )}
