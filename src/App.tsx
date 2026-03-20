@@ -19,6 +19,7 @@ import AIChat from "./pages/AIChat";
 import Enamed from "./pages/Enamed";
 import ResetPassword from "./pages/ResetPassword";
 import Flashcards from "./pages/Flashcards";
+import ScientificStudio from "./pages/ScientificStudio";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/ai-chat" element={<AIChat />} />
               <Route path="/enamed" element={<Enamed />} />
               <Route path="/flashcards" element={<Flashcards />} />
+              <Route path="/scientific-studio" element={<ScientificStudio />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               {/* Redirect old routes */}
               <Route path="/topics" element={<Navigate to="/profile" replace />} />

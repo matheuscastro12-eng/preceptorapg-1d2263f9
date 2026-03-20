@@ -9,17 +9,24 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Camera, Edit2, Save, X, Users, FileText, Star, MapPin, GraduationCap, UserPlus, UserMinus, MessageCircle, TrendingUp, Target, Brain, BookOpen, Calendar, BarChart3, Layers, Award, Flame, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Camera, Edit2, Save, X, UserPlus, UserMinus, MessageCircle, TrendingUp, Target, Brain, Calendar, BarChart3, Layers, Flame, GraduationCap, MapPin, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
 import PageSkeleton from '@/components/PageSkeleton';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area } from 'recharts';
 
 type Profile = Tables<'profiles'>;
+
+const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
+  <span
+    className={`material-symbols-outlined ${className}`}
+    style={{ fontVariationSettings: fill ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" : undefined }}
+  >
+    {name}
+  </span>
+);
 
 interface ProfileData {
   user_id: string;
@@ -47,15 +54,23 @@ interface WeeklyData {
   percentage: number;
 }
 
+interface RecentActivity {
+  id: string;
+  type: 'resumo' | 'simulado' | 'enamed';
+  title: string;
+  subtitle: string;
+  date: string;
+  score?: number;
+  total?: number;
+  icon: string;
+  color: string;
+  bgColor: string;
+}
+
 const chartConfig: ChartConfig = {
   acertos: { label: 'Acertos', color: 'hsl(var(--primary))' },
   total: { label: 'Total', color: 'hsl(var(--muted-foreground))' },
   percentage: { label: '% Acerto', color: 'hsl(var(--primary))' },
-};
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  show: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.06, duration: 0.4 } }),
 };
 
 const ProfilePage = () => {
@@ -73,6 +88,8 @@ const ProfilePage = () => {
   const [attempts, setAttempts] = useState<AttemptRow[]>([]);
   const [flashcardCount, setFlashcardCount] = useState(0);
   const [evoLoading, setEvoLoading] = useState(true);
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+  const [activeTab, setActiveTab] = useState<'evolucao' | 'atividades'>('evolucao');
 
   const targetUserId = userId || user?.id;
   const isOwnProfile = !userId || userId === user?.id;
@@ -83,7 +100,10 @@ const ProfilePage = () => {
       fetchStats();
       if (!isOwnProfile && user) fetchFollowStatus();
       fetchPublicFechamentos();
-      if (isOwnProfile) fetchEvolutionData();
+      if (isOwnProfile) {
+        fetchEvolutionData();
+        fetchRecentActivity();
+      }
     }
   }, [targetUserId, user]);
 
@@ -91,7 +111,6 @@ const ProfilePage = () => {
     if (isOwnProfile) {
       let { data, error } = await supabase.from('profiles').select('*').eq('user_id', targetUserId!).maybeSingle();
       if (error) { toast.error('Erro ao carregar perfil'); setLoading(false); return; }
-      // Auto-create profile if missing (for users created before trigger)
       if (!data && user) {
         const { data: newProfile, error: insertErr } = await supabase.from('profiles').insert({ user_id: user.id, email: user.email || '' }).select().single();
         if (!insertErr && newProfile) data = newProfile;
@@ -132,6 +151,47 @@ const ProfilePage = () => {
       console.error('Error fetching evolution data:', error);
     } finally {
       setEvoLoading(false);
+    }
+  };
+
+  const fetchRecentActivity = async () => {
+    try {
+      const [fechRes, attRes] = await Promise.all([
+        supabase.from('fechamentos').select('id, tema, tipo, created_at').eq('user_id', targetUserId!).order('created_at', { ascending: false }).limit(5),
+        supabase.from('enamed_attempts').select('id, correct_answers, total_questions, percentage, modo, created_at').order('created_at', { ascending: false }).limit(5),
+      ]);
+
+      const activities: RecentActivity[] = [];
+      (fechRes.data || []).forEach((f: any) => {
+        activities.push({
+          id: f.id,
+          type: 'resumo',
+          title: `Resumo: ${f.tema}`,
+          subtitle: f.tipo === 'seminario' ? 'Seminário' : 'Resumo',
+          date: f.created_at,
+          icon: 'description',
+          color: 'text-[#006D5B]',
+          bgColor: 'bg-[#c8eade]/40',
+        });
+      });
+      (attRes.data || []).forEach((a: any) => {
+        activities.push({
+          id: a.id,
+          type: a.modo === 'completo' ? 'enamed' : 'simulado',
+          title: `Simulado ${a.modo === 'completo' ? 'ENAMED Completo' : 'ENAMED'}`,
+          subtitle: `${a.correct_answers}/${a.total_questions} acertos`,
+          date: a.created_at,
+          score: a.correct_answers,
+          total: a.total_questions,
+          icon: 'quiz',
+          color: 'text-amber-600',
+          bgColor: 'bg-amber-100/60',
+        });
+      });
+      activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setRecentActivities(activities.slice(0, 8));
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -203,7 +263,7 @@ const ProfilePage = () => {
   }, [attempts]);
 
   const overallStats = useMemo(() => {
-    if (attempts.length === 0) return { total: 0, correct: 0, avg: 0, trend: 0 };
+    if (attempts.length === 0) return { total: 0, correct: 0, avg: 0, trend: 0, simCount: 0 };
     const total = attempts.reduce((s, a) => s + a.total_questions, 0);
     const correct = attempts.reduce((s, a) => s + a.correct_answers, 0);
     const avg = total > 0 ? Math.round((correct / total) * 100) : 0;
@@ -211,7 +271,7 @@ const ProfilePage = () => {
     const previous = attempts.slice(-10, -5);
     const recentAvg = recent.length > 0 ? recent.reduce((s, a) => s + a.percentage, 0) / recent.length : 0;
     const prevAvg = previous.length > 0 ? previous.reduce((s, a) => s + a.percentage, 0) / previous.length : 0;
-    return { total, correct, avg, trend: Math.round(recentAvg - prevAvg) };
+    return { total, correct, avg, trend: Math.round(recentAvg - prevAvg), simCount: attempts.length };
   }, [attempts]);
 
   const prediction = useMemo(() => {
@@ -224,294 +284,415 @@ const ProfilePage = () => {
   }, [weeklyData]);
 
   const initials = useMemo(() => (profile?.full_name || profile?.email || '?').slice(0, 2).toUpperCase(), [profile]);
+  const displayName = profile?.full_name || profile?.email?.split('@')[0] || 'Usuário';
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffH = Math.floor(diffMs / 3600000);
+    if (diffH < 1) return 'Agora mesmo';
+    if (diffH < 24) return `Há ${diffH}h`;
+    if (diffH < 48) return 'Ontem';
+    return `${d.getDate()}/${d.getMonth() + 1}`;
+  };
 
   if (authLoading || loading) return <PageSkeleton variant="menu" />;
   if (!user) return <Navigate to="/auth" replace />;
   if (!profile) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Perfil não encontrado</div>;
 
   return (
-    <DashboardLayout mainClassName="pb-12 px-4 sm:px-8">
-      <div className="max-w-2xl mx-auto">
-        {/* In-content toolbar */}
-        <div className="flex items-center justify-between mb-6">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-emerald-700 transition-colors">
-            <ArrowLeft className="h-4 w-4" /> Voltar
-          </button>
-          <span className="text-sm font-semibold text-slate-700">Perfil</span>
-          {isOwnProfile && !editing ? (
-            <Button variant="ghost" size="sm" onClick={() => setEditing(true)} className="gap-1.5 text-slate-400 hover:text-slate-700 text-xs">
-              <Edit2 className="h-3.5 w-3.5" /> Editar
-            </Button>
-          ) : (
-            <div className="w-20" />
-          )}
-        </div>
+    <DashboardLayout mainClassName="p-0">
+      <div className="w-full">
 
-        {/* Hero Banner */}
-        <div className="relative -mx-4 overflow-hidden">
-          <div className="h-28 sm:h-36 bg-gradient-to-br from-primary/20 via-accent/10 to-primary/5" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--primary)/0.15),transparent_70%)]" />
-        </div>
-
-        {/* Avatar overlapping banner */}
-        <motion.div
-          initial="hidden" animate="show" custom={0} variants={fadeUp}
-          className="relative -mt-14 sm:-mt-16 flex flex-col items-center text-center px-4"
-        >
-          <div className="relative group">
-            <div className="absolute -inset-1 rounded-full bg-background" />
-            <Avatar className="relative h-24 w-24 sm:h-28 sm:w-28 ring-4 ring-background shadow-xl">
-              <AvatarImage src={profile.avatar_url || undefined} />
-              <AvatarFallback className="text-2xl font-bold bg-primary/15 text-primary">{initials}</AvatarFallback>
-            </Avatar>
-            {isOwnProfile && (
-              <label className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer shadow-lg hover:bg-primary/90 transition-all hover:scale-105 active:scale-95">
-                <Camera className="h-3.5 w-3.5" />
-                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={uploading} />
-              </label>
-            )}
+        {/* ═══════════════ HERO BANNER ═══════════════ */}
+        <header className="relative w-full overflow-hidden">
+          <div className="absolute inset-0 bg-[#002b23]">
+            <div className="absolute inset-0 opacity-30" style={{
+              background: 'radial-gradient(ellipse at 30% 50%, #006d5b 0%, transparent 60%), radial-gradient(ellipse at 80% 30%, #005344 0%, transparent 50%)',
+            }} />
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(255,255,255,0.03) 1px, transparent 1px), radial-gradient(circle at 80% 50%, rgba(255,255,255,0.03) 1px, transparent 1px)',
+              backgroundSize: '40px 40px',
+            }} />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#002b23] via-transparent to-transparent" />
           </div>
 
-          {editing ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full mt-6 space-y-4 max-w-sm">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Nome Completo</Label>
-                <Input value={editForm.full_name} onChange={e => setEditForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Seu nome" />
+          {/* Back button */}
+          <div className="relative z-10 pt-3 px-3 sm:pt-6 sm:px-8">
+            <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-lg">
+              <ArrowLeft className="h-4 w-4" /> Voltar
+            </button>
+          </div>
+
+          {/* Profile info in banner */}
+          <div className="relative z-10 px-4 sm:px-8 lg:px-12 pt-4 pb-5 sm:pt-6 sm:pb-8 flex flex-col sm:flex-row items-center sm:items-end gap-3 sm:gap-8">
+            {/* Avatar */}
+            <div className="relative group shrink-0">
+              <div className="w-20 h-20 sm:w-36 sm:h-36 rounded-2xl border-4 border-white/10 overflow-hidden shadow-2xl bg-[#005344]">
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt={displayName} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-2xl sm:text-4xl font-bold text-white/80">{initials}</div>
+                )}
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Bio</Label>
-                <Textarea value={editForm.bio} onChange={e => setEditForm(f => ({ ...f, bio: e.target.value }))} placeholder="Conte sobre você..." maxLength={200} className="resize-none" rows={3} />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Faculdade</Label>
-                  <Input value={editForm.university} onChange={e => setEditForm(f => ({ ...f, university: e.target.value }))} placeholder="Ex: UFMG" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Período</Label>
-                  <Input value={editForm.semester} onChange={e => setEditForm(f => ({ ...f, semester: e.target.value }))} placeholder="Ex: 8º" />
-                </div>
-              </div>
-              <div className="flex gap-2 pt-2">
-                <Button onClick={handleSaveProfile} className="flex-1 gap-1.5"><Save className="h-4 w-4" /> Salvar</Button>
-                <Button variant="outline" onClick={() => setEditing(false)} size="icon"><X className="h-4 w-4" /></Button>
-              </div>
-            </motion.div>
-          ) : (
-            <div className="mt-3 space-y-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{profile.full_name || profile.email || 'Usuário'}</h1>
-              {profile.bio && <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">{profile.bio}</p>}
-              <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground">
+              {isOwnProfile && (
+                <label className="absolute -bottom-1 -right-1 bg-[#9df3dc] text-[#005344] p-1.5 sm:p-2 rounded-xl border-[3px] sm:border-4 border-[#002b23] shadow-lg cursor-pointer hover:bg-white transition-all hover:scale-105 active:scale-95">
+                  <Camera className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={uploading} />
+                </label>
+              )}
+            </div>
+
+            {/* Name & meta */}
+            <div className="flex-1 min-w-0 text-center sm:text-left pb-0 sm:pb-1">
+              <h2 className="font-['Manrope'] text-xl sm:text-4xl font-extrabold text-white mb-1.5 sm:mb-2 drop-shadow-md truncate">{displayName}</h2>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3">
                 {profile.university && (
-                  <span className="flex items-center gap-1 bg-secondary/50 px-2.5 py-1 rounded-full">
-                    <GraduationCap className="h-3 w-3" /> {profile.university}
+                  <span className="bg-[#9df3dc] text-[#005344] px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
+                    <GraduationCap className="h-3 w-3" />
+                    {profile.university}
                   </span>
                 )}
                 {profile.semester && (
-                  <span className="flex items-center gap-1 bg-secondary/50 px-2.5 py-1 rounded-full">
-                    <MapPin className="h-3 w-3" /> {profile.semester}
+                  <span className="text-white/70 text-xs sm:text-sm font-medium flex items-center gap-1">
+                    <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 opacity-60" />
+                    {profile.semester}
                   </span>
                 )}
               </div>
-              {!isOwnProfile && (
-                <div className="flex gap-2 pt-2 justify-center">
-                  <Button onClick={handleFollow} variant={isFollowing ? 'outline' : 'default'} size="sm" className="gap-1.5 rounded-full px-5">
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 sm:gap-3 shrink-0">
+              {isOwnProfile ? (
+                <button
+                  onClick={() => setEditing(true)}
+                  className="bg-white/10 backdrop-blur-xl border border-white/20 text-white px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 hover:bg-white/20 transition-all"
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                  Editar Perfil
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={handleFollow}
+                    className={`px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 transition-all ${
+                      isFollowing
+                        ? 'bg-white/10 border border-white/20 text-white hover:bg-white/20'
+                        : 'bg-[#9df3dc] text-[#005344] hover:brightness-110 shadow-lg'
+                    }`}
+                  >
                     {isFollowing ? <><UserMinus className="h-3.5 w-3.5" /> Seguindo</> : <><UserPlus className="h-3.5 w-3.5" /> Seguir</>}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => navigate(`/messages/${targetUserId}`)} className="gap-1.5 rounded-full px-5">
-                    <MessageCircle className="h-3.5 w-3.5" /> Mensagem
-                  </Button>
-                </div>
+                  </button>
+                  <button
+                    onClick={() => navigate(`/messages/${targetUserId}`)}
+                    className="bg-white/10 backdrop-blur-xl border border-white/20 text-white px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 hover:bg-white/20 transition-all"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                  </button>
+                </>
               )}
             </div>
-          )}
-        </motion.div>
-
-        {/* Stats Row */}
-        <motion.div initial="hidden" animate="show" custom={1} variants={fadeUp} className="mt-6 mb-6">
-          <div className="flex items-center justify-center gap-0 divide-x divide-border/40">
-            {[
-              { label: 'Resumos', value: stats.fechamentos },
-              { label: 'Favoritos', value: stats.favoritos },
-              { label: 'Seguidores', value: stats.followers },
-              { label: 'Seguindo', value: stats.following },
-            ].map((s) => (
-              <div key={s.label} className="flex-1 text-center py-2 px-3">
-                <p className="text-lg sm:text-xl font-bold text-foreground">{s.value}</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">{s.label}</p>
-              </div>
-            ))}
           </div>
-        </motion.div>
+        </header>
 
-        {/* Tabs */}
-        <motion.div initial="hidden" animate="show" custom={2} variants={fadeUp}>
-          <Tabs defaultValue={isOwnProfile ? 'evolucao' : 'posts'} className="w-full">
-            <TabsList className={`w-full ${isOwnProfile ? 'grid grid-cols-2' : ''} bg-secondary/40 rounded-xl p-1`}>
-              {isOwnProfile && (
-                <TabsTrigger value="evolucao" className="gap-1.5 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                  <BarChart3 className="h-3.5 w-3.5" /> Evolução
-                </TabsTrigger>
-              )}
-              <TabsTrigger value="posts" className="gap-1.5 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                <FileText className="h-3.5 w-3.5" /> Resumos Públicos
-              </TabsTrigger>
-            </TabsList>
+        {/* ═══════════════ MAIN CONTENT ═══════════════ */}
+        <div className="px-3 sm:px-8 lg:px-12 py-5 sm:py-10 space-y-6 sm:space-y-10">
 
-            {/* Evolution Tab */}
-            {isOwnProfile && (
-              <TabsContent value="evolucao" className="space-y-4 mt-5">
-                {evoLoading ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    {[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-2xl bg-muted/30 animate-pulse" />)}
+          {/* Edit form modal-style */}
+          {editing && (
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-6 shadow-sm space-y-3 sm:space-y-4 animate-fade-up">
+              <h3 className="font-['Manrope'] text-base sm:text-lg font-bold text-[#191c1d]">Editar Perfil</h3>
+              <div className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-500">Nome Completo</Label>
+                  <Input value={editForm.full_name} onChange={e => setEditForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Seu nome" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500">Faculdade</Label>
+                    <Input value={editForm.university} onChange={e => setEditForm(f => ({ ...f, university: e.target.value }))} placeholder="Ex: UFMG" />
                   </div>
-                ) : (
-                  <>
-                    {/* Metric Cards */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                      <MetricCard icon={Target} label="Média Geral" value={`${overallStats.avg}%`} color="primary" />
-                      <MetricCard
-                        icon={TrendingUp}
-                        label="Tendência"
-                        value={`${overallStats.trend >= 0 ? '+' : ''}${overallStats.trend}%`}
-                        color={overallStats.trend >= 0 ? 'primary' : 'destructive'}
-                      />
-                      <MetricCard icon={Brain} label="Questões" value={String(overallStats.total)} color="accent" />
-                      <MetricCard icon={Layers} label="Flashcards" value={String(flashcardCount)} color="accent" />
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500">Período</Label>
+                    <Input value={editForm.semester} onChange={e => setEditForm(f => ({ ...f, semester: e.target.value }))} placeholder="Ex: 8º" />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-slate-500">Bio</Label>
+                <Textarea value={editForm.bio} onChange={e => setEditForm(f => ({ ...f, bio: e.target.value }))} placeholder="Conte sobre você..." maxLength={200} className="resize-none" rows={2} />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button onClick={handleSaveProfile} className="gap-1.5 bg-[#006D5B] hover:bg-[#005344]"><Save className="h-4 w-4" /> Salvar</Button>
+                <Button variant="outline" onClick={() => setEditing(false)}><X className="h-4 w-4" /></Button>
+              </div>
+            </div>
+          )}
 
-                    {/* Prediction */}
-                    {prediction && (
-                      <Card className="p-4 border-border/20 bg-gradient-to-r from-primary/5 via-primary/3 to-transparent rounded-2xl">
-                        <div className="flex items-start gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-                            {prediction.improving ? <Flame className="h-5 w-5 text-primary" /> : <Target className="h-5 w-5 text-primary" />}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <h3 className="text-sm font-semibold text-foreground">Previsão de Desempenho</h3>
-                              {prediction.improving && (
-                                <span className="text-[10px] font-medium bg-primary/15 text-primary px-2 py-0.5 rounded-full">Em alta</span>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                              {prediction.improving
-                                ? `Excelente progresso! Previsão: ~${prediction.predicted}% na próxima semana.`
-                                : `Sua média recuou. Revise os temas com mais erros para recuperar.`}
-                            </p>
-                            <div className="mt-2.5 flex items-center gap-3">
-                              <div className="flex-1">
-                                <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-                                  <span>Atual: {prediction.current}%</span>
-                                  <span>Meta: {prediction.predicted}%</span>
-                                </div>
-                                <Progress value={prediction.current} className="h-1.5" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    )}
+          {/* Bio */}
+          {profile.bio && !editing && (
+            <p className="text-sm text-[#3e4945]/80 max-w-xl leading-relaxed">{profile.bio}</p>
+          )}
 
-                    {/* Charts */}
-                    {weeklyData.length > 0 ? (
+          {/* ─── Stats Overview ─── */}
+          <section>
+            <div className="flex items-center gap-2.5 mb-4 sm:mb-5">
+              <div className="w-1 sm:w-1.5 h-5 sm:h-6 bg-[#006D5B] rounded-full" />
+              <h3 className="font-['Manrope'] text-base sm:text-xl font-bold text-[#191c1d]">Visão Geral</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-4">
+              <StatCard label="Resumos Gerados" value={stats.fechamentos} badge={stats.favoritos > 0 ? `${stats.favoritos} fav` : undefined} badgeColor="bg-[#c8eade] text-[#005344]" />
+              <StatCard label="Simulados" value={overallStats.simCount} badge={overallStats.avg > 0 ? `${overallStats.avg}% média` : undefined} badgeColor="bg-amber-100 text-amber-700" />
+              <StatCard label="Flashcards" value={flashcardCount} />
+              <StatCard label="Seguidores" value={stats.followers} badge={stats.following > 0 ? `${stats.following} seguindo` : undefined} badgeColor="bg-slate-100 text-slate-500" />
+            </div>
+          </section>
+
+          {/* ─── Tabs ─── */}
+          {isOwnProfile && (
+            <section>
+              <div className="bg-[#f3f4f5] p-1 sm:p-1.5 rounded-xl sm:rounded-2xl flex gap-1 sm:gap-1.5 max-w-md mb-5 sm:mb-6">
+                <button
+                  onClick={() => setActiveTab('evolucao')}
+                  className={`flex-1 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-['Manrope'] text-xs sm:text-sm font-bold transition-all ${
+                    activeTab === 'evolucao' ? 'bg-white text-[#006D5B] shadow-sm border border-slate-200/40' : 'text-[#6e7975] hover:bg-white/60'
+                  }`}
+                >
+                  Evolução
+                </button>
+                <button
+                  onClick={() => setActiveTab('atividades')}
+                  className={`flex-1 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-['Manrope'] text-xs sm:text-sm font-bold transition-all ${
+                    activeTab === 'atividades' ? 'bg-white text-[#006D5B] shadow-sm border border-slate-200/40' : 'text-[#6e7975] hover:bg-white/60'
+                  }`}
+                >
+                  Atividade
+                </button>
+              </div>
+
+              {activeTab === 'evolucao' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+                  {/* Charts column */}
+                  <div className="lg:col-span-8 space-y-6">
+                    {evoLoading ? (
                       <div className="space-y-4">
-                        <Card className="p-4 sm:p-5 border-border/20 rounded-2xl">
-                          <h3 className="text-sm font-semibold mb-4 flex items-center gap-2 text-foreground">
-                            <Calendar className="h-4 w-4 text-primary" /> Acertos por Semana
-                          </h3>
-                          <ChartContainer config={chartConfig} className="h-[200px] w-full">
+                        {[...Array(2)].map((_, i) => <div key={i} className="h-64 rounded-2xl bg-slate-100 animate-pulse" />)}
+                      </div>
+                    ) : weeklyData.length > 0 ? (
+                      <>
+                        {/* Bar chart */}
+                        <div className="bg-white p-4 sm:p-7 rounded-2xl shadow-sm border border-slate-200/60">
+                          <div className="flex justify-between items-center mb-4 sm:mb-6">
+                            <div>
+                              <h4 className="font-['Manrope'] text-sm sm:text-lg font-bold text-[#191c1d]">Desempenho Semanal</h4>
+                              <p className="text-[10px] sm:text-xs text-[#6e7975] mt-0.5">Acertos vs total por semana</p>
+                            </div>
+                          </div>
+                          <ChartContainer config={chartConfig} className="h-[180px] sm:h-[220px] w-full">
                             <BarChart data={weeklyData} barGap={4}>
-                              <CartesianGrid strokeDasharray="3 3" className="stroke-border/20" vertical={false} />
+                              <CartesianGrid strokeDasharray="3 3" className="stroke-slate-100" vertical={false} />
                               <XAxis dataKey="week" className="text-xs" tickLine={false} axisLine={false} />
                               <YAxis className="text-xs" tickLine={false} axisLine={false} width={30} />
                               <ChartTooltip content={<ChartTooltipContent />} />
-                              <Bar dataKey="total" fill="hsl(var(--muted))" radius={[6, 6, 0, 0]} />
-                              <Bar dataKey="acertos" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                              <Bar dataKey="total" fill="#e7e8e9" radius={[6, 6, 0, 0]} />
+                              <Bar dataKey="acertos" fill="#006D5B" radius={[6, 6, 0, 0]} />
                             </BarChart>
                           </ChartContainer>
-                        </Card>
+                        </div>
 
+                        {/* Learning curve */}
                         {weeklyData.length > 1 && (
-                          <Card className="p-4 sm:p-5 border-border/20 rounded-2xl">
-                            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2 text-foreground">
-                              <TrendingUp className="h-4 w-4 text-primary" /> Curva de Aprendizado
-                            </h3>
-                            <ChartContainer config={chartConfig} className="h-[180px] w-full">
+                          <div className="bg-white p-4 sm:p-7 rounded-2xl shadow-sm border border-slate-200/60">
+                            <h4 className="font-['Manrope'] text-sm sm:text-lg font-bold text-[#191c1d] mb-0.5 sm:mb-1">Curva de Aprendizado</h4>
+                            <p className="text-[10px] sm:text-xs text-[#6e7975] mb-3 sm:mb-5">% de acerto ao longo do tempo</p>
+                            <ChartContainer config={chartConfig} className="h-[170px] sm:h-[200px] w-full">
                               <AreaChart data={weeklyData}>
                                 <defs>
                                   <linearGradient id="gradPercentage" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
-                                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                                    <stop offset="5%" stopColor="#006D5B" stopOpacity={0.15} />
+                                    <stop offset="95%" stopColor="#006D5B" stopOpacity={0} />
                                   </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" className="stroke-border/20" vertical={false} />
+                                <CartesianGrid strokeDasharray="3 3" className="stroke-slate-100" vertical={false} />
                                 <XAxis dataKey="week" className="text-xs" tickLine={false} axisLine={false} />
                                 <YAxis domain={[0, 100]} className="text-xs" tickLine={false} axisLine={false} width={30} />
                                 <ChartTooltip content={<ChartTooltipContent />} />
-                                <Area type="monotone" dataKey="percentage" stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#gradPercentage)" dot={{ fill: 'hsl(var(--primary))', r: 3.5, strokeWidth: 2, stroke: 'hsl(var(--background))' }} />
+                                <Area type="monotone" dataKey="percentage" stroke="#006D5B" strokeWidth={2.5} fill="url(#gradPercentage)" dot={{ fill: '#006D5B', r: 3.5, strokeWidth: 2, stroke: '#f8f9fa' }} />
                               </AreaChart>
                             </ChartContainer>
-                          </Card>
+                          </div>
                         )}
-                      </div>
+                      </>
                     ) : (
-                      <Card className="p-10 border-border/20 text-center rounded-2xl bg-secondary/20">
-                        <div className="h-14 w-14 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                          <BarChart3 className="h-7 w-7 text-muted-foreground/40" />
+                      <div className="bg-white p-6 sm:p-14 rounded-2xl shadow-sm border border-slate-200/60 text-center">
+                        <div className="h-14 w-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+                          <BarChart3 className="h-7 w-7 text-slate-300" />
                         </div>
-                        <h3 className="text-sm font-semibold mb-1 text-foreground">Sem dados ainda</h3>
-                        <p className="text-xs text-muted-foreground mb-5 max-w-xs mx-auto">Complete simulados e pratique para visualizar sua evolução aqui.</p>
-                        <Button size="sm" onClick={() => navigate('/enamed')} className="gap-2 rounded-full px-6">
-                          <Brain className="h-4 w-4" /> Começar Agora
-                        </Button>
-                      </Card>
+                        <h3 className="font-['Manrope'] text-base font-bold text-[#191c1d] mb-1">Sem dados ainda</h3>
+                        <p className="text-sm text-[#6e7975] mb-6 max-w-xs mx-auto">Complete simulados ENAMED para visualizar sua evolução aqui.</p>
+                        <button
+                          onClick={() => navigate('/enamed')}
+                          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-['Manrope'] font-bold text-white text-sm shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+                          style={{ background: 'linear-gradient(135deg, #005344, #006d5b)' }}
+                        >
+                          <Brain className="h-4 w-4" /> Fazer Simulado
+                        </button>
+                      </div>
                     )}
-                  </>
-                )}
-              </TabsContent>
-            )}
-
-            <TabsContent value="posts" className="mt-5">
-              {publicFechamentos.length === 0 ? (
-                <Card className="p-10 border-border/20 text-center rounded-2xl bg-secondary/20">
-                  <div className="h-14 w-14 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                    <FileText className="h-7 w-7 text-muted-foreground/40" />
                   </div>
-                  <h3 className="text-sm font-semibold mb-1 text-foreground">Nenhum resumo compartilhado</h3>
-                  <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                    {isOwnProfile ? 'Compartilhe seus resumos no feed para que apareçam aqui.' : 'Este usuário ainda não compartilhou resumos.'}
-                  </p>
-                </Card>
+
+                  {/* Sidebar column */}
+                  <div className="lg:col-span-4 space-y-6">
+                    {/* AI Insight card */}
+                    {prediction && (
+                      <div className="bg-[#005344] text-white p-5 sm:p-7 rounded-2xl shadow-xl relative overflow-hidden">
+                        <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+                        <div className="relative z-10">
+                          <div className="flex items-center gap-2.5 mb-5">
+                            <div className="bg-white/15 p-2 rounded-xl backdrop-blur-sm">
+                              <MI name="auto_awesome" fill className="text-[18px] text-[#9df3dc]" />
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#9df3dc]">Preceptor Insight</span>
+                          </div>
+                          <p className="text-sm sm:text-base font-medium leading-relaxed text-white/95 italic mb-3 sm:mb-4">
+                            {prediction.improving
+                              ? `"Você está em uma curva ascendente! Previsão: ~${prediction.predicted}% na próxima semana."`
+                              : `"Sua média recuou recentemente. Foque nos temas com mais erros para recuperar."`}
+                          </p>
+                          <p className="text-sm text-white/60 leading-relaxed mb-5">
+                            Média atual: <span className="text-white font-bold">{prediction.current}%</span>
+                            {prediction.improving && <> — meta: <span className="text-[#9df3dc] font-bold">{prediction.predicted}%</span></>}
+                          </p>
+                          <button
+                            onClick={() => navigate('/enamed')}
+                            className="w-full bg-white text-[#005344] py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#9df3dc] transition-all shadow-lg flex items-center justify-center gap-2"
+                          >
+                            Continuar Estudando
+                            <MI name="arrow_forward" className="text-[14px]" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Quick metrics */}
+                    <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200/60 space-y-5">
+                      <h4 className="font-['Manrope'] text-base font-bold text-[#191c1d]">Métricas Rápidas</h4>
+                      <div className="space-y-4">
+                        <QuickMetric icon={Target} label="Média Geral" value={`${overallStats.avg}%`} />
+                        <QuickMetric icon={TrendingUp} label="Tendência" value={`${overallStats.trend >= 0 ? '+' : ''}${overallStats.trend}%`} positive={overallStats.trend >= 0} />
+                        <QuickMetric icon={Brain} label="Questões Feitas" value={String(overallStats.total)} />
+                        <QuickMetric icon={Layers} label="Flashcards" value={String(flashcardCount)} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'atividades' && (
+                <section>
+                  {recentActivities.length === 0 ? (
+                    <div className="bg-white p-10 rounded-2xl shadow-sm border border-slate-200/60 text-center">
+                      <div className="h-14 w-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+                        <FileText className="h-7 w-7 text-slate-300" />
+                      </div>
+                      <h3 className="font-['Manrope'] text-base font-bold text-[#191c1d] mb-1">Nenhuma atividade</h3>
+                      <p className="text-sm text-[#6e7975]">Comece a estudar para ver seu histórico aqui.</p>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden divide-y divide-slate-100">
+                      {recentActivities.map((activity) => (
+                        <div key={activity.id} className="p-3 sm:p-5 flex items-center justify-between hover:bg-[#f8f9fa] transition-colors group cursor-pointer">
+                          <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
+                            <div className={`w-9 h-9 sm:w-12 sm:h-12 ${activity.bgColor} rounded-lg sm:rounded-xl flex items-center justify-center ${activity.color} shrink-0 group-hover:scale-105 transition-transform`}>
+                              <MI name={activity.icon} fill className="text-[18px] sm:text-[22px]" />
+                            </div>
+                            <div className="min-w-0">
+                              <h5 className="text-xs sm:text-sm font-bold text-[#191c1d] group-hover:text-[#006D5B] transition-colors truncate">{activity.title}</h5>
+                              <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5">
+                                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[#6e7975]">{activity.subtitle}</span>
+                                <div className="w-1 h-1 bg-slate-300 rounded-full" />
+                                <span className="text-[10px] sm:text-xs text-[#6e7975]">{formatDate(activity.date)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          {activity.score !== undefined && activity.total !== undefined && (
+                            <div className="text-right shrink-0 ml-2 sm:ml-4">
+                              <p className="text-base sm:text-lg font-extrabold text-[#006D5B] font-['Manrope']">
+                                {Math.round((activity.score / activity.total) * 100)}%
+                              </p>
+                              <p className="text-[9px] sm:text-[10px] text-[#6e7975] uppercase font-bold tracking-wider">Score</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+            </section>
+          )}
+
+          {/* Public posts tab for other profiles */}
+          {!isOwnProfile && (
+            <section>
+              <div className="flex items-center gap-2.5 mb-4 sm:mb-5">
+                <div className="w-1 sm:w-1.5 h-5 sm:h-6 bg-[#006D5B] rounded-full" />
+                <h3 className="font-['Manrope'] text-base sm:text-lg font-bold text-[#191c1d]">Resumos Públicos</h3>
+              </div>
+              {publicFechamentos.length === 0 ? (
+                <div className="bg-white p-10 rounded-2xl shadow-sm border border-slate-200/60 text-center">
+                  <div className="h-14 w-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+                    <FileText className="h-7 w-7 text-slate-300" />
+                  </div>
+                  <h3 className="font-['Manrope'] text-base font-bold text-[#191c1d] mb-1">Nenhum resumo compartilhado</h3>
+                  <p className="text-sm text-[#6e7975]">Este usuário ainda não compartilhou resumos.</p>
+                </div>
               ) : (
-                <div className="space-y-3">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden divide-y divide-slate-100">
                   {publicFechamentos.map((post) => (
-                    <Card key={post.id} className="p-4 bg-secondary/20 border-border/20 rounded-2xl hover:bg-secondary/30 transition-colors">
-                      <h3 className="font-semibold text-foreground text-sm">{post.fechamentos?.tema}</h3>
-                      <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">{post.content}</p>
-                    </Card>
+                    <div key={post.id} className="p-5 hover:bg-[#f8f9fa] transition-colors">
+                      <h5 className="text-sm font-bold text-[#191c1d]">{post.fechamentos?.tema}</h5>
+                      <p className="text-xs text-[#6e7975] mt-1 line-clamp-2 leading-relaxed">{post.content}</p>
+                    </div>
                   ))}
                 </div>
               )}
-            </TabsContent>
-          </Tabs>
-        </motion.div>
+            </section>
+          )}
+        </div>
       </div>
     </DashboardLayout>
   );
 };
 
-/* Reusable metric card */
-const MetricCard = ({ icon: Icon, label, value, color }: { icon: any; label: string; value: string; color: string }) => (
-  <Card className="p-3.5 border-border/20 rounded-2xl bg-secondary/20 hover:bg-secondary/30 transition-colors">
-    <div className="flex items-center gap-2 mb-2">
-      <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${color === 'primary' ? 'bg-primary/15' : color === 'destructive' ? 'bg-destructive/15' : 'bg-accent/15'}`}>
-        <Icon className={`h-3.5 w-3.5 ${color === 'primary' ? 'text-primary' : color === 'destructive' ? 'text-destructive' : 'text-accent'}`} />
-      </div>
-      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
+/* ─── Stat Card ─── */
+const StatCard = ({ label, value, badge, badgeColor }: { label: string; value: number; badge?: string; badgeColor?: string }) => (
+  <div className="bg-white p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200/60 hover:shadow-md transition-all">
+    <p className="text-[9px] sm:text-[11px] font-bold text-[#6e7975] uppercase tracking-widest mb-2 sm:mb-3">{label}</p>
+    <div className="flex items-baseline justify-between gap-1.5 sm:gap-2">
+      <h4 className="font-['Manrope'] text-xl sm:text-3xl font-extrabold text-[#006D5B]">{value}</h4>
+      {badge && (
+        <span className={`text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap ${badgeColor || 'bg-slate-100 text-slate-500'}`}>
+          {badge}
+        </span>
+      )}
     </div>
-    <p className={`text-xl font-bold ${color === 'destructive' ? 'text-destructive' : 'text-foreground'}`}>{value}</p>
-  </Card>
+  </div>
+);
+
+/* ─── Quick Metric ─── */
+const QuickMetric = ({ icon: Icon, label, value, positive }: { icon: any; label: string; value: string; positive?: boolean }) => (
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-3">
+      <div className="w-9 h-9 rounded-lg bg-[#c8eade]/50 flex items-center justify-center">
+        <Icon className="h-4 w-4 text-[#005344]" />
+      </div>
+      <span className="text-xs font-medium text-[#6e7975]">{label}</span>
+    </div>
+    <span className={`text-sm font-bold ${positive === false ? 'text-red-500' : 'text-[#191c1d]'}`}>{value}</span>
+  </div>
 );
 
 export default ProfilePage;

@@ -20,11 +20,30 @@ const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boole
   </span>
 );
 
-const sidebarNavItems = [
+interface NavItem {
+  icon: string;
+  label: string;
+  path: string;
+  matchPaths?: string[];
+  children?: { icon: string; label: string; path: string; matchPaths?: string[] }[];
+}
+
+const sidebarNavItems: NavItem[] = [
   { icon: 'dashboard', label: 'Início', path: '/menu' },
   { icon: 'auto_awesome', label: 'Estudo com IA', path: '/dashboard' },
-  { icon: 'shutter_speed', label: 'Simulações', path: '/exam', matchPaths: ['/exam', '/enamed', '/flashcards'] },
+  {
+    icon: 'shutter_speed', label: 'Simulações', path: '/exam',
+    matchPaths: ['/exam', '/enamed', '/flashcards'],
+    children: [
+      { icon: 'assignment', label: 'Simulação Normal', path: '/exam' },
+      { icon: 'medical_information', label: 'Caso Clínico', path: '/exam?mode=caso' },
+      { icon: 'history_edu', label: 'ENAMED', path: '/enamed' },
+      { icon: 'target', label: 'Simulado por Área', path: '/enamed?area=true', matchPaths: ['/enamed?area'] },
+      { icon: 'style', label: 'Flashcards', path: '/flashcards' },
+    ],
+  },
   { icon: 'library_books', label: 'Biblioteca', path: '/library' },
+  { icon: 'science', label: 'Curadoria Científica', path: '/scientific-studio' },
 ];
 
 const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayoutProps) => {
@@ -34,20 +53,42 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
 
   const isFreeUser = !hasAccess && !isAdmin;
   const userName = user?.email?.split('@')[0] || 'Estudante';
   const userInitial = userName.charAt(0).toUpperCase();
 
+  // Auto-expand submenu if currently on a child route
+  useEffect(() => {
+    sidebarNavItems.forEach(item => {
+      if (item.children && checkActive(item)) {
+        setExpandedMenu(item.path);
+      }
+    });
+  }, [location.pathname]);
+
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname, location.search]);
 
-  const checkActive = (item: typeof sidebarNavItems[0]) => {
+  const checkActive = (item: { path: string; matchPaths?: string[] }) => {
     if (item.matchPaths) {
       return item.matchPaths.some(p => location.pathname.startsWith(p));
     }
     return location.pathname === item.path;
+  };
+
+  const checkChildActive = (child: { path: string; matchPaths?: string[] }) => {
+    const childUrl = new URL(child.path, 'http://x');
+    const currentSearch = location.search;
+    if (child.matchPaths) {
+      return child.matchPaths.some(p => (location.pathname + location.search).includes(p));
+    }
+    if (childUrl.search) {
+      return location.pathname === childUrl.pathname && currentSearch === childUrl.search;
+    }
+    return location.pathname === childUrl.pathname && !currentSearch;
   };
 
   const sidebarContent = (
@@ -70,22 +111,69 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
       <nav className="flex-1 space-y-1 px-4">
         {sidebarNavItems.map((item) => {
           const active = checkActive(item);
+          const hasChildren = !!item.children;
+          const isExpanded = expandedMenu === item.path;
+
           return (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`relative w-full flex items-center gap-3 py-3 px-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                active
-                  ? 'text-white bg-white/15'
-                  : 'text-white/70 hover:text-white hover:bg-white/10 hover:translate-x-0.5'
-              }`}
-            >
-              {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full" />
+            <div key={item.path}>
+              <button
+                onClick={() => {
+                  if (hasChildren) {
+                    setExpandedMenu(isExpanded ? null : item.path);
+                  } else {
+                    navigate(item.path);
+                  }
+                }}
+                className={`relative w-full flex items-center gap-3 py-3 px-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  active
+                    ? 'text-white bg-white/15'
+                    : 'text-white/70 hover:text-white hover:bg-white/10 hover:translate-x-0.5'
+                }`}
+              >
+                {active && !hasChildren && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full" />
+                )}
+                <MI name={item.icon} fill={active} className="text-[22px]" />
+                <span className="flex-1 text-left">{item.label}</span>
+                {hasChildren && (
+                  <MI
+                    name="expand_more"
+                    className={`text-[20px] text-white/50 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                  />
+                )}
+              </button>
+
+              {/* Submenu */}
+              {hasChildren && (
+                <div
+                  className="overflow-hidden transition-all duration-250 ease-in-out"
+                  style={{
+                    maxHeight: isExpanded ? `${(item.children!.length) * 44}px` : '0px',
+                    opacity: isExpanded ? 1 : 0,
+                  }}
+                >
+                  <div className="ml-4 pl-4 border-l border-white/10 py-1 space-y-0.5">
+                    {item.children!.map((child) => {
+                      const childActive = checkChildActive(child);
+                      return (
+                        <button
+                          key={child.path}
+                          onClick={() => navigate(child.path)}
+                          className={`w-full flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
+                            childActive
+                              ? 'text-white bg-white/12'
+                              : 'text-white/55 hover:text-white hover:bg-white/8'
+                          }`}
+                        >
+                          <MI name={child.icon} fill={childActive} className="text-[18px]" />
+                          <span>{child.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
-              <MI name={item.icon} fill={active} className="text-[22px]" />
-              <span>{item.label}</span>
-            </button>
+            </div>
           );
         })}
 
