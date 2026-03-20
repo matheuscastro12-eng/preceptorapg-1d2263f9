@@ -1,88 +1,91 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Castro's PBL - Medical Dark Mode Design System
-   All colors in HSL format */
+/* PreceptorMED — Premium Minimalist Design System
+   Philosophy: Zinc neutrals. Medical green/teal as surgical accents only.
+   OLED-first dark mode. Pure white light mode.
+   Hierarchy through space, not borders.
+*/
 
 @layer base {
   :root {
-    /* Light mode (fallback, not primary) */
-    --background: 210 20% 98%;
-    --foreground: 210 40% 10%;
+    /* Light — pure white canvas */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 210 40% 10%;
+    --card-foreground: 240 10% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 210 40% 10%;
-    --primary: 168 76% 36%;
+    --popover-foreground: 240 10% 8%;
+    --primary: 168 70% 34%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 30% 92%;
-    --secondary-foreground: 210 40% 10%;
-    --muted: 210 20% 94%;
-    --muted-foreground: 210 15% 45%;
-    --accent: 200 80% 45%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 8% 18%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 48%;
+    --accent: 192 70% 38%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 210 20% 88%;
-    --input: 210 20% 88%;
-    --ring: 168 76% 36%;
-    --radius: 0.75rem;
-    
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 168 70% 34%;
+    --radius: 0.5rem;
+
     /* Medical accent colors */
-    --medical-green: 168 76% 36%;
-    --medical-blue: 210 90% 45%;
-    --medical-teal: 180 60% 40%;
-    
+    --medical-green: 168 70% 34%;
+    --medical-blue: 210 80% 42%;
+    --medical-teal: 192 70% 38%;
+
     /* Sidebar */
-    --sidebar-background: 210 25% 96%;
-    --sidebar-foreground: 210 40% 20%;
-    --sidebar-primary: 168 76% 36%;
+    --sidebar-background: 240 5% 98%;
+    --sidebar-foreground: 240 8% 20%;
+    --sidebar-primary: 168 70% 34%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 20% 92%;
-    --sidebar-accent-foreground: 210 40% 10%;
-    --sidebar-border: 210 20% 88%;
-    --sidebar-ring: 168 76% 36%;
+    --sidebar-accent: 240 5% 94%;
+    --sidebar-accent-foreground: 240 8% 12%;
+    --sidebar-border: 240 6% 92%;
+    --sidebar-ring: 168 70% 34%;
   }
 
   .dark {
-    /* Primary dark medical theme */
-    --background: 215 35% 7%;
-    --foreground: 210 20% 95%;
-    --card: 215 30% 10%;
-    --card-foreground: 210 20% 95%;
-    --popover: 215 30% 10%;
-    --popover-foreground: 210 20% 95%;
-    --primary: 168 76% 42%;
-    --primary-foreground: 215 35% 7%;
-    --secondary: 215 25% 15%;
-    --secondary-foreground: 210 20% 90%;
-    --muted: 215 25% 15%;
-    --muted-foreground: 210 15% 60%;
-    --accent: 200 80% 50%;
-    --accent-foreground: 215 35% 7%;
+    /* Dark — OLED black canvas */
+    --background: 240 10% 4%;
+    --foreground: 240 5% 93%;
+    --card: 240 10% 7%;
+    --card-foreground: 240 5% 93%;
+    --popover: 240 10% 7%;
+    --popover-foreground: 240 5% 93%;
+    --primary: 168 65% 40%;
+    --primary-foreground: 240 10% 4%;
+    --secondary: 240 8% 11%;
+    --secondary-foreground: 240 5% 85%;
+    --muted: 240 8% 11%;
+    --muted-foreground: 240 5% 52%;
+    --accent: 192 65% 43%;
+    --accent-foreground: 240 10% 4%;
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 215 25% 18%;
-    --input: 215 25% 18%;
-    --ring: 168 76% 42%;
-    
-    /* Medical accent colors - Dark */
-    --medical-green: 168 76% 42%;
-    --medical-blue: 200 80% 50%;
-    --medical-teal: 180 60% 45%;
-    
-    /* Sidebar - Dark */
-    --sidebar-background: 215 35% 9%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 168 76% 42%;
-    --sidebar-primary-foreground: 215 35% 7%;
-    --sidebar-accent: 215 25% 14%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 215 25% 15%;
-    --sidebar-ring: 168 76% 42%;
+    --border: 240 8% 14%;
+    --input: 240 8% 14%;
+    --ring: 168 65% 40%;
+
+    /* Medical accent colors — Dark */
+    --medical-green: 168 65% 40%;
+    --medical-blue: 200 72% 46%;
+    --medical-teal: 192 65% 43%;
+
+    /* Sidebar — Dark */
+    --sidebar-background: 240 10% 5%;
+    --sidebar-foreground: 240 5% 88%;
+    --sidebar-primary: 168 65% 40%;
+    --sidebar-primary-foreground: 240 10% 4%;
+    --sidebar-accent: 240 8% 10%;
+    --sidebar-accent-foreground: 240 5% 88%;
+    --sidebar-border: 240 8% 12%;
+    --sidebar-ring: 168 65% 40%;
   }
 }
 
@@ -91,59 +94,170 @@
     @apply border-border;
   }
 
-  html {
-    /* Theme is managed by next-themes */
-  }
-
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'DM Sans', 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    font-family: 'Manrope', 'DM Sans', system-ui, sans-serif;
+    letter-spacing: -0.025em;
   }
 }
 
+/* ── Google Stitch / Material Design 3 Classes ────────── */
+.glass-nav {
+  background-color: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  transition: box-shadow 0.3s ease, background-color 0.3s ease;
+}
+.glass-nav.scrolled {
+  background-color: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 4px 24px 0 rgba(44, 52, 52, 0.08);
+}
+.dark .glass-nav {
+  background-color: rgba(11, 15, 15, 0.88);
+}
+.dark .glass-nav.scrolled {
+  background-color: rgba(11, 15, 15, 0.96);
+}
+
+/* ── Stagger delays for list items ─────────────────────── */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.10s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.20s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.30s; }
+
+/* ── Premium button shimmer on hover ────────────────────── */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%);
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
+}
+.btn-shimmer:hover::after {
+  transform: translateX(100%);
+}
+
+/* ── Interactive card glow ring ─────────────────────────── */
+.card-interactive {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px 0 rgba(18, 107, 98, 0.10), 0 2px 8px 0 rgba(44, 52, 52, 0.06);
+}
+.card-interactive:active {
+  transform: translateY(0) scale(0.99);
+  box-shadow: 0 2px 8px 0 rgba(44, 52, 52, 0.06);
+}
+
+/* ── Sidebar link indicator ─────────────────────────────── */
+.sidebar-link-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: #126b62;
+  border-radius: 0 3px 3px 0;
+}
+
+/* ── Focus ring refinement ───────────────────────────────── */
+:focus-visible {
+  outline: 2px solid rgba(18, 107, 98, 0.5);
+  outline-offset: 2px;
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
 @layer utilities {
+  /* ── Gradients ─────────────────────────────────────── */
   .gradient-medical {
     background: linear-gradient(135deg, hsl(var(--medical-green)) 0%, hsl(var(--medical-blue)) 100%);
   }
-  
+
   .text-gradient-medical {
-    background: linear-gradient(135deg, hsl(var(--medical-green)) 0%, hsl(var(--medical-blue)) 100%);
+    background: linear-gradient(135deg, hsl(var(--medical-green)) 0%, hsl(var(--medical-teal)) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
-  .glow-medical {
-    box-shadow: 0 0 20px hsl(var(--medical-green) / 0.3);
+
+  /* Radial hero background — subtle, elegant */
+  .hero-radial {
+    background-image: radial-gradient(
+      ellipse 80% 60% at 50% -10%,
+      hsl(var(--primary) / 0.07) 0%,
+      transparent 70%
+    );
   }
 
-  /* Glass morphism */
+  /* ── Glassmorphism — contained, refined ────────────── */
   .glass {
-    background: hsl(var(--card) / 0.6);
-    backdrop-filter: blur(12px);
-    border: 1px solid hsl(var(--border) / 0.5);
+    background: hsl(var(--card) / 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
 
   .glass-strong {
-    background: hsl(var(--card) / 0.8);
-    backdrop-filter: blur(20px);
-    border: 1px solid hsl(var(--border) / 0.6);
+    background: hsl(var(--card) / 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.07);
   }
 
-  /* Glow effects */
+  /* Light mode glass override */
+  :root .glass {
+    border-color: hsl(var(--border) / 0.5);
+  }
+  :root .glass-strong {
+    border-color: hsl(var(--border) / 0.6);
+  }
+
+  /* ── Glow — surgical, not aggressive ───────────────── */
+  .glow-medical {
+    box-shadow: 0 0 16px hsl(var(--medical-green) / 0.18);
+  }
+
   .glow-primary {
-    box-shadow: 0 0 30px hsl(var(--primary) / 0.4), 0 0 60px hsl(var(--primary) / 0.2);
+    box-shadow: 0 0 24px hsl(var(--primary) / 0.2), 0 0 48px hsl(var(--primary) / 0.08);
   }
 
   .glow-accent {
-    box-shadow: 0 0 30px hsl(var(--accent) / 0.3);
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.18);
   }
 
-  /* Animated gradient border */
+  /* ── Gradient border (hover only) ──────────────────── */
   .gradient-border {
     position: relative;
     background: hsl(var(--card));
@@ -155,27 +269,36 @@
     position: absolute;
     inset: -1px;
     border-radius: inherit;
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.5), hsl(var(--accent) / 0.5));
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.35), hsl(var(--accent) / 0.35));
     z-index: -1;
-    opacity: 0.5;
-    transition: opacity 0.3s;
+    opacity: 0;
+    transition: opacity 0.25s ease;
   }
 
   .gradient-border:hover::before {
     opacity: 1;
   }
 
-  /* Floating animation */
+  /* ── Hover lift — subtle, Apple-like ───────────────── */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px -6px hsl(var(--foreground) / 0.08);
+  }
+
+  /* ── Animations ─────────────────────────────────────── */
   @keyframes float {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
+    50% { transform: translateY(-4px); }
   }
 
   .animate-float {
-    animation: float 3s ease-in-out infinite;
+    animation: float 4s ease-in-out infinite;
   }
 
-  /* Shimmer effect for loading */
   @keyframes shimmer {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
@@ -184,35 +307,25 @@
   .animate-shimmer {
     background: linear-gradient(
       90deg,
-      hsl(var(--muted) / 0.3) 25%,
-      hsl(var(--muted) / 0.5) 50%,
-      hsl(var(--muted) / 0.3) 75%
+      hsl(var(--muted) / 0.4) 25%,
+      hsl(var(--muted-foreground) / 0.08) 50%,
+      hsl(var(--muted) / 0.4) 75%
     );
     background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
+    animation: shimmer 1.8s infinite;
   }
 
-  /* Pulse glow */
+  /* Pulse glow — restrained */
   @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.3); }
-    50% { box-shadow: 0 0 40px hsl(var(--primary) / 0.5); }
+    0%, 100% { box-shadow: 0 0 12px hsl(var(--primary) / 0.18); }
+    50% { box-shadow: 0 0 24px hsl(var(--primary) / 0.30); }
   }
 
   .animate-pulse-glow {
-    animation: pulse-glow 2s ease-in-out infinite;
+    animation: pulse-glow 2.5s ease-in-out infinite;
   }
 
-  /* Button hover scale */
-  .hover-lift {
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-
-  .hover-lift:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 30px -10px hsl(var(--primary) / 0.3);
-  }
-
-  /* Typing cursor animation */
+  /* Typing cursor */
   @keyframes blink-cursor {
     0%, 100% { opacity: 1; }
     50% { opacity: 0; }
@@ -231,25 +344,25 @@
     font-size: 1em;
   }
 
-  /* Bouncing dots animation */
+  /* Bouncing dots */
   @keyframes typing-bounce {
-    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-    40% { transform: translateY(-6px); opacity: 1; }
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+    40% { transform: translateY(-5px); opacity: 1; }
   }
 
   .typing-dot {
     display: inline-block;
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background-color: hsl(var(--primary));
     animation: typing-bounce 1.4s infinite ease-in-out both;
   }
   .typing-dot:nth-child(1) { animation-delay: 0ms; }
-  .typing-dot:nth-child(2) { animation-delay: 160ms; }
-  .typing-dot:nth-child(3) { animation-delay: 320ms; }
+  .typing-dot:nth-child(2) { animation-delay: 150ms; }
+  .typing-dot:nth-child(3) { animation-delay: 300ms; }
 
-  /* Safe area insets for mobile */
+  /* ── Mobile utilities ───────────────────────────────── */
   .safe-area-top {
     padding-top: env(safe-area-inset-top);
   }
@@ -258,7 +371,6 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  /* Hide scrollbar for horizontal scroll on mobile */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -267,8 +379,51 @@
     display: none;
   }
 
-  /* Touch feedback */
   .touch-highlight {
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ── Fade-up entrance animation ───────────────────────── */
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-up {
+    animation: fade-up 0.5s ease-out forwards;
+    opacity: 0;
+  }
+
+  /* ── Slide-in from left (sidebar mobile) ──────────────── */
+  @keyframes slide-in-left {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+  }
+
+  .animate-slide-in-left {
+    animation: slide-in-left 0.25s ease-out forwards;
+  }
+
+  /* ── Scale-up entrance ────────────────────────────────── */
+  @keyframes scale-up {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-scale-up {
+    animation: scale-up 0.35s ease-out forwards;
+    opacity: 0;
   }
 }

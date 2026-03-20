@@ -14,8 +14,8 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Camera, Edit2, Save, X, Users, FileText, Star, MapPin, GraduationCap, UserPlus, UserMinus, MessageCircle, TrendingUp, Target, Brain, BookOpen, Calendar, BarChart3, Layers, Award, Flame, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
@@ -230,25 +230,23 @@ const ProfilePage = () => {
   if (!profile) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Perfil não encontrado</div>;
 
   return (
-    <PageTransition className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80">
-        <div className="container flex h-14 items-center justify-between px-4 max-w-2xl">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-1.5 text-muted-foreground hover:text-foreground">
+    <DashboardLayout mainClassName="pb-12 px-4 sm:px-8">
+      <div className="max-w-2xl mx-auto">
+        {/* In-content toolbar */}
+        <div className="flex items-center justify-between mb-6">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-emerald-700 transition-colors">
             <ArrowLeft className="h-4 w-4" /> Voltar
-          </Button>
-          <span className="text-sm font-semibold text-foreground">Perfil</span>
+          </button>
+          <span className="text-sm font-semibold text-slate-700">Perfil</span>
           {isOwnProfile && !editing ? (
-            <Button variant="ghost" size="sm" onClick={() => setEditing(true)} className="gap-1.5 text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="sm" onClick={() => setEditing(true)} className="gap-1.5 text-slate-400 hover:text-slate-700 text-xs">
               <Edit2 className="h-3.5 w-3.5" /> Editar
             </Button>
           ) : (
             <div className="w-20" />
           )}
         </div>
-      </header>
 
-      <main className="container max-w-2xl px-4 pb-12">
         {/* Hero Banner */}
         <div className="relative -mx-4 overflow-hidden">
           <div className="h-28 sm:h-36 bg-gradient-to-br from-primary/20 via-accent/10 to-primary/5" />
@@ -498,8 +496,8 @@ const ProfilePage = () => {
             </TabsContent>
           </Tabs>
         </motion.div>
-      </main>
-    </PageTransition>
+      </div>
+    </DashboardLayout>
   );
 };
 

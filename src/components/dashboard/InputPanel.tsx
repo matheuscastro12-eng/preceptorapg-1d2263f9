@@ -1,10 +1,6 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import GenerationProgress from '@/components/GenerationProgress';
-import ModeToggle, { type GenerationMode } from './ModeToggle';
-import { Loader2, Sparkles, Brain, Target, Lightbulb, Presentation, AlertTriangle, Timer } from 'lucide-react';
+import type { GenerationMode } from './ModeToggle';
+import { Loader2 } from 'lucide-react';
 
 interface InputPanelProps {
   tema: string;
@@ -21,168 +17,149 @@ interface InputPanelProps {
   cooldown?: boolean;
 }
 
+const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
+  <span
+    className={`material-symbols-outlined ${className}`}
+    style={{ fontVariationSettings: fill ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" : undefined }}
+  >
+    {name}
+  </span>
+);
+
 const MAX_TEMA_LENGTH = 500;
 const MAX_OBJETIVOS_LENGTH = 2000;
 
-const InputPanel = ({
-  tema,
-  setTema,
-  objetivos,
-  setObjetivos,
-  modo,
-  setModo,
-  generating,
-  hasStartedReceiving,
-  isComplete,
-  onGenerate,
-  canGenerate = true,
-  cooldown = false,
-}: InputPanelProps) => {
-  const suggestions = [
-    'Insuficiência Cardíaca',
-    'Diabetes Mellitus Tipo 2',
-    'Hipertensão Arterial',
-    'TDAH',
-  ];
+const suggestions = ['Insuficiência Cardíaca', 'Diabetes Mellitus Tipo 2', 'Hipertensão Arterial', 'TDAH'];
 
+const InputPanel = ({
+  tema, setTema, objetivos, setObjetivos,
+  modo, setModo, generating, hasStartedReceiving,
+  isComplete, onGenerate, canGenerate = true, cooldown = false,
+}: InputPanelProps) => {
   const isSeminario = modo === 'seminario';
 
   return (
-    <div className="relative rounded-2xl border border-border/30 bg-card p-6 flex flex-col overflow-hidden">
-      {/* Decorative gradient */}
-      <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${isSeminario ? 'from-accent/10' : 'from-primary/10'} to-transparent rounded-bl-full pointer-events-none transition-colors duration-500`} />
-      
-      <div className="flex items-center gap-3 mb-5 relative">
-        <div className={`rounded-xl bg-gradient-to-br ${isSeminario ? 'from-accent/20 to-accent/5 ring-accent/20' : 'from-primary/20 to-primary/5 ring-primary/20'} p-2.5 ring-1 transition-colors duration-500`}>
-          {isSeminario ? (
-            <Presentation className="h-5 w-5 text-accent" />
-          ) : (
-            <Brain className="h-5 w-5 text-primary" />
-          )}
-        </div>
-        <div>
-           <h2 className="text-lg font-semibold">
-            {isSeminario ? 'Roteiro de Seminário' : 'Novo Resumo'}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {isSeminario 
-              ? 'Crie slides com script e clinical pearls'
-              : 'Crie conteúdo educacional com IA'}
-          </p>
-        </div>
-      </div>
-
+    <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-[0_12px_40px_rgba(25,28,29,0.06)] border border-slate-100/60 hover:shadow-[0_16px_48px_rgba(25,28,29,0.08)] transition-shadow duration-500">
       {/* Mode Toggle */}
-      <div className="mb-5 relative" data-tour="mode-toggle">
-        <ModeToggle mode={modo} onChange={setModo} disabled={generating} />
+      <div className="flex p-1 bg-[#f3f4f5] rounded-xl w-fit mb-10" data-tour="mode-toggle">
+        {[
+          { mode: 'fechamento' as GenerationMode, label: 'Resumo', icon: 'description' },
+          { mode: 'seminario' as GenerationMode, label: 'Seminário', icon: 'slideshow' },
+        ].map(({ mode, label, icon }) => (
+          <button
+            key={mode}
+            onClick={() => setModo(mode)}
+            disabled={generating}
+            className={`flex items-center gap-2 px-6 sm:px-8 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 disabled:opacity-50 ${
+              modo === mode
+                ? 'bg-white text-[#005344] shadow-sm scale-[1.02]'
+                : 'text-[#3e4945] hover:text-[#191c1d]'
+            }`}
+          >
+            <MI name={icon} className="text-[18px]" />
+            {label}
+          </button>
+        ))}
       </div>
 
-      <div className="space-y-5 flex-1 relative">
-        <div className="space-y-2.5" data-tour="tema-input">
-          <Label htmlFor="tema" className="text-sm font-medium flex items-center gap-2">
-            <Target className="h-3.5 w-3.5 text-primary" />
-            Tema Central <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="tema"
-            placeholder="Ex: Insuficiência Cardíaca Congestiva"
-            value={tema}
-            onChange={(e) => setTema(e.target.value.slice(0, MAX_TEMA_LENGTH))}
-            maxLength={MAX_TEMA_LENGTH}
-            disabled={generating}
-            className="h-12 bg-background/60 border-border/40 focus:border-primary/60 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/50"
-          />
-          {tema.length > MAX_TEMA_LENGTH * 0.8 && (
-            <p className="text-[10px] text-muted-foreground text-right">{tema.length}/{MAX_TEMA_LENGTH}</p>
-          )}
-          
-          {/* Quick suggestions */}
+      <div className="space-y-8">
+        {/* Tema Central */}
+        <div data-tour="tema-input">
+          <label className="flex items-center gap-2 text-sm font-bold text-[#191c1d] mb-3 tracking-tight">
+            <MI name="subject" className="text-[18px] text-[#006D5B]" />
+            Tema Central
+          </label>
+          <div className="relative group">
+            <input
+              type="text"
+              placeholder="Ex: Insuficiência Cardíaca Congestiva"
+              value={tema}
+              onChange={(e) => setTema(e.target.value.slice(0, MAX_TEMA_LENGTH))}
+              disabled={generating}
+              className="w-full px-6 py-4 bg-[#f3f4f5] border-2 border-transparent rounded-xl text-[#191c1d] placeholder:text-[#6e7975]/60 focus:outline-none focus:border-[#006D5B]/30 focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,109,91,0.06)] transition-all duration-300 text-lg font-medium disabled:opacity-50"
+            />
+            <MI name="edit_note" className="absolute right-4 top-1/2 -translate-y-1/2 text-[#005344]/30 text-[22px] group-hover:text-[#005344]/50 transition-colors duration-200" />
+          </div>
+
+          {/* Quick chips */}
           {!tema && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {suggestions.map((suggestion) => (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {suggestions.map((s, i) => (
                 <button
-                  key={suggestion}
-                  onClick={() => setTema(suggestion)}
+                  key={s}
+                  onClick={() => setTema(s)}
                   disabled={generating}
-                  className="px-3 py-1 text-xs rounded-full bg-secondary/60 hover:bg-primary/20 hover:text-primary border border-border/30 transition-all disabled:opacity-50"
+                  type="button"
+                  style={{ animationDelay: `${i * 0.05}s` }}
+                  className="animate-fade-up px-4 py-1.5 rounded-full bg-[#edeeef] border border-[#bec9c4]/20 text-xs font-semibold text-[#3e4945] hover:bg-[#006d5b]/10 hover:text-[#005344] hover:border-[#006d5b]/20 hover:scale-105 transition-all duration-200 active:scale-95 disabled:opacity-40"
                 >
-                  {suggestion}
+                  {s}
                 </button>
               ))}
             </div>
           )}
+
+          {tema.length > MAX_TEMA_LENGTH * 0.8 && (
+            <p className="text-[10px] text-[#6e7975] text-right mt-1">{tema.length}/{MAX_TEMA_LENGTH}</p>
+          )}
         </div>
-        
-        <div className="space-y-2.5 flex-1" data-tour="objetivos-input">
-          <Label htmlFor="objetivos" className="text-sm font-medium flex items-center gap-2">
-            <Lightbulb className="h-3.5 w-3.5 text-accent" />
-            Objetivos 
-            <span className="text-muted-foreground text-xs font-normal">(opcional)</span>
-          </Label>
-          <Textarea
-            id="objetivos"
+
+        {/* Objetivos */}
+        <div data-tour="objetivos-input">
+          <label className="flex items-center gap-2 text-sm font-bold text-[#191c1d] mb-3 tracking-tight">
+            <MI name="target" className="text-[18px] text-[#006D5B]" />
+            Objetivos <span className="text-[#6e7975] font-normal">(opcional)</span>
+          </label>
+          <textarea
             placeholder={isSeminario
-              ? "Ex: Focar na fisiopatologia e tratamento farmacológico para apresentação de 20 minutos..."
-              : "Ex: Compreender a fisiopatologia, identificar sinais e sintomas, entender o tratamento..."
-            }
+              ? "Adicione focos específicos, como 'Critérios de Framingham' ou 'Manejo na Emergência'..."
+              : "Adicione focos específicos, como 'Critérios de Framingham' ou 'Manejo na Emergência'..."}
             value={objetivos}
             onChange={(e) => setObjetivos(e.target.value.slice(0, MAX_OBJETIVOS_LENGTH))}
-            maxLength={MAX_OBJETIVOS_LENGTH}
             disabled={generating}
-            className="min-h-[140px] resize-none bg-background/60 border-border/40 focus:border-primary/60 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/50"
+            rows={4}
+            className="w-full px-6 py-4 bg-[#f3f4f5] border-2 border-transparent rounded-xl text-[#191c1d] placeholder:text-[#6e7975]/60 focus:outline-none focus:border-[#006D5B]/30 focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,109,91,0.06)] transition-all duration-300 font-medium resize-none disabled:opacity-50"
           />
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-[10px] text-muted-foreground/60 leading-tight flex items-center gap-1">
-              <AlertTriangle className="h-3 w-3 shrink-0" />
-              Restrinja-se a objetivos médicos/acadêmicos. Conteúdos fora do escopo biomédico serão ignorados.
-            </p>
-            {objetivos.length > MAX_OBJETIVOS_LENGTH * 0.5 && (
-              <p className="text-[10px] text-muted-foreground shrink-0">{objetivos.length}/{MAX_OBJETIVOS_LENGTH}</p>
-            )}
-          </div>
         </div>
-      </div>
 
-      <div className="space-y-4 mt-6 relative" data-tour="generate-btn">
-        <Button 
-          className={`w-full h-12 text-base font-semibold shadow-lg transition-all duration-300 group ${
-            isSeminario
-              ? 'bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent/70 shadow-accent/20 hover:shadow-accent/30'
-              : 'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-primary/20 hover:shadow-primary/30'
-          }`}
-          onClick={onGenerate}
-          disabled={!canGenerate}
-        >
+        {/* Generate Button */}
+        <div className="pt-4" data-tour="generate-btn">
+          <button
+            onClick={onGenerate}
+            disabled={!canGenerate}
+            className="btn-shimmer relative overflow-hidden w-full py-5 rounded-xl font-['Manrope'] font-bold text-lg text-white flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 hover:shadow-xl hover:-translate-y-0.5 group"
+            style={{ background: canGenerate ? 'linear-gradient(135deg, #005344 0%, #006d5b 100%)' : 'linear-gradient(135deg, #6b8f8c, #4a6e6b)' }}
+          >
+            {generating ? (
+              <><Loader2 className="h-5 w-5 animate-spin" />{isSeminario ? 'Gerando roteiro...' : 'Gerando conteúdo...'}</>
+            ) : cooldown ? (
+              <><MI name="timer" className="text-[20px]" />Aguarde antes de gerar novamente...</>
+            ) : (
+              <>
+                <MI name="bolt" fill className="text-[22px] group-hover:scale-110 transition-transform duration-200" />
+                {isSeminario ? 'Gerar Roteiro de Slides' : 'Gerar Resumo'}
+                <MI name="arrow_forward" className="text-[18px] opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
+              </>
+            )}
+          </button>
+
           {generating ? (
-            <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              {isSeminario ? 'Gerando roteiro...' : 'Gerando conteúdo...'}
-            </>
-          ) : cooldown ? (
-            <>
-              <Timer className="mr-2 h-5 w-5" />
-              Aguarde antes de gerar novamente...
-            </>
+            <div className="mt-3">
+              <p className="text-[10px] text-[#6e7975] text-center mb-2">
+                Não feche ou atualize a página durante a geração.
+              </p>
+              <GenerationProgress
+                isGenerating={generating}
+                hasStartedReceiving={hasStartedReceiving}
+                isComplete={isComplete}
+              />
+            </div>
           ) : (
-            <>
-              <Sparkles className="mr-2 h-5 w-5 group-hover:animate-pulse" />
-              {isSeminario ? 'Gerar Roteiro de Slides' : 'Gerar Resumo'}
-            </>
+            <p className="text-center text-[10px] text-[#6e7975] mt-4 font-medium uppercase tracking-widest">
+              Tempo estimado de geração: 30 segundos
+            </p>
           )}
-        </Button>
-
-        {generating && (
-          <p className="text-[10px] text-destructive/70 text-center flex items-center justify-center gap-1">
-            <AlertTriangle className="h-3 w-3" />
-            Não feche ou atualize a página durante a geração.
-          </p>
-        )}
-
-        <GenerationProgress 
-          isGenerating={generating}
-          hasStartedReceiving={hasStartedReceiving}
-          isComplete={isComplete}
-        />
+        </div>
       </div>
     </div>
   );

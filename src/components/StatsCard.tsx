@@ -10,55 +10,40 @@ interface StatsCardProps {
 }
 
 const StatsCard = ({ title, value, icon: Icon, variant = 'default', loading }: StatsCardProps) => {
-  const variants = {
-    default: 'from-secondary/80 to-secondary/40 border-border/50',
-    primary: 'from-primary/20 to-primary/5 border-primary/30',
-    accent: 'from-accent/20 to-accent/5 border-accent/30',
-  };
-
-  const iconVariants = {
+  const accentColors = {
     default: 'text-muted-foreground',
     primary: 'text-primary',
     accent: 'text-accent',
   };
 
+  const borderAccent = {
+    default: '',
+    primary: 'border-l-2 border-l-primary',
+    accent: 'border-l-2 border-l-accent',
+  };
+
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-xl border bg-gradient-to-br p-4 backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-lg',
-        variants[variant]
+        'group relative rounded-lg border border-border/60 bg-card p-5 transition-all duration-200 hover:border-border hover:shadow-card',
+        borderAccent[variant]
       )}
     >
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1.5 min-w-0">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest truncate">
             {title}
           </p>
           {loading ? (
-            <div className="h-8 w-12 animate-pulse rounded bg-muted/50" />
+            <div className="h-7 w-14 animate-pulse rounded bg-muted" />
           ) : (
-            <p className="text-2xl font-bold tracking-tight">{value}</p>
+            <p className="text-2xl font-bold tracking-tightest tabular-nums">{value}</p>
           )}
         </div>
-        <div
-          className={cn(
-            'rounded-lg bg-background/50 p-2.5 backdrop-blur-sm',
-            iconVariants[variant]
-          )}
-        >
-          <Icon className="h-5 w-5" />
+        <div className={cn('shrink-0 mt-0.5', accentColors[variant])}>
+          <Icon className="h-4.5 w-4.5 opacity-70 group-hover:opacity-100 transition-opacity" strokeWidth={1.5} />
         </div>
       </div>
-      
-      {/* Decorative gradient orb */}
-      <div
-        className={cn(
-          'absolute -right-4 -top-4 h-16 w-16 rounded-full opacity-20 blur-2xl',
-          variant === 'primary' && 'bg-primary',
-          variant === 'accent' && 'bg-accent',
-          variant === 'default' && 'bg-muted-foreground'
-        )}
-      />
     </div>
   );
 };

@@ -4,18 +4,16 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Send, Trash2, Bot, User, Copy, FileDown, Check } from 'lucide-react';
-import logoPreceptor from '@/assets/logo-preceptor.png';
+import { Send, Trash2, User, Copy, FileDown, Check } from 'lucide-react';
 import logoIcon from '@/assets/logo-icon.png';
 import { useToast } from '@/hooks/use-toast';
 import { exportToPDF } from '@/utils/pdfExport';
 import { motion, AnimatePresence } from 'framer-motion';
-import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import UpgradePaywall from '@/components/UpgradePaywall';
 import { useDemoLimit } from '@/hooks/useDemoLimit';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 
 interface ChatMessage {
   id: string;
@@ -74,7 +72,6 @@ const AIChat = () => {
   }, [messages]);
 
   const streamChat = async (userMessage: string) => {
-    // Check demo limit before sending
     if (!isSubscriber && hasReachedLimit) return;
 
     const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: userMessage };
@@ -84,7 +81,6 @@ const AIChat = () => {
     setIsStreaming(true);
     setInput('');
 
-    // Increment usage BEFORE sending (optimistic)
     if (!isSubscriber) {
       incrementUsage();
     }
@@ -150,7 +146,6 @@ const AIChat = () => {
       }
     } catch (e: unknown) {
       if (e instanceof Error && e.name === 'AbortError') return;
-      console.error('Chat error:', e);
       const message = e instanceof Error ? e.message : 'Erro ao processar sua pergunta. Tente novamente.';
       setMessages(prev => [
         ...prev.filter(m => m.id !== assistantId),
@@ -189,73 +184,63 @@ const AIChat = () => {
   const isEmpty = messages.length === 0;
 
   return (
-    <PageTransition className="h-screen bg-background flex flex-col overflow-hidden">
-      {/* Header */}
-      <header className="shrink-0 border-b border-border/20 backdrop-blur-xl bg-background/90 z-10">
-        <div className="container flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/menu')} className="gap-1">
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Menu</span>
-            </Button>
+    <DashboardLayout mainClassName="h-[calc(100vh-4rem)] flex flex-col overflow-hidden" hideFooter>
+      {/* Toolbar */}
+      <div className="shrink-0 flex items-center justify-between px-4 sm:px-6 py-3 border-b border-slate-100 bg-white">
+        <div className="flex items-center gap-2">
+          <img src={logoIcon} alt="PreceptorMED" className="h-7 w-7" />
+          <div>
+            <span className="font-bold text-emerald-900 text-sm" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+              PreceptorMED <span style={{ color: '#126b62' }}>Chat</span>
+            </span>
+            <span className="text-[10px] text-slate-400 block leading-none">Assistente Acadêmico</span>
           </div>
-          <div className="flex items-center gap-2">
-            <img src={logoIcon} alt="PreceptorMED" className="h-8 w-8" />
-            <div>
-              <span className="font-bold text-foreground text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                Preceptor<span className="text-primary">MED</span>
-              </span>
-              <span className="text-[10px] text-muted-foreground block leading-none">Chat Acadêmico</span>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearChat}
-            className="text-muted-foreground hover:text-destructive gap-1"
-            disabled={isEmpty && !isStreaming}
-          >
-            <Trash2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Limpar</span>
-          </Button>
         </div>
-      </header>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={clearChat}
+          className="text-slate-400 hover:text-red-500 gap-1.5 text-xs"
+          disabled={isEmpty && !isStreaming}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Limpar conversa</span>
+        </Button>
+      </div>
 
-      {/* Demo banner for non-subscribers */}
+      {/* Demo banner */}
       {!isSubscriber && !hasReachedLimit && (
         <UpgradePaywall variant="banner" remainingPrompts={remainingPrompts} dailyLimit={dailyLimit} />
       )}
 
-      {/* Messages Area */}
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto">
         {hasReachedLimit && !isSubscriber ? (
-          /* Paywall when limit reached */
           <div className="h-full flex items-center justify-center px-4">
             <UpgradePaywall variant="chat-limit" remainingPrompts={remainingPrompts} dailyLimit={dailyLimit} />
           </div>
         ) : isEmpty ? (
-          /* Welcome Screen */
           <div className="h-full flex flex-col items-center justify-center px-4 py-8">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.4 }}
               className="text-center max-w-lg"
             >
-              <img src={logoIcon} alt="PreceptorMED" className="h-16 w-16 mx-auto mb-5" />
-              <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
-                Olá! Sou o <span className="text-primary">PreceptorMED</span>
+              <img src={logoIcon} alt="PreceptorMED" className="h-14 w-14 mx-auto mb-5" />
+              <h2 className="text-xl sm:text-2xl font-bold text-emerald-900 mb-2" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                Olá! Sou o <span style={{ color: '#126b62' }}>PreceptorMED</span>
               </h2>
-              <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
-                Seu assistente acadêmico de medicina com a mesma profundidade dos fechamentos de PBL. 
-                Pergunte qualquer coisa — de bioquímica molecular a raciocínio clínico.
+              <p className="text-sm text-slate-500 mb-8 leading-relaxed">
+                Seu assistente acadêmico de medicina. Pergunte qualquer coisa — de bioquímica molecular a raciocínio clínico.
               </p>
 
               {!isSubscriber && (
-                <div className="mb-6 p-3 rounded-xl bg-primary/5 border border-primary/20">
-                  <p className="text-xs text-muted-foreground">
-                    🎁 <span className="font-medium text-foreground">Modo Demonstração</span> — Você tem <span className="font-bold text-primary">{remainingPrompts}</span> perguntas grátis hoje.
-                    <button onClick={() => navigate('/pricing')} className="text-primary hover:underline ml-1">Assine para ilimitado →</button>
+                <div className="mb-6 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                  <p className="text-xs text-slate-500">
+                    🎁 <span className="font-medium text-slate-700">Modo Demonstração</span> — Você tem{' '}
+                    <span className="font-bold" style={{ color: '#126b62' }}>{remainingPrompts}</span> perguntas grátis hoje.{' '}
+                    <button onClick={() => navigate('/pricing')} className="font-semibold hover:underline" style={{ color: '#126b62' }}>Assine para ilimitado →</button>
                   </p>
                 </div>
               )}
@@ -268,7 +253,7 @@ const AIChat = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 + i * 0.05 }}
                     onClick={() => streamChat(s)}
-                    className="text-left p-3 rounded-xl border border-border/40 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/30 transition-all text-xs text-muted-foreground hover:text-foreground leading-relaxed"
+                    className="text-left p-3 rounded-xl border border-slate-100 bg-white hover:bg-emerald-50 hover:border-emerald-200 transition-all text-xs text-slate-500 hover:text-slate-700 leading-relaxed shadow-sm"
                   >
                     {s}
                   </motion.button>
@@ -277,8 +262,7 @@ const AIChat = () => {
             </motion.div>
           </div>
         ) : (
-          /* Chat Messages */
-          <div className="container max-w-3xl px-4 py-4 space-y-4">
+          <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
             <AnimatePresence initial={false}>
               {messages.map(m => (
                 <motion.div
@@ -295,48 +279,32 @@ const AIChat = () => {
                   )}
                   <div className={`max-w-[85%] sm:max-w-[75%] group/msg ${
                     m.role === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3'
-                      : 'bg-secondary/30 border border-border/30 rounded-2xl rounded-bl-md px-4 py-3'
-                  }`}>
+                      ? 'px-4 py-3 rounded-2xl rounded-br-md text-white text-sm'
+                      : 'bg-white border border-slate-100 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm'
+                  }`} style={m.role === 'user' ? { background: 'linear-gradient(135deg, #126b62, #005e56)' } : {}}>
                     {m.role === 'assistant' ? (
                       <>
                         {!m.content && isStreaming && m.id === messages[messages.length - 1]?.id && (
-                          <div className="flex items-center gap-3 py-3 px-2">
-                            <div className="relative flex items-center gap-1">
-                              <span className="h-2 w-2 rounded-full bg-primary animate-[wave_1.2s_ease-in-out_infinite]" />
-                              <span className="h-2 w-2 rounded-full bg-primary animate-[wave_1.2s_ease-in-out_0.2s_infinite]" />
-                              <span className="h-2 w-2 rounded-full bg-primary animate-[wave_1.2s_ease-in-out_0.4s_infinite]" />
-                            </div>
-                            <div className="relative overflow-hidden rounded-md">
-                              <span className="text-xs text-muted-foreground">Elaborando resposta</span>
-                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent animate-[shimmer_2s_infinite]" />
-                            </div>
+                          <div className="flex items-center gap-2 py-2 px-1">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-[wave_1.2s_ease-in-out_infinite]" />
+                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-[wave_1.2s_ease-in-out_0.2s_infinite]" />
+                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-[wave_1.2s_ease-in-out_0.4s_infinite]" />
+                            <span className="text-xs text-slate-400 ml-1">Elaborando resposta</span>
                           </div>
                         )}
                         {m.content && (
-                          <div id={`msg-${m.id}`} className={`prose prose-sm dark:prose-invert max-w-none text-sm ${isStreaming && m.id === messages[messages.length - 1]?.id ? 'typing-cursor' : ''}`}>
+                          <div id={`msg-${m.id}`} className="prose prose-sm max-w-none text-sm prose-headings:text-emerald-900 prose-a:text-emerald-700">
                             <MarkdownRenderer content={m.content} isTyping={isStreaming && m.id === messages[messages.length - 1]?.id} />
                           </div>
                         )}
                         {m.content && !(isStreaming && m.id === messages[messages.length - 1]?.id) && (
-                          <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/20 opacity-0 group-hover/msg:opacity-100 transition-opacity">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
-                              onClick={() => handleCopy(m)}
-                            >
+                          <div className="flex items-center gap-1 mt-2 pt-2 border-t border-slate-100 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-slate-400 hover:text-slate-700 gap-1" onClick={() => handleCopy(m)}>
                               {copiedId === m.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                               {copiedId === m.id ? 'Copiado' : 'Copiar'}
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
-                              onClick={() => handlePDF(m)}
-                            >
-                              <FileDown className="h-3 w-3" />
-                              PDF
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-slate-400 hover:text-slate-700 gap-1" onClick={() => handlePDF(m)}>
+                              <FileDown className="h-3 w-3" /> PDF
                             </Button>
                           </div>
                         )}
@@ -346,8 +314,8 @@ const AIChat = () => {
                     )}
                   </div>
                   {m.role === 'user' && (
-                    <div className="shrink-0 h-8 w-8 rounded-lg bg-muted flex items-center justify-center mt-1">
-                      <User className="h-4 w-4 text-muted-foreground" />
+                    <div className="shrink-0 h-8 w-8 rounded-lg bg-emerald-50 flex items-center justify-center mt-1">
+                      <User className="h-4 w-4 text-emerald-600" />
                     </div>
                   )}
                 </motion.div>
@@ -358,16 +326,16 @@ const AIChat = () => {
         )}
       </div>
 
-      {/* Input Area - disabled when limit reached */}
-      <div className="shrink-0 border-t border-border/20 bg-background/90 backdrop-blur-xl p-3 sm:p-4">
-        <div className="container max-w-3xl flex gap-2 items-end">
+      {/* Input */}
+      <div className="shrink-0 border-t border-slate-100 bg-white p-3 sm:p-4">
+        <div className="max-w-3xl mx-auto flex gap-2 items-end">
           <Textarea
             ref={textareaRef}
-            placeholder={hasReachedLimit && !isSubscriber ? "Limite diário atingido — assine para continuar" : "Pergunte sobre qualquer tema médico..."}
+            placeholder={hasReachedLimit && !isSubscriber ? 'Limite diário atingido — assine para continuar' : 'Pergunte sobre qualquer tema médico...'}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 min-h-[44px] max-h-[120px] resize-none text-sm"
+            className="flex-1 min-h-[44px] max-h-[120px] resize-none text-sm border-slate-200"
             rows={1}
             disabled={isStreaming || (hasReachedLimit && !isSubscriber)}
           />
@@ -376,15 +344,16 @@ const AIChat = () => {
             disabled={!input.trim() || isStreaming || (hasReachedLimit && !isSubscriber)}
             size="icon"
             className="shrink-0 h-11 w-11 rounded-xl"
+            style={{ background: 'linear-gradient(135deg, #126b62, #005e56)' }}
           >
             <Send className="h-4 w-4" />
           </Button>
         </div>
-        <p className="text-center text-[10px] text-muted-foreground/50 mt-2">
+        <p className="text-center text-[10px] text-slate-300 mt-2">
           PreceptorMED é uma ferramenta educacional. Sempre valide com fontes primárias.
         </p>
       </div>
-    </PageTransition>
+    </DashboardLayout>
   );
 };
 

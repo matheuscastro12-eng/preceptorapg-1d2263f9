@@ -1,12 +1,10 @@
 import { useState } from 'react';
-import PageTransition from '@/components/PageTransition';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { ArrowLeft, Sparkles, Download, Loader2, Play, Layers, Network } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import FechamentoLibrary from '@/components/FechamentoLibrary';
 import type { Fechamento } from '@/components/FechamentoLibrary';
-import ProfileDropdown from '@/components/ProfileDropdown';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import ContextChat from '@/components/ContextChat';
@@ -14,11 +12,12 @@ import { useToast } from '@/hooks/use-toast';
 import { exportToPDF } from '@/utils/pdfExport';
 import { supabase } from '@/integrations/supabase/client';
 import { lazy, Suspense } from 'react';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 
 const MindMapView = lazy(() => import('@/components/mindmap/MindMapView'));
 
 const Library = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedFechamento, setSelectedFechamento] = useState<Fechamento | null>(null);
@@ -36,18 +35,14 @@ const Library = () => {
       if (!contentElement) throw new Error('Content not found');
       await exportToPDF({ tema: selectedFechamento.tema, contentElement });
       toast({ title: 'PDF exportado!', description: 'O resumo foi salvo como PDF.' });
-    } catch (error) {
-      console.error('PDF export error:', error);
+    } catch {
       toast({ title: 'Erro ao exportar', description: 'Não foi possível exportar o PDF.', variant: 'destructive' });
-    } finally {
-      setExporting(false);
-    }
+    } finally { setExporting(false); }
   };
 
   const handleGoToExam = () => {
     if (!selectedFechamento) return;
-    const mode = selectedFechamento.tipo === 'caso_clinico' ? 'caso_clinico' : 'prova';
-    navigate(`/exam?mode=${mode}`);
+    navigate(`/exam?mode=${selectedFechamento.tipo === 'caso_clinico' ? 'caso_clinico' : 'prova'}`);
   };
 
   const handleGenerateFlashcards = async () => {
@@ -56,114 +51,78 @@ const Library = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Sessão expirada');
-
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-flashcards`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            content: selectedFechamento.resultado,
-            source_id: selectedFechamento.id,
-            source_type: 'resumo',
-          }),
-        }
+        { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ content: selectedFechamento.resultado, source_id: selectedFechamento.id, source_type: 'resumo' }) }
       );
-
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Erro ao gerar flashcards');
-
-      toast({
-        title: '🃏 Flashcards criados!',
-        description: `${result.count} flashcards gerados a partir deste resumo.`,
-      });
+      toast({ title: 'Flashcards criados!', description: `${result.count} flashcards gerados a partir deste resumo.` });
     } catch (error) {
-      toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Não foi possível gerar flashcards.',
-        variant: 'destructive',
-      });
-    } finally {
-      setGeneratingFlashcards(false);
-    }
+      toast({ title: 'Erro', description: error instanceof Error ? error.message : 'Não foi possível gerar flashcards.', variant: 'destructive' });
+    } finally { setGeneratingFlashcards(false); }
   };
 
-  // Full-page detail view
+  // Detail view
   if (selectedFechamento) {
     const isResumo = selectedFechamento.tipo === 'fechamento';
-
     return (
-      <PageTransition className="min-h-screen bg-background flex flex-col">
-        <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl safe-area-top">
-          <div className="container mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-4">
-              <Button variant="ghost" size="sm" onClick={() => { setSelectedFechamento(null); setShowMindMap(false); }} className="gap-1.5">
-                <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">{showMindMap ? 'Voltar' : 'Biblioteca'}</span>
-              </Button>
-              <div className="h-6 w-px bg-border/50 hidden sm:block" />
-              <span className="text-sm font-medium text-muted-foreground truncate max-w-[200px] sm:max-w-none">
-                {selectedFechamento.tema}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              {isResumo && (
-                <Button
-                  variant={showMindMap ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setShowMindMap(!showMindMap)}
-                  className="gap-1.5"
-                >
-                  <Network className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Mapa Mental</span>
-                </Button>
-              )}
-              {isResumo && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGenerateFlashcards}
-                  disabled={generatingFlashcards}
-                  className="gap-1.5"
-                >
-                  {generatingFlashcards ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Layers className="h-3.5 w-3.5" />
-                  )}
-                  <span className="hidden sm:inline">
-                    {generatingFlashcards ? 'Gerando...' : 'Flashcards'}
-                  </span>
-                </Button>
-              )}
-              <Button variant="outline" size="sm" onClick={handleGoToExam} className="gap-1.5">
-                <Play className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Fazer Prova</span>
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={exporting}>
-                {exporting ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-1.5 h-3.5 w-3.5" />}
-                PDF
-              </Button>
-              <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
-            </div>
+      <DashboardLayout mainClassName="pb-0 px-0 min-h-[calc(100vh-4rem)] flex flex-col">
+        {/* In-content toolbar */}
+        <div className="flex items-center justify-between px-4 sm:px-8 py-3 border-b border-slate-100 bg-white shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => { setSelectedFechamento(null); setShowMindMap(false); }}
+              className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-emerald-700 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Biblioteca</span>
+            </button>
+            <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+            <span className="text-sm font-semibold text-emerald-900 truncate max-w-[200px] sm:max-w-xs" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+              {selectedFechamento.tema}
+            </span>
           </div>
-        </header>
+          <div className="flex items-center gap-1.5">
+            {isResumo && (
+              <Button variant={showMindMap ? 'default' : 'outline'} size="sm" onClick={() => setShowMindMap(!showMindMap)} className="gap-1.5 text-xs h-8">
+                <Network className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Mapa Mental</span>
+              </Button>
+            )}
+            {isResumo && (
+              <Button variant="outline" size="sm" onClick={handleGenerateFlashcards} disabled={generatingFlashcards} className="gap-1.5 text-xs h-8">
+                {generatingFlashcards ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Layers className="h-3.5 w-3.5" />}
+                <span className="hidden sm:inline">{generatingFlashcards ? 'Gerando...' : 'Flashcards'}</span>
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={handleGoToExam} className="gap-1.5 text-xs h-8">
+              <Play className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Fazer Prova</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={exporting} className="gap-1.5 text-xs h-8">
+              {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              PDF
+            </Button>
+          </div>
+        </div>
 
-        <div className="flex-1 flex">
+        {/* Content */}
+        <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 min-w-0">
             {showMindMap ? (
-              <div className="h-[calc(100vh-4rem)] p-4">
+              <div className="h-full p-4">
                 <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
                   <MindMapView content={selectedFechamento.resultado} topic={selectedFechamento.tema} />
                 </Suspense>
               </div>
             ) : (
-              <ScrollArea className="h-[calc(100vh-4rem)]">
-                <div id="fechamento-content" className="container mx-auto px-4 sm:px-8 py-8 max-w-4xl">
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
+              <ScrollArea className="h-full">
+                <div id="fechamento-content" className="mx-auto px-6 sm:px-12 py-8 max-w-4xl">
+                  <h1 className="text-2xl font-bold text-emerald-900 mb-6" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                    {selectedFechamento.tema}
+                  </h1>
+                  <div className="prose prose-sm max-w-none prose-headings:font-headline prose-headings:text-emerald-900">
                     <MarkdownRenderer content={selectedFechamento.resultado} />
                   </div>
                 </div>
@@ -172,38 +131,23 @@ const Library = () => {
           </div>
           {!showMindMap && <ContextChat context={selectedFechamento.resultado} contextLabel="resumo" />}
         </div>
-      </PageTransition>
+      </DashboardLayout>
     );
   }
 
   // Grid view
   return (
-    <PageTransition className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/menu')} className="gap-1.5">
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Menu</span>
-            </Button>
-            <div className="h-6 w-px bg-border/50 hidden sm:block" />
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
-              </div>
-              <span className="text-base sm:text-lg font-bold text-gradient-medical">PreceptorMED</span>
-            </div>
-          </div>
-          <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
+    <DashboardLayout>
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-2xl font-extrabold tracking-tight text-emerald-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+            Biblioteca <span className="italic" style={{ color: '#126b62' }}>Digital</span>
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">Todos os seus resumos, provas e casos clínicos salvos.</p>
         </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
-          <FechamentoLibrary onSelect={setSelectedFechamento} />
-        </div>
-      </main>
-    </PageTransition>
+        <FechamentoLibrary onSelect={setSelectedFechamento} />
+      </div>
+    </DashboardLayout>
   );
 };
 

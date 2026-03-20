@@ -1,30 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import PixPaymentModal from '@/components/PixPaymentModal';
 import logoIcon from '@/assets/logo-icon.png';
-import {
-  BookOpen,
-  Download,
-  ArrowRight,
-  Check,
-  Brain,
-  GraduationCap,
-  FileText,
-  Shield,
-  Mail,
-  Instagram,
-  Clock,
-  Zap,
-  MessageSquare,
-  Stethoscope,
-  Loader2,
-  QrCode,
-} from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+
+const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
+  <span
+    className={`material-symbols-outlined ${className}`}
+    style={{ fontVariationSettings: fill ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" : undefined }}
+  >
+    {name}
+  </span>
+);
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -33,7 +24,7 @@ const Landing = () => {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [pixModal, setPixModal] = useState(false);
 
-  const handleSubscribe = async (planType: 'monthly' | 'annual') => {
+  const handleSubscribe = async (planType: 'monthly' | 'annual' | 'biannual') => {
     if (!user) {
       navigate(`/auth?plan=${planType}`);
       return;
@@ -52,317 +43,505 @@ const Landing = () => {
     }
   };
 
-  const features = [
-    { icon: FileText, title: 'Resumos Estruturados', desc: 'Definição, epidemiologia, fisiopatologia, diagnóstico e tratamento — tudo organizado.' },
-    { icon: GraduationCap, title: 'Simulados de Residência', desc: 'Questões no estilo das bancas com gabarito comentado.' },
-    { icon: Stethoscope, title: 'Casos Clínicos', desc: 'Raciocínio diagnóstico com casos elaborados dos seus estudos.' },
-    { icon: MessageSquare, title: 'Chat Acadêmico', desc: 'Preceptor virtual 24h para tirar dúvidas em tempo real.' },
-    { icon: BookOpen, title: 'Biblioteca Pessoal', desc: 'Todos os seus materiais organizados com busca e favoritos.' },
-    { icon: Download, title: 'Exportação PDF', desc: 'Resumos formatados para impressão ou compartilhamento.' },
-  ];
-
-  const steps = [
-    { num: '1', icon: Brain, title: 'Insira o tema', desc: 'Digite o assunto ou objetivos de estudo.' },
-    { num: '2', icon: Zap, title: 'IA gera o conteúdo', desc: 'Resumo completo em segundos.' },
-    { num: '3', icon: GraduationCap, title: 'Estude e pratique', desc: 'Simulados, chat, PDF — tudo integrado.' },
-  ];
-
-  const allBenefits = [
-    'Resumos ilimitados com IA',
-    'Simulados estilo residência',
-    'Chat acadêmico sem limites',
-    'Biblioteca pessoal completa',
-    'Exportação em PDF',
-    'Casos clínicos inteligentes',
-  ];
-
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* ─── Header ─── */}
-      <header className="sticky top-0 z-50 border-b border-border/30 bg-background/95 backdrop-blur-sm">
-        <div className="container flex h-14 items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-2">
+    <div className="min-h-screen bg-[#f8f9fa] flex flex-col" style={{ fontFamily: "'DM Sans', 'Inter', sans-serif" }}>
+
+      {/* ─── Header ───────────────────────────────────── */}
+      <header className="bg-white/80 backdrop-blur-xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] sticky top-0 z-50">
+        <nav className="flex justify-between items-center w-full px-6 md:px-12 py-4 max-w-7xl mx-auto">
+          <div className="flex items-center gap-2.5">
             <img src={logoIcon} alt="PreceptorMED" className="h-7 w-7" />
-            <span className="text-base font-bold tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Preceptor<span className="text-primary">MED</span>
+            <span className="text-2xl font-extrabold text-[#006D5B] tracking-tighter" style={{ fontFamily: "'Manrope', sans-serif" }}>
+              PreceptorMED
             </span>
           </div>
 
-          <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
-            <a href="#como-funciona" className="hover:text-foreground transition-colors">Como funciona</a>
-            <a href="#recursos" className="hover:text-foreground transition-colors">Recursos</a>
-            <a href="#precos" className="hover:text-foreground transition-colors">Preços</a>
-          </nav>
+          <div className="hidden md:flex items-center gap-8">
+            <a href="#como-funciona" className="text-slate-600 font-medium hover:text-[#006D5B] transition-colors duration-300 text-sm">Como funciona</a>
+            <a href="#recursos" className="text-slate-600 font-medium hover:text-[#006D5B] transition-colors duration-300 text-sm">Recursos</a>
+            <a href="#precos" className="text-slate-600 font-medium hover:text-[#006D5B] transition-colors duration-300 text-sm">Planos</a>
+          </div>
 
           {!loading && user ? (
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/menu')} className="text-sm">
+              <button
+                onClick={() => navigate('/menu')}
+                className="px-5 py-2 text-slate-600 font-semibold hover:text-[#006D5B] transition-colors duration-300 text-sm"
+              >
                 Meu Painel
-              </Button>
+              </button>
               <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/auth')} className="text-sm text-muted-foreground">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate('/auth')}
+                className="px-5 py-2 text-slate-600 font-semibold hover:text-[#006D5B] transition-colors duration-300 text-sm"
+              >
                 Entrar
-              </Button>
-              <Button size="sm" onClick={() => navigate('/auth?tab=signup')} className="text-sm">
-                Criar conta
-              </Button>
+              </button>
+              <button
+                onClick={() => navigate('/auth?tab=signup')}
+                className="px-6 py-2.5 bg-[#006D5B] text-white rounded-lg font-bold tracking-tight shadow-lg hover:bg-[#005344] active:scale-95 transition-all duration-200 text-sm"
+              >
+                Começar agora
+              </button>
             </div>
           )}
-        </div>
+        </nav>
       </header>
 
       <main className="flex-1">
-        {/* ─── Hero ─── */}
-        <section className="relative py-20 sm:py-28 lg:py-36 overflow-hidden">
-          {/* Subtle grid background */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.3)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.3)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,black,transparent)]" />
 
-          <div className="container relative px-4 sm:px-6">
-            <div className="max-w-2xl mx-auto text-center">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.08] mb-5">
-                Estude medicina com
-                <span className="text-primary"> precisão cirúrgica</span>
+        {/* ─── Hero ─────────────────────────────────────── */}
+        <section className="relative pt-20 pb-32 px-6 overflow-hidden">
+          <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
+            <div className="lg:w-1/2 animate-fade-up">
+              <span className="inline-block px-4 py-1.5 mb-6 text-xs font-bold tracking-widest uppercase bg-[#c8eade] text-[#005344] rounded-full">
+                Curadoria Médica de Elite
+              </span>
+              <h1
+                className="text-5xl md:text-7xl font-extrabold leading-[1.1] mb-8 tracking-tighter text-[#191c1d]"
+                style={{ fontFamily: "'Manrope', sans-serif" }}
+              >
+                Apoio clínico de elite para sua jornada médica.
               </h1>
-
-              <p className="text-muted-foreground text-base sm:text-lg max-w-lg mx-auto mb-8 leading-relaxed">
-                Resumos estruturados, simulados e casos clínicos gerados por IA acadêmica. De 2 horas para 5 minutos.
+              <p className="text-xl md:text-2xl text-slate-500 font-light leading-relaxed mb-10 max-w-xl">
+                Estude com resumos estruturados e casos reais gerados por IA acadêmica. Criado para quem não tem tempo a perder.
               </p>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Button size="lg" onClick={() => navigate('/auth?tab=signup')} className="w-full sm:w-auto px-8 h-12 gap-2">
-                  Começar grátis <ArrowRight className="h-4 w-4" />
-                </Button>
-                <Button size="lg" variant="outline" onClick={() => {
-                  document.getElementById('precos')?.scrollIntoView({ behavior: 'smooth' });
-                }} className="w-full sm:w-auto px-8 h-12">
-                  Ver preços
-                </Button>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={() => navigate('/auth?tab=signup')}
+                  className="btn-shimmer relative overflow-hidden px-8 py-4 bg-[#005344] text-white text-sm font-bold uppercase tracking-widest rounded-lg shadow-xl hover:shadow-2xl hover:-translate-y-0.5 active:scale-95 transition-all duration-300"
+                >
+                  Começar agora
+                </button>
+                <button
+                  onClick={() => document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="px-8 py-4 border border-slate-200 text-[#191c1d] text-sm font-bold uppercase tracking-widest rounded-lg hover:bg-slate-50 active:scale-95 transition-all duration-300"
+                >
+                  Ver demonstração
+                </button>
               </div>
-
-              <p className="mt-5 text-xs text-muted-foreground">
-                Sem cartão de crédito · 2 perguntas grátis por dia · Cancele quando quiser
-              </p>
             </div>
-          </div>
-        </section>
 
-        {/* ─── Metrics ─── */}
-        <section className="border-y border-border/30">
-          <div className="container px-4 sm:px-6">
-            <div className="grid grid-cols-3 divide-x divide-border/30">
-              {[
-                { value: '2h → 5min', label: 'Tempo de resumo' },
-                { value: '100%', label: 'Estrutura padronizada' },
-                { value: '∞', label: 'Resumos e simulados' },
-              ].map((s, i) => (
-                <div key={i} className="py-8 sm:py-10 text-center">
-                  <p className="text-xl sm:text-3xl font-bold tracking-tight text-foreground">{s.value}</p>
-                  <p className="text-[11px] sm:text-xs text-muted-foreground mt-1">{s.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ─── How it works ─── */}
-        <section id="como-funciona" className="py-20 sm:py-28">
-          <div className="container px-4 sm:px-6">
-            <div className="max-w-3xl mx-auto">
-              <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-2 text-center">Como funciona</p>
-              <h2 className="text-2xl sm:text-4xl font-bold text-center mb-14">
-                Três passos. Resultado imediato.
-              </h2>
-
-              <div className="grid sm:grid-cols-3 gap-8 sm:gap-6">
-                {steps.map((step) => (
-                  <div key={step.num} className="text-center">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4">
-                      <step.icon className="h-5 w-5 text-primary" />
+            <div className="lg:w-1/2 relative animate-fade-up" style={{ animationDelay: '0.2s' }}>
+              <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500 bg-gradient-to-br from-[#e8f5f1] to-[#d0ebe4] p-1">
+                {/* App mockup */}
+                <div className="bg-white rounded-xl overflow-hidden">
+                  {/* Mockup top bar */}
+                  <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 border-b border-slate-100">
+                    <div className="flex gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-red-400" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                      <div className="w-3 h-3 rounded-full bg-green-400" />
                     </div>
-                    <p className="text-[10px] font-bold text-primary/50 uppercase tracking-widest mb-1">Passo {step.num}</p>
-                    <h3 className="font-bold text-base mb-1">{step.title}</h3>
-                    <p className="text-sm text-muted-foreground">{step.desc}</p>
+                    <div className="flex-1 mx-8">
+                      <div className="bg-slate-200/60 rounded-full h-5 max-w-[200px] mx-auto" />
+                    </div>
                   </div>
-                ))}
+                  {/* Mockup sidebar + content */}
+                  <div className="flex h-[440px] lg:h-[540px]">
+                    {/* Mini sidebar */}
+                    <div className="w-14 flex-shrink-0 flex flex-col items-center py-4 gap-4" style={{ background: 'linear-gradient(180deg, #005344 0%, #006d5b 100%)' }}>
+                      <img src={logoIcon} alt="" className="w-7 h-7 brightness-0 invert" />
+                      <div className="mt-2 space-y-3">
+                        {['dashboard', 'auto_awesome', 'shutter_speed', 'library_books'].map((icon, i) => (
+                          <div key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center ${i === 1 ? 'bg-white/20' : 'hover:bg-white/10'} transition-colors`}>
+                            <span className="material-symbols-outlined text-white/80 text-[18px]">{icon}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Content area */}
+                    <div className="flex-1 bg-[#f8f9fa] p-6 overflow-hidden">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-6">
+                          <div className="w-8 h-8 rounded-lg bg-[#006D5B]/10 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-[#006D5B] text-[18px]">auto_awesome</span>
+                          </div>
+                          <div>
+                            <div className="h-3 w-28 bg-slate-300 rounded-full" />
+                            <div className="h-2 w-20 bg-slate-200 rounded-full mt-1" />
+                          </div>
+                        </div>
+                        {/* Mockup cards */}
+                        <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-[#006D5B]">
+                          <div className="h-3 w-32 bg-[#005344]/20 rounded-full mb-3" />
+                          <div className="space-y-2">
+                            <div className="h-2 w-full bg-slate-100 rounded-full" />
+                            <div className="h-2 w-5/6 bg-slate-100 rounded-full" />
+                            <div className="h-2 w-4/6 bg-slate-100 rounded-full" />
+                          </div>
+                        </div>
+                        <div className="bg-white rounded-xl p-4 shadow-sm">
+                          <div className="h-3 w-24 bg-slate-200 rounded-full mb-3" />
+                          <div className="space-y-2">
+                            <div className="h-2 w-full bg-slate-100 rounded-full" />
+                            <div className="h-2 w-3/4 bg-slate-100 rounded-full" />
+                          </div>
+                        </div>
+                        <div className="bg-white rounded-xl p-4 shadow-sm">
+                          <div className="h-3 w-28 bg-slate-200 rounded-full mb-3" />
+                          <div className="space-y-2">
+                            <div className="h-2 w-full bg-slate-100 rounded-full" />
+                            <div className="h-2 w-2/3 bg-slate-100 rounded-full" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
+              {/* Decorative blurs */}
+              <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-[#9df3dc]/30 rounded-full blur-3xl -z-10" />
+              <div className="absolute top-10 -right-10 w-48 h-48 bg-[#c8eade]/20 rounded-full blur-3xl -z-10" />
             </div>
           </div>
         </section>
 
-        {/* ─── Features ─── */}
-        <section id="recursos" className="py-20 sm:py-28 bg-muted/10 border-y border-border/20">
-          <div className="container px-4 sm:px-6">
-            <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-2 text-center">Recursos</p>
-            <h2 className="text-2xl sm:text-4xl font-bold text-center mb-4">
-              Tudo que você precisa para estudar
-            </h2>
-            <p className="text-sm text-muted-foreground text-center max-w-md mx-auto mb-14">
-              Ferramentas feitas para a rotina do estudante de medicina.
-            </p>
+        {/* ─── Features Section ─────────────────────────── */}
+        <section id="recursos" className="py-24 bg-[#f3f4f5]">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="mb-20 text-center md:text-left max-w-3xl">
+              <h2
+                className="text-4xl md:text-5xl font-bold tracking-tight mb-6"
+                style={{ fontFamily: "'Manrope', sans-serif" }}
+              >
+                Ferramentas que falam a língua do médico.
+              </h2>
+              <p className="text-lg text-slate-500 leading-relaxed">
+                Desenvolvemos uma interface que prioriza a cognição clínica. Sem ruído, apenas o que é essencial para o seu diagnóstico e aprendizado.
+              </p>
+            </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
-              {features.map((f, i) => (
-                <div key={i} className="bg-background rounded-xl p-5 border border-border/40 hover:border-primary/25 transition-colors">
-                  <div className="w-9 h-9 rounded-lg bg-primary/8 flex items-center justify-center mb-3">
-                    <f.icon className="h-4 w-4 text-primary" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {[
+                {
+                  icon: 'description',
+                  title: 'Resumos que vão ao ponto',
+                  desc: 'Resumos estruturados por IA com definição, fisiopatologia, diagnóstico e tratamento — prontos em segundos.',
+                },
+                {
+                  icon: 'clinical_notes',
+                  title: 'Simule a vida real',
+                  desc: 'Casos clínicos interativos e simulados estilo residência que testam seu raciocínio diagnóstico sob pressão.',
+                },
+                {
+                  icon: 'auto_awesome',
+                  title: 'Chat Acadêmico com IA',
+                  desc: 'Tire dúvidas em tempo real com o preceptor virtual. Respostas contextualizadas baseadas no que você está estudando.',
+                },
+                {
+                  icon: 'download',
+                  title: 'Exporte e estude offline',
+                  desc: 'Baixe seus resumos em PDF formatado, organize na sua biblioteca pessoal e acesse quando precisar.',
+                },
+              ].map((feature, i) => (
+                <div
+                  key={i}
+                  className="bg-white p-8 rounded-xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group"
+                >
+                  <div className="w-12 h-12 bg-[#006D5B]/10 flex items-center justify-center rounded-lg mb-6 group-hover:bg-[#006D5B] transition-colors duration-300">
+                    <MI name={feature.icon} className="text-[#006D5B] group-hover:text-white transition-colors duration-300" />
                   </div>
-                  <h3 className="font-semibold text-sm mb-1">{f.title}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
+                  <h3
+                    className="text-xl font-bold mb-4 text-[#191c1d]"
+                    style={{ fontFamily: "'Manrope', sans-serif" }}
+                  >
+                    {feature.title}
+                  </h3>
+                  <p className="text-slate-500 text-sm leading-relaxed">{feature.desc}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ─── Pricing ─── */}
-        <section id="precos" className="py-20 sm:py-28">
-          <div className="container px-4 sm:px-6">
-            <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-2 text-center">Planos</p>
-            <h2 className="text-2xl sm:text-4xl font-bold text-center mb-3">
-              Escolha seu plano
-            </h2>
-            <p className="text-sm text-muted-foreground text-center max-w-md mx-auto mb-12">
-              Acesso completo a todas as ferramentas. Cancele quando quiser.
-            </p>
-
-            <div className="grid sm:grid-cols-2 gap-5 max-w-2xl mx-auto mb-10">
-              {/* Monthly */}
-              <div className="rounded-xl border border-border/50 bg-background p-6">
-                <h3 className="font-semibold text-lg mb-0.5">Mensal</h3>
-                <p className="text-xs text-muted-foreground mb-5">Perfeito para começar</p>
-                <div className="mb-5">
-                  <span className="text-3xl font-bold">R$ 39,90</span>
-                  <span className="text-muted-foreground text-sm">/mês</span>
-                </div>
-                <ul className="space-y-2.5 mb-6 text-sm">
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary shrink-0" /> Acesso completo</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary shrink-0" /> Cancele quando quiser</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary shrink-0" /> Suporte por email</li>
-                </ul>
-                <Button variant="outline" className="w-full" onClick={() => handleSubscribe('monthly')} disabled={loadingPlan !== null}>
-                  {loadingPlan === 'monthly' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Assinar Mensal
-                </Button>
-                <Button variant="ghost" className="w-full mt-2 gap-2 text-xs" onClick={() => setPixModal(true)}>
-                  <QrCode className="h-3.5 w-3.5" /> Pagar com Pix
-                </Button>
-              </div>
-
-              {/* Annual */}
-              <div className="rounded-xl border-2 border-primary/40 bg-background p-6 relative">
-                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
-                  MELHOR PREÇO
-                </div>
-                <h3 className="font-semibold text-lg mb-0.5">Anual</h3>
-                <p className="text-xs text-muted-foreground mb-5">Economize quase 2 meses</p>
-                <div className="mb-5">
-                  <span className="text-3xl font-bold">R$ 299</span>
-                  <span className="text-muted-foreground text-sm">/ano</span>
-                </div>
-                <ul className="space-y-2.5 mb-6 text-sm">
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary shrink-0" /> Acesso completo</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary shrink-0" /> Equivale a R$ 24,92/mês</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary shrink-0" /> Suporte prioritário</li>
-                </ul>
-                <Button className="w-full" onClick={() => handleSubscribe('annual')} disabled={loadingPlan !== null}>
-                  {loadingPlan === 'annual' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Assinar Anual
-                </Button>
-              </div>
-            </div>
-
-            {/* Benefits */}
-            <div className="max-w-2xl mx-auto">
-              <h4 className="text-sm font-semibold text-center mb-4">O que está incluso</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                {allBenefits.map((b, i) => (
-                  <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30 text-xs">
-                    <Check className="h-3.5 w-3.5 text-primary shrink-0" />
-                    {b}
+        {/* ─── Editorial Content Block ─────────────────── */}
+        <section id="como-funciona" className="py-32 bg-white">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="grid grid-cols-12 gap-6 items-center">
+              <div className="col-span-12 lg:col-span-5 mb-12 lg:mb-0">
+                <div className="rounded-2xl shadow-lg w-full h-[500px] bg-gradient-to-br from-[#e8f5f1] to-[#d0ebe4] p-1 overflow-hidden">
+                  <div className="bg-white rounded-xl h-full overflow-hidden flex flex-col">
+                    {/* Mockup header */}
+                    <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 border-b border-slate-100">
+                      <div className="flex gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                      </div>
+                    </div>
+                    {/* Simulados mockup */}
+                    <div className="flex-1 bg-[#f8f9fa] p-6 overflow-hidden">
+                      <div className="flex items-center gap-2 mb-5">
+                        <span className="material-symbols-outlined text-[#006D5B]">shutter_speed</span>
+                        <div className="h-3.5 w-32 bg-slate-300 rounded-full" />
+                      </div>
+                      {/* Practice type cards */}
+                      <div className="grid grid-cols-2 gap-3 mb-5">
+                        <div className="bg-white rounded-xl p-4 border-2 border-[#006D5B] shadow-sm">
+                          <div className="w-8 h-8 rounded-lg bg-[#006D5B]/10 flex items-center justify-center mb-2">
+                            <span className="material-symbols-outlined text-[#006D5B] text-[16px]">quiz</span>
+                          </div>
+                          <div className="h-2.5 w-16 bg-slate-200 rounded-full" />
+                        </div>
+                        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center mb-2">
+                            <span className="material-symbols-outlined text-slate-400 text-[16px]">clinical_notes</span>
+                          </div>
+                          <div className="h-2.5 w-20 bg-slate-200 rounded-full" />
+                        </div>
+                      </div>
+                      {/* Content grid */}
+                      <div className="grid grid-cols-3 gap-2 mb-5">
+                        {[1,2,3,4,5,6].map(i => (
+                          <div key={i} className={`bg-white rounded-lg p-3 border ${i <= 2 ? 'border-[#006D5B]' : 'border-slate-200'} shadow-sm`}>
+                            <div className="h-2 w-full bg-slate-100 rounded-full mb-1.5" />
+                            <div className="h-1.5 w-2/3 bg-slate-50 rounded-full" />
+                          </div>
+                        ))}
+                      </div>
+                      {/* Generate button */}
+                      <div className="flex justify-center">
+                        <div className="h-10 w-40 rounded-lg" style={{ background: 'linear-gradient(135deg, #005344, #006d5b)' }} />
+                      </div>
+                    </div>
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mt-8 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-primary" /> Pagamento seguro</span>
-              <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-primary" /> Cancele a qualquer momento</span>
+              <div className="col-span-12 lg:col-span-6 lg:col-start-7">
+                <h2
+                  className="text-4xl font-bold mb-8 leading-tight text-[#191c1d]"
+                  style={{ fontFamily: "'Manrope', sans-serif" }}
+                >
+                  Inteligência artificial aplicada ao ensino médico.
+                </h2>
+
+                <div className="space-y-8">
+                  <div className="flex gap-6">
+                    <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-[#005344] text-white font-bold text-xs italic">01</div>
+                    <div>
+                      <h4
+                        className="text-lg font-bold mb-2 text-[#191c1d]"
+                        style={{ fontFamily: "'Manrope', sans-serif" }}
+                      >
+                        Resumos Estruturados por IA
+                      </h4>
+                      <p className="text-slate-500 leading-relaxed">
+                        Nossa IA acadêmica gera resumos completos com fisiopatologia, diagnóstico e tratamento em segundos — estruturados para retenção máxima.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-6">
+                    <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-[#005344] text-white font-bold text-xs italic">02</div>
+                    <div>
+                      <h4
+                        className="text-lg font-bold mb-2 text-[#191c1d]"
+                        style={{ fontFamily: "'Manrope', sans-serif" }}
+                      >
+                        Design Centrado na Retenção
+                      </h4>
+                      <p className="text-slate-500 leading-relaxed">
+                        Layouts limpos e tipografia estudada para reduzir a fadiga mental durante longas sessões de estudo.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-6">
+                    <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-[#005344] text-white font-bold text-xs italic">03</div>
+                    <div>
+                      <h4
+                        className="text-lg font-bold mb-2 text-[#191c1d]"
+                        style={{ fontFamily: "'Manrope', sans-serif" }}
+                      >
+                        Estudo Personalizado
+                      </h4>
+                      <p className="text-slate-500 leading-relaxed">
+                        Escolha o tema, o nível de profundidade e o formato. A plataforma se adapta ao seu estilo de estudo e às suas necessidades.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* ─── Final CTA ─── */}
-        <section className="py-20 sm:py-28 bg-muted/10 border-t border-border/20">
-          <div className="container px-4 sm:px-6">
-            <div className="max-w-lg mx-auto text-center">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-3">
-                Pronto para estudar de forma <span className="text-primary">mais inteligente?</span>
+        {/* ─── Pricing ──────────────────────────────────── */}
+        <section id="precos" className="py-24 bg-[#f3f4f5]">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center mb-16">
+              <h2
+                className="text-4xl font-bold mb-4 tracking-tight text-[#191c1d]"
+                style={{ fontFamily: "'Manrope', sans-serif" }}
+              >
+                O plano certo para cada etapa.
               </h2>
-              <p className="text-sm text-muted-foreground mb-7">
-                Junte-se a estudantes que já otimizaram sua rotina com o PreceptorMED.
-              </p>
-              <Button size="lg" onClick={() => navigate('/auth?tab=signup')} className="px-8 h-12 gap-2">
-                Criar conta grátis <ArrowRight className="h-4 w-4" />
-              </Button>
+              <p className="text-slate-500">Invista na sua excelência clínica com transparência.</p>
             </div>
+
+            <div className="flex flex-col md:flex-row justify-center gap-8 max-w-5xl mx-auto">
+              {/* Mensal */}
+              <div className="flex-1 bg-white p-10 rounded-2xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] border border-slate-200/30 hover:shadow-xl transition-all duration-300">
+                <h3 className="text-xl font-bold mb-2 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Mensal</h3>
+                <div className="mb-6">
+                  <span className="text-4xl font-extrabold text-[#005344]">R$ 49,90</span>
+                  <span className="text-slate-500">/mês</span>
+                </div>
+                <ul className="space-y-4 mb-10 text-sm text-[#191c1d]">
+                  <li className="flex items-center gap-3">
+                    <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
+                    Acesso completo à plataforma
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
+                    Resumos e simulados ilimitados
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
+                    Cancelamento a qualquer momento
+                  </li>
+                </ul>
+                <button
+                  onClick={() => handleSubscribe('monthly')}
+                  disabled={loadingPlan !== null}
+                  className="w-full py-4 border border-slate-300 text-[#191c1d] text-sm font-bold uppercase tracking-widest rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
+                >
+                  {loadingPlan === 'monthly' && <Loader2 className="inline mr-2 h-4 w-4 animate-spin" />}
+                  Começar mensal
+                </button>
+              </div>
+
+              {/* Anual — highlighted */}
+              <div className="flex-1 bg-white p-10 rounded-2xl shadow-xl border-2 border-[#006D5B] relative overflow-hidden hover:shadow-2xl transition-all duration-300">
+                <div className="absolute top-0 right-0 bg-[#005344] text-white px-4 py-1 text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
+                  Melhor Valor
+                </div>
+                <h3 className="text-xl font-bold mb-2 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Anual</h3>
+                <div className="mb-2">
+                  <span className="text-4xl font-extrabold text-[#005344]">R$ 350,90</span>
+                  <span className="text-slate-500">/ano</span>
+                </div>
+                <p className="text-xs text-[#006D5B] font-semibold mb-6">Equivale a R$ 29,24/mês (Economia de 41%)</p>
+                <ul className="space-y-4 mb-10 text-sm text-[#191c1d]">
+                  <li className="flex items-center gap-3 font-semibold">
+                    <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
+                    Tudo do plano mensal
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
+                    Economia de mais de 40%
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
+                    Suporte prioritário
+                  </li>
+                </ul>
+                <button
+                  onClick={() => handleSubscribe('annual')}
+                  disabled={loadingPlan !== null}
+                  className="btn-shimmer relative overflow-hidden w-full py-4 bg-[#005344] text-white text-sm font-bold uppercase tracking-widest rounded-lg shadow-lg hover:bg-[#003d32] transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
+                >
+                  {loadingPlan === 'annual' && <Loader2 className="inline mr-2 h-4 w-4 animate-spin" />}
+                  Começar anual
+                </button>
+              </div>
+
+              {/* Bianual */}
+              <div className="flex-1 bg-white p-10 rounded-2xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] border border-slate-200/30 hover:shadow-xl transition-all duration-300">
+                <h3 className="text-xl font-bold mb-2 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Bianual</h3>
+                <div className="mb-2">
+                  <span className="text-4xl font-extrabold text-[#005344]">R$ 599,90</span>
+                  <span className="text-slate-500">/2 anos</span>
+                </div>
+                <p className="text-xs text-[#006D5B] font-semibold mb-6">Equivale a R$ 24,99/mês (Economia de 50%)</p>
+                <ul className="space-y-4 mb-10 text-sm text-[#191c1d]">
+                  <li className="flex items-center gap-3 font-semibold">
+                    <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
+                    Tudo do plano anual
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
+                    Maior economia possível
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
+                    Suporte prioritário
+                  </li>
+                </ul>
+                <button
+                  onClick={() => handleSubscribe('biannual')}
+                  disabled={loadingPlan !== null}
+                  className="w-full py-4 border border-slate-300 text-[#191c1d] text-sm font-bold uppercase tracking-widest rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
+                >
+                  {loadingPlan === 'biannual' && <Loader2 className="inline mr-2 h-4 w-4 animate-spin" />}
+                  Começar bianual
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Final CTA ────────────────────────────────── */}
+        <section className="py-24" style={{ background: 'linear-gradient(135deg, #005344 0%, #006d5b 100%)' }}>
+          <div className="max-w-4xl mx-auto px-6 text-center">
+            <h2
+              className="text-4xl md:text-5xl font-extrabold mb-8 tracking-tighter text-white"
+              style={{ fontFamily: "'Manrope', sans-serif" }}
+            >
+              Pronto para elevar seu padrão clínico?
+            </h2>
+            <p className="text-xl text-white/70 mb-12 font-light">
+              Junte-se a milhares de médicos que já transformaram suas rotinas de estudo.
+            </p>
+            <button
+              onClick={() => navigate('/auth?tab=signup')}
+              className="px-10 py-5 bg-white text-[#005344] rounded-lg font-bold uppercase tracking-widest shadow-2xl hover:scale-105 hover:shadow-[0_20px_60px_rgba(0,0,0,0.3)] transition-all duration-300 active:scale-95"
+            >
+              Criar minha conta agora
+            </button>
           </div>
         </section>
       </main>
 
-      {/* ─── Footer ─── */}
-      <footer className="border-t border-border/20">
-        <div className="container px-4 sm:px-6 py-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="col-span-2 space-y-3">
-              <div className="flex items-center gap-2">
-                <img src={logoIcon} alt="PreceptorMED" className="h-7 w-7" />
-                <span className="text-base font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  Preceptor<span className="text-primary">MED</span>
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">
-                Resumos, casos clínicos e simulados potencializados por IA acadêmica.
-              </p>
-              <a href="https://instagram.com/preceptor.med" target="_blank" rel="noopener noreferrer"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/30 text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors">
-                <Instagram className="h-3.5 w-3.5" />
-              </a>
+      {/* ─── Footer ───────────────────────────────────── */}
+      <footer className="bg-slate-50 border-t border-slate-200/50 py-12 px-6 md:px-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:flex lg:justify-between items-start w-full max-w-7xl mx-auto gap-12">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2.5">
+              <img src={logoIcon} alt="PreceptorMED" className="h-6 w-6" />
+              <span className="text-xl font-bold text-slate-900" style={{ fontFamily: "'Manrope', sans-serif" }}>PreceptorMED</span>
             </div>
-
-            <div>
-              <h4 className="font-semibold text-xs mb-3">Produto</h4>
-              <ul className="space-y-2 text-xs text-muted-foreground">
-                <li><button onClick={() => document.getElementById('precos')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-foreground transition-colors">Preços</button></li>
-                <li><button onClick={() => navigate('/auth?tab=signup')} className="hover:text-foreground transition-colors">Criar Conta</button></li>
-                <li><button onClick={() => navigate('/auth')} className="hover:text-foreground transition-colors">Entrar</button></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-xs mb-3">Contato</h4>
-              <ul className="space-y-2 text-xs text-muted-foreground">
-                <li>
-                  <a href="mailto:preceptormed@gmail.com" className="flex items-center gap-1.5 hover:text-foreground transition-colors">
-                    <Mail className="h-3 w-3 shrink-0" /> preceptormed@gmail.com
-                  </a>
-                </li>
-                <li>
-                  <a href="https://instagram.com/preceptor.med" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-foreground transition-colors">
-                    <Instagram className="h-3 w-3 shrink-0" /> @preceptor.med
-                  </a>
-                </li>
-              </ul>
-            </div>
+            <p className="max-w-xs text-sm text-slate-500">
+              © {new Date().getFullYear()} PreceptorMED. Plataforma de estudo médico com IA.
+            </p>
           </div>
-        </div>
 
-        <div className="border-t border-border/15">
-          <div className="container px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p className="text-[10px] text-muted-foreground">© {new Date().getFullYear()} PreceptorMED. Todos os direitos reservados.</p>
-            <p className="text-[10px] text-muted-foreground/60">Ferramenta educacional. Não substitui orientação médica.</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+            <div className="space-y-4">
+              <h5 className="font-bold text-xs uppercase tracking-widest text-slate-900">Legal</h5>
+              <ul className="space-y-2">
+                <li><a className="text-sm text-slate-500 hover:text-slate-800 hover:translate-x-1 transition-all duration-200 block" href="#">Termos de Uso</a></li>
+                <li><a className="text-sm text-slate-500 hover:text-slate-800 hover:translate-x-1 transition-all duration-200 block" href="#">Privacidade</a></li>
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <h5 className="font-bold text-xs uppercase tracking-widest text-slate-900">Empresa</h5>
+              <ul className="space-y-2">
+                <li><a className="text-sm text-slate-500 hover:text-slate-800 hover:translate-x-1 transition-all duration-200 block" href="https://instagram.com/preceptor.med" target="_blank" rel="noopener noreferrer">Instagram</a></li>
+                <li><a className="text-sm text-slate-500 hover:text-slate-800 hover:translate-x-1 transition-all duration-200 block" href="mailto:preceptormed@gmail.com">Contato</a></li>
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <h5 className="font-bold text-xs uppercase tracking-widest text-slate-900">Ajuda</h5>
+              <ul className="space-y-2">
+                <li><a className="text-sm text-slate-500 hover:text-slate-800 hover:translate-x-1 transition-all duration-200 block" href="mailto:preceptormed@gmail.com">Suporte</a></li>
+              </ul>
+            </div>
           </div>
         </div>
       </footer>
@@ -371,7 +550,7 @@ const Landing = () => {
         open={pixModal}
         onClose={() => setPixModal(false)}
         planLabel="Plano Mensal"
-        planPrice="R$ 39,90"
+        planPrice="R$ 49,90"
       />
     </div>
   );

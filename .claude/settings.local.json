@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npm install:*)",
+      "Bash(npx claude-code-templates:*)",
+      "Bash(npx claude-code-templates@latest --skill creative-design/frontend-design)",
+      "Bash(find /c/Users/Matheus/Documents/PRECEPTOR/preceptorapg/src/components -name *Layout* -o -name *Sidebar* -o -name *Navbar* -o -name *Nav*)",
+      "Bash(npx vite:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(grep -c \"240 10% 4%\" \"c:/Users/Matheus/Documents/PRECEPTOR/preceptorapg/dist/assets/\"*.css)",
+      "Bash(netstat -ano)",
+      "Bash(npx tsc:*)",
+      "Bash(grep -v '^$')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8081)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8082)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)"
+    ]
+  }
+}

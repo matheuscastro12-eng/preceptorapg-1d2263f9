@@ -2,13 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Label } from '@/components/ui/label';
-import { Search, Loader2, Library, Star } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Loader2, Star } from 'lucide-react';
 
 interface Fechamento {
   id: string;
@@ -25,12 +19,15 @@ interface ContentSelectorProps {
   disabled?: boolean;
 }
 
+const MI = ({ name, className = '' }: { name: string; className?: string }) => (
+  <span className={`material-symbols-outlined ${className}`}>{name}</span>
+);
+
 const ContentSelector = ({ selectedIds, onSelectionChange, disabled }: ContentSelectorProps) => {
   const { user } = useAuth();
   const [fechamentos, setFechamentos] = useState<Fechamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   useEffect(() => {
     if (user) fetchFechamentos();
@@ -52,11 +49,9 @@ const ContentSelector = ({ selectedIds, onSelectionChange, disabled }: ContentSe
     }
   };
 
-  const filtered = fechamentos.filter(f => {
-    const matchesSearch = f.tema.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFavorites = showFavoritesOnly ? f.favorito : true;
-    return matchesSearch && matchesFavorites;
-  });
+  const filtered = fechamentos.filter(f =>
+    f.tema.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const toggleItem = (id: string) => {
     if (disabled) return;
@@ -67,108 +62,62 @@ const ContentSelector = ({ selectedIds, onSelectionChange, disabled }: ContentSe
     }
   };
 
-  const toggleAll = () => {
-    if (disabled) return;
-    if (selectedIds.length === filtered.length) {
-      onSelectionChange([]);
-    } else {
-      onSelectionChange(filtered.map(f => f.id));
-    }
-  };
-
-  const getSelectedContent = () => {
-    return fechamentos
-      .filter(f => selectedIds.includes(f.id))
-      .map(f => `## ${f.tema}\n\n${f.resultado}`)
-      .join('\n\n---\n\n');
-  };
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Library className="h-4 w-4 text-primary" />
-        <Label className="text-sm font-medium">
-          Selecione o conteúdo da prova
-        </Label>
-        {selectedIds.length > 0 && (
-          <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-medium">
-            {selectedIds.length} selecionado{selectedIds.length > 1 ? 's' : ''}
-          </span>
-        )}
+    <div className="bg-[#f3f4f5] p-6 sm:p-8 rounded-xl space-y-6">
+      {/* Search */}
+      <div className="relative">
+        <MI name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6e7975] text-[20px]" />
+        <input
+          type="text"
+          placeholder="Buscar nos meus resumos..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          disabled={disabled}
+          className="w-full pl-12 pr-4 py-3 bg-white border-none rounded-lg text-sm text-[#191c1d] placeholder:text-[#6e7975]/60 focus:outline-none focus:ring-2 focus:ring-[#006D5B]/20 shadow-sm disabled:opacity-50"
+        />
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por tema..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            disabled={disabled}
-            className="pl-9 h-9 bg-background/60 border-border/40"
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant={showFavoritesOnly ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            disabled={disabled}
-            className="shrink-0 h-9"
-          >
-            <Star className={`mr-1.5 h-3.5 w-3.5 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-            Favoritos
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={toggleAll}
-            disabled={disabled}
-            className="shrink-0 h-9"
-          >
-            {selectedIds.length === filtered.length && filtered.length > 0 ? 'Desmarcar' : 'Selecionar'} todos
-          </Button>
-        </div>
-      </div>
-
+      {/* Content grid */}
       {loading ? (
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <Loader2 className="h-5 w-5 animate-spin text-[#006D5B]" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="py-8 text-center text-muted-foreground text-sm">
+        <div className="py-8 text-center text-[#6e7975] text-sm">
           {fechamentos.length === 0
-            ? 'Nenhum resumo salvo. Gere e salve conteúdo no Dashboard primeiro.'
+            ? 'Nenhum resumo salvo. Gere e salve conteúdo no Estudo com IA primeiro.'
             : 'Nenhum resultado encontrado.'}
         </div>
       ) : (
-        <ScrollArea className="h-[280px] rounded-lg border border-border/30 bg-background/40">
-          <div className="p-2 space-y-1">
-            {filtered.map((f) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {filtered.map((f) => {
+            const isSelected = selectedIds.includes(f.id);
+            return (
               <label
                 key={f.id}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer transition-colors hover:bg-accent/10 ${
-                  selectedIds.includes(f.id) ? 'bg-primary/10 border border-primary/20' : 'border border-transparent'
+                onClick={() => toggleItem(f.id)}
+                className={`flex items-center gap-3 p-4 bg-white rounded-lg cursor-pointer transition-all duration-200 ${
+                  isSelected
+                    ? 'border-2 border-[#005344] shadow-sm'
+                    : 'border border-transparent hover:border-[#bec9c4]/30'
                 } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <Checkbox
-                  checked={selectedIds.includes(f.id)}
+                  checked={isSelected}
                   onCheckedChange={() => toggleItem(f.id)}
                   disabled={disabled}
+                  className="border-[#bec9c4] data-[state=checked]:bg-[#005344] data-[state=checked]:border-[#005344]"
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">{f.tema}</span>
-                    {f.favorito && <Star className="h-3 w-3 fill-yellow-500 text-yellow-500 shrink-0" />}
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(f.created_at), "dd 'de' MMM, yyyy", { locale: ptBR })}
+                  <span className={`text-sm font-semibold truncate block ${isSelected ? 'text-[#005344]' : 'text-[#3e4945]'}`}>
+                    {f.tema}
                   </span>
                 </div>
+                {f.favorito && <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />}
               </label>
-            ))}
-          </div>
-        </ScrollArea>
+            );
+          })}
+        </div>
       )}
     </div>
   );

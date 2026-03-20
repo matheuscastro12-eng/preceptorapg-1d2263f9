@@ -244,10 +244,10 @@ ${context}
       {/* Desktop: sidebar panel */}
       <motion.div
         initial={{ width: 0, opacity: 0 }}
-        animate={{ width: 420, opacity: 1 }}
+        animate={{ width: 380, opacity: 1 }}
         exit={{ width: 0, opacity: 0 }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="hidden lg:flex shrink-0 h-full rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm flex-col overflow-hidden"
+        transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+        className="hidden lg:flex shrink-0 h-full rounded-xl border border-slate-100 bg-white shadow-[0_8px_32px_0_rgba(44,52,52,0.06)] flex-col overflow-hidden"
       >
         <ChatContent
           isEmpty={isEmpty}
@@ -341,7 +341,8 @@ const ChatContent = ({
                 <button
                   key={i}
                   onClick={() => onSuggestion(s)}
-                  className="w-full text-left p-3 rounded-xl border border-border/30 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/30 transition-all text-sm text-muted-foreground hover:text-foreground"
+                  style={{ animationDelay: `${i * 0.06}s` }}
+                  className="w-full text-left p-3 rounded-xl border border-slate-100 bg-white hover:bg-emerald-50 hover:border-emerald-200 transition-all duration-200 active:scale-[0.98] text-sm text-slate-500 hover:text-emerald-800 shadow-sm animate-fade-up"
                 >
                   {s}
                 </button>
@@ -417,14 +418,14 @@ const ChatContent = ({
           rows={1}
           disabled={isStreaming}
         />
-        <Button
+        <button
           onClick={onSend}
           disabled={!input.trim() || isStreaming}
-          size="icon"
-          className="shrink-0 h-10 w-10 rounded-xl"
+          className="shrink-0 h-10 w-10 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90 disabled:opacity-40 hover:brightness-110"
+          style={{ background: 'linear-gradient(135deg, #126b62, #005e56)' }}
         >
-          <Send className="h-4 w-4" />
-        </Button>
+          <Send className="h-4 w-4 text-[#e2fff9]" />
+        </button>
       </div>
     </div>
   </>

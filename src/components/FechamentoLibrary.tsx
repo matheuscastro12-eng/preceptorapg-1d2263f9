@@ -2,20 +2,19 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { 
-  Library, 
-  Star, 
-  Trash2, 
-  Search, 
+import {
+  Library,
+  Star,
+  Trash2,
+  Search,
   Calendar,
   FileText,
   ClipboardList,
   Stethoscope,
+  ChevronRight,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -109,27 +108,14 @@ const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
     }
   };
 
-  const getTypeIcon = (tipo: string) => {
+  const getTypeConfig = (tipo: string) => {
     switch (tipo) {
-      case 'prova': return <ClipboardList className="h-4 w-4" />;
-      case 'caso_clinico': return <Stethoscope className="h-4 w-4" />;
-      default: return <FileText className="h-4 w-4" />;
-    }
-  };
-
-  const getTypeLabel = (tipo: string) => {
-    switch (tipo) {
-      case 'prova': return 'Prova';
-      case 'caso_clinico': return 'Caso Clínico';
-      default: return 'Resumo';
-    }
-  };
-
-  const getTypeColor = (tipo: string) => {
-    switch (tipo) {
-      case 'prova': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-      case 'caso_clinico': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
-      default: return 'bg-primary/10 text-primary border-primary/20';
+      case 'prova':
+        return { icon: <ClipboardList className="h-3.5 w-3.5" strokeWidth={1.5} />, label: 'Prova', color: 'text-blue-500', bg: 'bg-blue-500/8', border: 'border-l-blue-500' };
+      case 'caso_clinico':
+        return { icon: <Stethoscope className="h-3.5 w-3.5" strokeWidth={1.5} />, label: 'Caso Clínico', color: 'text-amber-500', bg: 'bg-amber-500/8', border: 'border-l-amber-500' };
+      default:
+        return { icon: <FileText className="h-3.5 w-3.5" strokeWidth={1.5} />, label: 'Resumo', color: 'text-primary', bg: 'bg-primary/8', border: 'border-l-primary' };
     }
   };
 
@@ -140,123 +126,150 @@ const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
     return matchesSearch && matchesFavorites && matchesType;
   });
 
+  const typeFilters: { value: typeof selectedType; label: string }[] = [
+    { value: 'all', label: 'Todos' },
+    { value: 'fechamento', label: 'Resumos' },
+    { value: 'prova', label: 'Provas' },
+    { value: 'caso_clinico', label: 'Casos' },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center">
-          <Library className="h-5 w-5 text-primary" />
-        </div>
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold">Biblioteca Pessoal</h2>
-          <p className="text-sm text-muted-foreground">{fechamentos.length} itens salvos</p>
+          <h2 className="text-xl font-bold tracking-tight">Biblioteca Pessoal</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">{fechamentos.length} itens salvos</p>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="space-y-3">
+        <div className="flex gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Buscar por tema..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9" />
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" strokeWidth={1.5} />
+            <Input
+              placeholder="Buscar por tema..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 h-9 text-sm bg-background"
+            />
           </div>
-          <Button variant={showFavoritesOnly ? 'default' : 'outline'} size="sm" onClick={() => setShowFavoritesOnly(!showFavoritesOnly)} className="shrink-0">
-            <Star className={`mr-2 h-4 w-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-            Favoritos
+          <Button
+            variant={showFavoritesOnly ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+            className="gap-1.5 h-9 shrink-0"
+          >
+            <Star className={`h-3.5 w-3.5 ${showFavoritesOnly ? 'fill-current' : ''}`} strokeWidth={1.5} />
+            <span className="hidden sm:inline">Favoritos</span>
           </Button>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {[
-            { value: 'all', label: 'Todos' },
-            { value: 'fechamento', label: 'Resumos' },
-            { value: 'prova', label: 'Provas' },
-            { value: 'caso_clinico', label: 'Casos Clínicos' }
-          ].map((type) => (
-            <Button key={type.value} variant={selectedType === type.value ? 'default' : 'outline'} size="sm" onClick={() => setSelectedType(type.value as typeof selectedType)} className="text-xs">
+        <div className="flex gap-1.5 flex-wrap">
+          {typeFilters.map((type) => (
+            <button
+              key={type.value}
+              onClick={() => setSelectedType(type.value)}
+              className={`px-3 py-1.5 text-[12px] font-semibold rounded-lg transition-all duration-200 active:scale-95 ${
+                selectedType === type.value
+                  ? 'bg-emerald-800 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'
+              }`}
+            >
               {type.label}
-            </Button>
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Cards Grid */}
+      {/* Content */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="h-44 rounded-xl border border-border/20 bg-muted/30 animate-pulse" />
+        <div className="rounded-xl border border-slate-100 overflow-hidden divide-y divide-slate-50 bg-white shadow-sm">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center gap-4 px-4 py-3.5 animate-pulse">
+              <div className="h-8 w-8 rounded-lg bg-surface-container-high shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-1/3 rounded bg-surface-container-high" />
+                <div className="h-2.5 w-1/2 rounded bg-surface-container" />
+              </div>
+            </div>
           ))}
         </div>
       ) : filteredFechamentos.length === 0 ? (
-        <div className="py-16 text-center text-muted-foreground">
-          <Library className="h-12 w-12 mx-auto mb-4 opacity-30" />
-          <p className="text-lg font-medium">
-            {searchTerm || showFavoritesOnly || selectedType !== 'all' ? 'Nenhum conteúdo encontrado.' : 'Nenhum conteúdo salvo ainda.'}
+        <div className="py-20 text-center text-muted-foreground">
+          <Library className="h-10 w-10 mx-auto mb-4 opacity-20" strokeWidth={1} />
+          <p className="text-sm font-medium">
+            {searchTerm || showFavoritesOnly || selectedType !== 'all'
+              ? 'Nenhum conteúdo encontrado.'
+              : 'Nenhum conteúdo salvo ainda.'}
           </p>
+          {!searchTerm && !showFavoritesOnly && selectedType === 'all' && (
+            <p className="text-xs text-muted-foreground/60 mt-1">Gere resumos ou simulados para começar.</p>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredFechamentos.map((fechamento, index) => (
-            <motion.div
-              key={fechamento.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.03, duration: 0.3 }}
-            >
-              <Card
-                className="group relative cursor-pointer border-border/50 bg-card/80 backdrop-blur-sm hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 h-full flex flex-col"
-                onClick={() => onSelect(fechamento)}
+        <div className="rounded-xl border border-slate-100 overflow-hidden divide-y divide-slate-50 bg-white shadow-sm">
+          {filteredFechamentos.map((fechamento, index) => {
+            const typeConfig = getTypeConfig(fechamento.tipo);
+            return (
+              <motion.div
+                key={fechamento.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: Math.min(index * 0.04, 0.4), duration: 0.3, ease: 'easeOut' }}
               >
-                <div className="p-4 flex flex-col flex-1">
-                  {/* Type badge */}
-                  <div className="flex items-center justify-between mb-3">
-                    <Badge variant="outline" className={`text-[10px] font-medium ${getTypeColor(fechamento.tipo)}`}>
-                      {getTypeIcon(fechamento.tipo)}
-                      <span className="ml-1">{getTypeLabel(fechamento.tipo)}</span>
-                    </Badge>
-                    {fechamento.favorito && (
-                      <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-                    )}
+                <div
+                  className={`group relative flex items-center gap-4 px-4 py-3.5 hover:bg-emerald-50/40 transition-all duration-200 cursor-pointer border-l-2 ${typeConfig.border}`}
+                  onClick={() => onSelect(fechamento)}
+                >
+                  {/* Icon */}
+                  <div className={`h-8 w-8 rounded-lg ${typeConfig.bg} flex items-center justify-center shrink-0 ${typeConfig.color} transition-transform duration-200 group-hover:scale-110`}>
+                    {typeConfig.icon}
                   </div>
 
-                  {/* Title */}
-                  <h3 className="font-semibold text-sm leading-snug mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                    {fechamento.tema}
-                  </h3>
-
-                  {/* Preview text */}
-                  <p className="text-xs text-muted-foreground line-clamp-3 flex-1 mb-3">
-                    {fechamento.resultado.replace(/[#*`>-]/g, '').slice(0, 150)}
-                  </p>
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between mt-auto pt-3 border-t border-border/30">
-                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
-                      {format(new Date(fechamento.created_at), "dd MMM yyyy", { locale: ptBR })}
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-[13px] font-semibold truncate group-hover:text-emerald-700 transition-colors duration-200">
+                        {fechamento.tema}
+                      </p>
+                      {fechamento.favorito && (
+                        <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />
+                      )}
                     </div>
-                    <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={(e) => toggleFavorite(e, fechamento.id, fechamento.favorito)}
-                      >
-                        <Star className={`h-3.5 w-3.5 ${fechamento.favorito ? 'fill-primary text-primary' : ''}`} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive"
-                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(fechamento); }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <span className={`text-[11px] font-medium ${typeConfig.color}`}>{typeConfig.label}</span>
+                      <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {format(new Date(fechamento.created_at), "dd MMM yyyy", { locale: ptBR })}
+                      </span>
                     </div>
+                    <p className="text-[11px] text-muted-foreground/60 mt-1 line-clamp-1 hidden sm:block">
+                      {fechamento.resultado.replace(/[#*`>-]/g, '').slice(0, 120)}
+                    </p>
                   </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-200 shrink-0">
+                    <button
+                      className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-amber-400 hover:bg-amber-50 transition-all duration-200 active:scale-95"
+                      onClick={(e) => toggleFavorite(e, fechamento.id, fechamento.favorito)}
+                    >
+                      <Star className={`h-3.5 w-3.5 transition-transform duration-200 hover:scale-110 ${fechamento.favorito ? 'fill-amber-400 text-amber-400' : ''}`} />
+                    </button>
+                    <button
+                      className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 transition-all duration-200 active:scale-95"
+                      onClick={(e) => { e.stopPropagation(); setDeleteTarget(fechamento); }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  <ChevronRight className="h-4 w-4 text-slate-200 group-hover:text-slate-400 group-hover:translate-x-0.5 shrink-0 transition-all duration-200" />
                 </div>
-              </Card>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
       )}
 
@@ -271,7 +284,10 @@ const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => { if (deleteTarget) { deleteFechamento(deleteTarget.id); setDeleteTarget(null); } }}>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { if (deleteTarget) { deleteFechamento(deleteTarget.id); setDeleteTarget(null); } }}
+            >
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>

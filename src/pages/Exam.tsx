@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import PageTransition from '@/components/PageTransition';
 import PageSkeleton from '@/components/PageSkeleton';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,16 +8,24 @@ import { useToast } from '@/hooks/use-toast';
 import { useExamGenerator, type ExamConfig, type PracticeMode } from '@/hooks/useExamGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate } from 'react-router-dom';
-import { Sparkles, ArrowLeft, BookOpen, PanelLeftOpen, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import GenerationProgress from '@/components/GenerationProgress';
-import { Button } from '@/components/ui/button';
-import ProfileDropdown from '@/components/ProfileDropdown';
 import ExamConfigPanel from '@/components/exam/ExamConfigPanel';
 import SimulationView from '@/components/exam/SimulationView';
 import ContextChat from '@/components/ContextChat';
 import { exportToPDF } from '@/utils/pdfExport';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import OnboardingTour, { type TourStep } from '@/components/OnboardingTour';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+
+const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
+  <span
+    className={`material-symbols-outlined ${className}`}
+    style={{ fontVariationSettings: fill ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" : undefined }}
+  >
+    {name}
+  </span>
+);
 
 const examTourSteps: TourStep[] = [
   {
@@ -30,7 +37,7 @@ const examTourSteps: TourStep[] = [
   {
     target: '[data-tour="exam-config"]',
     title: 'Configure a Prova',
-    description: 'Defina a quantidade de questões e o nível de dificuldade (Ciclo Básico ou Residência).',
+    description: 'Defina a quantidade de questões e o nível de dificuldade.',
     placement: 'right',
   },
   {
@@ -57,7 +64,7 @@ function hasParseableQuestion(text: string): boolean {
 }
 
 const Exam = () => {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { hasAccess, loading: subLoading } = useSubscription();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const { toast } = useToast();
@@ -69,9 +76,9 @@ const Exam = () => {
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [config, setConfig] = useState<ExamConfig>({
-    quantidade: 30,
+    quantidade: 20,
     nivel: 'residencia',
-    simulationMode: true, // Always true now
+    simulationMode: true,
     practiceMode: lockedMode || 'prova',
   });
   const [exporting, setExporting] = useState(false);
@@ -85,7 +92,6 @@ const Exam = () => {
     }
   }, [lockedMode]);
 
-  // Force simulationMode to always be true
   useEffect(() => {
     if (!config.simulationMode) {
       setConfig(prev => ({ ...prev, simulationMode: true }));
@@ -103,8 +109,6 @@ const Exam = () => {
     reset,
   } = useExamGenerator();
 
-  // Progressive activation: enter simulation as soon as we have at least 1 complete question
-  // For prova: wait for parseable question; for caso_clinico: show as soon as content arrives
   useEffect(() => {
     if (showSimulation) return;
     if (!hasStartedReceiving || !resultado) return;
@@ -163,12 +167,11 @@ const Exam = () => {
     setExporting(true);
     try {
       const title = config.practiceMode === 'caso_clinico'
-        ? `Caso Clínico - ${config.nivel === 'basico' ? 'Ciclo Básico' : 'Residência'}`
-        : `Prova - ${config.nivel === 'basico' ? 'Ciclo Básico' : 'Residência'} (${config.quantidade}Q)`;
+        ? `Caso Clínico - ${config.nivel === 'basico' ? 'Residente' : 'Especialista'}`
+        : `Prova - ${config.nivel === 'basico' ? 'Residente' : 'Especialista'} (${config.quantidade}Q)`;
       await exportToPDF({ tema: title, contentElement: resultRef.current });
       toast({ title: 'PDF exportado!', description: 'Conteúdo salvo como PDF.' });
     } catch (error) {
-      console.error('PDF export error:', error);
       toast({ title: 'Erro ao exportar', description: 'Tente novamente.', variant: 'destructive' });
     } finally {
       setExporting(false);
@@ -176,118 +179,105 @@ const Exam = () => {
   };
 
   const isProva = config.practiceMode === 'prova';
+  const modeLabel = lockedMode === 'caso_clinico' ? 'Casos Clínicos' : 'Simulados';
 
   return (
-    <PageTransition className="min-h-screen bg-background flex flex-col">
+    <DashboardLayout mainClassName="pb-4 px-4 sm:px-6">
       <OnboardingTour steps={examTourSteps} tourKey="exam" />
 
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-destructive/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-accent/5 rounded-full blur-3xl animate-pulse delay-1000" />
-      </div>
-
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/80 safe-area-top">
-        <div className="container flex h-14 sm:h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            {examStarted ? (
-              <Button variant="ghost" size="sm" onClick={handleBackToMenu} className="gap-2">
-                <PanelLeftOpen className="h-4 w-4" />
-                Voltar ao Menu
-              </Button>
-            ) : (
-              <Button variant="ghost" size="sm" onClick={() => navigate('/menu')} className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Voltar
-              </Button>
-            )}
-            <div className="h-6 w-px bg-border/50" />
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-primary" />
-              </div>
-              <span className="text-lg font-bold text-gradient-medical">PreceptorMED</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/library')}
-              className="gap-2 hover:bg-primary/10 hover:text-primary transition-colors"
-            >
-              <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Biblioteca</span>
-            </Button>
-            <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 container relative py-3 sm:py-6 px-3 sm:px-4">
+      <div className="max-w-5xl mx-auto">
         {examStarted ? (
-          /* Full-screen simulation with chat sidebar */
-          <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:h-[calc(100vh-8rem)]">
-            <div className="flex-1 min-w-0 relative rounded-xl sm:rounded-2xl border border-border/30 bg-gradient-to-br from-card/80 to-card/40 p-3 sm:p-6 flex flex-col overflow-hidden min-h-[60vh] lg:min-h-0">
-              {showSimulation && isProva ? (
-                <SimulationView
-                  resultado={resultado}
-                  onExit={handleBackToMenu}
-                  isGenerating={generating}
-                  isComplete={isComplete}
-                />
-              ) : showSimulation && !isProva ? (
-                /* Caso clínico: render markdown directly */
-                <div className="flex-1 overflow-y-auto">
-                  <div ref={resultRef} className="prose prose-sm dark:prose-invert max-w-none">
-                    <MarkdownRenderer content={resultado} isTyping={generating} />
-                  </div>
-                  {generating && (
-                    <div className="flex items-center gap-2 mt-4 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-sm">Elaborando caso clínico...</span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full py-16 text-center space-y-6 max-w-md mx-auto">
-                  <GenerationProgress
+          <div className="flex flex-col gap-4">
+            {/* Back button */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleBackToMenu}
+                className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-[#006D5B] transition-colors active:scale-95"
+              >
+                <ArrowLeft className="h-4 w-4" /> Nova Configuração
+              </button>
+              <span className="text-xs text-slate-400">{isProva ? 'Simulado' : 'Caso Clínico'}</span>
+            </div>
+
+            {/* Exam content area */}
+            <div className="flex flex-col lg:flex-row gap-4 min-h-[calc(100vh-10rem)]">
+              <div className="flex-1 min-w-0 rounded-xl bg-white border border-slate-100 shadow-[0_4px_20px_rgba(25,28,29,0.06)] p-4 sm:p-6 flex flex-col overflow-hidden">
+                {showSimulation && isProva ? (
+                  <SimulationView
+                    resultado={resultado}
+                    onExit={handleBackToMenu}
                     isGenerating={generating}
-                    hasStartedReceiving={hasStartedReceiving}
                     isComplete={isComplete}
                   />
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-foreground">
-                      {isProva ? 'Elaborando questões...' : 'Elaborando caso clínico...'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {hasStartedReceiving
-                        ? 'Recebendo conteúdo — as questões aparecerão automaticamente.'
-                        : 'Conectando com a IA, aguarde um momento.'}
-                    </p>
+                ) : showSimulation && !isProva ? (
+                  <div className="flex-1 overflow-y-auto">
+                    <div ref={resultRef} className="prose prose-sm max-w-none prose-headings:text-[#191c1d]">
+                      <MarkdownRenderer content={resultado} isTyping={generating} />
+                    </div>
+                    {generating && (
+                      <div className="flex items-center gap-2 mt-4 text-slate-400">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm">Elaborando caso clínico...</span>
+                      </div>
+                    )}
                   </div>
-                </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full py-16 text-center space-y-6 max-w-md mx-auto">
+                    <GenerationProgress
+                      isGenerating={generating}
+                      hasStartedReceiving={hasStartedReceiving}
+                      isComplete={isComplete}
+                    />
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-slate-700">
+                        {isProva ? 'Elaborando questões...' : 'Elaborando caso clínico...'}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        {hasStartedReceiving
+                          ? 'Recebendo conteúdo — as questões aparecerão automaticamente.'
+                          : 'Conectando com a IA, aguarde um momento.'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {resultado && (
+                <ContextChat
+                  context={resultado}
+                  contextLabel="simulado"
+                  suggestions={[
+                    'Por que a alternativa correta está certa?',
+                    'Quais são os diagnósticos diferenciais?',
+                    'Explique a fisiopatologia envolvida',
+                    'Que pegadinhas comuns caem sobre esse tema?',
+                  ]}
+                />
               )}
             </div>
-
-            {/* Chat sidebar for exam */}
-            {resultado && (
-              <ContextChat
-                context={resultado}
-                contextLabel="simulado"
-                suggestions={[
-                  'Por que a alternativa correta está certa?',
-                  'Quais são os diagnósticos diferenciais?',
-                  'Explique a fisiopatologia envolvida',
-                  'Que pegadinhas comuns caem sobre esse tema?',
-                ]}
-              />
-            )}
           </div>
         ) : (
-          /* Config panel - single column */
-          <div className="max-w-2xl mx-auto lg:h-[calc(100vh-8rem)]">
+          /* ── Config Page ── */
+          <div className="px-2 sm:px-4 py-6 sm:py-12 relative">
+            {/* Background orbs */}
+            <div className="absolute -top-16 -right-16 w-64 h-64 bg-[#9df3dc]/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-60 -left-20 w-48 h-48 bg-[#006D5B]/6 rounded-full blur-3xl pointer-events-none animate-float" />
+
+            {/* Header */}
+            <div className="mb-12 relative z-10 animate-fade-up">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#c8eade] text-[#4c6a62] text-xs font-bold mb-4">
+                <MI name="shutter_speed" className="text-[14px]" />
+                SIMULAÇÕES
+              </span>
+              <h2 className="font-['Manrope'] text-3xl sm:text-4xl font-extrabold text-[#191c1d] tracking-tight mb-3">
+                {modeLabel} com IA
+              </h2>
+              <p className="text-[#3e4945] max-w-2xl leading-relaxed">
+                Configure e gere questões personalizadas baseadas nos seus resumos da biblioteca.
+                Nossa IA analisa seu progresso para criar o desafio ideal.
+              </p>
+            </div>
+
             <ExamConfigPanel
               selectedIds={selectedIds}
               onSelectionChange={setSelectedIds}
@@ -301,8 +291,8 @@ const Exam = () => {
             />
           </div>
         )}
-      </main>
-    </PageTransition>
+      </div>
+    </DashboardLayout>
   );
 };
 
