@@ -88,6 +88,27 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
             </button>
           );
         })}
+
+        {/* Admin — only for admin users */}
+        {isAdmin && (
+          <>
+            <div className="my-3 border-t border-white/10" />
+            <button
+              onClick={() => navigate('/admin')}
+              className={`relative w-full flex items-center gap-3 py-3 px-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                location.pathname === '/admin'
+                  ? 'text-white bg-white/15'
+                  : 'text-white/70 hover:text-white hover:bg-white/10 hover:translate-x-0.5'
+              }`}
+            >
+              {location.pathname === '/admin' && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full" />
+              )}
+              <MI name="admin_panel_settings" fill={location.pathname === '/admin'} className="text-[22px]" />
+              <span>Painel Admin</span>
+            </button>
+          </>
+        )}
       </nav>
 
       {/* Bottom section */}
