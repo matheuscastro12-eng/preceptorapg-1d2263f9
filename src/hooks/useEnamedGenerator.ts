@@ -48,31 +48,45 @@ export const useEnamedGenerator = () => {
       const decoder = new TextDecoder();
       let fullText = '';
       let started = false;
+      let buffer = '';
 
       if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const jsonStr = line.slice(6).trim();
-              if (jsonStr === '[DONE]') continue;
-              try {
-                const parsed = JSON.parse(jsonStr);
-                const content = parsed.choices?.[0]?.delta?.content;
-                if (content) {
-                  if (!started) { started = true; setHasStartedReceiving(true); }
-                  fullText += content;
-                  setResultado(fullText);
-                }
-              } catch { /* ignore */ }
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            buffer += chunk;
+            const lines = buffer.split('\n');
+            // Keep last incomplete line in buffer
+            buffer = lines.pop() || '';
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed.startsWith('data: ')) {
+                const jsonStr = trimmed.slice(6).trim();
+                if (jsonStr === '[DONE]') continue;
+                if (!jsonStr) continue;
+                try {
+                  const parsed = JSON.parse(jsonStr);
+                  const content = parsed.choices?.[0]?.delta?.content;
+                  if (content) {
+                    if (!started) { started = true; setHasStartedReceiving(true); }
+                    fullText += content;
+                    setResultado(fullText);
+                  }
+                } catch { /* ignore malformed chunk */ }
+              }
             }
           }
+        } catch (streamError) {
+          console.warn('Stream interrupted:', streamError);
         }
       }
 
+      // Always mark as complete when stream ends, even if interrupted
+      if (fullText) {
+        setResultado(fullText);
+      }
       setIsComplete(true);
     } catch (error) {
       toast({

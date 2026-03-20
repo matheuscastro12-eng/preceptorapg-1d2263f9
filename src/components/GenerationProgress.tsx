@@ -70,9 +70,19 @@ const GenerationProgress = ({ isGenerating, hasStartedReceiving, isComplete }: G
   // Complete when done
   useEffect(() => {
     if (isComplete) {
-      setProgress(100);
+      // Small delay for smooth visual transition to 100%
+      const timer = setTimeout(() => setProgress(100), 200);
+      return () => clearTimeout(timer);
     }
   }, [isComplete]);
+
+  // Safety: if generating stops without isComplete, force complete
+  useEffect(() => {
+    if (!isGenerating && !isComplete && hasStartedReceiving) {
+      const timer = setTimeout(() => setProgress(100), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isGenerating, isComplete, hasStartedReceiving]);
 
   // Smooth display transition
   useEffect(() => {
