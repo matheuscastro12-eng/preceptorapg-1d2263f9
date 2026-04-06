@@ -138,27 +138,27 @@ export default function CrmAnalytics() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Analytics</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Metricas de visitantes e engajamento em tempo real</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Analytics</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Metricas de visitantes e engajamento em tempo real</p>
         </div>
-        <div className="flex gap-1 bg-gray-800 rounded-lg p-1">
+        <div className="flex gap-1 bg-gray-800 rounded-lg p-1 self-start">
           {(["7d", "14d", "30d"] as Period[]).map((p) => (
             <button key={p} onClick={() => setPeriod(p)}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                 period === p ? "bg-[#1B5E3B] text-white" : "text-gray-400 hover:text-white"
               }`}>
-              {p === "7d" ? "7 dias" : p === "14d" ? "14 dias" : "30 dias"}
+              {p === "7d" ? "7d" : p === "14d" ? "14d" : "30d"}
             </button>
           ))}
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
         <MetricCard title="Visitantes" value={stats.visitors} icon={Eye} color="blue" subtitle={`Ultimos ${periodDays} dias`} />
         <MetricCard title="Pageviews" value={stats.pageviews} icon={FileText} color="green" subtitle="Total de visualizacoes" />
         <MetricCard title="Views/Visita" value={stats.viewsPerVisit} icon={MousePointerClick} color="purple" subtitle="Paginas por sessao" />
@@ -167,9 +167,9 @@ export default function CrmAnalytics() {
       </div>
 
       {/* Chart */}
-      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
+      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
         <h2 className="text-sm font-semibold text-white mb-4">Visitantes por dia</h2>
-        <ResponsiveContainer width="100%" height={280}>
+        <ResponsiveContainer width="100%" height={220}>
           <LineChart data={timeSeries} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis
@@ -192,7 +192,7 @@ export default function CrmAnalytics() {
       </div>
 
       {/* Source + Page breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6">
         {/* Sources */}
         <div className="bg-gray-900/80 border border-gray-800 rounded-xl overflow-hidden">
           <div className="p-4 border-b border-gray-800">

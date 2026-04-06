@@ -29,12 +29,12 @@ export default function AdminEasyflow() {
     : subs;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">EasyFlow</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Dados financeiros e gestão de assinaturas</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">EasyFlow</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Dados financeiros e gestão de assinaturas</p>
         </div>
         <button onClick={() => { refetchSubs(); refetchSales(); }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 text-gray-300 hover:bg-gray-700">
@@ -43,7 +43,7 @@ export default function AdminEasyflow() {
       </div>
 
       {/* KPIs from sales data */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard title="Total Vendas" value={salesData?.data?.totalTransactionValue ? (salesData.data.totalTransactionValue / 100) : 0} format="currency" icon={DollarSign} color="green" subtitle="Valor acumulado" />
         <MetricCard title="Nº de Vendas" value={salesData?.data?.sales?.totalDocs ?? 0} icon={CreditCard} color="blue" subtitle="Pedidos" />
         <MetricCard title="Assinaturas" value={subsData?.data?.totalDocs ?? 0} icon={Users} color="gold" subtitle="Total encontradas" />
@@ -72,9 +72,9 @@ export default function AdminEasyflow() {
 
       {/* Subscriptions */}
       <div className="bg-gray-900/80 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+        <div className="p-4 border-b border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-white">Assinaturas {activeEmail ? `— ${activeEmail}` : "(todas)"}</h2>
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-wrap">
             {["", "active", "canceled", "expired", "inactive"].map((st) => (
               <button key={st} onClick={() => setSubStatusFilter(st)}
                 className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${subStatusFilter === st ? "bg-[#C9A84C] text-gray-900" : "bg-gray-800 text-gray-500 hover:text-white"}`}>
@@ -88,7 +88,7 @@ export default function AdminEasyflow() {
           <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-[#C9A84C]" /></div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[600px]">
               <thead>
                 <tr className="border-b border-gray-800">
                   {["Cliente", "Plano", "Valor", "Método", "Status", "Criado em", ""].map((h) => (
@@ -150,7 +150,7 @@ export default function AdminEasyflow() {
           <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-[#C9A84C]" /></div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[600px]">
               <thead>
                 <tr className="border-b border-gray-800">
                   {["Cliente", "Produto", "Valor", "Método", "Status", "Data"].map((h) => (

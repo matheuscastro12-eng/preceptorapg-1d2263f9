@@ -64,19 +64,19 @@ export default function AdminReceita() {
 
   if (isLoading) {
     return (
-      <div className="p-6 flex justify-center items-center h-96">
+      <div className="p-4 md:p-6 flex justify-center items-center h-96">
         <Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" />
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       {/* Header with period filter */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Receita & MRR</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Acompanhamento de receita recorrente</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Receita & MRR</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Acompanhamento de receita recorrente</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex gap-1 bg-gray-800 rounded-lg p-1">
@@ -97,7 +97,7 @@ export default function AdminReceita() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard title="MRR Total" value={resumo?.mrrTotal ?? 0} format="currency" icon={DollarSign} color="green" subtitle="Receita recorrente" />
         <MetricCard title="Novas Receitas" value={resumo?.novas ?? 0} icon={TrendingUp} color="blue" subtitle={periodLabel} />
         <MetricCard title="Cancelamentos" value={resumo?.cancelamentos ?? 0} icon={TrendingDown} color="red" subtitle="Total cancelados" />
@@ -110,7 +110,7 @@ export default function AdminReceita() {
           <h2 className="text-sm font-semibold text-white">Receitas ({(receitas ?? []).length})</h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="border-b border-gray-800">
                 {["Produto", "Plano", "Valor", "Inicio", "Renovacao", "Status", "Origem", ""].map((h) => (
@@ -161,9 +161,9 @@ export default function AdminReceita() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6">
         {/* Por Plano */}
-        <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
+        <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
           <h2 className="text-sm font-semibold text-white mb-4">Receita por Plano</h2>
           {(porPlano ?? []).length > 0 ? (
             <div className="space-y-3">
@@ -188,7 +188,7 @@ export default function AdminReceita() {
         </div>
 
         {/* Por Produto */}
-        <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
+        <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
           <h2 className="text-sm font-semibold text-white mb-4">Receita por Produto</h2>
           {(porProduto ?? []).length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
@@ -210,7 +210,7 @@ export default function AdminReceita() {
       {/* Modal Nova Receita */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowForm(false)}>
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm sm:max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-white">{editingId ? "Editar Receita" : "Nova Receita"}</h2>
               <button onClick={() => setShowForm(false)} className="p-1 rounded-full hover:bg-gray-800"><X className="w-4 h-4 text-gray-400" /></button>

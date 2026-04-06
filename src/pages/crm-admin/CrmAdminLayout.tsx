@@ -46,7 +46,7 @@ export default function CrmAdminLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-gray-950">
       <AdminSidebar />
-      <main className="flex-1 overflow-y-auto crm-scrollbar">
+      <main className="flex-1 overflow-y-auto crm-scrollbar pt-14 lg:pt-0">
         <Outlet />
       </main>
     </div>

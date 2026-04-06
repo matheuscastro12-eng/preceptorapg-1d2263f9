@@ -48,13 +48,13 @@ export default function CrmAutomations() {
   const globalClickRate = globalStats.opened > 0 ? Math.round((globalStats.clicked / globalStats.opened) * 1000) / 10 : 0;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Automacoes</h1>
-        <p className="text-sm text-gray-500 mt-0.5">12 automacoes ativas &middot; Email, Push e WhatsApp &middot; Ultimos 30 dias</p>
+        <h1 className="text-xl md:text-2xl font-bold text-white">Automacoes</h1>
+        <p className="text-xs md:text-sm text-gray-500 mt-0.5">12 automacoes ativas &middot; Email, Push e WhatsApp</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
         {[
           { label: "Total Enviadas", value: globalStats.sent, color: "text-white" },
           { label: "Entregues", value: globalStats.delivered, color: "text-blue-400" },
@@ -69,7 +69,7 @@ export default function CrmAutomations() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
         <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 flex items-center gap-4">
           <div className="p-3 bg-yellow-900/30 rounded-xl"><Mail className="w-5 h-5 text-yellow-400" /></div>
           <div>
@@ -89,11 +89,11 @@ export default function CrmAutomations() {
       </div>
 
       <div className="bg-gray-900/80 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-800">
-          <h2 className="text-base font-semibold text-white">Performance por Automacao (30 dias)</h2>
+        <div className="p-3 md:p-4 border-b border-gray-800">
+          <h2 className="text-sm md:text-base font-semibold text-white">Performance por Automacao (30 dias)</h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="border-b border-gray-800">
                 {["Automacao", "Canal", "Enviadas", "Abertura", "Clique", "Falhas"].map((h) => (
@@ -150,12 +150,12 @@ export default function CrmAutomations() {
       </div>
 
       <div className="bg-gray-900/80 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-800">
-          <h2 className="text-base font-semibold text-white">Log de Automacoes Recentes</h2>
+        <div className="p-3 md:p-4 border-b border-gray-800">
+          <h2 className="text-sm md:text-base font-semibold text-white">Log de Automacoes Recentes</h2>
           <p className="text-xs text-gray-500 mt-0.5">{totalAuto.toLocaleString("pt-BR")} no total</p>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="border-b border-gray-800">
                 {["Tipo", "Canal", "Status", "Motivo", "Produto", "Quando"].map((h) => (

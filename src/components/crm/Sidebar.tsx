@@ -1,9 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, TrendingUp, Heart, AlertTriangle, Zap,
-  ChevronDown, Activity, UserCog, BarChart3, ArrowLeft, LogOut,
+  ChevronDown, Activity, UserCog, BarChart3, ArrowLeft, LogOut, Menu, X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
 import ChangePasswordModal from "./ChangePasswordModal";
 
@@ -53,6 +53,7 @@ export default function Sidebar() {
   const { pathname } = useLocation();
   const { crmUser, logout } = useCrmAuth();
   const [showPwdModal, setShowPwdModal] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const getInitialExpanded = () => {
     const expanded: Record<string, boolean> = {};
@@ -71,18 +72,35 @@ export default function Sidebar() {
     setExpanded((prev) => ({ ...prev, [label]: !prev[label] }));
   };
 
-  return (
-    <aside className="w-64 min-h-screen bg-gray-900 border-r border-gray-800/50 flex flex-col">
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileOpen) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
+
+  const sidebarContent = (
+    <>
       {/* Logo */}
       <div className="px-5 py-5 border-b border-gray-800/50">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1B5E3B] to-[#14472d] flex items-center justify-center shadow-lg shadow-[#1B5E3B]/10">
-            <Activity className="w-4.5 h-4.5 text-[#C9A84C]" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1B5E3B] to-[#14472d] flex items-center justify-center shadow-lg shadow-[#1B5E3B]/10">
+              <Activity className="w-4.5 h-4.5 text-[#C9A84C]" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white tracking-tight">Preceptor CRM</p>
+              <p className="text-[10px] text-gray-500">Inteligência Estratégica</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-bold text-white tracking-tight">Preceptor CRM</p>
-            <p className="text-[10px] text-gray-500">Inteligência Estratégica</p>
-          </div>
+          <button onClick={() => setMobileOpen(false)} className="lg:hidden p-1.5 text-gray-400 hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
@@ -98,7 +116,6 @@ export default function Sidebar() {
 
             return (
               <div key={section.label}>
-                {/* Section header */}
                 <button
                   onClick={() => toggleSection(section.label)}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-200 ${
@@ -118,7 +135,6 @@ export default function Sidebar() {
                   />
                 </button>
 
-                {/* Collapsible items */}
                 <div
                   className={`overflow-hidden transition-all duration-200 ease-in-out ${
                     isExpanded ? "max-h-96 opacity-100 mt-0.5" : "max-h-0 opacity-0"
@@ -180,6 +196,44 @@ export default function Sidebar() {
           <ArrowLeft className="w-3 h-3" />Voltar ao Hub
         </Link>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile top bar */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gray-900 border-b border-gray-800/50 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setMobileOpen(true)} className="p-1.5 text-gray-400 hover:text-white">
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#1B5E3B] to-[#14472d] flex items-center justify-center">
+              <Activity className="w-3.5 h-3.5 text-[#C9A84C]" />
+            </div>
+            <p className="text-sm font-bold text-white">CRM</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 px-2 py-1 bg-green-900/30 rounded-full border border-green-800/50">
+          <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+          <span className="text-[10px] text-green-400 font-medium">Live</span>
+        </div>
+      </div>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+      )}
+
+      {/* Sidebar - desktop: static, mobile: slide-in drawer */}
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-50
+        w-64 min-h-screen bg-gray-900 border-r border-gray-800/50 flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+      `}>
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

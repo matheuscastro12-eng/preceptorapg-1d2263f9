@@ -23,11 +23,11 @@ export default function AdminPDI() {
   const historico = (pdis ?? []).filter((p) => p.status === "concluido");
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">PDI</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Plano de Desenvolvimento Individual</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">PDI</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Plano de Desenvolvimento Individual</p>
         </div>
         <div className="flex items-center gap-3">
           <select value={selectedMembro} onChange={(e) => setSelectedMembro(e.target.value)}
@@ -38,7 +38,7 @@ export default function AdminPDI() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3 md:gap-4">
         <MetricCard title="PDIs Ativos" value={stats?.ativos ?? 0} icon={Target} color="gold" subtitle="Em andamento" />
         <MetricCard title="Competencias" value={(ativo as any)?.competencias?.length ?? 0} icon={CheckCircle} color="blue" subtitle={selectedMembro ? "Deste PDI" : "—"} />
       </div>
@@ -69,7 +69,7 @@ export default function AdminPDI() {
             </button>
           )}
           {showNewPDI && (
-            <div className="bg-gray-900/80 border-2 border-[#C9A84C]/30 rounded-xl p-5 flex items-end gap-3">
+            <div className="bg-gray-900/80 border-2 border-[#C9A84C]/30 rounded-xl p-4 md:p-5 flex items-end gap-3">
               <div className="flex-1">
                 <label className="block text-xs text-gray-400 mb-1">Periodo</label>
                 <input value={newPeriodo} onChange={(e) => setNewPeriodo(e.target.value)} placeholder="Q2 2026"

@@ -50,12 +50,12 @@ export default function AdminDashboard() {
   const k = kpis!;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       <PageHeader title="Dashboard Administrativo" subtitle="Visao consolidada de Financas & People" showPeriodFilter />
 
       {/* KPI Bar */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <MetricCard title="MRR" value={k.mrr} format="currency" icon={DollarSign} color="green" subtitle="Receita mensal recorrente" />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+        <MetricCard title="MRR" value={k.mrr} format="currency" icon={DollarSign} color="green" subtitle="Receita mensal" />
         <MetricCard title="ARR" value={k.arr} format="currency" icon={TrendingUp} color="green" subtitle="MRR x 12" />
         <MetricCard title="Runway" value={`${k.runway} meses`} icon={ArrowLeftRight} color={k.runway < 3 ? "red" : "gold"} subtitle="Saldo / burn rate" />
         <MetricCard title="Headcount" value={k.headcount} icon={Users} color="blue" subtitle="Membros ativos" />
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Secondary KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
           <p className="text-xs text-gray-500 mb-1">Assinantes Ativos</p>
           <p className="text-2xl font-bold text-green-400">{k.assinantesAtivos}</p>
@@ -139,7 +139,7 @@ export default function AdminDashboard() {
       {bp && (
         <div>
           <h2 className="text-sm font-semibold text-white mb-3">Business Plan — Mês Atual</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
             <MetricCard title="Receita Bruta" value={bp.receitaBrutaMes} format="currency" icon={DollarSign} color="green" subtitle="Projetada" />
             <MetricCard title="EBITDA" value={bp.ebitdaMes} format="currency" icon={TrendingUp} color="purple" subtitle="Projetado" />
             <MetricCard title="Margem EBITDA" value={`${bp.margemEbitda}%`} icon={Target} color="gold" subtitle="EBITDA / Receita" />
@@ -167,7 +167,7 @@ export default function AdminDashboard() {
       {/* People Health */}
       <div>
         <h2 className="text-sm font-semibold text-white mb-3">People Health</h2>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           <MetricCard title="1:1s em dia" value={(allMembros ?? []).filter(m => m.status === "ativo").length - (ooAlerts ?? []).length} icon={Calendar} color="green" subtitle={`${(ooAlerts ?? []).length} pendentes`} />
           <MetricCard title="PDIs ativos" value={pdiStats?.ativos ?? 0} icon={Crosshair} color="gold" subtitle="Em andamento" />
           <MetricCard title="Promocoes" value={promoTri.data ?? 0} icon={Star} color="purple" subtitle="Neste trimestre" />

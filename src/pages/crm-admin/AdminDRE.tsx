@@ -83,14 +83,14 @@ export default function AdminDRE() {
   }
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">DRE — Demonstração de Resultado</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Projeção {ano} — Abril a Dezembro</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">DRE — Demonstração de Resultado</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Projeção {ano} — Abril a Dezembro</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 self-start">
           <select value={ano} onChange={(e) => setAno(Number(e.target.value))}
             className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-[#C9A84C]">
             <option value={2026}>2026</option>
@@ -104,7 +104,7 @@ export default function AdminDRE() {
       </div>
 
       {/* KPI Bar */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-3">
           <p className="text-[9px] text-gray-500 uppercase">Receita Bruta</p>
           <p className="text-lg font-bold text-green-400">R$ {(kpis.recBruta / 1000).toFixed(0)}k</p>

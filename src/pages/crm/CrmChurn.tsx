@@ -49,13 +49,13 @@ export default function CrmChurn() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Anti-Churn Engine</h1>
-        <p className="text-sm text-gray-500 mt-0.5">ML identifica risco de churn 14 dias antes &middot; Intervencoes automaticas por nivel</p>
+        <h1 className="text-xl md:text-2xl font-bold text-white">Anti-Churn Engine</h1>
+        <p className="text-xs md:text-sm text-gray-500 mt-0.5">ML identifica risco de churn 14 dias antes &middot; Intervencoes automaticas</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {(["critical", "high", "medium", "low"] as RiskLevel[]).map((level) => {
           const count = riskCounts[level];
           const color = RISK_LEVEL_COLORS[level];
@@ -69,7 +69,7 @@ export default function CrmChurn() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs text-gray-500 mb-1">{RISK_LABELS[level]}</p>
-                  <p className="text-3xl font-bold" style={{ color }}>{count}</p>
+                  <p className="text-2xl md:text-3xl font-bold" style={{ color }}>{count}</p>
                 </div>
                 <div className="p-2 rounded-lg" style={{ backgroundColor: `${color}20` }}>
                   <AlertTriangle className="w-4 h-4" style={{ color }} />
@@ -86,12 +86,12 @@ export default function CrmChurn() {
         })}
       </div>
 
-      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
-        <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
+        <h2 className="text-sm md:text-base font-semibold text-white mb-4 flex items-center gap-2">
           <Shield className="w-4 h-4 text-green-400" />
           Playbook de Intervencoes
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
           <div className="p-4 rounded-xl border border-yellow-800/40 bg-yellow-900/10">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-2 h-2 rounded-full bg-yellow-400" />
@@ -129,17 +129,19 @@ export default function CrmChurn() {
       </div>
 
       <div className="bg-gray-900/80 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+        <div className="p-3 md:p-4 border-b border-gray-800 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-semibold text-white">{risk_level ? `Risco ${RISK_LABELS[risk_level]}` : "Todos os Riscos"}</h2>
+            <h2 className="text-sm md:text-base font-semibold text-white">{risk_level ? `Risco ${RISK_LABELS[risk_level]}` : "Todos os Riscos"}</h2>
             <p className="text-xs text-gray-500 mt-0.5">{total} usuarios &middot; Prob. media: {avgChurnProb}%</p>
           </div>
           {risk_level && (
             <button onClick={() => setSearchParams({})} className="text-xs text-gray-400 hover:text-white">&times; Limpar filtro</button>
           )}
         </div>
-        <div className="p-4">
-          <ChurnTable predictions={predictions} />
+        <div className="p-3 md:p-4 overflow-x-auto">
+          <div className="min-w-[500px]">
+            <ChurnTable predictions={predictions} />
+          </div>
         </div>
 
         {totalPages > 1 && (

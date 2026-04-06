@@ -40,7 +40,7 @@ export default function AdminSalarios() {
   }
 
   if (isLoading) {
-    return <div className="p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
+    return <div className="p-4 md:p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
   }
 
   const totalFolha = (folha ?? []).reduce((s, f) => s + f.salario_bruto, 0);
@@ -48,12 +48,12 @@ export default function AdminSalarios() {
   const headcount = (folha ?? []).length;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Salarios & Remuneracao</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Folha de pagamento e equity — acesso confidencial</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Salarios & Remuneracao</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Folha de pagamento e equity — acesso confidencial</p>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/20 rounded-full border border-red-800/30">
           <ShieldX className="w-3.5 h-3.5 text-red-400" />
@@ -62,7 +62,7 @@ export default function AdminSalarios() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard title="Folha Mensal" value={totalFolha} format="currency" icon={Wallet} color="red" subtitle="Total bruto" />
         <MetricCard title="Media Salarial" value={Math.round(mediaSalarial)} format="currency" icon={DollarSign} color="gold" subtitle="Por colaborador" />
         <MetricCard title="Headcount" value={headcount} icon={TrendingUp} color="blue" subtitle="Recebendo" />
@@ -75,7 +75,7 @@ export default function AdminSalarios() {
           <h2 className="text-sm font-semibold text-white">Folha Consolidada</h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="border-b border-gray-800">
                 {["Membro", "Cargo", "Salario Bruto", "Modelo", "Dia Pgto", "Equity %", "Reajustes", "Editar"].map((h) => (
@@ -104,7 +104,7 @@ export default function AdminSalarios() {
       </div>
 
       {/* Projecao Folha */}
-      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
+      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
         <h2 className="text-sm font-semibold text-white mb-4">Projecao de Folha — Proximos 3 meses</h2>
         {(projecao ?? []).length > 0 ? (
           <ResponsiveContainer width="100%" height={200}>
@@ -255,7 +255,7 @@ function RemuneracaoModal({ membroId, onClose, onSave }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm sm:max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-white">Remuneracao</h2>
           <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-800"><X className="w-4 h-4 text-gray-400" /></button>
@@ -276,7 +276,7 @@ function RemuneracaoModal({ membroId, onClose, onSave }: {
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-gray-400 mb-1">Dia Pagamento</label>
               <input type="number" min={1} max={31} value={form.dia_pagamento ?? ""} onChange={(e) => setForm({ ...form, dia_pagamento: Number(e.target.value) })}
@@ -296,7 +296,7 @@ function RemuneracaoModal({ membroId, onClose, onSave }: {
 
           <div className="border-t border-gray-800 pt-4">
             <p className="text-xs font-semibold text-gray-400 mb-3">Equity & Vesting</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Equity %</label>
                 <input type="number" step="0.01" value={form.equity_percentual || ""} onChange={(e) => setForm({ ...form, equity_percentual: Number(e.target.value) })}

@@ -22,11 +22,11 @@ export default function AdminOneOnOne() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">1:1 Meetings</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Acompanhamento individual do time</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">1:1 Meetings</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Acompanhamento individual do time</p>
         </div>
         <div className="flex items-center gap-3">
           <select value={selectedMembro} onChange={(e) => setSelectedMembro(e.target.value)}
@@ -62,7 +62,7 @@ export default function AdminOneOnOne() {
       )}
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard title="Em dia" value={(membros ?? []).filter(m => m.status === "ativo").length - (alerts ?? []).length} icon={CheckCircle} color="green" subtitle="Ultimos 14 dias" />
         <MetricCard title="Pendentes" value={(alerts ?? []).length} icon={AlertTriangle} color="red" subtitle="Sem 1:1 recente" />
         <MetricCard title="Total 1:1s" value={(oos ?? []).length} icon={Calendar} color="blue" subtitle={selectedMembro ? "Deste membro" : "Selecione um membro"} />
@@ -80,7 +80,7 @@ export default function AdminOneOnOne() {
       ) : (
         <div className="space-y-4">
           {(oos ?? []).map((oo) => (
-            <div key={oo.id} className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
+            <div key={oo.id} className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">{HUMORS[oo.humor] ?? ""}</span>
@@ -156,7 +156,7 @@ function OneOnOneFormModal({ membroId, membros, onClose }: { membroId: string; m
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm sm:max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-white">Novo 1:1</h2>
           <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-800"><X className="w-4 h-4 text-gray-400" /></button>

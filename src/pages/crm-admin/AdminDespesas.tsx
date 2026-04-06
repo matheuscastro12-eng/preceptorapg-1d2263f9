@@ -60,16 +60,16 @@ export default function AdminDespesas() {
   };
 
   if (isLoading) {
-    return <div className="p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
+    return <div className="p-4 md:p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Despesas</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Controle de gastos operacionais</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Despesas</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Controle de gastos operacionais</p>
         </div>
         <button onClick={() => setShowForm(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#C9A84C] text-gray-900 hover:bg-yellow-500 transition-colors">
@@ -99,7 +99,7 @@ export default function AdminDespesas() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard title="Total do Mes" value={resumo?.totalMes ?? 0} format="currency" icon={CreditCard} color="red" subtitle="Despesas correntes" />
         <MetricCard title="Recorrentes" value={resumo?.recorrentes ?? 0} format="currency" icon={Repeat} color="gold" subtitle="Mensais + anuais" />
         <MetricCard title="Pontuais" value={resumo?.pontuais ?? 0} format="currency" icon={Zap} color="blue" subtitle="Gastos unicos" />
@@ -131,7 +131,7 @@ export default function AdminDespesas() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="border-b border-gray-800">
                 {["Descricao", "Categoria", "Valor", "Data", "Tipo", "Responsavel", ""].map((h) => (
@@ -184,7 +184,7 @@ export default function AdminDespesas() {
       </div>
 
       {/* Pizza chart */}
-      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
+      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
         <h2 className="text-sm font-semibold text-white mb-4">Despesas por Categoria</h2>
         {(porCat ?? []).length > 0 ? (
           <div className="flex items-center gap-8">
@@ -214,7 +214,7 @@ export default function AdminDespesas() {
       {/* Modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowForm(false)}>
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm sm:max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-white">{editingId ? "Editar Despesa" : "Nova Despesa"}</h2>
               <button onClick={() => setShowForm(false)} className="p-1 rounded-full hover:bg-gray-800"><X className="w-4 h-4 text-gray-400" /></button>

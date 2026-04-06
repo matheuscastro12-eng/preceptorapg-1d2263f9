@@ -34,15 +34,15 @@ export default function AdminCarreira() {
   };
 
   if (isLoading) {
-    return <div className="p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
+    return <div className="p-4 md:p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Plano de Carreira</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Trilhas de crescimento por area</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Plano de Carreira</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Trilhas de crescimento por area</p>
         </div>
         <button onClick={() => setShowPromover(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#C9A84C] text-gray-900 hover:bg-yellow-500 transition-colors">
@@ -62,7 +62,7 @@ export default function AdminCarreira() {
       </div>
 
       {/* Timeline */}
-      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-6">
+      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-6">
         <div className="flex items-stretch gap-0 overflow-x-auto pb-2">
           {(trilhas ?? []).map((t, i) => {
             const membrosHere = getMembrosInTrilha(t.id);

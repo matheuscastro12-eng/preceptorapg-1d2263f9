@@ -34,16 +34,16 @@ export default function AdminRelatorio() {
   }));
 
   if (isLoading) {
-    return <div className="p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
+    return <div className="p-4 md:p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Relatorio para Investidor</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Report mensal com KPIs e narrativa</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Relatorio para Investidor</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Report mensal com KPIs e narrativa</p>
         </div>
         <button onClick={() => { setEditingRel(null); setShowForm(true); }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#C9A84C] text-gray-900 hover:bg-yellow-500 transition-colors">
@@ -67,7 +67,7 @@ export default function AdminRelatorio() {
 
       {/* MRR Chart */}
       {mrrHistory.length > 1 && (
-        <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
+        <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
           <h2 className="text-sm font-semibold text-white mb-4">Evolucao MRR</h2>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={mrrHistory}>
@@ -84,9 +84,9 @@ export default function AdminRelatorio() {
 
       {/* BP Section */}
       {bp && (
-        <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
+        <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
           <h2 className="text-sm font-semibold text-white mb-3">Business Plan — Projeção Atual</h2>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <div className="bg-gray-800/50 rounded-lg p-3">
               <p className="text-[9px] text-gray-500 uppercase">Receita Bruta</p>
               <p className="text-sm font-bold text-green-400">R$ {(bp.receitaBrutaMes / 1000).toFixed(0)}k</p>
@@ -149,7 +149,7 @@ export default function AdminRelatorio() {
               {isExpanded && (
                 <div className="px-4 pb-4 border-t border-gray-800/50 pt-4 space-y-4">
                   {/* KPI Grid */}
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     {[
                       { label: "MRR", value: fmtCurrency(r.mrr) },
                       { label: "ARR", value: fmtCurrency(r.arr) },
@@ -251,7 +251,7 @@ function RelatorioFormModal({ editing, onClose }: { editing: Relatorio | null; o
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm sm:max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-white">{editing ? "Editar Relatorio" : "Novo Relatorio"}</h2>
           <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-800"><X className="w-4 h-4 text-gray-400" /></button>
@@ -281,7 +281,7 @@ function RelatorioFormModal({ editing, onClose }: { editing: Relatorio | null; o
           {/* KPI Grid */}
           <div>
             <p className="text-xs font-semibold text-gray-400 mb-2">Metricas</p>
-            <div className="grid grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {[
                 { key: "mrr", label: "MRR (R$)", type: "number" },
                 { key: "arr", label: "ARR (R$)", type: "number" },

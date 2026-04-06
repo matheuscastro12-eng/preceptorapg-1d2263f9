@@ -91,16 +91,16 @@ export default function AdminTime() {
   const areas = new Set((membros ?? []).map((m) => m.area)).size;
 
   if (isLoading) {
-    return <div className="p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
+    return <div className="p-4 md:p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Time</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{ativos} membros ativos em {areas} areas</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Time</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">{ativos} membros ativos em {areas} areas</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex gap-0.5 bg-gray-800 rounded-lg p-0.5">
@@ -140,11 +140,11 @@ export default function AdminTime() {
 
       {/* Cards View */}
       {viewMode === "cards" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
           {(membros ?? []).map((m) => {
             const vc = VINCULO_COLORS[m.vinculo] ?? VINCULO_COLORS.voluntario;
             return (
-              <div key={m.id} className="bg-gray-900/80 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition-colors">
+              <div key={m.id} className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5 hover:border-gray-700 transition-colors">
                 <div className="flex items-start gap-3 mb-4">
                   {m.foto_url ? (
                     <img src={m.foto_url} alt={m.nome} className="w-12 h-12 rounded-full object-cover" />
@@ -210,7 +210,7 @@ export default function AdminTime() {
       {viewMode === "table" && (
         <div className="bg-gray-900/80 border border-gray-800 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[600px]">
               <thead>
                 <tr className="border-b border-gray-800">
                   {["Membro", "Cargo", "Area", "Vinculo", "Entrada", "Status", "Cidade", ""].map((h) => (
@@ -274,7 +274,7 @@ export default function AdminTime() {
       {/* Modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowForm(false)}>
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm sm:max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-white">{editingMembro ? "Editar Membro" : "Novo Membro"}</h2>
               <button onClick={() => { setShowForm(false); setEditingMembro(null); setForm({ ...emptyForm }); }} className="p-1 rounded-full hover:bg-gray-800"><X className="w-4 h-4 text-gray-400" /></button>

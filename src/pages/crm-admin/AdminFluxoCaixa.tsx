@@ -34,12 +34,12 @@ export default function AdminFluxoCaixa() {
   const minProjecao = Math.min(...(projecao ?? []).map((p) => p.saldo));
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Fluxo de Caixa</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Saldo, entradas, saidas e projecao 90 dias</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Fluxo de Caixa</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Saldo, entradas, saidas e projecao 90 dias</p>
         </div>
         {!editSaldo ? (
           <button onClick={() => { setEditSaldo(true); setNovoSaldo(String(saldo)); }}
@@ -62,7 +62,7 @@ export default function AdminFluxoCaixa() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard title="Saldo Atual" value={saldo} format="currency" icon={Wallet} color={saldo > 0 ? "green" : "red"} subtitle={fluxo ? `Atualizado ${new Date(fluxo.data_atualizacao).toLocaleDateString("pt-BR")}` : "—"} />
         <MetricCard title="Runway" value={`${runway} meses`} icon={ArrowLeftRight} color={runway < 3 ? "red" : runway < 6 ? "gold" : "green"} subtitle={`Burn medio: R$ ${burnMedio.toFixed(0)}/mes`} />
         <MetricCard title="Entradas Previstas" value={totalEntradas} format="currency" icon={TrendingUp} color="green" subtitle={`${(entradas ?? []).length} renovacoes`} />
@@ -70,8 +70,8 @@ export default function AdminFluxoCaixa() {
       </div>
 
       {/* Projecao 90 dias */}
-      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <h2 className="text-sm font-semibold text-white">Projecao de Saldo — Proximos 90 dias</h2>
           {minProjecao < 0 && (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-900/30 text-red-400 border border-red-800/30">
@@ -111,7 +111,7 @@ export default function AdminFluxoCaixa() {
       </div>
 
       {/* Tables: Entradas + Saidas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6">
         {/* Entradas */}
         <div className="bg-gray-900/80 border border-gray-800 rounded-xl overflow-hidden">
           <div className="p-4 border-b border-gray-800">
@@ -120,7 +120,7 @@ export default function AdminFluxoCaixa() {
             </h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[400px]">
               <thead>
                 <tr className="border-b border-gray-800">
                   <th className="text-left py-2.5 px-4 text-xs font-semibold text-gray-500 uppercase">Descricao</th>
@@ -152,7 +152,7 @@ export default function AdminFluxoCaixa() {
             </h2>
           </div>
           <div className="overflow-x-auto max-h-80 overflow-y-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[400px]">
               <thead className="sticky top-0 bg-gray-900">
                 <tr className="border-b border-gray-800">
                   <th className="text-left py-2.5 px-4 text-xs font-semibold text-gray-500 uppercase">Descricao</th>

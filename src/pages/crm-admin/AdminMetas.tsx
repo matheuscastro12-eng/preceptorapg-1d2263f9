@@ -40,16 +40,16 @@ export default function AdminMetas() {
   const atRisk = (okrs ?? []).filter((o) => ["em_risco", "atrasado"].includes(o.status)).length;
 
   if (isLoading) {
-    return <div className="p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
+    return <div className="p-4 md:p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Metas & OKRs</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Objectives and Key Results</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Metas & OKRs</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Objectives and Key Results</p>
         </div>
         <select
           value={`${ano}-${trimestre}`}
@@ -64,7 +64,7 @@ export default function AdminMetas() {
 
       {/* KPIs */}
       {totalOkrs > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <MetricCard title="OKRs" value={totalOkrs} icon={Target} color="gold" subtitle={`Q${trimestre} ${ano}`} />
           <MetricCard title="Progresso Medio" value={`${avgProg}%`} icon={TrendingUp} color={avgProg >= 70 ? "green" : avgProg >= 40 ? "gold" : "red"} subtitle="Todos os OKRs" />
           <MetricCard title="No Prazo" value={onTrack} icon={CheckCircle} color="green" subtitle="On track" />
@@ -163,7 +163,7 @@ function InlineOKRCreator({ trimestre, ano, onClose }: { trimestre: number; ano:
 
         <div className="divide-y divide-gray-800/50">
           {drafts.map((draft, oi) => (
-            <div key={oi} className="p-5 space-y-3">
+            <div key={oi} className="p-4 md:p-5 space-y-3">
               {/* OKR header */}
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-bold text-[#C9A84C] bg-[#C9A84C]/10 px-2 py-0.5 rounded">OKR {oi + 1}</span>
@@ -247,7 +247,7 @@ function OKRCard({ okr, editable }: { okr: OKR; editable: boolean }) {
 
   return (
     <div className="bg-gray-900/80 border border-gray-800 rounded-xl overflow-hidden">
-      <div className="p-5 border-b border-gray-800/50">
+      <div className="p-4 md:p-5 border-b border-gray-800/50">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-start gap-3 flex-1">
             <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"

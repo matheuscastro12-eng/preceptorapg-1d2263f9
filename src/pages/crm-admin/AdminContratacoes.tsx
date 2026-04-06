@@ -38,22 +38,22 @@ export default function AdminContratacoes() {
   const [selectedCand, setSelectedCand] = useState<Candidato | null>(null);
 
   if (isLoading) {
-    return <div className="p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
+    return <div className="p-4 md:p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
   }
 
   const m = metricas ?? { vagasAbertas: 0, candidatosEmProcesso: 0, tempoMedio: "—", taxaAprovacao: 0 };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           {selectedVaga ? (
             <button onClick={() => setSelectedVaga(null)} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white mb-1">
               <ArrowLeft className="w-3.5 h-3.5" />Voltar as vagas
             </button>
           ) : null}
-          <h1 className="text-2xl font-bold text-white">Contratacoes</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Pipeline de vagas e candidatos</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Contratacoes</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Pipeline de vagas e candidatos</p>
         </div>
         {!selectedVaga && (
           <button onClick={() => setShowVagaForm(true)}
@@ -64,7 +64,7 @@ export default function AdminContratacoes() {
       </div>
 
       {/* Metricas */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard title="Vagas Abertas" value={m.vagasAbertas} icon={Search} color="blue" subtitle="Em andamento" />
         <MetricCard title="Candidatos" value={m.candidatosEmProcesso} icon={UserPlus} color="purple" subtitle="Em processo" />
         <MetricCard title="Tempo Medio" value={m.tempoMedio} icon={Clock} color="gold" subtitle="Por processo" />
@@ -93,12 +93,12 @@ function VagasList({ vagas, onSelect }: { vagas: Vaga[]; onSelect: (id: string) 
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
       {vagas.map((v) => {
         const urg = URG_CONFIG[v.urgencia] ?? URG_CONFIG.baixa;
         return (
           <div key={v.id} onClick={() => onSelect(v.id)}
-            className="bg-gray-900/80 border border-gray-800 rounded-xl p-5 cursor-pointer hover:border-gray-700 hover:shadow-lg transition-all relative">
+            className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5 cursor-pointer hover:border-gray-700 hover:shadow-lg transition-all relative">
             <div className="flex items-start justify-between mb-3">
               <div>
                 <h3 className="font-semibold text-white">{v.titulo}</h3>
@@ -246,7 +246,7 @@ function VagaFormModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm sm:max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-white">Nova Vaga</h2>
           <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-800"><X className="w-4 h-4 text-gray-400" /></button>
@@ -326,7 +326,7 @@ function CandidatoFormModal({ vagaId, onClose }: { vagaId: string; onClose: () =
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm sm:max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-white">Novo Candidato</h2>
           <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-800"><X className="w-4 h-4 text-gray-400" /></button>
@@ -387,7 +387,7 @@ function CandidatoDetailModal({ candidato, onClose }: { candidato: Candidato; on
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm sm:max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-lg font-bold text-white">{candidato.nome}</h2>

@@ -29,20 +29,20 @@ export default function CrmFunnel() {
   const med = funnelKpis?.find((f) => f.produto === "preceptormed") ?? emptyFunnel;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Funil de Conversao</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Visitante &rarr; Signup &rarr; Trial &rarr; Engajado &rarr; Assinante</p>
+        <h1 className="text-xl md:text-2xl font-bold text-white">Funil de Conversao</h1>
+        <p className="text-xs md:text-sm text-gray-500 mt-0.5">Visitante &rarr; Signup &rarr; Trial &rarr; Engajado &rarr; Assinante</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
-          <h2 className="text-base font-semibold text-white mb-4">PreceptorMED — Funil Atual</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6">
+        <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
+          <h2 className="text-sm md:text-base font-semibold text-white mb-4">PreceptorMED — Funil Atual</h2>
           <FunnelChart data={med} />
         </div>
 
-        <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
-          <h2 className="text-base font-semibold text-white mb-4">Progresso vs. Meta Estrategica</h2>
+        <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
+          <h2 className="text-sm md:text-base font-semibold text-white mb-4">Progresso vs. Meta Estrategica</h2>
           <div className="space-y-4">
             {Object.entries(targets).map(([key, target]) => {
               const actual = (med[key as keyof typeof med] as number) ?? 0;
@@ -86,15 +86,15 @@ export default function CrmFunnel() {
         </div>
       )}
 
-      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
-        <h2 className="text-base font-semibold text-white mb-1">Evolucao do Funil (30 dias)</h2>
+      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
+        <h2 className="text-sm md:text-base font-semibold text-white mb-1">Evolucao do Funil (30 dias)</h2>
         <p className="text-xs text-gray-500 mb-4">Transicoes de estagio por dia</p>
         <FunnelTimeSeriesChart data={timeSeries ?? []} />
       </div>
 
-      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
-        <h2 className="text-base font-semibold text-white mb-4">12 Automacoes do Funil</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
+        <h2 className="text-sm md:text-base font-semibold text-white mb-4">12 Automacoes do Funil</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {[
             { day: "D0", name: "Boas-vindas", trigger: "Signup", channel: "Email" },
             { day: "D+1", name: "Ativacao", trigger: "24h apos signup", channel: "Email" },

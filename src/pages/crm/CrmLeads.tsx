@@ -45,7 +45,7 @@ export default function CrmLeads() {
 
   if (isLoading) {
     return (
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         <div className="h-8 bg-gray-800 rounded w-48 animate-pulse mb-6" />
         <div className="h-96 bg-gray-800 rounded-xl animate-pulse" />
       </div>
@@ -53,29 +53,29 @@ export default function CrmLeads() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Lead Intelligence</h1>
-        <p className="text-sm text-gray-500 mt-0.5">{total.toLocaleString("pt-BR")} leads no banco &middot; Score automatico por comportamento</p>
+        <h1 className="text-xl md:text-2xl font-bold text-white">Lead Intelligence</h1>
+        <p className="text-xs md:text-sm text-gray-500 mt-0.5">{total.toLocaleString("pt-BR")} leads no banco &middot; Score automatico</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {(["visitor", "active_trial", "subscriber", "churned"] as LeadStatus[]).map((s) => {
           const count = leads.filter((l) => l.status === s).length;
           return (
-            <div key={s} className="bg-gray-900/80 border border-gray-800 rounded-xl p-4">
-              <p className="text-xs text-gray-500 mb-1">{LEAD_STATUS_LABELS[s]}</p>
-              <p className="text-2xl font-bold" style={{ color: STATUS_COLORS[s] }}>{count}</p>
-              <p className="text-xs text-gray-600 mt-0.5">nesta pagina</p>
+            <div key={s} className="bg-gray-900/80 border border-gray-800 rounded-xl p-3 md:p-4">
+              <p className="text-[10px] md:text-xs text-gray-500 mb-1">{LEAD_STATUS_LABELS[s]}</p>
+              <p className="text-xl md:text-2xl font-bold" style={{ color: STATUS_COLORS[s] }}>{count}</p>
+              <p className="text-[10px] md:text-xs text-gray-600 mt-0.5">nesta pagina</p>
             </div>
           );
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-6">
         <div className="lg:col-span-2 bg-gray-900/80 border border-gray-800 rounded-xl overflow-hidden">
-          <div className="p-4 border-b border-gray-800">
-            <form className="flex gap-3 w-full" onSubmit={handleFilter}>
+          <div className="p-3 md:p-4 border-b border-gray-800">
+            <form className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full" onSubmit={handleFilter}>
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
@@ -85,21 +85,54 @@ export default function CrmLeads() {
                   className="w-full pl-9 pr-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-green-600"
                 />
               </div>
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-green-600">
-                <option value="">Todos os status</option>
-                {Object.entries(LEAD_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
-              <select value={scoreFilter} onChange={(e) => setScoreFilter(e.target.value)} className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-green-600">
-                <option value="">Qualquer score</option>
-                <option value="70">Score &ge; 70</option>
-                <option value="50">Score &ge; 50</option>
-                <option value="30">Score &ge; 30</option>
-              </select>
-              <button type="submit" className="px-4 py-2 bg-[#1B5E3B] text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">Filtrar</button>
+              <div className="flex gap-2">
+                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="flex-1 sm:flex-none px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-green-600">
+                  <option value="">Status</option>
+                  {Object.entries(LEAD_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+                <select value={scoreFilter} onChange={(e) => setScoreFilter(e.target.value)} className="flex-1 sm:flex-none px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-green-600">
+                  <option value="">Score</option>
+                  <option value="70">&ge; 70</option>
+                  <option value="50">&ge; 50</option>
+                  <option value="30">&ge; 30</option>
+                </select>
+                <button type="submit" className="px-4 py-2 bg-[#1B5E3B] text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">Filtrar</button>
+              </div>
             </form>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile card view */}
+          <div className="md:hidden divide-y divide-gray-800/50">
+            {leads.map((lead) => (
+              <div key={lead.id} className="p-3 space-y-2">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-white">{lead.nome ?? "—"}</p>
+                    <p className="text-xs text-gray-500">{lead.email}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-10 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500" style={{ width: `${lead.lead_score}%` }} />
+                    </div>
+                    <span className="font-bold text-white text-xs">{lead.lead_score}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ backgroundColor: `${STATUS_COLORS[lead.status]}20`, color: STATUS_COLORS[lead.status], border: `1px solid ${STATUS_COLORS[lead.status]}40` }}>
+                    {LEAD_STATUS_LABELS[lead.status]}
+                  </span>
+                  <span className="text-[10px] font-medium" style={{ color: PRODUTO_COLORS[lead.produto_interesse] }}>
+                    {lead.produto_interesse.replace("preceptor", "P.")}
+                  </span>
+                  <span className="text-[10px] text-gray-500">{lead.utm_source ?? "direct"}</span>
+                  <span className="text-[10px] text-gray-600 ml-auto">{lead.last_activity_at ? new Date(lead.last_activity_at).toLocaleDateString("pt-BR") : "—"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-800">
@@ -148,21 +181,21 @@ export default function CrmLeads() {
             </table>
           </div>
 
-          <div className="p-4 border-t border-gray-800 flex items-center justify-between">
-            <p className="text-xs text-gray-500">Mostrando {leads.length} de {total.toLocaleString("pt-BR")} leads</p>
+          <div className="p-3 md:p-4 border-t border-gray-800 flex items-center justify-between">
+            <p className="text-[10px] md:text-xs text-gray-500">Mostrando {leads.length} de {total.toLocaleString("pt-BR")}</p>
             <div className="flex gap-2">
               {page > 1 && (
-                <button onClick={() => goToPage(page - 1)} className="px-3 py-1.5 bg-gray-800 text-gray-300 text-sm rounded-lg hover:bg-gray-700">&larr; Anterior</button>
+                <button onClick={() => goToPage(page - 1)} className="px-3 py-1.5 bg-gray-800 text-gray-300 text-xs md:text-sm rounded-lg hover:bg-gray-700">&larr;</button>
               )}
-              <span className="px-3 py-1.5 text-sm text-gray-500">{page} / {totalPages}</span>
+              <span className="px-3 py-1.5 text-xs md:text-sm text-gray-500">{page}/{totalPages}</span>
               {page < totalPages && (
-                <button onClick={() => goToPage(page + 1)} className="px-3 py-1.5 bg-gray-800 text-gray-300 text-sm rounded-lg hover:bg-gray-700">Proxima &rarr;</button>
+                <button onClick={() => goToPage(page + 1)} className="px-3 py-1.5 bg-gray-800 text-gray-300 text-xs md:text-sm rounded-lg hover:bg-gray-700">&rarr;</button>
               )}
             </div>
           </div>
         </div>
 
-        <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
+        <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
           <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-green-400" />
             Performance por Canal

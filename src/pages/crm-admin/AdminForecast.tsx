@@ -106,16 +106,16 @@ export default function AdminForecast() {
   const f = (field: keyof Premissa, value: number) => setForm({ ...form, [field]: value });
 
   if (isLoading) {
-    return <div className="p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
+    return <div className="p-4 md:p-6 flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-[#C9A84C]" /></div>;
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Forecast & Business Plan</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-xl md:text-2xl font-bold text-white">Forecast & Business Plan</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">
             Premissas de receita e projeção DRE — {p?.versao ?? "Nenhuma versão"}
           </p>
         </div>
@@ -145,10 +145,10 @@ export default function AdminForecast() {
       </div>
 
       {/* ══ SEÇÃO 1: Premissas ══ */}
-      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
+      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
         <h2 className="text-sm font-semibold text-white mb-4">Premissas do Business Plan</h2>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-5">
           {/* Assinantes Base */}
           <div className="bg-gray-800/50 rounded-lg p-3">
             <p className="text-[10px] text-gray-500 uppercase mb-1">Assinantes Base</p>
@@ -182,7 +182,7 @@ export default function AdminForecast() {
         </div>
 
         {/* Mix + Preços */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4 mb-4">
           {(["mensal", "anual", "bianual"] as const).map((plano) => {
             const mixKey = `mix_${plano}` as keyof Premissa;
             const precoKey = `preco_${plano}` as keyof Premissa;
@@ -226,7 +226,7 @@ export default function AdminForecast() {
         )}
 
         {/* Taxas de Renovação */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
           {([
             ["taxa_renovacao_m_m", "Renovação M→M"],
             ["taxa_renovacao_m_a", "Renovação M→A"],
@@ -263,8 +263,8 @@ export default function AdminForecast() {
 
       {/* Breakdown */}
       {calc && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6">
+          <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
             <h3 className="text-sm font-semibold text-white mb-3">Receita de Aquisição (Mês 1)</h3>
             <div className="space-y-2">
               {[
@@ -284,7 +284,7 @@ export default function AdminForecast() {
             </div>
           </div>
 
-          <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
+          <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
             <h3 className="text-sm font-semibold text-white mb-3">Receita de Renovação (Mês 2+)</h3>
             <div className="space-y-2">
               {[
@@ -307,7 +307,7 @@ export default function AdminForecast() {
       )}
 
       {/* ══ SEÇÃO 3: Versões do BP ══ */}
-      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
+      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-white">Versões do Business Plan</h2>
         </div>
@@ -346,7 +346,7 @@ export default function AdminForecast() {
       </div>
 
       {/* ══ SEÇÃO 4: Gráfico DRE ══ */}
-      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
+      <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5">
         <h2 className="text-sm font-semibold text-white mb-4">Projeção DRE — Abril a Dezembro 2026</h2>
         {chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height={320}>
