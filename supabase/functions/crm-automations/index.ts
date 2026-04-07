@@ -56,10 +56,97 @@ const AUTOMATION_TEMPLATES: Record<string, { subject: string; preview: string }>
     preview: "Expanda seus estudos para além da residência",
   },
   reativacao: {
-    subject: "Volta! 50% OFF no plano anual — só este mês",
-    preview: "Última chance antes do próximo ENAMED",
+    subject: "Volta! 50% OFF no plano anual — so este mes",
+    preview: "Ultima chance antes do proximo ENAMED",
+  },
+  inadimplencia_d1: {
+    subject: "Ops! Seu pagamento nao foi processado",
+    preview: "Regularize para continuar seus estudos sem interrupcao",
+  },
+  inadimplencia_d5: {
+    subject: "Aviso importante: seu acesso sera suspenso em 48h",
+    preview: "Atualize seus dados de pagamento para evitar a suspensao",
+  },
+  inadimplencia_d10: {
+    subject: "Ultima chance: 20% OFF para regularizar sua assinatura",
+    preview: "Oferta exclusiva por tempo limitado para manter seu acesso",
   },
 };
+
+function buildEmailHtml(
+  template: string,
+  tmpl: { subject: string; preview: string },
+  metadata: Record<string, unknown>
+): string {
+  const nome = (metadata.nome as string) || "estudante";
+  const wrap = (body: string) => `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+      <div style="background: #1B5E3B; padding: 24px; text-align: center;">
+        <h1 style="color: #C9A84C; margin: 0; font-size: 22px;">PreceptorMED</h1>
+      </div>
+      <div style="padding: 32px 28px;">${body}</div>
+      <div style="background: #f5f5f5; padding: 20px; text-align: center; font-size: 11px; color: #999;">
+        Preceptor Group &copy; 2026 | Voce recebeu este email por ser assinante do PreceptorMED
+      </div>
+    </div>
+  `;
+
+  // Inadimplencia templates
+  if (template === "inadimplencia_d1") {
+    return wrap(`
+      <p style="font-size: 16px; color: #333;">Ola, <strong>${nome}</strong>!</p>
+      <p style="color: #555; line-height: 1.6;">Identificamos que seu ultimo pagamento <strong>nao foi processado</strong>. Isso pode acontecer por cartao expirado, limite insuficiente ou dados desatualizados.</p>
+      <p style="color: #555; line-height: 1.6;">Para continuar seus estudos sem interrupcao, atualize seus dados de pagamento:</p>
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="https://thepreceptor.com.br/subscription" style="background: #1B5E3B; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Atualizar pagamento</a>
+      </div>
+      <p style="color: #888; font-size: 13px;">Se o pagamento ja foi regularizado, desconsidere este email.</p>
+    `);
+  }
+
+  if (template === "inadimplencia_d5") {
+    return wrap(`
+      <p style="font-size: 16px; color: #333;">Ola, <strong>${nome}</strong>,</p>
+      <p style="color: #555; line-height: 1.6;">Seu pagamento continua pendente ha <strong>5 dias</strong>. Se nao for regularizado nas proximas <strong>48 horas</strong>, seu acesso ao PreceptorMED sera <span style="color: #dc2626; font-weight: bold;">suspenso temporariamente</span>.</p>
+      <p style="color: #555; line-height: 1.6;">Nao queremos que voce perca seu progresso! Atualize agora:</p>
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="https://thepreceptor.com.br/subscription" style="background: #dc2626; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Regularizar agora</a>
+      </div>
+      <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 16px 0;">
+        <p style="color: #991b1b; font-size: 13px; margin: 0;"><strong>O que acontece se nao regularizar:</strong></p>
+        <ul style="color: #991b1b; font-size: 13px; margin: 8px 0 0; padding-left: 20px;">
+          <li>Acesso suspenso temporariamente</li>
+          <li>Historico e progresso preservados por 30 dias</li>
+        </ul>
+      </div>
+    `);
+  }
+
+  if (template === "inadimplencia_d10") {
+    return wrap(`
+      <p style="font-size: 16px; color: #333;">Ola, <strong>${nome}</strong>,</p>
+      <p style="color: #555; line-height: 1.6;">Esta e nossa <strong>ultima tentativa</strong> de manter sua assinatura ativa. Seu pagamento esta pendente ha <strong>10 dias</strong>.</p>
+      <p style="color: #555; line-height: 1.6;">Preparamos uma <strong>oferta exclusiva</strong> para te ajudar a regularizar:</p>
+      <div style="background: #f0fdf4; border: 2px solid #16a34a; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;">
+        <p style="color: #16a34a; font-size: 28px; font-weight: bold; margin: 0;">20% OFF</p>
+        <p style="color: #555; font-size: 14px; margin: 8px 0 0;">na renovacao da sua assinatura</p>
+      </div>
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="https://thepreceptor.com.br/subscription" style="background: #1B5E3B; color: white; padding: 14px 36px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 15px;">Regularizar com 20% OFF</a>
+      </div>
+      <p style="color: #dc2626; font-size: 13px; text-align: center;"><strong>Atencao:</strong> Apos 15 dias, sua assinatura sera cancelada automaticamente.</p>
+    `);
+  }
+
+  // Default template for other automations
+  return wrap(`
+    <p style="font-size: 16px; color: #333;">Ola, <strong>${nome}</strong>!</p>
+    <p style="color: #555; line-height: 1.6;">${tmpl.preview}</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="https://thepreceptor.com.br" style="background: #1B5E3B; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold;">Acessar PreceptorMED</a>
+    </div>
+  `);
+}
 
 async function sendEmail(
   to: string,
@@ -81,21 +168,7 @@ async function sendEmail(
         from: "PreceptorMED <noreply@thepreceptor.com.br>",
         to,
         subject: tmpl.subject,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: #1B5E3B; padding: 20px; text-align: center;">
-              <h1 style="color: #C9A84C; margin: 0;">PreceptorMED</h1>
-            </div>
-            <div style="padding: 30px;">
-              <p style="font-size: 16px; color: #333;">${tmpl.preview}</p>
-              <p style="color: #666; font-size: 14px;">Template: ${template}</p>
-              <pre style="background: #f5f5f5; padding: 10px; font-size: 12px;">${JSON.stringify(metadata, null, 2)}</pre>
-            </div>
-            <div style="background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #999;">
-              © 2026 Preceptor Group | <a href="#">Cancelar inscrição</a>
-            </div>
-          </div>
-        `,
+        html: buildEmailHtml(template, tmpl, metadata),
         tags: [{ name: "trigger", value: template }],
       }),
     });
@@ -150,7 +223,9 @@ serve(async (req) => {
         ? automation.crm_leads[0]
         : automation.crm_leads;
 
-      const email = leadData?.email;
+      // Email from lead or from metadata (for inadimplencia where lead may not exist)
+      const meta = (automation.metadata ?? {}) as Record<string, unknown>;
+      const email = leadData?.email || (meta.email as string);
       if (!email) {
         results.skipped++;
         continue;
