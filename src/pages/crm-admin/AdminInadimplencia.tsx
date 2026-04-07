@@ -11,6 +11,7 @@ import {
   INADIMPLENCIA_PLAN_LABELS,
 } from "@/hooks/useInadimplencia";
 import type { Inadimplencia } from "@/hooks/useInadimplencia";
+import SendEmailModal from "@/components/crm-admin/SendEmailModal";
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }> = {
   em_cobranca: { bg: "bg-red-900/30", text: "text-red-400", label: "Em Cobranca" },
@@ -28,6 +29,7 @@ export default function AdminInadimplencia() {
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [obsText, setObsText] = useState("");
+  const [emailTarget, setEmailTarget] = useState<{ email: string; nome: string } | null>(null);
 
   if (isLoading) {
     return (
@@ -152,16 +154,22 @@ export default function AdminInadimplencia() {
                   )}
                   <span className="text-gray-600">{item.tentativas}x falhou</span>
                 </div>
-                {item.status === "em_cobranca" && (
-                  <div className="flex gap-2">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setEmailTarget({ email: item.email, nome: item.nome })}
+                    className="px-2 py-1 text-[10px] rounded bg-[#C9A84C]/20 text-[#C9A84C] hover:bg-[#C9A84C]/30"
+                  >
+                    <Mail className="w-3 h-3 inline mr-1" />Enviar email
+                  </button>
+                  {item.status === "em_cobranca" && (
                     <button
                       onClick={() => markPerdido.mutate(item.id)}
                       className="px-2 py-1 text-[10px] rounded bg-gray-800 text-gray-400 hover:bg-gray-700"
                     >
-                      Marcar perdido
+                      Perdido
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             );
           })}
@@ -227,6 +235,13 @@ export default function AdminInadimplencia() {
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setEmailTarget({ email: item.email, nome: item.nome })}
+                          className="p-1.5 rounded text-[#C9A84C] hover:bg-[#C9A84C]/20 transition-colors"
+                          title="Enviar email"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                        </button>
                         {item.status === "em_cobranca" && (
                           <button
                             onClick={() => markPerdido.mutate(item.id)}
@@ -290,6 +305,15 @@ export default function AdminInadimplencia() {
           </div>
         )}
       </div>
+
+      {/* Send Email Modal */}
+      {emailTarget && (
+        <SendEmailModal
+          to={emailTarget.email}
+          nome={emailTarget.nome}
+          onClose={() => setEmailTarget(null)}
+        />
+      )}
     </div>
   );
 }
