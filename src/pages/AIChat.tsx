@@ -4,7 +4,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Trash2, User, Copy, FileDown, Check } from 'lucide-react';
+import { Send, Trash2, User, Copy, FileDown, Check, BookOpen } from 'lucide-react';
 import logoIcon from '@/assets/logo-icon.png';
 import { useToast } from '@/hooks/use-toast';
 import { exportToPDF } from '@/utils/pdfExport';
@@ -39,6 +39,7 @@ const AIChat = () => {
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [usePubMed, setUsePubMed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -102,7 +103,7 @@ const AIChat = () => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ messages: allMessages }),
+          body: JSON.stringify({ messages: allMessages, usePubMed }),
           signal: controller.signal,
         }
       );
@@ -328,30 +329,47 @@ const AIChat = () => {
 
       {/* Input */}
       <div className="shrink-0 border-t border-slate-100 bg-white p-3 sm:p-4">
-        <div className="max-w-3xl mx-auto flex gap-2 items-end">
-          <Textarea
-            ref={textareaRef}
-            placeholder={hasReachedLimit && !isSubscriber ? 'Limite diário atingido — assine para continuar' : 'Pergunte sobre qualquer tema médico...'}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="flex-1 min-h-[44px] max-h-[120px] resize-none text-sm border-slate-200"
-            rows={1}
-            disabled={isStreaming || (hasReachedLimit && !isSubscriber)}
-          />
-          <Button
-            onClick={handleSend}
-            disabled={!input.trim() || isStreaming || (hasReachedLimit && !isSubscriber)}
-            size="icon"
-            className="shrink-0 h-11 w-11 rounded-xl"
-            style={{ background: 'linear-gradient(135deg, #126b62, #005e56)' }}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+        <div className="max-w-3xl mx-auto space-y-2">
+          <div className="flex gap-2 items-end">
+            <Textarea
+              ref={textareaRef}
+              placeholder={hasReachedLimit && !isSubscriber ? 'Limite diário atingido — assine para continuar' : usePubMed ? 'Pergunte com evidências do PubMed...' : 'Pergunte sobre qualquer tema médico...'}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="flex-1 min-h-[44px] max-h-[120px] resize-none text-sm border-slate-200"
+              rows={1}
+              disabled={isStreaming || (hasReachedLimit && !isSubscriber)}
+            />
+            <Button
+              onClick={handleSend}
+              disabled={!input.trim() || isStreaming || (hasReachedLimit && !isSubscriber)}
+              size="icon"
+              className="shrink-0 h-11 w-11 rounded-xl"
+              style={{ background: 'linear-gradient(135deg, #126b62, #005e56)' }}
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setUsePubMed(!usePubMed)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                usePubMed
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-600 hover:border-slate-300'
+              }`}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              <span>PubMed</span>
+              {usePubMed && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+            </button>
+            <p className="text-[10px] text-slate-300">
+              {usePubMed ? 'Respostas com artigos científicos do PubMed' : 'PreceptorMED — ferramenta educacional'}
+            </p>
+          </div>
         </div>
-        <p className="text-center text-[10px] text-slate-300 mt-2">
-          PreceptorMED é uma ferramenta educacional. Sempre valide com fontes primárias.
-        </p>
       </div>
     </DashboardLayout>
   );

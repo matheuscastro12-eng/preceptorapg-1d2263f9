@@ -51,8 +51,141 @@ Você pode ajudar o estudante com:
 # AVISO
 Se o estudante descrever sintomas pessoais buscando diagnóstico, oriente gentilmente a procurar um profissional de saúde e ofereça explicar o tema de forma acadêmica.`;
 
+const PUBMED_SYSTEM_ADDENDUM = `
+
+# ARTIGOS CIENTÍFICOS DO PUBMED
+Quando artigos do PubMed forem fornecidos junto com a pergunta do estudante, você DEVE:
+
+1. **Incorporar as evidências** dos artigos na sua resposta de forma natural e fluida
+2. **Citar os artigos** no formato: Autor et al., "Título", Revista, Ano. (PMID: XXXXX)
+3. **Traduzir tudo** — tanto os conceitos dos artigos quanto títulos e trechos relevantes — para português
+4. **Sintetizar**, não simplesmente copiar os abstracts. Extraia os pontos mais relevantes para a pergunta do estudante
+5. Ao final da resposta, inclua uma seção **📚 Referências PubMed** com os artigos citados em formato padronizado
+6. Se os artigos não forem diretamente relevantes à pergunta, use sua base de conhecimento normalmente e mencione os artigos apenas se adicionarem valor
+
+Lembre-se: o estudante é brasileiro, responda TUDO em português.`;
+
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_MESSAGES = 50;
+
+// ── PubMed E-utilities (free, no API key needed) ──
+
+/** Extract medical keywords from the user's message for PubMed search */
+function extractSearchTerms(message: string): string {
+  // Remove common Portuguese filler words and keep medical terms
+  const stopwords = new Set([
+    "o", "a", "os", "as", "um", "uma", "uns", "umas", "de", "do", "da", "dos", "das",
+    "em", "no", "na", "nos", "nas", "por", "para", "com", "sem", "sobre", "entre",
+    "que", "qual", "quais", "como", "quando", "onde", "porque", "por que",
+    "é", "são", "está", "estão", "foi", "foram", "ser", "ter", "haver",
+    "me", "se", "te", "nos", "lhe", "eu", "ele", "ela", "nós", "eles", "elas",
+    "esse", "essa", "este", "esta", "isso", "isto", "aquilo",
+    "e", "ou", "mas", "porém", "pois", "nem", "não", "sim",
+    "mais", "muito", "bem", "também", "já", "ainda", "só", "apenas",
+    "pode", "podem", "poderia", "quero", "preciso", "gostaria",
+    "explique", "descreva", "fale", "conte", "diga", "cite", "liste",
+    "quero", "saber", "entender", "compreender", "aprender",
+  ]);
+
+  const words = message
+    .toLowerCase()
+    .replace(/[^\w\sáéíóúâêôãõçü-]/g, " ")
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !stopwords.has(w));
+
+  // Take the most relevant terms (max 5 for a focused search)
+  const terms = words.slice(0, 6).join(" ");
+  return terms || message.slice(0, 100);
+}
+
+interface PubMedArticle {
+  pmid: string;
+  title: string;
+  authors: string;
+  journal: string;
+  year: string;
+  abstract: string;
+}
+
+/** Search PubMed and fetch article details */
+async function searchPubMed(query: string, maxResults = 5): Promise<PubMedArticle[]> {
+  try {
+    // Step 1: Search for PMIDs
+    const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=${maxResults}&sort=relevance&retmode=json`;
+    const searchResp = await fetch(searchUrl);
+    if (!searchResp.ok) return [];
+
+    const searchData = await searchResp.json();
+    const pmids: string[] = searchData.esearchresult?.idlist ?? [];
+    if (pmids.length === 0) return [];
+
+    // Step 2: Fetch article details
+    const fetchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${pmids.join(",")}&rettype=xml&retmode=xml`;
+    const fetchResp = await fetch(fetchUrl);
+    if (!fetchResp.ok) return [];
+
+    const xml = await fetchResp.text();
+
+    // Parse XML (simple extraction — Deno doesn't have DOMParser in edge functions)
+    const articles: PubMedArticle[] = [];
+    const articleBlocks = xml.split("<PubmedArticle>").slice(1);
+
+    for (const block of articleBlocks) {
+      const pmid = extractXml(block, "PMID") || "";
+      const title = extractXml(block, "ArticleTitle") || "Untitled";
+      const abstract = extractXml(block, "AbstractText") || "";
+      const journal = extractXml(block, "Title") || extractXml(block, "ISOAbbreviation") || "";
+      const year = extractXml(block, "Year") || "";
+
+      // Extract authors
+      const authorMatches = block.match(/<LastName>([^<]+)<\/LastName>/g) ?? [];
+      const authorNames = authorMatches.slice(0, 3).map(m => m.replace(/<\/?LastName>/g, ""));
+      const authors = authorNames.length > 0
+        ? authorNames.join(", ") + (authorMatches.length > 3 ? " et al." : "")
+        : "Unknown";
+
+      articles.push({ pmid, title: cleanXml(title), authors, journal: cleanXml(journal), year, abstract: cleanXml(abstract) });
+    }
+
+    return articles;
+  } catch (e) {
+    console.error("PubMed search error:", e);
+    return [];
+  }
+}
+
+function extractXml(xml: string, tag: string): string | null {
+  const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`);
+  const match = xml.match(regex);
+  return match?.[1]?.trim() ?? null;
+}
+
+function cleanXml(text: string): string {
+  return text.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+}
+
+/** Format articles as context for the AI prompt */
+function formatArticlesForPrompt(articles: PubMedArticle[]): string {
+  if (articles.length === 0) return "";
+
+  let context = "\n\n---\n📚 ARTIGOS DO PUBMED ENCONTRADOS (use como referência na resposta):\n\n";
+
+  for (let i = 0; i < articles.length; i++) {
+    const a = articles[i];
+    context += `[${i + 1}] ${a.authors} — "${a.title}"\n`;
+    context += `    ${a.journal}, ${a.year}. PMID: ${a.pmid}\n`;
+    if (a.abstract) {
+      // Truncate long abstracts to save tokens
+      const truncated = a.abstract.length > 600 ? a.abstract.slice(0, 600) + "..." : a.abstract;
+      context += `    Abstract: ${truncated}\n`;
+    }
+    context += "\n";
+  }
+
+  return context;
+}
+
+// ── Main handler ──
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -126,11 +259,10 @@ serve(async (req) => {
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      // NOTE: Log is inserted AFTER confirming Gemini response is OK (below)
     }
 
     const body = await req.json();
-    const { messages } = body;
+    const { messages, usePubMed = false } = body;
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return new Response(
@@ -139,11 +271,38 @@ serve(async (req) => {
       );
     }
 
+    // Get the last user message for PubMed search
+    const lastUserMessage = [...messages].reverse().find((m: any) => m.role === "user")?.content ?? "";
+
+    // Search PubMed if enabled
+    let pubmedContext = "";
+    let pubmedArticles: PubMedArticle[] = [];
+    if (usePubMed && lastUserMessage) {
+      const searchTerms = extractSearchTerms(lastUserMessage);
+      console.log("PubMed search terms:", searchTerms);
+      pubmedArticles = await searchPubMed(searchTerms, 5);
+      pubmedContext = formatArticlesForPrompt(pubmedArticles);
+      console.log(`PubMed found ${pubmedArticles.length} articles`);
+    }
+
+    // Build system prompt with or without PubMed addendum
+    const systemPrompt = usePubMed
+      ? SYSTEM_PROMPT + PUBMED_SYSTEM_ADDENDUM
+      : SYSTEM_PROMPT;
+
     // Validate and sanitize messages
     const sanitizedMessages = messages.slice(-MAX_MESSAGES).map((m: any) => ({
       role: m.role === "assistant" ? "model" : "user",
       parts: [{ text: typeof m.content === "string" ? m.content.slice(0, MAX_MESSAGE_LENGTH).replace(/[\x00-\x1F\x7F]/g, "") : "" }],
     }));
+
+    // If PubMed context exists, append it to the last user message
+    if (pubmedContext && sanitizedMessages.length > 0) {
+      const lastIdx = sanitizedMessages.length - 1;
+      if (sanitizedMessages[lastIdx].role === "user") {
+        sanitizedMessages[lastIdx].parts[0].text += pubmedContext;
+      }
+    }
 
     const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
     if (!GOOGLE_AI_API_KEY) {
@@ -152,7 +311,7 @@ serve(async (req) => {
 
     // Prepend system prompt to first message
     const contents = [
-      { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
+      { role: "user", parts: [{ text: systemPrompt }] },
       { role: "model", parts: [{ text: "Entendido! Sou o PreceptorMED, seu assistente acadêmico de medicina. Estou pronto para ajudar com qualquer dúvida médica com a profundidade que você precisa. Como posso ajudar?" }] },
       ...sanitizedMessages,
     ];
