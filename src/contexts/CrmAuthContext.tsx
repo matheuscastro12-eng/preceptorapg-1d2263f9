@@ -59,10 +59,10 @@ export function CrmAuthProvider({ children }: { children: React.ReactNode }) {
   // Restore + verify session from server
   useEffect(() => {
     const restore = async () => {
-      const token = localStorage.getItem(TOKEN_KEY);
-      if (!token) { setLoading(false); return; }
-
       try {
+        const token = localStorage.getItem(TOKEN_KEY);
+        if (!token) { setLoading(false); return; }
+
         const data = await crmApi({ action: "verify", token });
         if (data.user) {
           const user: CrmUser = {
@@ -73,18 +73,23 @@ export function CrmAuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem(SESSION_KEY, JSON.stringify(user));
 
           // Ensure supabaseCrm is authenticated BEFORE setting user (which triggers children to render)
-          const { data: crmSession } = await supabaseCrm.auth.getSession();
-          if (!crmSession?.session && data.svc) {
-            await supabaseCrm.auth.signInWithPassword({ email: data.svc.e, password: data.svc.p });
+          try {
+            const { data: crmSession } = await supabaseCrm.auth.getSession();
+            if (!crmSession?.session && data.svc) {
+              await supabaseCrm.auth.signInWithPassword({ email: data.svc.e, password: data.svc.p });
+            }
+          } catch (authErr) {
+            console.warn("CRM supabase auth failed (non-fatal):", authErr);
           }
 
           setCrmUser(user);
         } else {
           localStorage.removeItem(TOKEN_KEY);
           localStorage.removeItem(SESSION_KEY);
-          await supabaseCrm.auth.signOut();
+          try { await supabaseCrm.auth.signOut(); } catch {}
         }
-      } catch {
+      } catch (err) {
+        console.warn("CRM session restore failed:", err);
         // Offline — use cached session as fallback
         try {
           const cached = localStorage.getItem(SESSION_KEY);
