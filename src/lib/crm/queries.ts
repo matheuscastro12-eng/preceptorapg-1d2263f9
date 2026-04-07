@@ -15,6 +15,28 @@ import type {
   Produto,
 } from "./types";
 
+// ── Helper: fetch subscriptions via edge function (bypasses RLS) ──
+
+const CRM_ACTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-admin-actions`;
+const API_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+async function fetchSubscriptionsViaEdge(): Promise<any[]> {
+  try {
+    const token = localStorage.getItem("crm_token");
+    const res = await fetch(CRM_ACTIONS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "apikey": API_KEY, "Authorization": `Bearer ${API_KEY}` },
+      body: JSON.stringify({ action: "get_subscriptions", token }),
+    });
+    const data = await res.json();
+    return data.subscriptions ?? [];
+  } catch {
+    // Fallback to direct query (works if service account is authenticated)
+    const { data } = await supabase.from("subscriptions").select("*");
+    return data ?? [];
+  }
+}
+
 // ── DASHBOARD KPIs ────────────────────────────────────────────
 
 export async function getDashboardKpis() {
@@ -25,10 +47,8 @@ export async function getDashboardKpis() {
 
   // Calculate MRR from actual subscription plans (only from baseline date forward)
   const MRR_BASELINE = "2026-04-07T00:00:00.000Z";
-  const { data: activeSubs } = await supabase
-    .from("subscriptions")
-    .select("plan_type, updated_at, created_at")
-    .eq("status", "active");
+  const allSubs = await fetchSubscriptionsViaEdge();
+  const activeSubs = allSubs.filter((s: any) => s.status === "active");
 
   const PLAN_MRR: Record<string, number> = {
     monthly: 49.90,
@@ -37,7 +57,7 @@ export async function getDashboardKpis() {
     free_access: 0,
   };
 
-  const newSubs = (activeSubs ?? []).filter(s => (s.updated_at ?? s.created_at) >= MRR_BASELINE);
+  const newSubs = activeSubs.filter((s: any) => (s.updated_at ?? s.created_at) >= MRR_BASELINE);
   const mrr = newSubs.reduce((sum, s) => sum + (PLAN_MRR[s.plan_type] ?? 0), 0);
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();

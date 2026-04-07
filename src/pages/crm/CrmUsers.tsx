@@ -3,7 +3,18 @@ import { supabase } from "@/lib/crm/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
 const CRM_AUTH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-auth`;
+const CRM_ACTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-admin-actions`;
 const API_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+async function crmAction(action: string, data: Record<string, unknown>) {
+  const token = localStorage.getItem("crm_token");
+  const res = await fetch(CRM_ACTIONS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": API_KEY, "Authorization": `Bearer ${API_KEY}` },
+    body: JSON.stringify({ action, token, ...data }),
+  });
+  return res.json();
+}
 import {
   Users, CreditCard, Gift, UserX, UserCheck, Loader2, Clock,
   Edit2, Save, Search, DollarSign, Activity, TrendingUp, BarChart3, Trash2,
@@ -107,10 +118,13 @@ export default function CrmUsers() {
     try {
       const duration = selectedDuration[userId] || "unlimited";
       const expiresAt = getExpirationDate(duration);
-      const { data: existing } = await supabase.from("subscriptions").select("id").eq("user_id", userId).maybeSingle();
-      const subData = { status: "active" as const, plan_type: "free_access" as const, granted_by: user!.id, access_expires_at: expiresAt };
-      if (existing) await supabase.from("subscriptions").update(subData).eq("user_id", userId);
-      else await supabase.from("subscriptions").insert({ user_id: userId, ...subData });
+      const result = await crmAction("grant_access", {
+        user_id: userId,
+        plan_type: "free_access",
+        access_expires_at: expiresAt,
+        granted_by: user?.id,
+      });
+      if (result.error) console.error("Grant failed:", result.error);
       fetchUsers();
     } catch (e) { console.error(e); }
     finally { setActionLoading(null); }
@@ -119,7 +133,8 @@ export default function CrmUsers() {
   const revokeAccess = async (userId: string) => {
     setActionLoading(userId);
     try {
-      await supabase.from("subscriptions").update({ status: "inactive", plan_type: "none" }).eq("user_id", userId);
+      const result = await crmAction("revoke_access", { user_id: userId });
+      if (result.error) console.error("Revoke failed:", result.error);
       fetchUsers();
     } catch (e) { console.error(e); }
     finally { setActionLoading(null); }
@@ -144,11 +159,8 @@ export default function CrmUsers() {
     try {
       const plan = selectedPlan[userId];
       if (!plan) return;
-      const status = plan === "none" ? "inactive" : "active";
-      const { data: existing } = await supabase.from("subscriptions").select("id").eq("user_id", userId).maybeSingle();
-      const subData = { status, plan_type: plan, access_expires_at: null as string | null };
-      if (existing) await supabase.from("subscriptions").update(subData).eq("user_id", userId);
-      else await supabase.from("subscriptions").insert({ user_id: userId, ...subData });
+      const result = await crmAction("update_plan", { user_id: userId, plan_type: plan });
+      if (result.error) console.error("Update plan failed:", result.error);
       setEditingPlan(null);
       fetchUsers();
     } catch (e) { console.error(e); }

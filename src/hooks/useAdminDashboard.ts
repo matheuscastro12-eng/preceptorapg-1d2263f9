@@ -1,6 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/crm/supabase";
 
+const CRM_ACTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-admin-actions`;
+const API_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+async function fetchSubscriptions(): Promise<any[]> {
+  try {
+    const token = localStorage.getItem("crm_token");
+    const res = await fetch(CRM_ACTIONS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "apikey": API_KEY, "Authorization": `Bearer ${API_KEY}` },
+      body: JSON.stringify({ action: "get_subscriptions", token }),
+    });
+    const data = await res.json();
+    return data.subscriptions ?? [];
+  } catch {
+    const { data } = await supabase.from("subscriptions").select("*");
+    return data ?? [];
+  }
+}
+
 export interface DashboardKpis {
   mrr: number;
   arr: number;
@@ -37,13 +56,11 @@ async function fetchDashboardKpis(): Promise<DashboardKpis> {
 
   // MRR real = soma dos assinantes pagantes ativos (apenas novos a partir de 07/04/2026)
   const MRR_BASELINE_DATE = "2026-04-07T00:00:00.000Z";
-  const { data: subs } = await supabase
-    .from("subscriptions")
-    .select("plan_type, status, stripe_customer_id, created_at, updated_at")
-    .eq("status", "active");
+  const allSubs = await fetchSubscriptions();
+  const subs = allSubs.filter((s: any) => s.status === "active");
 
   // Conta apenas assinantes que entraram/renovaram a partir da data base
-  const pagantes = (subs ?? []).filter((s) =>
+  const pagantes = subs.filter((s: any) =>
     (s.plan_type === "monthly" || s.plan_type === "annual" || s.plan_type === "biannual") &&
     ((s.updated_at ?? s.created_at) >= MRR_BASELINE_DATE)
   );
@@ -51,10 +68,10 @@ async function fetchDashboardKpis(): Promise<DashboardKpis> {
   const assinantesAtivos = pagantes.length;
   const ticketMedio = assinantesAtivos > 0 ? mrr / assinantesAtivos : 0;
 
-  // Churn: inativos / total
-  const { count: totalSubs } = await supabase.from("subscriptions").select("*", { count: "exact", head: true });
-  const { count: inativos } = await supabase.from("subscriptions").select("*", { count: "exact", head: true }).eq("status", "inactive");
-  const churnRate = (totalSubs ?? 0) > 0 ? ((inativos ?? 0) / (totalSubs ?? 1)) * 100 : 0;
+  // Churn: inativos / total (using already fetched data)
+  const totalSubs = allSubs.length;
+  const inativos = allSubs.filter((s: any) => s.status === "inactive" || s.status === "inadimplente").length;
+  const churnRate = totalSubs > 0 ? (inativos / totalSubs) * 100 : 0;
 
   // Novas no mes (pela data de criacao)
   const { count: novasReceitas } = await supabase
@@ -104,11 +121,10 @@ async function fetchDashboardKpis(): Promise<DashboardKpis> {
 
 async function fetchMrrHistory(): Promise<MrrHistory[]> {
   // Usa subscriptions reais (pagantes) com data de criacao
-  const { data: subs } = await supabase
-    .from("subscriptions")
-    .select("plan_type, status, created_at")
-    .in("plan_type", ["monthly", "annual", "biannual"])
-    .order("created_at", { ascending: true });
+  const allSubs = await fetchSubscriptions();
+  const subs = allSubs.filter((s: any) =>
+    ["monthly", "annual", "biannual"].includes(s.plan_type)
+  ).sort((a: any, b: any) => a.created_at.localeCompare(b.created_at));
 
   const now = new Date();
   const months: Record<string, number> = {};
@@ -118,7 +134,7 @@ async function fetchMrrHistory(): Promise<MrrHistory[]> {
     months[`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`] = 0;
   }
 
-  for (const s of subs ?? []) {
+  for (const s of subs) {
     if (s.status !== "active") continue;
     const startMonth = s.created_at.substring(0, 7);
     const price = PLAN_PRICES[s.plan_type] ?? 0;

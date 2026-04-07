@@ -74,17 +74,30 @@ export function useReceitaResumo(periodo: Periodo = "mes") {
   return useQuery({
     queryKey: ["crm-admin", "receita-resumo", periodo],
     queryFn: async () => {
-      // MRR real da tabela subscriptions (mesma fonte do CRM Marketing)
-      const { data: subs } = await supabase
-        .from("subscriptions")
-        .select("plan_type, status, created_at")
-        .eq("status", "active");
+      // MRR real via edge function (bypasses RLS)
+      const CRM_ACTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-admin-actions`;
+      const API_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      let allSubs: any[] = [];
+      try {
+        const token = localStorage.getItem("crm_token");
+        const res = await fetch(CRM_ACTIONS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "apikey": API_KEY, "Authorization": `Bearer ${API_KEY}` },
+          body: JSON.stringify({ action: "get_subscriptions", token }),
+        });
+        const data = await res.json();
+        allSubs = data.subscriptions ?? [];
+      } catch {
+        const { data } = await supabase.from("subscriptions").select("*");
+        allSubs = data ?? [];
+      }
 
-      const pagantes = (subs ?? []).filter((s) => s.plan_type === "monthly" || s.plan_type === "annual" || s.plan_type === "biannual");
-      const mrrTotal = pagantes.reduce((s, sub) => s + (PLAN_PRICES[sub.plan_type] ?? 0), 0);
-      const novas = pagantes.filter((s) => s.created_at >= `${since}T00:00:00.000Z`).length;
+      const activeSubs = allSubs.filter((s: any) => s.status === "active");
+      const pagantes = activeSubs.filter((s: any) => s.plan_type === "monthly" || s.plan_type === "annual" || s.plan_type === "biannual");
+      const mrrTotal = pagantes.reduce((s: number, sub: any) => s + (PLAN_PRICES[sub.plan_type] ?? 0), 0);
+      const novas = pagantes.filter((s: any) => s.created_at >= `${since}T00:00:00.000Z`).length;
 
-      const { count: cancelamentos } = await supabase.from("subscriptions").select("*", { count: "exact", head: true }).eq("status", "inactive");
+      const cancelamentos = allSubs.filter((s: any) => s.status === "inactive").length;
 
       return {
         mrrTotal: Math.round(mrrTotal * 100) / 100,
