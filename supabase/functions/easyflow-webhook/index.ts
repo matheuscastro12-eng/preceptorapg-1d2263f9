@@ -110,7 +110,13 @@ serve(async (req) => {
         .update({ status: "subscriber", converted_at: new Date().toISOString() })
         .eq("user_id", profile.user_id);
 
-      console.log(`[EasyFlow] ✅ Activated: ${email} -> ${plan}`);
+      // Resolve any open inadimplencia
+      await supabase.from("admin_inadimplencias")
+        .update({ status: "resolvido", updated_at: new Date().toISOString() })
+        .eq("user_id", profile.user_id)
+        .eq("status", "em_cobranca");
+
+      console.log(`[EasyFlow] Activated: ${email} -> ${plan}`);
       return json({ received: true, action: "activated", email, plan });
     }
 
@@ -144,7 +150,7 @@ serve(async (req) => {
     }
 
     // ══════════════════════════════════════════════
-    // PAYMENT ISSUES (delayed/failed — don't cancel yet)
+    // PAYMENT ISSUES (delayed/failed — mark as inadimplente)
     // ══════════════════════════════════════════════
     if (
       event === "subscriptionrecurrence.delayed" ||
@@ -152,14 +158,50 @@ serve(async (req) => {
     ) {
       const profile = await findUser();
       if (profile) {
-        // Mark as inadimplente but keep plan_type
+        // Mark subscription as inadimplente but keep plan_type
         await supabase.from("subscriptions")
-          .update({ status: "inactive" })
+          .update({ status: "inadimplente" })
           .eq("user_id", profile.user_id);
 
-        console.log(`[EasyFlow] ⚠️ Payment issue: ${email} (${event})`);
+        // Get subscription details for inadimplencia record
+        const { data: sub } = await supabase.from("subscriptions")
+          .select("plan_type").eq("user_id", profile.user_id).maybeSingle();
+
+        const { data: prof } = await supabase.from("profiles")
+          .select("full_name").eq("user_id", profile.user_id).maybeSingle();
+
+        // Upsert inadimplencia record
+        const { data: existing } = await supabase.from("admin_inadimplencias")
+          .select("id, tentativas").eq("user_id", profile.user_id).eq("status", "em_cobranca").maybeSingle();
+
+        if (existing) {
+          await supabase.from("admin_inadimplencias")
+            .update({
+              tentativas: (existing.tentativas ?? 0) + 1,
+              ultimo_evento: event,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existing.id);
+        } else {
+          const PLAN_VALORES: Record<string, number> = {
+            monthly: 49.90, annual: 350.90 / 12, biannual: 599.90 / 6,
+          };
+          await supabase.from("admin_inadimplencias").insert({
+            user_id: profile.user_id,
+            email,
+            nome: prof?.full_name ?? email,
+            plano: sub?.plan_type ?? "unknown",
+            valor_devido: PLAN_VALORES[sub?.plan_type ?? ""] ?? 0,
+            status: "em_cobranca",
+            tentativas: 1,
+            ultimo_evento: event,
+            data_ocorrencia: new Date().toISOString(),
+          });
+        }
+
+        console.log(`[EasyFlow] Payment issue: ${email} (${event})`);
       }
-      return json({ received: true, action: "payment_issue", email, event });
+      return json({ received: true, action: "payment_issue_tracked", email, event });
     }
 
     // ══════════════════════════════════════════════

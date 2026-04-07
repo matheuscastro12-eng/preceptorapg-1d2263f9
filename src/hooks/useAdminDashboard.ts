@@ -35,13 +35,18 @@ async function fetchDashboardKpis(): Promise<DashboardKpis> {
   const mesAtual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const inicioMes = `${mesAtual}-01`;
 
-  // MRR real = soma dos assinantes pagantes ativos na tabela subscriptions (mesma do CRM Marketing)
+  // MRR real = soma dos assinantes pagantes ativos (apenas novos a partir de 07/04/2026)
+  const MRR_BASELINE_DATE = "2026-04-07T00:00:00.000Z";
   const { data: subs } = await supabase
     .from("subscriptions")
-    .select("plan_type, status, stripe_customer_id")
+    .select("plan_type, status, stripe_customer_id, created_at, updated_at")
     .eq("status", "active");
 
-  const pagantes = (subs ?? []).filter((s) => s.plan_type === "monthly" || s.plan_type === "annual" || s.plan_type === "biannual");
+  // Conta apenas assinantes que entraram/renovaram a partir da data base
+  const pagantes = (subs ?? []).filter((s) =>
+    (s.plan_type === "monthly" || s.plan_type === "annual" || s.plan_type === "biannual") &&
+    ((s.updated_at ?? s.created_at) >= MRR_BASELINE_DATE)
+  );
   const mrr = pagantes.reduce((s, sub) => s + (PLAN_PRICES[sub.plan_type] ?? 0), 0);
   const assinantesAtivos = pagantes.length;
   const ticketMedio = assinantesAtivos > 0 ? mrr / assinantesAtivos : 0;

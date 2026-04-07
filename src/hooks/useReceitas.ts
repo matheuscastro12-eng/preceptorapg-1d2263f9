@@ -63,9 +63,9 @@ export function useReceitas(periodo: Periodo = "mes") {
 }
 
 const PLAN_PRICES: Record<string, number> = {
-  monthly: 29.90,
-  annual: 299.00 / 12,
-  biannual: 499.00 / 24,
+  monthly: 49.90,
+  annual: 350.90 / 12,    // ~R$29.24/mês
+  biannual: 599.90 / 6,   // ~R$99.98/mês
 };
 
 export function useReceitaResumo(periodo: Periodo = "mes") {

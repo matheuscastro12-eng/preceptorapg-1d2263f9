@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, DollarSign, CreditCard, ArrowLeftRight,
-  Users, Wallet, UserPlus, Target, FileBarChart,
+  Users, Wallet, UserPlus, Target, FileBarChart, AlertTriangle,
   ChevronDown, Building2, ArrowLeft, LogOut, Menu, X,
   Calendar, Crosshair, TrendingUp, LineChart, Sheet,
 } from "lucide-react";
@@ -32,6 +32,7 @@ const sections: NavSection[] = [
       { to: "/admin/crm-admin/despesas", label: "Despesas", icon: CreditCard },
       { to: "/admin/crm-admin/fluxo-caixa", label: "Fluxo de Caixa", icon: ArrowLeftRight },
       { to: "/admin/crm-admin/easyflow", label: "EasyFlow", icon: Wallet },
+      { to: "/admin/crm-admin/inadimplencia", label: "Inadimplencia", icon: AlertTriangle },
     ],
   },
   {

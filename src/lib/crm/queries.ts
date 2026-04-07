@@ -23,10 +23,11 @@ export async function getDashboardKpis() {
     .select("*", { count: "exact", head: true })
     .eq("status", "subscriber");
 
-  // Calculate MRR from actual subscription plans
+  // Calculate MRR from actual subscription plans (only from baseline date forward)
+  const MRR_BASELINE = "2026-04-07T00:00:00.000Z";
   const { data: activeSubs } = await supabase
     .from("subscriptions")
-    .select("plan_type")
+    .select("plan_type, updated_at, created_at")
     .eq("status", "active");
 
   const PLAN_MRR: Record<string, number> = {
@@ -36,7 +37,8 @@ export async function getDashboardKpis() {
     free_access: 0,
   };
 
-  const mrr = (activeSubs ?? []).reduce((sum, s) => sum + (PLAN_MRR[s.plan_type] ?? 0), 0);
+  const newSubs = (activeSubs ?? []).filter(s => (s.updated_at ?? s.created_at) >= MRR_BASELINE);
+  const mrr = newSubs.reduce((sum, s) => sum + (PLAN_MRR[s.plan_type] ?? 0), 0);
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
   const { count: newChurns } = await supabase

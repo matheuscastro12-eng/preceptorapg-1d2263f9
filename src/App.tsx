@@ -47,6 +47,7 @@ import AdminRelatorio from "./pages/crm-admin/AdminRelatorio";
 import AdminForecast from "./pages/crm-admin/AdminForecast";
 import AdminDRE from "./pages/crm-admin/AdminDRE";
 import AdminEasyflow from "./pages/crm-admin/AdminEasyflow";
+import AdminInadimplencia from "./pages/crm-admin/AdminInadimplencia";
 import Welcome from "./pages/Welcome";
 import { usePageTracking } from "./hooks/usePageTracking";
 
@@ -105,6 +106,7 @@ const App = () => (
                 <Route path="forecast" element={<AdminForecast />} />
                 <Route path="dre" element={<AdminDRE />} />
                 <Route path="easyflow" element={<AdminEasyflow />} />
+                <Route path="inadimplencia" element={<AdminInadimplencia />} />
               </Route>
               <Route path="/profile" element={<Profile />} />
               <Route path="/ai-chat" element={<AIChat />} />

@@ -60,7 +60,7 @@ Quando artigos do PubMed forem fornecidos junto com a pergunta do estudante, voc
 2. **Citar os artigos** no formato: Autor et al., "Título", Revista, Ano. (PMID: XXXXX)
 3. **Traduzir tudo** — tanto os conceitos dos artigos quanto títulos e trechos relevantes — para português
 4. **Sintetizar**, não simplesmente copiar os abstracts. Extraia os pontos mais relevantes para a pergunta do estudante
-5. Ao final da resposta, inclua uma seção **📚 Referências PubMed** com os artigos citados em formato padronizado
+5. Ao final da resposta, inclua uma seção **Referências PubMed** (use --- antes como separador) com os artigos citados em formato padronizado
 6. Se os artigos não forem diretamente relevantes à pergunta, use sua base de conhecimento normalmente e mencione os artigos apenas se adicionarem valor
 
 Lembre-se: o estudante é brasileiro, responda TUDO em português.`;
@@ -168,7 +168,7 @@ function cleanXml(text: string): string {
 function formatArticlesForPrompt(articles: PubMedArticle[]): string {
   if (articles.length === 0) return "";
 
-  let context = "\n\n---\n📚 ARTIGOS DO PUBMED ENCONTRADOS (use como referência na resposta):\n\n";
+  let context = "\n\n---\nARTIGOS DO PUBMED ENCONTRADOS (use como referencia na resposta):\n\n";
 
   for (let i = 0; i < articles.length; i++) {
     const a = articles[i];
