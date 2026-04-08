@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,78 +17,76 @@ interface OnboardingTourProps {
   onComplete?: () => void;
 }
 
-const PADDING = 10;
-const GAP = 14;
+const PADDING = 12;
+const GAP = 16;
 
 const OnboardingTour = ({ steps, tourKey, onComplete }: OnboardingTourProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
-  const [rect, setRect] = useState<DOMRect | null>(null);
-  const [ready, setReady] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
-  // Responsive tooltip width
-  const getTooltipWidth = () => Math.min(320, window.innerWidth - 32);
+  const getTooltipWidth = () => Math.min(300, window.innerWidth - 40);
 
   useEffect(() => {
     const done = localStorage.getItem(`tour_${tourKey}`);
     if (!done && steps.length > 0) {
-      // Wait for page animations to complete before showing tour
-      const timer = setTimeout(() => setIsVisible(true), 1500);
+      const timer = setTimeout(() => setIsVisible(true), 2000);
       return () => clearTimeout(timer);
     }
   }, [tourKey, steps.length]);
 
-  const measureTarget = useCallback(() => {
-    if (!isVisible || !steps[currentStep]) {
-      setReady(false);
-      return;
-    }
+  const measure = useCallback(() => {
+    if (!isVisible || !steps[currentStep]) return;
 
-    const el = document.querySelector(steps[currentStep].target);
+    const el = document.querySelector(steps[currentStep].target) as HTMLElement | null;
     if (!el) {
-      setRect(null);
-      setReady(true);
+      setPos(null);
       return;
     }
 
-    const r = el.getBoundingClientRect();
-    if (r.width === 0 && r.height === 0) {
-      setRect(null);
-      setReady(true);
-      return;
-    }
+    // Use offsetTop/offsetLeft to get position relative to offsetParent chain
+    // This avoids issues with CSS transforms affecting getBoundingClientRect
+    const rect = el.getBoundingClientRect();
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
 
-    setRect(r);
-    setReady(true);
+    setPos({
+      top: rect.top + scrollY,
+      left: rect.left + scrollX,
+      width: rect.width,
+      height: rect.height,
+    });
 
-    const inView = r.top >= 0 && r.bottom <= window.innerHeight;
+    // Scroll into view
+    const inView = rect.top >= 0 && rect.bottom <= window.innerHeight;
     if (!inView) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setTimeout(() => {
         const r2 = el.getBoundingClientRect();
-        if (r2.width > 0 && r2.height > 0) setRect(r2);
-      }, 400);
+        setPos({
+          top: r2.top + window.scrollY,
+          left: r2.left + window.scrollX,
+          width: r2.width,
+          height: r2.height,
+        });
+      }, 500);
     }
   }, [currentStep, isVisible, steps]);
 
   useEffect(() => {
-    measureTarget();
-    const onUpdate = () => requestAnimationFrame(measureTarget);
-    window.addEventListener('resize', onUpdate);
-    window.addEventListener('scroll', onUpdate, true);
-
-    // Re-measure several times to catch post-animation positions
-    const timers = [100, 300, 600, 1000].map(ms =>
-      setTimeout(measureTarget, ms)
-    );
-
+    if (!isVisible) return;
+    measure();
+    const timers = [100, 300, 600, 1000, 1500].map(ms => setTimeout(measure, ms));
+    const onScroll = () => requestAnimationFrame(measure);
+    window.addEventListener('resize', onScroll);
+    window.addEventListener('scroll', onScroll, true);
     return () => {
-      window.removeEventListener('resize', onUpdate);
-      window.removeEventListener('scroll', onUpdate, true);
       timers.forEach(clearTimeout);
+      window.removeEventListener('resize', onScroll);
+      window.removeEventListener('scroll', onScroll, true);
     };
-  }, [measureTarget]);
+  }, [measure, isVisible]);
 
   const finish = () => {
     localStorage.setItem(`tour_${tourKey}`, 'true');
@@ -104,199 +103,148 @@ const OnboardingTour = ({ steps, tourKey, onComplete }: OnboardingTourProps) => 
     if (currentStep > 0) setCurrentStep(currentStep - 1);
   };
 
-  if (!isVisible || !ready) return null;
+  if (!isVisible) return null;
 
   const step = steps[currentStep];
-  const hasTarget = rect !== null && rect.width > 0;
+  const hasTarget = pos !== null && pos.width > 0;
   const tooltipW = getTooltipWidth();
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
 
-  // Spotlight clip-path
-  const clipPath = hasTarget
-    ? `polygon(
-        0% 0%, 0% 100%,
-        ${Math.max(0, rect!.left - PADDING)}px 100%,
-        ${Math.max(0, rect!.left - PADDING)}px ${Math.max(0, rect!.top - PADDING)}px,
-        ${Math.min(vw, rect!.right + PADDING)}px ${Math.max(0, rect!.top - PADDING)}px,
-        ${Math.min(vw, rect!.right + PADDING)}px ${Math.min(vh, rect!.bottom + PADDING)}px,
-        ${Math.max(0, rect!.left - PADDING)}px ${Math.min(vh, rect!.bottom + PADDING)}px,
-        ${Math.max(0, rect!.left - PADDING)}px 100%,
-        100% 100%, 100% 0%
-      )`
-    : undefined;
-
-  // Tooltip position — smart placement that always stays on screen
-  const calcTooltipPos = (): React.CSSProperties => {
+  // Calculate tooltip position below or above the target
+  const getTooltipStyle = (): React.CSSProperties => {
     if (!hasTarget) {
-      return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+      return { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
     }
 
-    const r = rect!;
-    const tooltipH = tooltipRef.current?.offsetHeight ?? 200;
-    const placement = step.placement || 'bottom';
+    const viewportTop = window.scrollY;
+    const viewportBottom = viewportTop + window.innerHeight;
+    const targetBottom = pos!.top + pos!.height;
+    const targetCenterX = pos!.left + pos!.width / 2;
+    const tooltipH = tooltipRef.current?.offsetHeight ?? 220;
 
-    // Available space in each direction
-    const spaceBelow = vh - r.bottom - GAP;
-    const spaceAbove = r.top - GAP;
-    const spaceRight = vw - r.right - GAP;
-    const spaceLeft = r.left - GAP;
+    // Try below first
+    let top = targetBottom + GAP;
+    const spaceBelow = viewportBottom - targetBottom - GAP;
+    const spaceAbove = pos!.top - viewportTop - GAP;
 
-    // Determine best vertical placement
-    let top: number | undefined;
-    let usedPlacement = placement;
-
-    if (placement === 'bottom' || placement === 'top') {
-      if (placement === 'bottom' && spaceBelow >= tooltipH) {
-        top = r.bottom + GAP;
-      } else if (placement === 'top' && spaceAbove >= tooltipH) {
-        top = r.top - tooltipH - GAP;
-      } else if (spaceBelow >= spaceAbove) {
-        top = r.bottom + GAP;
-        usedPlacement = 'bottom';
-      } else {
-        top = Math.max(PADDING, r.top - tooltipH - GAP);
-        usedPlacement = 'top';
-      }
-
-      // Horizontal: center on target, clamp to viewport
-      const idealLeft = r.left + r.width / 2 - tooltipW / 2;
-      const left = Math.max(PADDING, Math.min(idealLeft, vw - tooltipW - PADDING));
-      return { top, left };
+    if (spaceBelow < tooltipH && spaceAbove > tooltipH) {
+      top = pos!.top - tooltipH - GAP;
     }
 
-    // Left/right placement
-    if (placement === 'right' && spaceRight >= tooltipW) {
-      top = Math.max(PADDING, Math.min(r.top + r.height / 2 - tooltipH / 2, vh - tooltipH - PADDING));
-      return { top, left: r.right + GAP };
-    }
-    if (placement === 'left' && spaceLeft >= tooltipW) {
-      top = Math.max(PADDING, Math.min(r.top + r.height / 2 - tooltipH / 2, vh - tooltipH - PADDING));
-      return { top, left: r.left - tooltipW - GAP };
-    }
+    // Horizontal: center on target, clamp to viewport
+    let left = targetCenterX - tooltipW / 2;
+    left = Math.max(window.scrollX + 20, Math.min(left, window.scrollX + window.innerWidth - tooltipW - 20));
 
-    // Fallback: place below, centered
-    top = Math.max(PADDING, Math.min(r.bottom + GAP, vh - tooltipH - PADDING));
-    const left = Math.max(PADDING, Math.min(r.left + r.width / 2 - tooltipW / 2, vw - tooltipW - PADDING));
-    return { top, left };
+    return { position: 'absolute' as const, top, left };
   };
 
-  return (
-    <AnimatePresence>
-      {isVisible && (
-        <>
-          {/* Overlay with spotlight hole */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9990]"
-            style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.65)',
-              clipPath,
-            }}
-            onClick={finish}
-          />
+  const overlay = (
+    <>
+      {/* Full-screen dark overlay */}
+      <div
+        className="fixed inset-0 z-[9990] transition-opacity duration-300"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+        onClick={finish}
+      />
 
-          {/* Highlight ring around target */}
-          {hasTarget && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="fixed z-[9991] pointer-events-none rounded-xl"
-              style={{
-                top: rect!.top - PADDING,
-                left: rect!.left - PADDING,
-                width: rect!.width + PADDING * 2,
-                height: rect!.height + PADDING * 2,
-                boxShadow: '0 0 0 3px hsl(var(--primary) / 0.6), 0 0 24px 4px hsl(var(--primary) / 0.15)',
-              }}
-            />
-          )}
+      {/* Spotlight — cut out hole for the target */}
+      {hasTarget && (
+        <div
+          className="fixed z-[9991] pointer-events-none rounded-2xl transition-all duration-300"
+          style={{
+            top: pos!.top - window.scrollY - PADDING,
+            left: pos!.left - window.scrollX - PADDING,
+            width: pos!.width + PADDING * 2,
+            height: pos!.height + PADDING * 2,
+            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(0, 109, 91, 0.5)',
+            background: 'transparent',
+          }}
+        />
+      )}
 
-          {/* Tooltip */}
-          <motion.div
-            ref={tooltipRef}
-            key={currentStep}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.2 }}
-            className="fixed z-[9999] rounded-2xl border border-border/60 bg-card shadow-2xl"
-            style={{ width: tooltipW, maxWidth: `calc(100vw - 32px)`, ...calcTooltipPos() }}
-          >
-            <div className="p-4 sm:p-5">
-              {/* Close */}
-              <button
-                onClick={finish}
-                className="absolute top-3 right-3 p-1 rounded-full hover:bg-muted transition-colors"
-              >
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
+      {/* Tooltip */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          ref={tooltipRef}
+          key={currentStep}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.25 }}
+          className="z-[9999] rounded-2xl border border-slate-200 bg-white shadow-2xl"
+          style={{ width: tooltipW, ...getTooltipStyle() }}
+        >
+          <div className="p-5">
+            {/* Close */}
+            <button
+              onClick={finish}
+              className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-slate-100 transition-colors"
+            >
+              <X className="h-4 w-4 text-slate-400" />
+            </button>
 
-              {/* Header */}
-              <div className="flex items-center gap-2.5 mb-3">
-                <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">
-                    Passo {currentStep + 1} de {steps.length}
-                  </p>
-                  <h3 className="font-semibold text-foreground text-sm leading-tight">{step.title}</h3>
-                </div>
+            {/* Header */}
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="h-9 w-9 rounded-xl bg-[#006D5B]/10 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="h-4 w-4 text-[#006D5B]" />
               </div>
-
-              {/* Description */}
-              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                {step.description}
-              </p>
-
-              {/* Progress dots */}
-              <div className="flex justify-center gap-1.5 mb-4">
-                {steps.map((_, i) => (
-                  <div
-                    key={i}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      i === currentStep
-                        ? 'w-5 bg-primary'
-                        : i < currentStep
-                        ? 'w-1.5 bg-primary/40'
-                        : 'w-1.5 bg-muted-foreground/20'
-                    }`}
-                  />
-                ))}
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center justify-between">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={prev}
-                  disabled={currentStep === 0}
-                  className="gap-1 text-xs h-8"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                  Anterior
-                </Button>
-
-                <Button
-                  size="sm"
-                  onClick={next}
-                  className="gap-1 text-xs h-8 bg-primary hover:bg-primary/90"
-                >
-                  {currentStep === steps.length - 1 ? 'Concluir' : 'Proximo'}
-                  {currentStep < steps.length - 1 && <ChevronRight className="h-3.5 w-3.5" />}
-                </Button>
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">
+                  Passo {currentStep + 1} de {steps.length}
+                </p>
+                <h3 className="font-bold text-slate-800 text-sm leading-tight">{step.title}</h3>
               </div>
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+
+            {/* Description */}
+            <p className="text-sm text-slate-500 leading-relaxed mb-5">
+              {step.description}
+            </p>
+
+            {/* Progress dots */}
+            <div className="flex justify-center gap-1.5 mb-4">
+              {steps.map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    i === currentStep
+                      ? 'w-6 bg-[#006D5B]'
+                      : i < currentStep
+                      ? 'w-1.5 bg-[#006D5B]/40'
+                      : 'w-1.5 bg-slate-200'
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-between">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={prev}
+                disabled={currentStep === 0}
+                className="gap-1 text-xs h-9 text-slate-500"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                Anterior
+              </Button>
+
+              <Button
+                size="sm"
+                onClick={next}
+                className="gap-1 text-xs h-9 bg-[#006D5B] hover:bg-[#005344] text-white"
+              >
+                {currentStep === steps.length - 1 ? 'Concluir' : 'Próximo'}
+                {currentStep < steps.length - 1 && <ChevronRight className="h-3.5 w-3.5" />}
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </>
   );
+
+  return createPortal(overlay, document.body);
 };
 
 export default OnboardingTour;
