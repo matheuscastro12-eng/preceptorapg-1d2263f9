@@ -158,10 +158,10 @@ const MainMenu = () => {
         <section
           className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 animate-fade-up"
           style={{ animationDelay: '0.06s' }}
-          data-tour="estudo"
         >
           {/* Study with AI */}
           <div
+            data-tour="estudo"
             className="rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:scale-[1.015] hover:-translate-y-1 active:scale-[0.99] transition-all duration-500"
             style={{ background: 'linear-gradient(135deg, #005344 0%, #006d5b 100%)' }}
             onClick={() => go('/dashboard')}
@@ -215,11 +215,10 @@ const MainMenu = () => {
         <section
           className="space-y-6 animate-fade-up relative z-10"
           style={{ animationDelay: '0.14s' }}
-          data-tour="pratica"
         >
           <h3 className="font-['Manrope'] text-xl font-bold text-[#191c1d]">Prática & Avaliação</h3>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+          <div data-tour="pratica" className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             {practiceItems.map((item, i) => (
               <div
                 key={item.path}

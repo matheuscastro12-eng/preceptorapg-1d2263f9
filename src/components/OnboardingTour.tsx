@@ -32,7 +32,8 @@ const OnboardingTour = ({ steps, tourKey, onComplete }: OnboardingTourProps) => 
   useEffect(() => {
     const done = localStorage.getItem(`tour_${tourKey}`);
     if (!done && steps.length > 0) {
-      const timer = setTimeout(() => setIsVisible(true), 800);
+      // Wait for page animations to complete before showing tour
+      const timer = setTimeout(() => setIsVisible(true), 1500);
       return () => clearTimeout(timer);
     }
   }, [tourKey, steps.length]);
@@ -75,9 +76,16 @@ const OnboardingTour = ({ steps, tourKey, onComplete }: OnboardingTourProps) => 
     const onUpdate = () => requestAnimationFrame(measureTarget);
     window.addEventListener('resize', onUpdate);
     window.addEventListener('scroll', onUpdate, true);
+
+    // Re-measure several times to catch post-animation positions
+    const timers = [100, 300, 600, 1000].map(ms =>
+      setTimeout(measureTarget, ms)
+    );
+
     return () => {
       window.removeEventListener('resize', onUpdate);
       window.removeEventListener('scroll', onUpdate, true);
+      timers.forEach(clearTimeout);
     };
   }, [measureTarget]);
 
