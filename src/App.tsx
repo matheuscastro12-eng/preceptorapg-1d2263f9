@@ -49,6 +49,7 @@ import AdminDRE from "./pages/crm-admin/AdminDRE";
 import AdminEasyflow from "./pages/crm-admin/AdminEasyflow";
 import AdminInadimplencia from "./pages/crm-admin/AdminInadimplencia";
 import Welcome from "./pages/Welcome";
+import ThankYou from "./pages/ThankYou";
 import { usePageTracking } from "./hooks/usePageTracking";
 
 const queryClient = new QueryClient();
@@ -114,6 +115,7 @@ const App = () => (
               <Route path="/flashcards" element={<Flashcards />} />
               <Route path="/scientific-studio" element={<ScientificStudio />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/obrigado" element={<ThankYou />} />
               {/* Legacy redirects */}
               <Route path="/topics" element={<Navigate to="/profile" replace />} />
               <Route path="/evolution" element={<Navigate to="/profile" replace />} />
