@@ -105,7 +105,7 @@ export default function ThankYou() {
                 <span className="text-[#006D5B]">Dr. {userName}!</span>
               </h1>
               <p className="text-base sm:text-xl text-slate-500 font-light leading-relaxed mb-10 max-w-xl mx-auto">
-                Sua jornada para a residencia acaba de ganhar um aliado de elite. Agora voce tem acesso completo a todas as ferramentas do PreceptorMED.
+                Sua jornada para a residência acaba de ganhar um aliado de elite. Agora você tem acesso completo a todas as ferramentas do PreceptorMED.
               </p>
             </motion.div>
 
@@ -120,7 +120,7 @@ export default function ThankYou() {
                 onClick={() => navigate('/menu')}
                 className="btn-shimmer relative overflow-hidden inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#005344] text-white text-sm font-bold uppercase tracking-widest rounded-lg shadow-xl hover:shadow-2xl hover:-translate-y-0.5 active:scale-95 transition-all duration-300"
               >
-                Comecar a Estudar
+                Começar a Estudar
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
@@ -143,7 +143,7 @@ export default function ThankYou() {
               className="text-center text-2xl sm:text-3xl font-extrabold text-[#191c1d] mb-4 tracking-tight"
               style={{ fontFamily: "'Manrope', sans-serif" }}
             >
-              O que voce pode fazer agora
+              O que você pode fazer agora
             </motion.h2>
             <motion.p
               initial={{ opacity: 0 }}
@@ -151,7 +151,7 @@ export default function ThankYou() {
               transition={{ delay: 0.9 }}
               className="text-center text-sm sm:text-base text-slate-500 mb-12 max-w-lg mx-auto"
             >
-              Todas as ferramentas estao desbloqueadas. Comece por onde preferir.
+              Todas as ferramentas estão desbloqueadas. Comece por onde preferir.
             </motion.p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -159,7 +159,7 @@ export default function ThankYou() {
                 {
                   icon: 'auto_awesome',
                   title: 'Resumos com IA',
-                  desc: 'Gere resumos estruturados sobre qualquer tema medico em segundos.',
+                  desc: 'Gere resumos estruturados sobre qualquer tema médico em segundos.',
                   action: () => navigate('/dashboard'),
                   color: '#006D5B',
                   bg: '#c8eade',
@@ -168,7 +168,7 @@ export default function ThankYou() {
                 {
                   icon: 'chat_bubble',
                   title: 'Preceptor Chat',
-                  desc: 'Tire duvidas com IA especializada em medicina baseada em evidencias.',
+                  desc: 'Tire dúvidas com IA especializada em medicina baseada em evidências.',
                   action: () => navigate('/ai-chat'),
                   color: '#005344',
                   bg: '#d0ebe4',
@@ -177,7 +177,7 @@ export default function ThankYou() {
                 {
                   icon: 'history_edu',
                   title: 'ENAMED',
-                  desc: 'Pratique com provas anteriores do ENAMED com correcao e explicacao.',
+                  desc: 'Pratique com provas anteriores do ENAMED com correção e explicação.',
                   action: () => navigate('/enamed'),
                   color: '#4c6a62',
                   bg: '#dce8e4',
@@ -186,7 +186,7 @@ export default function ThankYou() {
                 {
                   icon: 'style',
                   title: 'Flashcards',
-                  desc: 'Crie flashcards automaticos e revise com repeticao espacada.',
+                  desc: 'Crie flashcards automáticos e revise com repetição espaçada.',
                   action: () => navigate('/flashcards'),
                   color: '#006D5B',
                   bg: '#e0f0eb',
@@ -237,10 +237,10 @@ export default function ThankYou() {
               </div>
               <div className="relative z-10">
                 <p className="text-white/90 text-lg sm:text-xl leading-relaxed font-light italic mb-6">
-                  "A medicina nao e apenas uma ciencia, e uma arte. Nao se trata apenas de comprimidos e pocoes — trata-se do cuidado com a alma."
+                  "Somente aqueles que consideram a cura como o objetivo final de seus esforços podem, portanto, ser designados como médicos."
                 </p>
                 <p className="text-[#C9A84C] font-bold text-sm tracking-wider uppercase">
-                  — Paracelso
+                  — Rudolf Virchow
                 </p>
                 <div className="mt-8 pt-6 border-t border-white/10">
                   <p className="text-white/60 text-xs">
