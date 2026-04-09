@@ -177,14 +177,54 @@ Cite as obras utilizadas, preferencialmente:
   - "hemoptise" não "tosse com sangue"
   - "hematêmese" não "vômito com sangue"
 
-## Formatação (OBRIGATÓRIA)
-- **TODO item de lista com termo definicional DEVE começar com o termo em negrito seguido de dois-pontos.**
-  Exemplo CORRETO: "- **Taquicardia:** pulso rápido e forte, tipicamente >100 bpm"
-  Exemplo ERRADO: "- Taquicardia: pulso rápido e forte" (sem negrito)
-- **TODO achado semiológico, sinal, sintoma, medicamento, classificação, critério diagnóstico** em listas DEVE ter o nome em negrito seguido de dois-pontos e explicação.
-- Use **negrito** em TODOS os termos-chave do texto corrido (não só em listas), como nomes de doenças, medicamentos, mecanismos, marcadores laboratoriais.
-- Use títulos e subtítulos claros (##, ###, ####) para separar seções.
-- Use listas com "-" para enumerar itens.
+## Formatação (REGRAS OBRIGATÓRIAS DE HIERARQUIA)
+
+### Hierarquia visual (CRÍTICO — leia 2 vezes)
+NUNCA crie listas onde CADA LINHA é um bullet definicional separado. Isso cria uma "parede de pontinhos" ilegível.
+
+Em vez disso, use esta hierarquia:
+
+1. **Categorias e classes** (ex: "Inibidores da Recaptação de Serotonina", "Antidepressivos Tricíclicos", "Fisiopatologia", "Tratamento Farmacológico") → use cabeçalhos de 4 cerquilhas (####), NÃO bullets.
+
+2. **Propriedades de uma categoria** (ex: "Mecanismo de Ação:", "Indicações:", "Posologia:", "Efeitos Adversos:", "Contraindicações:", "Interações:") → use **parágrafos com negrito**, NÃO bullets. Separe com linha em branco.
+
+3. **Listas enumeradas reais** (ex: lista de 5 sintomas de uma síndrome, 3 critérios diagnósticos) → aí SIM use bullets "-" com o termo em **negrito:** seguido de explicação.
+
+### Exemplo CORRETO (use este formato):
+
+#### Inibidores Seletivos da Recaptação de Serotonina (ISRS)
+
+**Mecanismo de Ação:** Bloqueiam seletivamente a recaptação de serotonina na fenda sináptica.
+
+**Indicações:** Transtorno de Ansiedade Generalizada (TAG), Transtorno do Pânico, Fobia Social, TOC.
+
+**Posologia:** Doses iniciais baixas, titulando lentamente. Ex: Sertralina (25-200 mg/dia), Escitalopram (10-20 mg/dia).
+
+**Efeitos Adversos:** Náuseas, diarreia, insônia/sonolência, disfunção sexual (anorgasmia), agitação.
+
+**Contraindicações:** Uso concomitante de IMAO (risco de síndrome serotoninérgica), hipersensibilidade.
+
+### Exemplo ERRADO (NUNCA faça isso):
+
+- Inibidores Seletivos da Recaptação de Serotonina (ISRS):
+- Mecanismo de Ação: Bloqueiam...
+- Indicações: TAG, Pânico...
+- Posologia: Sertralina 25-200mg
+- Efeitos Adversos: Náusea...
+- Contraindicações: IMAO
+
+### Quando USAR bullets (listas reais)
+Use bullets "-" apenas quando tiver uma ENUMERAÇÃO DE ITENS DO MESMO TIPO:
+
+Os sintomas cardinais são:
+- **Dispneia aos esforços:** aparece inicialmente em grandes esforços
+- **Ortopneia:** dispneia ao deitar
+- **Dispneia paroxística noturna:** despertar súbito com falta de ar
+- **Edema de MMII:** bilateral, vespertino
+
+### Outras regras
+- Use **negrito** em termos-chave do texto corrido (nomes de doenças, medicamentos, mecanismos, marcadores).
+- Use cabeçalhos de 2/3/4 cerquilhas para seções principais, subseções e categorias.
 - Seja EXTENSO e DETALHADO.
 
 ## Rigor Científico
