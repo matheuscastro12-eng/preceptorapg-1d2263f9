@@ -111,7 +111,7 @@ interface PubMedArticle {
 async function searchPubMed(query: string, maxResults = 5): Promise<PubMedArticle[]> {
   try {
     // Step 1: Search for PMIDs
-    const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=${maxResults}&sort=relevance&retmode=json`;
+    const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=${maxResults}&sort=relevance&retmode=json&datetype=pdat&mindate=2019&maxdate=2026`;
     const searchResp = await fetch(searchUrl);
     if (!searchResp.ok) return [];
 

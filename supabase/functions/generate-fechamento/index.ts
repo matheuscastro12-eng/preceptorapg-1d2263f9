@@ -6,8 +6,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const FECHAMENTO_PROMPT = `# ROLE
-Você é um Monitor Sênior e Preceptor Acadêmico de Medicina de excelência. Sua tarefa é gerar um Resumo Acadêmico com a MÁXIMA PROFUNDIDADE TÉCNICA possível para estudantes de medicina, garantindo rigor acadêmico e conteúdo denso compatível com o ciclo clínico/básico.
+const FECHAMENTO_PROMPT = `# REGRAS DE OURO (NUNCA VIOLAR)
+1. NUNCA invente dados, estatisticas, valores de referencia ou mecanismos que voce nao tenha certeza. Se nao tiver certeza de um numero exato, use "aproximadamente" ou omita.
+2. NUNCA cite referencias com capitulos ou paginas especificas inventadas. Cite apenas o livro/autor de forma generica (ex: "Guyton", nao "Guyton, cap. 14, p. 203").
+3. Se um subtopico da estrutura NAO se aplica ao tema solicitado, escreva "[Nao aplicavel ao tema]" em vez de forcar conteudo irrelevante. Ex: Embriologia nao se aplica a um tema de geriatria.
+4. Priorize informacoes de alto nivel de evidencia. Quando houver incerteza, sinalize com "A literatura sugere..." ou "Dados limitados indicam...".
+5. Para dados epidemiologicos, priorize dados brasileiros (DATASUS, Ministerio da Saude, diretrizes SUS, consensos brasileiros) quando disponiveis.
+
+# ROLE
+Voce e um Monitor Senior e Preceptor Academico de Medicina de excelencia. Sua tarefa e gerar um Resumo Academico com a MAXIMA PROFUNDIDADE TECNICA possivel para estudantes de medicina, garantindo rigor academico e conteudo denso compativel com o ciclo clinico/basico.
 
 # PRINCÍPIOS FUNDAMENTAIS
 1. **Aprendizagem Ativa:** O estudante é protagonista. O resumo deve fornecer substrato teórico robusto para discussão em grupo.
@@ -192,10 +199,28 @@ Cite as obras utilizadas, preferencialmente:
 - Você SOMENTE deve gerar conteúdo dentro do campo da medicina baseada em evidências, ciências biomédicas e saúde.
 - Se o usuário solicitar conteúdo sobre pseudociências (homeopatia, astrologia médica, "física quântica na saúde", etc.), terapias sem evidência científica, ou qualquer tema fora do escopo médico-acadêmico: IGNORE completamente essa parte da solicitação.
 - NÃO gere seções sobre temas não-científicos. NÃO tente "refutar" pseudociências — simplesmente ignore e foque no conteúdo médico válido.
-- Se TODO o conteúdo solicitado estiver fora do escopo, responda APENAS: "O tema solicitado está fora do escopo médico-acadêmico desta ferramenta."`;
+- Se TODO o conteudo solicitado estiver fora do escopo, responda APENAS: "O tema solicitado esta fora do escopo medico-academico desta ferramenta."
 
-const SEMINARIO_PROMPT = `# ROLE
-Você é um Preceptor Acadêmico de Medicina de Excelência, especializado na metodologia PBL. Sua missão é gerar CONTEÚDO ACADÊMICO DENSO E ESTRUTURADO para seminário, que será posteriormente transformado em slides por uma IA de apresentações. Foque em PROFUNDIDADE DE CONTEÚDO, não em formatação visual.
+## VERIFICACAO FINAL (ANTES DE ENVIAR)
+Antes de finalizar sua resposta, verifique internamente:
+- Todos os valores numericos citados (doses, valores de referencia, estatisticas) estao corretos e plausíveis?
+- As cascatas fisiopatologicas estao na ordem correta?
+- Os medicamentos listados realmente tem as indicacoes citadas?
+- As classificacoes (CID, NYHA, Child-Pugh, etc.) estao atualizadas?
+Se detectar incerteza em alguma informacao, sinalize com [verificar] ao lado.`;
+
+const SEMINARIO_PROMPT = `# REGRAS DE OURO (NUNCA VIOLAR)
+1. NUNCA invente dados, estatisticas, valores de referencia ou mecanismos que voce nao tenha certeza. Use "aproximadamente" se incerto.
+2. NUNCA cite referencias com capitulos ou paginas inventadas. Cite apenas livro/autor.
+3. Se um subtopico NAO se aplica ao tema, escreva "[Nao aplicavel ao tema]" em vez de forcar conteudo.
+4. Priorize dados brasileiros (DATASUS, SUS, consensos brasileiros) quando disponiveis.
+5. Sinalizar incerteza com "A literatura sugere..." ou "Dados limitados indicam...".
+
+# TERMINOLOGIA MEDICA OBRIGATORIA
+- Use SEMPRE: "dispneia" (nao "falta de ar"), "odinofagia" (nao "dor ao engolir"), "hemoptise" (nao "tosse com sangue"), "hematêmese" (nao "vomito com sangue").
+
+# ROLE
+Voce e um Preceptor Academico de Medicina de Excelencia, especializado na metodologia PBL. Sua missão é gerar CONTEÚDO ACADÊMICO DENSO E ESTRUTURADO para seminário, que será posteriormente transformado em slides por uma IA de apresentações. Foque em PROFUNDIDADE DE CONTEÚDO, não em formatação visual.
 
 # PRINCÍPIOS
 1. **Conteúdo acima de tudo:** Cada seção deve ser rica em informações técnicas, mecanismos moleculares, correlações clínicas e dados epidemiológicos.
@@ -457,11 +482,22 @@ Gere um fechamento de PBL COMPLETO, EXTENSO e PROFUNDO sobre este tema. Não sej
     if (sanitizedObjetivos) {
       userPrompt += `
 
-**Objetivos de Aprendizado Específicos:**
+**Objetivos de Aprendizado Especificos:**
 ${sanitizedObjetivos}
 
-ATENÇÃO: Além da estrutura padrão, certifique-se de responder EXAUSTIVAMENTE a cada um dos objetivos listados acima.`;
+ATENCAO: Alem da estrutura padrao, certifique-se de responder EXAUSTIVAMENTE a cada um dos objetivos listados acima.`;
     }
+
+    // Chain-of-thought preamble
+    userPrompt += `
+
+Antes de escrever, analise internamente:
+1. O tema e predominantemente morfofuncional, clinico, ou hibrido?
+2. Quais secoes da estrutura sao mais relevantes para este tema especifico?
+3. Quais secoes podem receber "[Nao aplicavel ao tema]"?
+${sanitizedObjetivos ? "4. Como cada objetivo mapeia para as secoes?" : ""}
+
+Agora gere o resumo completo.`;
 
     // Call Google Gemini API directly with SSE streaming
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GOOGLE_AI_API_KEY}`;
@@ -472,11 +508,12 @@ ATENÇÃO: Além da estrutura padrão, certifique-se de responder EXAUSTIVAMENTE
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
         contents: [
-          { role: "user", parts: [{ text: systemPrompt + "\n\n" + userPrompt }] },
+          { role: "user", parts: [{ text: userPrompt }] },
         ],
         generationConfig: {
-          temperature: 1,
+          temperature: 0.7,
           maxOutputTokens: 65536,
         },
       }),

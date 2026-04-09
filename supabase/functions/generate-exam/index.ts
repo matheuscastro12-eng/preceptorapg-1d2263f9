@@ -398,11 +398,12 @@ ${sanitizedConteudo}
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
         contents: [
-          { role: "user", parts: [{ text: systemPrompt + "\n\n" + userPrompt }] },
+          { role: "user", parts: [{ text: userPrompt }] },
         ],
         generationConfig: {
-          temperature: 1,
+          temperature: 0.7,
           maxOutputTokens: 65536,
         },
       }),
