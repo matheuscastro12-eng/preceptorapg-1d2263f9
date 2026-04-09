@@ -180,7 +180,7 @@ serve(async (req) => {
     }
 
     // Sanitize and trim messages
-    const sanitizedMessages = messages.slice(-MAX_MESSAGES).map((m: { role: string; content: string }) => ({
+    let sanitizedMessages = messages.slice(-MAX_MESSAGES).map((m: { role: string; content: string }) => ({
       role: m.role === "assistant" ? "model" : "user",
       parts: [
         {
@@ -192,13 +192,27 @@ serve(async (req) => {
       ],
     }));
 
+    // Gemini exige que `contents` SEMPRE comece com role "user"
+    // O frontend pode mandar a mensagem de boas-vindas do assistente como primeira,
+    // entao dropamos qualquer mensagem "model" inicial ate achar um "user"
+    while (sanitizedMessages.length > 0 && sanitizedMessages[0].role === "model") {
+      sanitizedMessages.shift();
+    }
+
+    if (sanitizedMessages.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Nenhuma mensagem do usuario encontrada" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
     if (!GOOGLE_AI_API_KEY) {
       throw new Error("GOOGLE_AI_API_KEY is not configured");
     }
 
-    // IMPORTANTE: systemInstruction camelCase — snake_case é silenciosamente ignorado
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_AI_API_KEY}`;
+    // IMPORTANTE: systemInstruction camelCase — snake_case e silenciosamente ignorado
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_AI_API_KEY}`;
 
     const response = await fetch(geminiUrl, {
       method: "POST",
