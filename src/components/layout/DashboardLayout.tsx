@@ -309,7 +309,7 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
 
         {/* Main */}
         <main className={`flex-1 ${mainClassName ?? "p-6 sm:p-10 max-w-7xl mx-auto w-full"}`}>
-          <div key={location.pathname} className="animate-fade-up flex-1 flex flex-col min-h-0" style={{ animationDuration: '0.35s' }}>
+          <div className="flex-1 flex flex-col min-h-0">
             {children}
           </div>
         </main>
