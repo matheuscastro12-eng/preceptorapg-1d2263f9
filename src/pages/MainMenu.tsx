@@ -7,6 +7,7 @@ import PageSkeleton from '@/components/PageSkeleton';
 import { useToast } from '@/hooks/use-toast';
 import OnboardingTour, { type TourStep } from '@/components/OnboardingTour';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import GamificationWidget from '@/components/GamificationWidget';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Lock } from 'lucide-react';
 import { format } from 'date-fns';
@@ -153,6 +154,13 @@ const MainMenu = () => {
             </button>
           )}
         </section>
+
+        {/* Gamification widget */}
+        {!isFreeUser && (
+          <section className="animate-fade-up" style={{ animationDelay: '0.03s' }}>
+            <GamificationWidget variant="card" />
+          </section>
+        )}
 
         {/* Primary Feature Cards */}
         <section

@@ -12,6 +12,7 @@ import { ArrowLeft, RotateCcw, Check, X, Layers, Brain, Sparkles, Trash2, Chevro
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import { useRecordReview } from '@/hooks/useGamification';
 
 interface Flashcard {
   id: string;
@@ -40,6 +41,7 @@ const Flashcards = () => {
   const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const recordReview = useRecordReview();
 
   const [allCards, setAllCards] = useState<Flashcard[]>([]);
   const [decks, setDecks] = useState<Deck[]>([]);
@@ -98,19 +100,26 @@ const Flashcards = () => {
   const handleReview = async (quality: 'easy' | 'good' | 'hard' | 'again') => {
     const card = dueCards[currentIndex];
     if (!card) return;
-    let newEase = card.ease_factor, newInterval = card.interval_days, newReps = card.repetitions;
-    switch (quality) {
-      case 'again': newInterval = 1; newReps = 0; newEase = Math.max(1.3, newEase - 0.2); break;
-      case 'hard': newInterval = Math.max(1, Math.round(newInterval * 1.2)); newEase = Math.max(1.3, newEase - 0.15); newReps += 1; break;
-      case 'good': newInterval = newReps === 0 ? 1 : newReps === 1 ? 6 : Math.round(newInterval * newEase); newReps += 1; break;
-      case 'easy': newInterval = newReps === 0 ? 4 : Math.round(newInterval * newEase * 1.3); newEase += 0.15; newReps += 1; break;
-    }
+
+    const easeBefore = card.ease_factor;
+    const intervalBefore = card.interval_days;
+
+    // Proper SM-2 algorithm
+    const { sm2 } = await import('@/hooks/useGamification');
+    const { ease: newEase, interval: newInterval, reps: newReps } = sm2(quality, card.ease_factor, card.interval_days, card.repetitions);
+
     const nextReview = new Date(); nextReview.setDate(nextReview.getDate() + newInterval);
     await supabase.from('flashcards').update({ interval_days: newInterval, ease_factor: newEase, repetitions: newReps, next_review: nextReview.toISOString() }).eq('id', card.id);
+
+    // Record review + award XP (fire and forget)
+    recordReview.mutate({
+      cardId: card.id, quality, easeBefore, easeAfter: newEase, intervalBefore, intervalAfter: newInterval,
+    });
+
     setReviewedCount(prev => prev + 1);
     setFlipped(false);
     if (currentIndex < dueCards.length - 1) setCurrentIndex(prev => prev + 1);
-    else { toast({ title: 'Sessão completa!', description: `Você revisou ${reviewedCount + 1} cards.` }); setSelectedDeck(null); fetchCards(); }
+    else { toast({ title: 'Sessao completa!', description: `Voce revisou ${reviewedCount + 1} cards. +XP!` }); setSelectedDeck(null); fetchCards(); }
   };
 
   const deleteCard = async (id: string) => {

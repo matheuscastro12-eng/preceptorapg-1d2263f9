@@ -5,6 +5,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { Menu, X, Loader2 } from 'lucide-react';
+import GamificationWidget from '@/components/GamificationWidget';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -248,6 +249,9 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
           </div>
           <MI name="chevron_right" className="text-[18px] text-white/40 ml-auto group-hover:text-white/70 group-hover:translate-x-0.5 transition-all" />
         </button>
+
+        {/* Gamification stats */}
+        <GamificationWidget variant="sidebar" />
 
         {/* Help & Logout */}
         <div className="mt-3 space-y-1 mb-2">
