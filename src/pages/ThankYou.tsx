@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 import logoIcon from '@/assets/logo-icon.png';
@@ -14,15 +14,23 @@ const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boole
   </span>
 );
 
+const PLAN_INFO: Record<string, { label: string; title: string }> = {
+  mensal:  { label: 'Plano Mensal',   title: 'Assinatura Mensal Confirmada' },
+  anual:   { label: 'Plano Anual',    title: 'Assinatura Anual Confirmada' },
+  bianual: { label: 'Plano Bi-anual', title: 'Assinatura Bi-anual Confirmada' },
+};
+
 export default function ThankYou() {
   const navigate = useNavigate();
+  const { plano } = useParams<{ plano?: string }>();
   const { user } = useAuth();
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Estudante';
+  const plan = PLAN_INFO[plano ?? ''] ?? { label: 'Assinatura', title: 'Assinatura Confirmada' };
 
   useEffect(() => {
-    document.title = 'Bem-vindo ao PreceptorMED!';
+    document.title = `Bem-vindo ao PreceptorMED! — ${plan.label}`;
     return () => { document.title = 'PreceptorMED'; };
-  }, []);
+  }, [plan.label]);
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col" style={{ fontFamily: "'DM Sans', 'Inter', sans-serif" }}>
@@ -95,7 +103,7 @@ export default function ThankYou() {
               transition={{ delay: 0.4 }}
             >
               <span className="inline-block px-4 py-1.5 mb-5 text-[10px] sm:text-xs font-bold tracking-widest uppercase bg-[#c8eade] text-[#005344] rounded-full">
-                Assinatura Confirmada
+                {plan.title}
               </span>
               <h1
                 className="text-3xl sm:text-5xl md:text-6xl font-extrabold leading-[1.1] mb-5 tracking-tighter text-[#191c1d]"

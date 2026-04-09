@@ -116,6 +116,7 @@ const App = () => (
               <Route path="/scientific-studio" element={<ScientificStudio />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/obrigado" element={<ThankYou />} />
+              <Route path="/obrigado/:plano" element={<ThankYou />} />
               {/* Legacy redirects */}
               <Route path="/topics" element={<Navigate to="/profile" replace />} />
               <Route path="/evolution" element={<Navigate to="/profile" replace />} />
