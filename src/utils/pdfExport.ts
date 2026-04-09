@@ -414,29 +414,51 @@ export const exportToPDF = async ({ tema, contentElement, markdown }: PDFExportO
     // ── Bullet (with bold/italic support) ──
     if (/^[-*•]\s/.test(trimmed)) {
       const bt = trimmed.replace(/^[-*•]\s/, '');
+
+      // Detect "definitional bullet" — starts with **Term:** or **Term**:
+      // These render as compact paragraphs with NO bullet circle to reduce visual noise
+      const isDefinitional = /^\*\*[^*]+\*\*\s*:/.test(bt) || /^\*\*[^*]+:\*\*/.test(bt);
+
       doc.setFontSize(F.bullet);
       doc.setTextColor(...C.text);
-      // Estimate lines needed (rough: 1 line per 75 chars)
       const estLines = Math.ceil(cleanMdNoStyle(bt.replace(/\*\*/g, '').replace(/\*/g, '')).length / 75);
       checkPage(estLines * LH.bullet + 4);
-      doc.setFillColor(...C.greenMid);
-      doc.circle(ML + 2.5, y - 1.2, 0.9, 'F');
-      const linesUsed = renderRichText(doc, bt, ML + 7, y, CW - 12, LH.bullet, 'times');
-      y += linesUsed * LH.bullet + 2;
+
+      if (isDefinitional) {
+        // No bullet circle — just indent, let the bold term carry the visual weight
+        const linesUsed = renderRichText(doc, bt, ML + 4, y, CW - 8, LH.bullet, 'times');
+        y += linesUsed * LH.bullet + 2.5;
+      } else {
+        // Normal bullet with small subtle dash
+        doc.setDrawColor(...C.greenMid);
+        doc.setLineWidth(0.5);
+        doc.line(ML + 1, y - 1.2, ML + 4, y - 1.2);
+        const linesUsed = renderRichText(doc, bt, ML + 7, y, CW - 12, LH.bullet, 'times');
+        y += linesUsed * LH.bullet + 2;
+      }
       continue;
     }
 
     // ── Sub-bullet ──
     if (/^\s{2,}[-*•]\s/.test(lines[li])) {
       const sbt = lines[li].trim().replace(/^[-*•]\s/, '');
+      const isDefinitional = /^\*\*[^*]+\*\*\s*:/.test(sbt) || /^\*\*[^*]+:\*\*/.test(sbt);
+
       doc.setFontSize(F.bodySmall);
       doc.setTextColor(...C.gray);
       const estLines = Math.ceil(cleanMdNoStyle(sbt.replace(/\*\*/g, '').replace(/\*/g, '')).length / 80);
       checkPage(estLines * 4 + 3);
-      doc.setDrawColor(...C.grayLight);
-      doc.circle(ML + 8, y - 1, 0.5, 'S');
-      const linesUsed = renderRichText(doc, sbt, ML + 12, y, CW - 18, 4, 'times');
-      y += linesUsed * 4 + 1.5;
+
+      if (isDefinitional) {
+        const linesUsed = renderRichText(doc, sbt, ML + 10, y, CW - 16, 4, 'times');
+        y += linesUsed * 4 + 2;
+      } else {
+        doc.setDrawColor(...C.grayLight);
+        doc.setLineWidth(0.3);
+        doc.line(ML + 7, y - 1, ML + 9.5, y - 1);
+        const linesUsed = renderRichText(doc, sbt, ML + 12, y, CW - 18, 4, 'times');
+        y += linesUsed * 4 + 1.5;
+      }
       continue;
     }
 
