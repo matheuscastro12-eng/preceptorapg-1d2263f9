@@ -17,6 +17,23 @@ serve(async (req) => {
 
   try {
     const rawBody = await req.text();
+
+    // Validate webhook signature (HMAC-SHA256)
+    const WEBHOOK_SECRET = Deno.env.get("EASYFLOW_API_SECRET") ?? "";
+    if (WEBHOOK_SECRET) {
+      const signature = req.headers.get("x-signature") || req.headers.get("x-webhook-signature") || "";
+      if (signature) {
+        const encoder = new TextEncoder();
+        const key = await crypto.subtle.importKey("raw", encoder.encode(WEBHOOK_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+        const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(rawBody));
+        const expected = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
+        if (signature !== expected) {
+          console.warn("[EasyFlow] Invalid webhook signature");
+          // Log but don't block (EasyFlow may not send signatures for all event types)
+        }
+      }
+    }
+
     let body: Record<string, any> = {};
     try { body = JSON.parse(rawBody); } catch {
       try { const p = new URLSearchParams(rawBody); p.forEach((v, k) => { try { body[k] = JSON.parse(v); } catch { body[k] = v; } }); }

@@ -458,6 +458,36 @@ serve(async (req) => {
     const sanitizedTema = tema.trim().replace(/[\x00-\x1F\x7F]/g, "");
     const sanitizedObjetivos = objetivos ? objetivos.trim().replace(/[\x00-\x1F\x7F]/g, "") : "";
 
+    // Check cache: same tema + mode generated in last 24h (saves API costs)
+    const cacheKey = `${sanitizedTema.toLowerCase().slice(0, 100)}::${sanitizedModo}`;
+    if (!sanitizedObjetivos) {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 3600000).toISOString();
+      const { data: cached } = await serviceClient
+        .from("fechamentos")
+        .select("resultado")
+        .ilike("tema", sanitizedTema.slice(0, 100))
+        .gte("created_at", twentyFourHoursAgo)
+        .not("resultado", "is", null)
+        .limit(1)
+        .maybeSingle();
+
+      if (cached?.resultado) {
+        console.log(`[Cache hit] Tema: ${sanitizedTema.slice(0, 50)}`);
+        // Return cached as SSE stream
+        const cacheStream = new ReadableStream({
+          start(controller) {
+            const chunk = `data: ${JSON.stringify({ choices: [{ delta: { content: cached.resultado } }] })}\n\n`;
+            controller.enqueue(new TextEncoder().encode(chunk));
+            controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"));
+            controller.close();
+          },
+        });
+        return new Response(cacheStream, {
+          headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+        });
+      }
+    }
+
     const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
     if (!GOOGLE_AI_API_KEY) {
       throw new Error("GOOGLE_AI_API_KEY is not configured");

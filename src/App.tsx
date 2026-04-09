@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,51 +7,60 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CrmAuthProvider } from "./contexts/CrmAuthContext";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import Library from "./pages/Library";
-import Exam from "./pages/Exam";
-import Pricing from "./pages/Pricing";
-import Landing from "./pages/Landing";
-import MainMenu from "./pages/MainMenu";
-import Subscription from "./pages/Subscription";
-import Profile from "./pages/Profile";
-import AIChat from "./pages/AIChat";
-import Enamed from "./pages/Enamed";
-import ResetPassword from "./pages/ResetPassword";
-import Flashcards from "./pages/Flashcards";
-import ScientificStudio from "./pages/ScientificStudio";
-import NotFound from "./pages/NotFound";
-import CrmHub from "./pages/crm/CrmHub";
-import CrmLayout from "./pages/crm/CrmLayout";
-import CrmDashboard from "./pages/crm/CrmDashboard";
-import CrmLeads from "./pages/crm/CrmLeads";
-import CrmFunnel from "./pages/crm/CrmFunnel";
-import CrmHealth from "./pages/crm/CrmHealth";
-import CrmChurn from "./pages/crm/CrmChurn";
-import CrmAutomations from "./pages/crm/CrmAutomations";
-import CrmUsers from "./pages/crm/CrmUsers";
-import CrmAnalytics from "./pages/crm/CrmAnalytics";
-import CrmAdminLayout from "./pages/crm-admin/CrmAdminLayout";
-import AdminDashboard from "./pages/crm-admin/AdminDashboard";
-import AdminReceita from "./pages/crm-admin/AdminReceita";
-import AdminDespesas from "./pages/crm-admin/AdminDespesas";
-import AdminFluxoCaixa from "./pages/crm-admin/AdminFluxoCaixa";
-import AdminTime from "./pages/crm-admin/AdminTime";
-import AdminSalarios from "./pages/crm-admin/AdminSalarios";
-import AdminContratacoes from "./pages/crm-admin/AdminContratacoes";
-import AdminMetas from "./pages/crm-admin/AdminMetas";
-import AdminOneOnOne from "./pages/crm-admin/AdminOneOnOne";
-import AdminPDI from "./pages/crm-admin/AdminPDI";
-import AdminCarreira from "./pages/crm-admin/AdminCarreira";
-import AdminRelatorio from "./pages/crm-admin/AdminRelatorio";
-import AdminForecast from "./pages/crm-admin/AdminForecast";
-import AdminDRE from "./pages/crm-admin/AdminDRE";
-import AdminEasyflow from "./pages/crm-admin/AdminEasyflow";
-import AdminInadimplencia from "./pages/crm-admin/AdminInadimplencia";
-import Welcome from "./pages/Welcome";
-import ThankYou from "./pages/ThankYou";
 import { usePageTracking } from "./hooks/usePageTracking";
+import PageSkeleton from "./components/PageSkeleton";
+
+// Core pages (loaded eagerly — first paint)
+import Landing from "./pages/Landing";
+import Auth from "./pages/Auth";
+import MainMenu from "./pages/MainMenu";
+import NotFound from "./pages/NotFound";
+
+// Lazy-loaded pages (split into separate chunks)
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Library = lazy(() => import("./pages/Library"));
+const Exam = lazy(() => import("./pages/Exam"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Subscription = lazy(() => import("./pages/Subscription"));
+const Profile = lazy(() => import("./pages/Profile"));
+const AIChat = lazy(() => import("./pages/AIChat"));
+const Enamed = lazy(() => import("./pages/Enamed"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Flashcards = lazy(() => import("./pages/Flashcards"));
+const ScientificStudio = lazy(() => import("./pages/ScientificStudio"));
+const Welcome = lazy(() => import("./pages/Welcome"));
+const ThankYou = lazy(() => import("./pages/ThankYou"));
+
+// CRM pages (lazy — admin only)
+const CrmHub = lazy(() => import("./pages/crm/CrmHub"));
+const CrmLayout = lazy(() => import("./pages/crm/CrmLayout"));
+const CrmDashboard = lazy(() => import("./pages/crm/CrmDashboard"));
+const CrmLeads = lazy(() => import("./pages/crm/CrmLeads"));
+const CrmFunnel = lazy(() => import("./pages/crm/CrmFunnel"));
+const CrmHealth = lazy(() => import("./pages/crm/CrmHealth"));
+const CrmChurn = lazy(() => import("./pages/crm/CrmChurn"));
+const CrmAutomations = lazy(() => import("./pages/crm/CrmAutomations"));
+const CrmUsers = lazy(() => import("./pages/crm/CrmUsers"));
+const CrmAnalytics = lazy(() => import("./pages/crm/CrmAnalytics"));
+
+// CRM Admin pages (lazy — admin only)
+const CrmAdminLayout = lazy(() => import("./pages/crm-admin/CrmAdminLayout"));
+const AdminDashboard = lazy(() => import("./pages/crm-admin/AdminDashboard"));
+const AdminReceita = lazy(() => import("./pages/crm-admin/AdminReceita"));
+const AdminDespesas = lazy(() => import("./pages/crm-admin/AdminDespesas"));
+const AdminFluxoCaixa = lazy(() => import("./pages/crm-admin/AdminFluxoCaixa"));
+const AdminTime = lazy(() => import("./pages/crm-admin/AdminTime"));
+const AdminSalarios = lazy(() => import("./pages/crm-admin/AdminSalarios"));
+const AdminContratacoes = lazy(() => import("./pages/crm-admin/AdminContratacoes"));
+const AdminMetas = lazy(() => import("./pages/crm-admin/AdminMetas"));
+const AdminOneOnOne = lazy(() => import("./pages/crm-admin/AdminOneOnOne"));
+const AdminPDI = lazy(() => import("./pages/crm-admin/AdminPDI"));
+const AdminCarreira = lazy(() => import("./pages/crm-admin/AdminCarreira"));
+const AdminRelatorio = lazy(() => import("./pages/crm-admin/AdminRelatorio"));
+const AdminForecast = lazy(() => import("./pages/crm-admin/AdminForecast"));
+const AdminDRE = lazy(() => import("./pages/crm-admin/AdminDRE"));
+const AdminEasyflow = lazy(() => import("./pages/crm-admin/AdminEasyflow"));
+const AdminInadimplencia = lazy(() => import("./pages/crm-admin/AdminInadimplencia"));
 
 const queryClient = new QueryClient();
 
@@ -58,6 +68,8 @@ function PageTracker({ children }: { children: React.ReactNode }) {
   usePageTracking();
   return <>{children}</>;
 }
+
+const LazyFallback = () => <PageSkeleton variant="menu" />;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -69,60 +81,61 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
           <PageTracker>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/welcome" element={<Welcome />} />
-              <Route path="/menu" element={<MainMenu />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/library" element={<Library />} />
-              <Route path="/exam" element={<Exam />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/subscription" element={<Subscription />} />
-              <Route path="/admin" element={<Navigate to="/admin/crm" replace />} />
-              <Route path="/admin/crm" element={<CrmHub />} />
-              <Route path="/admin/crm-mkt" element={<CrmLayout />}>
-                <Route index element={<CrmDashboard />} />
-                <Route path="leads" element={<CrmLeads />} />
-                <Route path="funnel" element={<CrmFunnel />} />
-                <Route path="health" element={<CrmHealth />} />
-                <Route path="churn" element={<CrmChurn />} />
-                <Route path="automations" element={<CrmAutomations />} />
-                <Route path="users" element={<CrmUsers />} />
-                <Route path="analytics" element={<CrmAnalytics />} />
-              </Route>
-              <Route path="/admin/crm-admin" element={<CrmAdminLayout />}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="receita" element={<AdminReceita />} />
-                <Route path="despesas" element={<AdminDespesas />} />
-                <Route path="fluxo-caixa" element={<AdminFluxoCaixa />} />
-                <Route path="time" element={<AdminTime />} />
-                <Route path="salarios" element={<AdminSalarios />} />
-                <Route path="contratacoes" element={<AdminContratacoes />} />
-                <Route path="one-on-one" element={<AdminOneOnOne />} />
-                <Route path="pdi" element={<AdminPDI />} />
-                <Route path="carreira" element={<AdminCarreira />} />
-                <Route path="metas" element={<AdminMetas />} />
-                <Route path="relatorio" element={<AdminRelatorio />} />
-                <Route path="forecast" element={<AdminForecast />} />
-                <Route path="dre" element={<AdminDRE />} />
-                <Route path="easyflow" element={<AdminEasyflow />} />
-                <Route path="inadimplencia" element={<AdminInadimplencia />} />
-              </Route>
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/ai-chat" element={<AIChat />} />
-              <Route path="/enamed" element={<Enamed />} />
-              <Route path="/flashcards" element={<Flashcards />} />
-              <Route path="/scientific-studio" element={<ScientificStudio />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/obrigado" element={<ThankYou />} />
-              <Route path="/obrigado/:plano" element={<ThankYou />} />
-              {/* Legacy redirects */}
-              <Route path="/topics" element={<Navigate to="/profile" replace />} />
-              <Route path="/evolution" element={<Navigate to="/profile" replace />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<LazyFallback />}>
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/welcome" element={<Welcome />} />
+                <Route path="/menu" element={<MainMenu />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/library" element={<Library />} />
+                <Route path="/exam" element={<Exam />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/subscription" element={<Subscription />} />
+                <Route path="/admin" element={<Navigate to="/admin/crm" replace />} />
+                <Route path="/admin/crm" element={<CrmHub />} />
+                <Route path="/admin/crm-mkt" element={<CrmLayout />}>
+                  <Route index element={<CrmDashboard />} />
+                  <Route path="leads" element={<CrmLeads />} />
+                  <Route path="funnel" element={<CrmFunnel />} />
+                  <Route path="health" element={<CrmHealth />} />
+                  <Route path="churn" element={<CrmChurn />} />
+                  <Route path="automations" element={<CrmAutomations />} />
+                  <Route path="users" element={<CrmUsers />} />
+                  <Route path="analytics" element={<CrmAnalytics />} />
+                </Route>
+                <Route path="/admin/crm-admin" element={<CrmAdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="receita" element={<AdminReceita />} />
+                  <Route path="despesas" element={<AdminDespesas />} />
+                  <Route path="fluxo-caixa" element={<AdminFluxoCaixa />} />
+                  <Route path="time" element={<AdminTime />} />
+                  <Route path="salarios" element={<AdminSalarios />} />
+                  <Route path="contratacoes" element={<AdminContratacoes />} />
+                  <Route path="one-on-one" element={<AdminOneOnOne />} />
+                  <Route path="pdi" element={<AdminPDI />} />
+                  <Route path="carreira" element={<AdminCarreira />} />
+                  <Route path="metas" element={<AdminMetas />} />
+                  <Route path="relatorio" element={<AdminRelatorio />} />
+                  <Route path="forecast" element={<AdminForecast />} />
+                  <Route path="dre" element={<AdminDRE />} />
+                  <Route path="easyflow" element={<AdminEasyflow />} />
+                  <Route path="inadimplencia" element={<AdminInadimplencia />} />
+                </Route>
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/ai-chat" element={<AIChat />} />
+                <Route path="/enamed" element={<Enamed />} />
+                <Route path="/flashcards" element={<Flashcards />} />
+                <Route path="/scientific-studio" element={<ScientificStudio />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/obrigado" element={<ThankYou />} />
+                <Route path="/obrigado/:plano" element={<ThankYou />} />
+                {/* Legacy redirects */}
+                <Route path="/topics" element={<Navigate to="/profile" replace />} />
+                <Route path="/evolution" element={<Navigate to="/profile" replace />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </PageTracker>
           </BrowserRouter>
         </CrmAuthProvider>
