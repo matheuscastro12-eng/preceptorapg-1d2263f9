@@ -6,6 +6,8 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { Menu, X, Loader2 } from 'lucide-react';
 import GamificationWidget from '@/components/GamificationWidget';
+import SupportWidget from '@/components/support/SupportWidget';
+import NpsModal from '@/components/support/NpsModal';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -255,10 +257,13 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
 
         {/* Help & Logout */}
         <div className="mt-3 space-y-1 mb-2">
-          <a href="mailto:suporte@thepreceptor.com.br" className="w-full text-white/60 text-xs font-medium flex items-center gap-2 py-2 px-3 rounded-lg hover:text-white hover:bg-white/10 transition-all duration-200 cursor-pointer">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-support-widget'))}
+            className="w-full text-white/60 text-xs font-medium flex items-center gap-2 py-2 px-3 rounded-lg hover:text-white hover:bg-white/10 transition-all duration-200 cursor-pointer text-left"
+          >
             <MI name="help" className="text-[18px]" />
             <span>Suporte</span>
-          </a>
+          </button>
           <button
             onClick={signOut}
             className="w-full text-white/60 text-xs font-medium flex items-center gap-2 py-2 px-3 rounded-lg hover:text-red-300 hover:bg-red-500/10 transition-all duration-200"
@@ -364,6 +369,10 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
           </div>
         </div>
       )}
+
+      {/* Support widget + NPS modal (self-controlled; only render for authenticated users) */}
+      <SupportWidget />
+      <NpsModal />
     </div>
   );
 };

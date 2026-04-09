@@ -61,6 +61,7 @@ const AdminForecast = lazy(() => import("./pages/crm-admin/AdminForecast"));
 const AdminDRE = lazy(() => import("./pages/crm-admin/AdminDRE"));
 const AdminEasyflow = lazy(() => import("./pages/crm-admin/AdminEasyflow"));
 const AdminInadimplencia = lazy(() => import("./pages/crm-admin/AdminInadimplencia"));
+const AdminSuporte = lazy(() => import("./pages/crm-admin/AdminSuporte"));
 
 const queryClient = new QueryClient();
 
@@ -121,6 +122,7 @@ const App = () => (
                   <Route path="dre" element={<AdminDRE />} />
                   <Route path="easyflow" element={<AdminEasyflow />} />
                   <Route path="inadimplencia" element={<AdminInadimplencia />} />
+                  <Route path="suporte" element={<AdminSuporte />} />
                 </Route>
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/ai-chat" element={<AIChat />} />
