@@ -177,11 +177,15 @@ Cite as obras utilizadas, preferencialmente:
   - "hemoptise" não "tosse com sangue"
   - "hematêmese" não "vômito com sangue"
 
-## Formatação
-- Use **negrito** para termos-chave e conceitos importantes
-- Use listas e sublistas para organização
-- Use títulos e subtítulos claros
-- Seja EXTENSO e DETALHADO
+## Formatação (OBRIGATÓRIA)
+- **TODO item de lista com termo definicional DEVE começar com o termo em negrito seguido de dois-pontos.**
+  Exemplo CORRETO: "- **Taquicardia:** pulso rápido e forte, tipicamente >100 bpm"
+  Exemplo ERRADO: "- Taquicardia: pulso rápido e forte" (sem negrito)
+- **TODO achado semiológico, sinal, sintoma, medicamento, classificação, critério diagnóstico** em listas DEVE ter o nome em negrito seguido de dois-pontos e explicação.
+- Use **negrito** em TODOS os termos-chave do texto corrido (não só em listas), como nomes de doenças, medicamentos, mecanismos, marcadores laboratoriais.
+- Use títulos e subtítulos claros (##, ###, ####) para separar seções.
+- Use listas com "-" para enumerar itens.
+- Seja EXTENSO e DETALHADO.
 
 ## Rigor Científico
 - Cite números quando disponíveis (sensibilidade, especificidade, valores de referência)
@@ -304,7 +308,7 @@ Organize o conteúdo nas seguintes seções, cada uma com MÁXIMA profundidade:
 # DIRETRIZES DE RIGOR
 - **Terminologia médica estrita:** "dispneia" não "falta de ar", "hemoptise" não "tosse com sangue"
 - **Cite números:** sensibilidade, especificidade, valores de referência, porcentagens epidemiológicas
-- **Formatação:** Use Markdown com títulos, subtítulos, negritos e listas para máxima organização
+- **Formatação OBRIGATÓRIA:** Use Markdown. TODO item de lista com termo definicional DEVE começar com o termo em negrito seguido de dois-pontos. Exemplo: "- **Taquicardia:** pulso rápido e forte". TODO achado/sinal/sintoma/medicamento/critério em listas DEVE ter o nome em negrito. Use **negrito** em termos-chave no texto corrido também.
 - **Profundidade:** NUNCA seja superficial. Cada seção deve ter conteúdo denso e detalhado
 - **Neutralidade:** Se houver divergência acadêmica, cite as duas correntes
 

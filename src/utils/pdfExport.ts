@@ -62,6 +62,64 @@ const LH = {
 const setTitleFont = (doc: any, style: 'bold' | 'normal' = 'bold') => doc.setFont('helvetica', style);
 const setBodyFont = (doc: any, style: 'normal' | 'bold' | 'italic' = 'normal') => doc.setFont('times', style);
 
+// ── Parse markdown inline tokens (bold, italic) ──
+type InlineToken = { text: string; bold: boolean; italic: boolean };
+
+function parseInlineTokens(text: string): InlineToken[] {
+  const tokens: InlineToken[] = [];
+  // Match **bold**, *italic*, or plain text
+  const regex = /(\*\*[^*]+\*\*)|(\*[^*]+\*)|([^*]+)/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    if (match[1]) tokens.push({ text: match[1].slice(2, -2), bold: true, italic: false });
+    else if (match[2]) tokens.push({ text: match[2].slice(1, -1), bold: false, italic: true });
+    else if (match[3]) tokens.push({ text: match[3], bold: false, italic: false });
+  }
+  return tokens;
+}
+
+// ── Render rich text (with bold/italic) with word wrapping ──
+// Returns total lines rendered
+function renderRichText(
+  doc: any,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  fontFamily: 'times' | 'helvetica' = 'times'
+): number {
+  const tokens = parseInlineTokens(text);
+  let curX = x;
+  let curY = y;
+  let linesUsed = 1;
+
+  for (const token of tokens) {
+    const cleanedText = cleanMdNoStyle(token.text);
+    const style: 'normal' | 'bold' | 'italic' = token.bold ? 'bold' : token.italic ? 'italic' : 'normal';
+    doc.setFont(fontFamily, style);
+
+    // Split by whitespace, keeping spaces
+    const words = cleanedText.split(/(\s+)/).filter(w => w.length > 0);
+
+    for (const word of words) {
+      const wordWidth = doc.getTextWidth(word);
+      if (curX + wordWidth > x + maxWidth && word.trim().length > 0) {
+        // Wrap to next line
+        curY += lineHeight;
+        curX = x;
+        linesUsed++;
+      }
+      doc.text(word, curX, curY);
+      curX += wordWidth;
+    }
+  }
+
+  // Reset font
+  doc.setFont(fontFamily, 'normal');
+  return linesUsed;
+}
+
 export const exportToPDF = async ({ tema, contentElement, markdown }: PDFExportOptions): Promise<void> => {
   const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -353,33 +411,32 @@ export const exportToPDF = async ({ tema, contentElement, markdown }: PDFExportO
       continue;
     }
 
-    // ── Bullet ──
+    // ── Bullet (with bold/italic support) ──
     if (/^[-*•]\s/.test(trimmed)) {
-      const bt = cleanMd(trimmed.replace(/^[-*•]\s/, ''));
+      const bt = trimmed.replace(/^[-*•]\s/, '');
       doc.setFontSize(F.bullet);
-      doc.setFont('times', 'normal');
       doc.setTextColor(...C.text);
-      const bl = doc.splitTextToSize(bt, CW - 12);
-      checkPage(bl.length * LH.bullet + 4);
+      // Estimate lines needed (rough: 1 line per 75 chars)
+      const estLines = Math.ceil(cleanMdNoStyle(bt.replace(/\*\*/g, '').replace(/\*/g, '')).length / 75);
+      checkPage(estLines * LH.bullet + 4);
       doc.setFillColor(...C.greenMid);
       doc.circle(ML + 2.5, y - 1.2, 0.9, 'F');
-      doc.text(bl, ML + 7, y);
-      y += bl.length * LH.bullet + 2;
+      const linesUsed = renderRichText(doc, bt, ML + 7, y, CW - 12, LH.bullet, 'times');
+      y += linesUsed * LH.bullet + 2;
       continue;
     }
 
     // ── Sub-bullet ──
     if (/^\s{2,}[-*•]\s/.test(lines[li])) {
-      const sbt = cleanMd(lines[li].trim().replace(/^[-*•]\s/, ''));
+      const sbt = lines[li].trim().replace(/^[-*•]\s/, '');
       doc.setFontSize(F.bodySmall);
-      doc.setFont('times', 'normal');
       doc.setTextColor(...C.gray);
-      const sbl = doc.splitTextToSize(sbt, CW - 18);
-      checkPage(sbl.length * 4 + 3);
+      const estLines = Math.ceil(cleanMdNoStyle(sbt.replace(/\*\*/g, '').replace(/\*/g, '')).length / 80);
+      checkPage(estLines * 4 + 3);
       doc.setDrawColor(...C.grayLight);
       doc.circle(ML + 8, y - 1, 0.5, 'S');
-      doc.text(sbl, ML + 12, y);
-      y += sbl.length * 4 + 1.5;
+      const linesUsed = renderRichText(doc, sbt, ML + 12, y, CW - 18, 4, 'times');
+      y += linesUsed * 4 + 1.5;
       continue;
     }
 
@@ -388,31 +445,28 @@ export const exportToPDF = async ({ tema, contentElement, markdown }: PDFExportO
       const nm = trimmed.match(/^(\d+)\.\s(.*)/);
       if (nm) {
         doc.setFontSize(F.bullet);
-        doc.setFont('times', 'normal');
-        const nl = doc.splitTextToSize(cleanMd(nm[2]), CW - 14);
-        checkPage(nl.length * LH.bullet + 4);
+        const estLines = Math.ceil(cleanMdNoStyle(nm[2].replace(/\*\*/g, '').replace(/\*/g, '')).length / 75);
+        checkPage(estLines * LH.bullet + 4);
         doc.setFillColor(...C.green);
         doc.roundedRect(ML, y - 4, 6, 6, 1.2, 1.2, 'F');
         doc.setTextColor(...C.white);
         doc.setFont('helvetica', 'bold');
         doc.text(nm[1], ML + 3, y, { align: 'center' });
-        doc.setFont('times', 'normal');
         doc.setTextColor(...C.text);
-        doc.text(nl, ML + 9, y);
-        y += nl.length * LH.bullet + 2.5;
+        const linesUsed = renderRichText(doc, nm[2], ML + 9, y, CW - 14, LH.bullet, 'times');
+        y += linesUsed * LH.bullet + 2.5;
       }
       continue;
     }
 
-    // ── Paragraph ──
+    // ── Paragraph (with bold/italic support) ──
     checkPage(10);
     doc.setFontSize(F.body);
-    doc.setFont('times', 'normal');
     doc.setTextColor(...C.text);
-    const pt = cleanMd(trimmed);
-    const pl = doc.splitTextToSize(pt, CW);
-    doc.text(pl, ML, y);
-    y += pl.length * LH.body + 2.5;
+    const estPLines = Math.ceil(cleanMdNoStyle(trimmed.replace(/\*\*/g, '').replace(/\*/g, '')).length / 85);
+    checkPage(estPLines * LH.body + 4);
+    const linesUsed = renderRichText(doc, trimmed, ML, y, CW, LH.body, 'times');
+    y += linesUsed * LH.body + 2.5;
   }
 
   if (inTable) flushTable();
@@ -443,6 +497,44 @@ export const exportToPDF = async ({ tema, contentElement, markdown }: PDFExportO
   const filename = `preceptormed-${tema.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-àáâãéêíóôõúç]/g, '').substring(0, 50)}.pdf`;
   doc.save(filename);
 };
+
+// Clean special chars WITHOUT stripping markdown bold/italic markers
+function cleanMdNoStyle(t: string): string {
+  return t
+    .replace(/`(.*?)`/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/~~(.*?)~~/g, '$1')
+    .replace(/β/g, 'beta')
+    .replace(/α/g, 'alfa')
+    .replace(/γ/g, 'gama')
+    .replace(/δ/g, 'delta')
+    .replace(/Δ/g, 'Delta')
+    .replace(/μ/g, 'micro')
+    .replace(/²/g, '2')
+    .replace(/³/g, '3')
+    .replace(/¹/g, '1')
+    .replace(/°/g, 'o')
+    .replace(/±/g, '+/-')
+    .replace(/≥/g, '>=')
+    .replace(/≤/g, '<=')
+    .replace(/→/g, ' -> ')
+    .replace(/←/g, ' <- ')
+    .replace(/↑/g, '(aumenta)')
+    .replace(/↓/g, '(diminui)')
+    .replace(/⚠️/g, '[!]')
+    .replace(/✅/g, '[OK]')
+    .replace(/❌/g, '[X]')
+    .replace(/•/g, '-')
+    .replace(/–/g, '-')
+    .replace(/—/g, ' - ')
+    .replace(/"/g, '"')
+    .replace(/"/g, '"')
+    .replace(/'/g, "'")
+    .replace(/'/g, "'")
+    .replace(/…/g, '...')
+    .replace(/\u00A0/g, ' ')
+    .replace(/[^\x00-\x7F\xC0-\xFF\u0100-\u017F]/g, '');
+}
 
 function cleanMd(t: string): string {
   return t
@@ -485,29 +577,43 @@ function cleanMd(t: string): string {
     .replace(/[^\x00-\x7F\xC0-\xFF\u0100-\u017F]/g, '');  // remove remaining non-latin chars
 }
 
+// Serialize HTML node into markdown WITH inline styles (bold, italic)
+function serializeInline(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent || '';
+  if (node.nodeType !== Node.ELEMENT_NODE) return '';
+  const el = node as HTMLElement;
+  const tag = el.tagName.toLowerCase();
+  const inner = Array.from(el.childNodes).map(serializeInline).join('');
+  if (tag === 'strong' || tag === 'b') return `**${inner}**`;
+  if (tag === 'em' || tag === 'i') return `*${inner}*`;
+  if (tag === 'code') return `\`${inner}\``;
+  if (tag === 'br') return '\n';
+  return inner;
+}
+
 function extractMarkdownFromHTML(el: HTMLElement): string {
   const out: string[] = [];
   const walk = (node: Node) => {
     if (node.nodeType === Node.TEXT_NODE) { const t = node.textContent?.trim(); if (t) out.push(t); return; }
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     const tag = (node as HTMLElement).tagName.toLowerCase();
-    const text = (node as HTMLElement).textContent?.trim() || '';
-    if (tag === 'h1') { out.push(`# ${text}`); return; }
-    if (tag === 'h2') { out.push(`## ${text}`); return; }
-    if (tag === 'h3') { out.push(`### ${text}`); return; }
-    if (tag === 'h4') { out.push(`#### ${text}`); return; }
-    if (tag === 'li') { out.push(`- ${text}`); return; }
-    if (tag === 'blockquote') { out.push(`> ${text}`); return; }
+    const richText = serializeInline(node).trim();
+    if (tag === 'h1') { out.push(`# ${richText}`); return; }
+    if (tag === 'h2') { out.push(`## ${richText}`); return; }
+    if (tag === 'h3') { out.push(`### ${richText}`); return; }
+    if (tag === 'h4') { out.push(`#### ${richText}`); return; }
+    if (tag === 'li') { out.push(`- ${richText}`); return; }
+    if (tag === 'blockquote') { out.push(`> ${richText}`); return; }
     if (tag === 'hr') { out.push('---'); return; }
     if (tag === 'br') { out.push(''); return; }
     if (tag === 'th' || tag === 'td') return;
     if (tag === 'tr') {
-      const cells = Array.from((node as HTMLElement).querySelectorAll('th, td')).map(c => c.textContent?.trim() || '');
+      const cells = Array.from((node as HTMLElement).querySelectorAll('th, td')).map(c => serializeInline(c).trim());
       out.push('| ' + cells.join(' | ') + ' |');
       if ((node as HTMLElement).querySelector('th')) out.push('| ' + cells.map(() => '---').join(' | ') + ' |');
       return;
     }
-    if (tag === 'p') { if (text) out.push(text); out.push(''); return; }
+    if (tag === 'p') { if (richText) out.push(richText); out.push(''); return; }
     node.childNodes.forEach(walk);
     if (['div', 'section', 'article', 'table'].includes(tag)) out.push('');
   };
