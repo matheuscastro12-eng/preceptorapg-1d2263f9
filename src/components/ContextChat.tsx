@@ -48,6 +48,14 @@ const ContextChat = ({ context, contextLabel = 'conteúdo gerado', suggestions =
     setMessages([]);
   }, [context]);
 
+  // Allow opening programmatically via CustomEvent from anywhere in the page
+  // (e.g., the "Dúvidas Clínicas?" card in Dashboard)
+  useEffect(() => {
+    const handler = () => setIsOpen(true);
+    window.addEventListener('open-context-chat', handler);
+    return () => window.removeEventListener('open-context-chat', handler);
+  }, []);
+
   const stripMarkdown = (md: string) =>
     md.replace(/#{1,6}\s?/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/`(.+?)`/g, '$1').replace(/---/g, '').replace(/- /g, '• ').trim();
 

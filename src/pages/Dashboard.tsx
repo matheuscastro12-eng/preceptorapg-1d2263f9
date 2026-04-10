@@ -432,7 +432,12 @@ const Dashboard = () => {
                     </div>
 
                     {/* Dúvidas prompt */}
-                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:border-[#006D5B]/20 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group animate-fade-up" style={{ animationDelay: '0.3s' }}>
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-context-chat'))}
+                      className="w-full text-left bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:border-[#006D5B]/20 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group animate-fade-up"
+                      style={{ animationDelay: '0.3s' }}
+                    >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-[#006D5B]/10 flex items-center justify-center group-hover:bg-[#006D5B]/15 group-hover:scale-105 transition-all duration-300">
                           <MI name="chat_bubble" fill className="text-[16px] text-[#006D5B]" />
@@ -443,7 +448,7 @@ const Dashboard = () => {
                         </div>
                         <MI name="arrow_forward" className="text-[16px] text-slate-300 ml-auto group-hover:text-[#006D5B] group-hover:translate-x-0.5 transition-all duration-200" />
                       </div>
-                    </div>
+                    </button>
 
                     {/* Generate Exam Button */}
                     {showActions && (
