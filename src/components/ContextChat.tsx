@@ -66,20 +66,22 @@ const ContextChat = ({ context, contextLabel = 'conteúdo gerado', suggestions =
     setIsStreaming(true);
     setInput('');
 
-    const systemContext = `Você é o PreceptorMED, um preceptor médico acadêmico extremamente preciso. O estudante está revisando o seguinte ${contextLabel}. 
+    // Prepend the context as a fake "first turn" (user message + assistant
+    // acknowledgement). This gives the AI the reference content on EVERY
+    // request while keeping strict user/model alternation — which the ai-chat
+    // edge function needs (Gemini rejects consecutive same-role messages).
+    //
+    // We don't send a 'system' role because the ai-chat edge function already
+    // sends its own system prompt via Gemini systemInstruction.
+    const contextIntro = `Vou te mostrar o ${contextLabel} que estou revisando. Responda dúvidas APENAS com base nesse conteúdo. NÃO invente, NÃO extrapole, NÃO use conhecimento externo. Quando eu perguntar sobre um item numerado (ex: "item 2.2"), localize EXATAMENTE esse item e cite o título/subtítulo pra confirmar. Se não encontrar o item, diga quais tópicos estão disponíveis. Seja conciso e didático, com termos-chave em negrito.
 
-REGRAS OBRIGATÓRIAS:
-1. Responda dúvidas APENAS com base no conteúdo abaixo. NÃO invente, NÃO extrapole, NÃO use conhecimento externo.
-2. Quando o estudante perguntar sobre um item numerado (ex: "item 2.2", "tópico 3.1"), localize EXATAMENTE esse item no conteúdo e responda sobre ele. Cite o título/subtítulo do item para confirmar.
-3. Se não encontrar o item mencionado no conteúdo, diga explicitamente: "Não encontrei esse item no ${contextLabel}. Os tópicos disponíveis são: [liste os títulos/subtítulos presentes]."
-4. Seja conciso e didático, usando terminologia médica técnica com termos-chave em negrito.
-
---- CONTEÚDO DE REFERÊNCIA (leia com atenção) ---
+--- CONTEÚDO DE REFERÊNCIA ---
 ${context}
 --- FIM DO CONTEÚDO ---`;
 
     const allMessages = [
-      { role: 'system' as const, content: systemContext },
+      { role: 'user' as const, content: contextIntro },
+      { role: 'assistant' as const, content: 'Entendi. Vou responder suas dúvidas com base exclusivamente no conteúdo que você me mostrou.' },
       ...messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
       { role: 'user' as const, content: userMessage },
     ];
