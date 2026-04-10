@@ -89,15 +89,23 @@ const ContextChat = ({ context, contextLabel = 'conteúdo gerado', suggestions =
     //
     // We don't send a 'system' role because the ai-chat edge function already
     // sends its own system prompt via Gemini systemInstruction.
-    const contextIntro = `Vou te mostrar o ${contextLabel} que estou revisando. Responda dúvidas APENAS com base nesse conteúdo. NÃO invente, NÃO extrapole, NÃO use conhecimento externo. Quando eu perguntar sobre um item numerado (ex: "item 2.2"), localize EXATAMENTE esse item e cite o título/subtítulo pra confirmar. Se não encontrar o item, diga quais tópicos estão disponíveis. Seja conciso e didático, com termos-chave em negrito.
+    const contextIntro = `Estou revisando o ${contextLabel} abaixo e vou te fazer perguntas sobre o tema. Use o resumo como CONTEXTO PRINCIPAL da conversa — ele mostra qual tópico estou estudando e qual o recorte dado. Mas NÃO se limite a só repetir o que está no resumo: como você é o PreceptorMED, pode e DEVE complementar com seu conhecimento médico completo quando eu perguntar sobre:
 
---- CONTEÚDO DE REFERÊNCIA ---
+- Pontos que mais caem em prova/residência sobre o tema
+- Correlações clínicas, pérolas, mnemônicos, dicas de raciocínio
+- Detalhes que o resumo não cobriu mas são importantes
+- Diagnósticos diferenciais, mecanismos moleculares, farmacologia
+- Casos clínicos e aplicações práticas
+
+Quando eu perguntar sobre um item numerado específico do resumo (ex: "item 2.2"), localize esse item e responda sobre ele citando o título/subtítulo. Nas outras perguntas, mantenha o tema do resumo como eixo central e expanda com profundidade acadêmica. Seja conciso, didático e técnico, com termos-chave em **negrito**.
+
+--- RESUMO DE REFERÊNCIA ---
 ${context}
---- FIM DO CONTEÚDO ---`;
+--- FIM DO RESUMO ---`;
 
     const allMessages = [
       { role: 'user' as const, content: contextIntro },
-      { role: 'assistant' as const, content: 'Entendi. Vou responder suas dúvidas com base exclusivamente no conteúdo que você me mostrou.' },
+      { role: 'assistant' as const, content: 'Entendi. Vou usar o resumo como contexto principal e complementar com meu conhecimento médico completo para te ajudar com pontos de prova, pérolas clínicas, correlações e tudo mais que for útil para o seu estudo.' },
       ...messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
       { role: 'user' as const, content: userMessage },
     ];
