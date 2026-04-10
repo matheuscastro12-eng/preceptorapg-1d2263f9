@@ -64,6 +64,19 @@ export default function SupportWidget() {
     return () => window.removeEventListener('open-support-widget', handler);
   }, []);
 
+  // Hide FAB when a contextual chat (ContextChat) is open, to avoid overlapping widgets
+  const [contextChatOpen, setContextChatOpen] = useState(false);
+  useEffect(() => {
+    const onOpen = () => setContextChatOpen(true);
+    const onClose = () => setContextChatOpen(false);
+    window.addEventListener('context-chat-opened', onOpen);
+    window.addEventListener('context-chat-closed', onClose);
+    return () => {
+      window.removeEventListener('context-chat-opened', onOpen);
+      window.removeEventListener('context-chat-closed', onClose);
+    };
+  }, []);
+
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || sending || !user) return;
@@ -189,7 +202,7 @@ export default function SupportWidget() {
   return (
     <>
       {/* Floating button */}
-      {!open && (
+      {!open && !contextChatOpen && (
         <button
           onClick={() => setOpen(true)}
           className="fixed bottom-5 right-5 z-[90] h-14 w-14 rounded-full bg-[#006D5B] text-white shadow-2xl shadow-[#006D5B]/30 flex items-center justify-center hover:bg-[#005344] hover:scale-105 active:scale-95 transition-all duration-200 group"

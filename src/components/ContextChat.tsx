@@ -56,6 +56,14 @@ const ContextChat = ({ context, contextLabel = 'conteúdo gerado', suggestions =
     return () => window.removeEventListener('open-context-chat', handler);
   }, []);
 
+  // Broadcast open/close state so other widgets (e.g., SupportWidget) can hide
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(isOpen ? 'context-chat-opened' : 'context-chat-closed'));
+    return () => {
+      if (isOpen) window.dispatchEvent(new CustomEvent('context-chat-closed'));
+    };
+  }, [isOpen]);
+
   const stripMarkdown = (md: string) =>
     md.replace(/#{1,6}\s?/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/`(.+?)`/g, '$1').replace(/---/g, '').replace(/- /g, '• ').trim();
 
@@ -191,7 +199,7 @@ ${context}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           onClick={() => setIsOpen(true)}
-          className="fixed right-4 bottom-4 z-[60] h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center lg:hidden"
+          className="fixed right-4 bottom-4 z-[100] h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center lg:hidden"
           title="Tirar dúvidas"
         >
           <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-30" />
@@ -204,7 +212,7 @@ ${context}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.3, type: 'spring', damping: 25 }}
           onClick={() => setIsOpen(true)}
-          className="hidden lg:flex fixed right-0 top-1/2 -translate-y-1/2 z-[60] flex-col items-center justify-center gap-2 w-11 py-6 rounded-l-2xl border border-r-0 border-primary/30 bg-white shadow-xl shadow-primary/10 hover:bg-primary/5 hover:border-primary/50 hover:w-12 transition-all cursor-pointer group"
+          className="hidden lg:flex fixed right-0 top-1/2 -translate-y-1/2 z-[100] flex-col items-center justify-center gap-2 w-11 py-6 rounded-l-2xl border border-r-0 border-primary/30 bg-white shadow-xl shadow-primary/10 hover:bg-primary/5 hover:border-primary/50 hover:w-12 transition-all cursor-pointer group"
         >
           <div className="relative">
             <MessageCircle className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
@@ -229,7 +237,7 @@ ${context}
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="fixed inset-0 z-[60] bg-background flex flex-col lg:hidden"
+        className="fixed inset-0 z-[100] bg-background flex flex-col lg:hidden"
       >
         <ChatContent
           isEmpty={isEmpty}
@@ -260,14 +268,14 @@ ${context}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           onClick={() => setIsOpen(false)}
-          className="hidden lg:block fixed inset-0 z-[55] bg-black/20 backdrop-blur-[2px] cursor-pointer"
+          className="hidden lg:block fixed inset-0 z-[99] bg-black/40 backdrop-blur-[3px] cursor-pointer"
         />
         <motion.div
           initial={{ x: '100%', opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: '100%', opacity: 0 }}
           transition={{ type: 'spring', damping: 28, stiffness: 260 }}
-          className="hidden lg:flex fixed right-0 top-0 bottom-0 z-[60] w-[420px] bg-white shadow-2xl shadow-black/20 border-l border-slate-200 flex-col overflow-hidden"
+          className="hidden lg:flex fixed right-0 top-0 bottom-0 z-[100] w-[420px] bg-white shadow-2xl shadow-black/20 border-l border-slate-200 flex-col overflow-hidden"
         >
           <ChatContent
             isEmpty={isEmpty}
