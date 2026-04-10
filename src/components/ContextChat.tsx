@@ -191,20 +191,20 @@ ${context}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           onClick={() => setIsOpen(true)}
-          className="fixed right-4 bottom-4 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center lg:hidden"
+          className="fixed right-4 bottom-4 z-[60] h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center lg:hidden"
           title="Tirar dúvidas"
         >
           <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-30" />
           <MessageCircle className="h-6 w-6 relative" />
         </motion.button>
 
-        {/* Desktop: vertical tab flush to the result panel edge */}
+        {/* Desktop: vertical tab fixed to the right edge of the viewport */}
         <motion.button
-          initial={{ x: 10, opacity: 0 }}
+          initial={{ x: 40, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.3, type: 'spring', damping: 25 }}
           onClick={() => setIsOpen(true)}
-          className="hidden lg:flex shrink-0 flex-col items-center justify-center gap-2 w-10 self-stretch rounded-r-2xl border border-l-0 border-primary/25 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all cursor-pointer group"
+          className="hidden lg:flex fixed right-0 top-1/2 -translate-y-1/2 z-[60] flex-col items-center justify-center gap-2 w-11 py-6 rounded-l-2xl border border-r-0 border-primary/30 bg-white shadow-xl shadow-primary/10 hover:bg-primary/5 hover:border-primary/50 hover:w-12 transition-all cursor-pointer group"
         >
           <div className="relative">
             <MessageCircle className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
@@ -229,7 +229,7 @@ ${context}
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="fixed inset-0 z-50 bg-background flex flex-col lg:hidden"
+        className="fixed inset-0 z-[60] bg-background flex flex-col lg:hidden"
       >
         <ChatContent
           isEmpty={isEmpty}
@@ -251,33 +251,44 @@ ${context}
         />
       </motion.div>
 
-      {/* Desktop: sidebar panel */}
-      <motion.div
-        initial={{ width: 0, opacity: 0 }}
-        animate={{ width: 380, opacity: 1 }}
-        exit={{ width: 0, opacity: 0 }}
-        transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-        className="hidden lg:flex shrink-0 h-full rounded-xl border border-slate-100 bg-white shadow-[0_8px_32px_0_rgba(44,52,52,0.06)] flex-col overflow-hidden"
-      >
-        <ChatContent
-          isEmpty={isEmpty}
-          messages={messages}
-          isStreaming={isStreaming}
-          copiedId={copiedId}
-          input={input}
-          setInput={setInput}
-          contextLabel={contextLabel}
-          scrollContainerRef={scrollContainerRef}
-          messagesEndRef={messagesEndRef}
-          onClose={() => setIsOpen(false)}
-          onSend={handleSend}
-          onKeyDown={handleKeyDown}
-          onCopy={handleCopy}
-          onClear={clearChat}
-          onSuggestion={streamChat}
-          suggestions={suggestions}
+      {/* Desktop: slide-in side panel fixed to the right edge of viewport */}
+      <>
+        {/* Subtle backdrop on desktop to focus attention on the chat */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          onClick={() => setIsOpen(false)}
+          className="hidden lg:block fixed inset-0 z-[55] bg-black/20 backdrop-blur-[2px] cursor-pointer"
         />
-      </motion.div>
+        <motion.div
+          initial={{ x: '100%', opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: '100%', opacity: 0 }}
+          transition={{ type: 'spring', damping: 28, stiffness: 260 }}
+          className="hidden lg:flex fixed right-0 top-0 bottom-0 z-[60] w-[420px] bg-white shadow-2xl shadow-black/20 border-l border-slate-200 flex-col overflow-hidden"
+        >
+          <ChatContent
+            isEmpty={isEmpty}
+            messages={messages}
+            isStreaming={isStreaming}
+            copiedId={copiedId}
+            input={input}
+            setInput={setInput}
+            contextLabel={contextLabel}
+            scrollContainerRef={scrollContainerRef}
+            messagesEndRef={messagesEndRef}
+            onClose={() => setIsOpen(false)}
+            onSend={handleSend}
+            onKeyDown={handleKeyDown}
+            onCopy={handleCopy}
+            onClear={clearChat}
+            onSuggestion={streamChat}
+            suggestions={suggestions}
+          />
+        </motion.div>
+      </>
     </>
   );
 };
