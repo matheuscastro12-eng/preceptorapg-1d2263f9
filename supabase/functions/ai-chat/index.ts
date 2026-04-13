@@ -222,7 +222,7 @@ serve(async (req) => {
     // Check subscription status
     const { data: subscription } = await supabaseClient
       .from("subscriptions")
-      .select("status, plan_type")
+      .select("status, plan_type, access_expires_at")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -234,7 +234,13 @@ serve(async (req) => {
       .maybeSingle();
 
     const isAdmin = !!userRole;
-    const hasAccess = subscription?.status === "active" || subscription?.plan_type === "free_access" || isAdmin;
+    // Respect access_expires_at (trial de 3 dias / acesso temporário)
+    const isExpired = subscription?.access_expires_at
+      ? new Date(subscription.access_expires_at).getTime() < Date.now()
+      : false;
+    const hasAccess = isAdmin || (
+      !isExpired && (subscription?.status === "active" || subscription?.plan_type === "free_access")
+    );
 
     // If user is NOT a subscriber, enforce server-side daily demo limit
     let demoAdminClient: any = null;

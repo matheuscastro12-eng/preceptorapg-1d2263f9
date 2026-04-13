@@ -405,7 +405,7 @@ serve(async (req) => {
     // Check subscription status
     const { data: subscription } = await supabaseClient
       .from("subscriptions")
-      .select("status, plan_type")
+      .select("status, plan_type, access_expires_at")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -418,7 +418,13 @@ serve(async (req) => {
       .maybeSingle();
 
     const isAdmin = !!userRole;
-    const hasActiveSubscription = subscription?.status === "active" || subscription?.plan_type === "free_access";
+    // Respect access_expires_at (trial de 3 dias / acesso temporário)
+    const isExpired = subscription?.access_expires_at
+      ? new Date(subscription.access_expires_at).getTime() < Date.now()
+      : false;
+    const hasActiveSubscription = !isExpired && (
+      subscription?.status === "active" || subscription?.plan_type === "free_access"
+    );
 
     if (!hasActiveSubscription && !isAdmin) {
       return new Response(
