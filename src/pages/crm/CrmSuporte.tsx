@@ -3,7 +3,6 @@ import {
   MessageCircle, Lightbulb, Heart, Star, Loader2, RefreshCw,
   Sparkles, TrendingUp, TrendingDown, Minus, Mail, Filter, AlertCircle,
 } from "lucide-react";
-import PageHeader from "@/components/crm-admin/PageHeader";
 import { supabase as supabaseCrm } from "@/lib/crm/supabase";
 
 type FeedbackRow = {
@@ -82,7 +81,7 @@ const SENTIMENT_COLORS: Record<string, string> = {
   critical: "text-red-400 bg-red-900/20",
 };
 
-export default function AdminSuporte() {
+export default function CrmSuporte() {
   const [periodDays, setPeriodDays] = useState<number>(30);
   const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([]);
   const [nps, setNps] = useState<NpsRow[]>([]);
@@ -221,11 +220,11 @@ export default function AdminSuporte() {
       : "text-red-400";
 
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader
-        title="Suporte & Feedback"
-        subtitle="NPS, CSAT, feedbacks e resumo de IA dos pedidos dos usuários"
-      />
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
+      <div>
+        <h1 className="text-xl md:text-2xl font-bold text-white">Suporte &amp; Feedback</h1>
+        <p className="text-xs md:text-sm text-gray-500 mt-0.5">NPS, CSAT, feedbacks e resumo de IA dos pedidos dos usuários</p>
+      </div>
 
       {/* Period filter */}
       <div className="flex items-center gap-3 flex-wrap">

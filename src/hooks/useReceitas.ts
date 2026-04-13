@@ -92,8 +92,15 @@ export function useReceitaResumo(periodo: Periodo = "mes") {
         allSubs = data ?? [];
       }
 
+      // MRR baseline: only count subscriptions active/renewed from this date forward
+      // (alinha com useAdminDashboard.ts e lib/crm/queries.ts)
+      const MRR_BASELINE_DATE = "2026-04-07T00:00:00.000Z";
+
       const activeSubs = allSubs.filter((s: any) => s.status === "active");
-      const pagantes = activeSubs.filter((s: any) => s.plan_type === "monthly" || s.plan_type === "annual" || s.plan_type === "biannual");
+      const pagantes = activeSubs.filter((s: any) =>
+        (s.plan_type === "monthly" || s.plan_type === "annual" || s.plan_type === "biannual") &&
+        ((s.updated_at ?? s.created_at) >= MRR_BASELINE_DATE)
+      );
       const mrrTotal = pagantes.reduce((s: number, sub: any) => s + (PLAN_PRICES[sub.plan_type] ?? 0), 0);
       const novas = pagantes.filter((s: any) => s.created_at >= `${since}T00:00:00.000Z`).length;
 

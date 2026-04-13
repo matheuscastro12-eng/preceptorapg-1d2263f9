@@ -44,7 +44,10 @@ export function useDespesas(filters?: { categoria?: string; mes?: string; recorr
       let q = supabase.from("admin_despesas").select("*").order("data", { ascending: false });
       if (filters?.categoria) q = q.eq("categoria", filters.categoria);
       if (filters?.mes) {
-        q = q.gte("data", `${filters.mes}-01`).lte("data", `${filters.mes}-31`);
+        // First day of next month, exclusive — handles 28/29/30/31 day months correctly
+        const [y, m] = filters.mes.split("-").map(Number);
+        const nextMonth = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`;
+        q = q.gte("data", `${filters.mes}-01`).lt("data", nextMonth);
       }
       if (filters?.recorrente === true) q = q.eq("recorrente", true);
       if (filters?.recorrente === false) q = q.eq("recorrente", false);
@@ -57,7 +60,11 @@ export function useDespesas(filters?: { categoria?: string; mes?: string; recorr
 
 export function useDespesaResumo() {
   const now = new Date();
-  const mesAtual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // 1-12
+  const mesAtual = `${year}-${String(month).padStart(2, "0")}`;
+  // First day of next month — handles all month lengths (28/29/30/31) correctly
+  const nextMonth = month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, "0")}-01`;
 
   return useQuery({
     queryKey: ["crm-admin", "despesa-resumo", mesAtual],
@@ -66,7 +73,7 @@ export function useDespesaResumo() {
         .from("admin_despesas")
         .select("valor, categoria, recorrente")
         .gte("data", `${mesAtual}-01`)
-        .lte("data", `${mesAtual}-31`);
+        .lt("data", nextMonth);
 
       const all = data ?? [];
       const totalMes = all.reduce((s, d) => s + Number(d.valor), 0);

@@ -3,7 +3,7 @@ import {
   LayoutDashboard, DollarSign, CreditCard, ArrowLeftRight,
   Users, Wallet, UserPlus, Target, FileBarChart, AlertTriangle,
   ChevronDown, Building2, ArrowLeft, LogOut, Menu, X,
-  Calendar, Crosshair, TrendingUp, LineChart, Sheet, LifeBuoy,
+  Calendar, Crosshair, TrendingUp, LineChart, Sheet,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
@@ -61,13 +61,6 @@ const sections: NavSection[] = [
     icon: FileBarChart,
     items: [
       { to: "/admin/crm-admin/relatorio", label: "Relatório Investidor", icon: FileBarChart },
-    ],
-  },
-  {
-    label: "Suporte",
-    icon: LifeBuoy,
-    items: [
-      { to: "/admin/crm-admin/suporte", label: "Suporte & Feedback", icon: LifeBuoy },
     ],
   },
 ];

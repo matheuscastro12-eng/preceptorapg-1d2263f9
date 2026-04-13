@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, TrendingUp, Heart, AlertTriangle, Zap,
   ChevronDown, Activity, UserCog, BarChart3, ArrowLeft, LogOut, Menu, X,
+  LifeBuoy,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
@@ -45,6 +46,13 @@ const sections: NavSection[] = [
       { to: "/admin/crm-mkt/health", label: "Health Score", icon: Heart },
       { to: "/admin/crm-mkt/churn", label: "Anti-Churn", icon: AlertTriangle },
       { to: "/admin/crm-mkt/automations", label: "Automações", icon: Zap },
+    ],
+  },
+  {
+    label: "Suporte",
+    icon: LifeBuoy,
+    items: [
+      { to: "/admin/crm-mkt/suporte", label: "Suporte & Feedback", icon: LifeBuoy },
     ],
   },
 ];
