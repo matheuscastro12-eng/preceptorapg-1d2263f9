@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeUtmSource } from "@/lib/utm";
 
 const VISITOR_KEY = "preceptor_visitor_id";
 const UTM_KEY = "preceptor_utm";
@@ -19,7 +20,7 @@ interface UtmParams {
 export function captureUtmParams(): UtmParams {
   const params = new URLSearchParams(window.location.search);
   const utm: UtmParams = {
-    utm_source: params.get("utm_source"),
+    utm_source: normalizeUtmSource(params.get("utm_source")),
     utm_medium: params.get("utm_medium"),
     utm_campaign: params.get("utm_campaign"),
     utm_content: params.get("utm_content"),
@@ -32,15 +33,9 @@ export function captureUtmParams(): UtmParams {
   if (!utm.utm_source && utm.referrer) {
     try {
       const ref = new URL(utm.referrer);
-      const host = ref.hostname.toLowerCase();
-      if (host.includes("google")) utm.utm_source = "google";
-      else if (host.includes("instagram")) utm.utm_source = "instagram";
-      else if (host.includes("facebook") || host.includes("fb")) utm.utm_source = "facebook";
-      else if (host.includes("tiktok")) utm.utm_source = "tiktok";
-      else if (host.includes("youtube")) utm.utm_source = "youtube";
-      else if (host.includes("linkedin")) utm.utm_source = "linkedin";
-      else if (host.includes("twitter") || host.includes("x.com")) utm.utm_source = "twitter";
-      else utm.utm_source = ref.hostname;
+      // normalizeUtmSource ja mapeia hostnames conhecidos (l.facebook.com,
+      // youtu.be, etc) para o canal canonico
+      utm.utm_source = normalizeUtmSource(ref.hostname);
       if (!utm.utm_medium) utm.utm_medium = "referral";
     } catch {}
   }

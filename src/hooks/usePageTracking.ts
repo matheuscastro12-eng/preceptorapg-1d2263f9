@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeUtmSource } from "@/lib/utm";
 
 const VISITOR_KEY = "preceptor_visitor_id";
 const SESSION_KEY = "preceptor_session_id";
@@ -42,7 +43,7 @@ export function usePageTracking() {
 
         // Capturar UTM da URL se presente
         const params = new URLSearchParams(location.search);
-        let utm_source = params.get("utm_source");
+        let utm_source = normalizeUtmSource(params.get("utm_source"));
         let utm_medium = params.get("utm_medium");
         let utm_campaign = params.get("utm_campaign");
 
@@ -52,7 +53,9 @@ export function usePageTracking() {
             const saved = sessionStorage.getItem(UTM_KEY);
             if (saved) {
               const parsed = JSON.parse(saved);
-              utm_source = parsed.utm_source;
+              // utm salvo ja vem normalizado (captureUtmParams normaliza),
+              // mas re-normalizamos por garantia
+              utm_source = normalizeUtmSource(parsed.utm_source);
               utm_medium = parsed.utm_medium;
               utm_campaign = parsed.utm_campaign;
             }
@@ -65,16 +68,7 @@ export function usePageTracking() {
             const ref = new URL(document.referrer);
             // So inferir se o referrer e externo
             if (ref.hostname !== window.location.hostname) {
-              const host = ref.hostname.toLowerCase();
-              if (host.includes("google")) utm_source = "google";
-              else if (host.includes("instagram") || host.includes("l.instagram")) utm_source = "instagram";
-              else if (host.includes("facebook") || host.includes("fb") || host.includes("l.facebook")) utm_source = "facebook";
-              else if (host.includes("tiktok")) utm_source = "tiktok";
-              else if (host.includes("youtube")) utm_source = "youtube";
-              else if (host.includes("linkedin")) utm_source = "linkedin";
-              else if (host.includes("twitter") || host.includes("x.com")) utm_source = "twitter";
-              else if (host.includes("stripe")) utm_source = "stripe";
-              else utm_source = ref.hostname;
+              utm_source = normalizeUtmSource(ref.hostname);
               if (!utm_medium) utm_medium = "referral";
             }
           } catch {}
