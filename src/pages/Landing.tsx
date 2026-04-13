@@ -67,6 +67,7 @@ const Landing = () => {
           <div className="hidden md:flex items-center gap-8">
             <a href="#como-funciona" className="text-slate-600 font-medium hover:text-[#006D5B] transition-colors duration-300 text-sm">Como funciona</a>
             <a href="#recursos" className="text-slate-600 font-medium hover:text-[#006D5B] transition-colors duration-300 text-sm">Recursos</a>
+            <a href="#depoimentos" className="text-slate-600 font-medium hover:text-[#006D5B] transition-colors duration-300 text-sm">Depoimentos</a>
             <a href="#precos" className="text-slate-600 font-medium hover:text-[#006D5B] transition-colors duration-300 text-sm">Planos</a>
           </div>
 
@@ -101,6 +102,7 @@ const Landing = () => {
           <div className="md:hidden border-t border-slate-100 bg-white/95 backdrop-blur-xl px-4 py-4 space-y-3 animate-fade-in">
             <a href="#como-funciona" onClick={() => setMobileMenu(false)} className="block py-2 text-sm font-medium text-slate-600 hover:text-[#006D5B]">Como funciona</a>
             <a href="#recursos" onClick={() => setMobileMenu(false)} className="block py-2 text-sm font-medium text-slate-600 hover:text-[#006D5B]">Recursos</a>
+            <a href="#depoimentos" onClick={() => setMobileMenu(false)} className="block py-2 text-sm font-medium text-slate-600 hover:text-[#006D5B]">Depoimentos</a>
             <a href="#precos" onClick={() => setMobileMenu(false)} className="block py-2 text-sm font-medium text-slate-600 hover:text-[#006D5B]">Planos</a>
             <div className="pt-2 border-t border-slate-100 flex gap-3">
               <button onClick={() => navigate('/auth')} className="flex-1 py-2.5 text-sm font-semibold text-[#006D5B] border border-[#006D5B]/20 rounded-lg hover:bg-[#006D5B]/5">Entrar</button>
@@ -386,6 +388,98 @@ const Landing = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Social Proof / Depoimentos ──────────────── */}
+        <section id="depoimentos" className="py-14 sm:py-24 bg-white">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="text-center mb-10 sm:mb-14">
+              <span className="inline-block px-3 sm:px-4 py-1.5 mb-4 sm:mb-5 text-[10px] sm:text-xs font-bold tracking-widest uppercase bg-[#c8eade] text-[#005344] rounded-full">
+                O que dizem os estudantes
+              </span>
+              <h2
+                className="text-2xl sm:text-4xl font-bold mb-3 sm:mb-4 tracking-tight text-[#191c1d]"
+                style={{ fontFamily: "'Manrope', sans-serif" }}
+              >
+                Aprovado por quem estuda de verdade.
+              </h2>
+              <p className="text-sm sm:text-base text-slate-500 max-w-xl mx-auto leading-relaxed">
+                Depoimentos reais de estudantes de medicina que já usam o PreceptorMED no dia a dia.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-7">
+              {/* Depoimento 1 — Alicia */}
+              <article className="group relative bg-white border border-slate-100 rounded-2xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(25,28,29,0.04)] hover:shadow-[0_10px_40px_rgba(0,109,91,0.12)] hover:-translate-y-1 hover:border-[#006D5B]/20 transition-all duration-500">
+                {/* Quote icon decorativo */}
+                <div className="absolute top-5 right-5 text-[#006D5B]/10 group-hover:text-[#006D5B]/20 transition-colors duration-500">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.571-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z"/>
+                  </svg>
+                </div>
+
+                {/* Estrelas */}
+                <div className="flex gap-0.5 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <svg key={i} width="18" height="18" viewBox="0 0 24 24" fill="#C9A84C" aria-hidden="true">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                  ))}
+                </div>
+
+                <p className="text-sm sm:text-base text-slate-700 leading-relaxed mb-6 font-light italic">
+                  "A plataforma PreceptorMED é uma ferramenta fantástica para o auxílio nos estudos. Os resumos são bem estruturados e direcionados para os objetivos de aprendizagem do tema, além de que as fontes utilizadas são sempre relevantes. Particularmente, minha função preferida é a de geração de questões com base nos conteúdos, o que ajuda a reforçar os conhecimentos."
+                </p>
+
+                <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#006D5B] to-[#005344] flex items-center justify-center text-white font-bold text-sm shadow-md">
+                    AC
+                  </div>
+                  <div>
+                    <p className="font-bold text-[#191c1d] text-sm" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                      Alicia Cosendey
+                    </p>
+                    <p className="text-xs text-slate-500">Estudante de Medicina</p>
+                  </div>
+                </div>
+              </article>
+
+              {/* Depoimento 2 — João */}
+              <article className="group relative bg-white border border-slate-100 rounded-2xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(25,28,29,0.04)] hover:shadow-[0_10px_40px_rgba(0,109,91,0.12)] hover:-translate-y-1 hover:border-[#006D5B]/20 transition-all duration-500">
+                <div className="absolute top-5 right-5 text-[#006D5B]/10 group-hover:text-[#006D5B]/20 transition-colors duration-500">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.571-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z"/>
+                  </svg>
+                </div>
+
+                <div className="flex gap-0.5 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <svg key={i} width="18" height="18" viewBox="0 0 24 24" fill="#C9A84C" aria-hidden="true">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                  ))}
+                </div>
+
+                <p className="text-sm sm:text-base text-slate-700 leading-relaxed mb-6 font-light italic">
+                  "Eu não tenho dúvidas que o PreceptorMED é o futuro da medicina! As respostas oferecidas pela IA são de longe as mais detalhadas. Não somente isso, a plataforma sempre utiliza referências nas quais eu confio. Me surpreende também a constante expansão das ferramentas da plataforma, que além de me ajudar nos meus estudos, também me auxilia na realização de trabalhos científicos.
+                  <br /><br />
+                  <span className="not-italic font-semibold text-[#005344]">Simplificando: se você tiver a oportunidade de assinar o PreceptorMED, assine.</span>"
+                </p>
+
+                <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#005344] to-[#C9A84C] flex items-center justify-center text-white font-bold text-sm shadow-md">
+                    JM
+                  </div>
+                  <div>
+                    <p className="font-bold text-[#191c1d] text-sm" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                      João Miyake
+                    </p>
+                    <p className="text-xs text-slate-500">Estudante de Medicina</p>
+                  </div>
+                </div>
+              </article>
             </div>
           </div>
         </section>
