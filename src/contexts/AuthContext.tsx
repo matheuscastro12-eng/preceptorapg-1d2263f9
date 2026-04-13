@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, name: string, phone?: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, name: string, phone?: string, signupIntent?: 'paid_signup' | 'organic') => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, name: string, phone?: string) => {
+  const signUp = async (email: string, password: string, name: string, phone?: string, signupIntent?: 'paid_signup' | 'organic') => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -60,6 +60,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         data: {
           full_name: name,
           phone: phone || '',
+          // Quando 'paid_signup', o trigger pula o trial gratuito
+          // (usuario veio do botao de assinatura — webhook EasyFlow cria sub paga)
+          signup_intent: signupIntent ?? 'organic',
         },
       },
     });

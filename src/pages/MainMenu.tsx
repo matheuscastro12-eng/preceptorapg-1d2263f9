@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import OnboardingTour, { type TourStep } from '@/components/OnboardingTour';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import GamificationWidget from '@/components/GamificationWidget';
+import TrialBanner from '@/components/TrialBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Lock } from 'lucide-react';
 import { format } from 'date-fns';
@@ -153,6 +154,11 @@ const MainMenu = () => {
               Assinar agora &rarr;
             </button>
           )}
+        </section>
+
+        {/* Trial banner — only shows for users in 3-day free trial */}
+        <section className="animate-fade-up" style={{ animationDelay: '0.02s' }}>
+          <TrialBanner />
         </section>
 
         {/* Gamification widget */}

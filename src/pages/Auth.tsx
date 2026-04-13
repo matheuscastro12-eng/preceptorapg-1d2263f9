@@ -88,7 +88,13 @@ const Auth = () => {
       return;
     }
     setLoading(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupName, signupPhone.trim());
+    const { error } = await signUp(
+      signupEmail,
+      signupPassword,
+      signupName,
+      signupPhone.trim(),
+      planType ? 'paid_signup' : 'organic',
+    );
     if (error) {
       toast({ title: 'Erro ao criar conta', description: error.message, variant: 'destructive' });
     } else {
