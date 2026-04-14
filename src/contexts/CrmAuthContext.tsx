@@ -73,10 +73,22 @@ export function CrmAuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem(SESSION_KEY, JSON.stringify(user));
 
           // Ensure supabaseCrm is authenticated BEFORE setting user (which triggers children to render)
+          // Importante: checar tambem se a sessao esta expirada — Supabase JWT
+          // padrao tem 1h de vida. Depois de um refresh com sessao expirada,
+          // getSession() retorna o token velho mas queries batem em RLS quebrada.
           try {
             const { data: crmSession } = await supabaseCrm.auth.getSession();
-            if (!crmSession?.session && data.svc) {
-              await supabaseCrm.auth.signInWithPassword({ email: data.svc.e, password: data.svc.p });
+            const session = crmSession?.session;
+            const nowSec = Math.floor(Date.now() / 1000);
+            // Considera expirado se falta < 60s para expirar (margem de seguranca)
+            const isExpired = !session || (session.expires_at ? session.expires_at < nowSec + 60 : true);
+
+            if (isExpired && data.svc?.e && data.svc?.p) {
+              const { error } = await supabaseCrm.auth.signInWithPassword({
+                email: data.svc.e,
+                password: data.svc.p,
+              });
+              if (error) console.warn("CRM service re-auth failed:", error.message);
             }
           } catch (authErr) {
             console.warn("CRM supabase auth failed (non-fatal):", authErr);
