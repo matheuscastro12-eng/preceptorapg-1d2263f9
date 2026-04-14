@@ -27,12 +27,24 @@ export default function CrmAnalytics() {
     (async () => {
       setLoading(true);
       const since = new Date(Date.now() - periodDays * 86400000).toISOString();
-      const { data } = await supabase
-        .from("crm_page_views")
-        .select("id, visitor_id, session_id, page_path, referrer, utm_source, created_at")
-        .gte("created_at", since)
-        .order("created_at", { ascending: true });
-      setViews(data ?? []);
+      // Supabase limita em 1000 rows por query — pagina ate pegar tudo.
+      const pageSize = 1000;
+      const all: PageView[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from("crm_page_views")
+          .select("id, visitor_id, session_id, page_path, referrer, utm_source, created_at")
+          .gte("created_at", since)
+          .order("created_at", { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error || !data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+        if (from >= 100000) break; // safety cap
+      }
+      setViews(all);
       setLoading(false);
     })();
   }, [periodDays]);
