@@ -1,4 +1,27 @@
-import { lazy, Suspense } from "react";
+import { lazy as reactLazy, Suspense } from "react";
+
+// Wraps React.lazy to auto-reload quando um chunk antigo sumiu pos-deploy.
+// Usa sessionStorage pra evitar loop infinito caso o problema seja real.
+const lazy = <T extends { default: React.ComponentType<any> }>(
+  factory: () => Promise<T>,
+) =>
+  reactLazy(() =>
+    factory().catch((err) => {
+      const msg = String(err?.message ?? err);
+      const isChunkError =
+        msg.includes("Failed to fetch dynamically imported module") ||
+        msg.includes("Importing a module script failed") ||
+        msg.includes("error loading dynamically imported module");
+      const alreadyReloaded = sessionStorage.getItem("chunk-reload-attempt");
+      if (isChunkError && !alreadyReloaded) {
+        sessionStorage.setItem("chunk-reload-attempt", "1");
+        window.location.reload();
+        return new Promise<T>(() => {});
+      }
+      sessionStorage.removeItem("chunk-reload-attempt");
+      throw err;
+    }),
+  );
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
