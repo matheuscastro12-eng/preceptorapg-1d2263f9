@@ -67,6 +67,7 @@ export default function CrmUsers() {
   const [selectedPlan, setSelectedPlan] = useState<Record<string, PlanType>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"recent" | "oldest" | "name_asc" | "email_asc" | "status">("recent");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [efPanelEmail, setEfPanelEmail] = useState<string | null>(null);
 
@@ -181,6 +182,23 @@ export default function CrmUsers() {
     if (statusFilter === "free") return u.subscription?.plan_type === "free_access" && !isExpired(u.subscription);
     if (statusFilter === "none") return !u.subscription || u.subscription.status !== "active" || isExpired(u.subscription);
     return true;
+  }).sort((a, b) => {
+    switch (sortBy) {
+      case "recent": return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      case "oldest": return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      case "name_asc": return (a.full_name ?? "").localeCompare(b.full_name ?? "", "pt-BR");
+      case "email_asc": return a.email.localeCompare(b.email, "pt-BR");
+      case "status": {
+        const rank = (u: UserWithSubscription) => {
+          const s = u.subscription;
+          if (!s || s.status !== "active" || isExpired(s)) return 3;
+          if (s.plan_type === "free_access") return 2;
+          return 1;
+        };
+        return rank(a) - rank(b);
+      }
+      default: return 0;
+    }
   });
 
   const getStatusBadge = (sub?: UserWithSubscription["subscription"]) => {
@@ -244,6 +262,17 @@ export default function CrmUsers() {
               </button>
             ))}
           </div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs font-medium text-gray-300 focus:outline-none focus:border-green-600 cursor-pointer"
+          >
+            <option value="recent">Mais recentes</option>
+            <option value="oldest">Mais antigos</option>
+            <option value="name_asc">Nome (A-Z)</option>
+            <option value="email_asc">Email (A-Z)</option>
+            <option value="status">Status (pagantes primeiro)</option>
+          </select>
         </div>
 
         {loading ? (
