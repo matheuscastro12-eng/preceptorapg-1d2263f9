@@ -202,16 +202,29 @@ export default function CrmAutomations() {
           <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="border-b border-gray-800">
-                {["Tipo", "Canal", "Status", "Motivo", "Produto", "Quando", "Acao"].map((h) => (
+                {["Destinatario", "Tipo", "Canal", "Status", "Motivo", "Produto", "Quando", "Acao"].map((h) => (
                   <th key={h} className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800/50">
-              {automations.map((auto) => {
+              {automations.map((auto: any) => {
                 const ChannelIcon = CHANNEL_ICONS[auto.channel] ?? Mail;
+                const lead = Array.isArray(auto.crm_leads) ? auto.crm_leads[0] : auto.crm_leads;
+                const email = lead?.email ?? (auto.metadata?.email as string | undefined);
+                const nome = lead?.nome ?? (auto.metadata?.nome as string | undefined);
                 return (
                   <tr key={auto.id} className="hover:bg-gray-800/30">
+                    <td className="py-2.5 px-4">
+                      {email ? (
+                        <div className="min-w-0">
+                          {nome && <p className="text-sm text-white truncate max-w-[200px]">{nome}</p>}
+                          <p className="text-xs text-gray-500 truncate max-w-[200px]">{email}</p>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-700">—</span>
+                      )}
+                    </td>
                     <td className="py-2.5 px-4"><span className="text-sm text-white">{AUTOMATION_TRIGGER_LABELS[auto.trigger_name] ?? auto.trigger_name}</span></td>
                     <td className="py-2.5 px-4">
                       <div className="flex items-center gap-1.5">

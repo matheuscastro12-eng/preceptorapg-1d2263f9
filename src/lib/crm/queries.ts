@@ -299,13 +299,13 @@ export async function getRecentAutomations({
 
   const { data, count, error } = await supabase
     .from("crm_automations_log")
-    .select("*", { count: "exact" })
+    .select("*, crm_leads!lead_id ( email, nome )", { count: "exact" })
     .order("created_at", { ascending: false })
     .range(from, to);
 
   if (error) throw error;
 
-  return { automations: (data ?? []) as CrmAutomationLog[], total: count ?? 0 };
+  return { automations: (data ?? []) as (CrmAutomationLog & { crm_leads?: { email: string; nome: string | null } | null })[], total: count ?? 0 };
 }
 
 // ── UTM ANALYTICS ─────────────────────────────────────────────
