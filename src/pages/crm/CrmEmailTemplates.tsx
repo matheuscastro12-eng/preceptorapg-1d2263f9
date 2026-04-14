@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/crm/supabase";
 import { Mail, Save, Eye, Loader2, FileText, Check } from "lucide-react";
 import { toast } from "sonner";
+import RichTextEditor from "@/components/crm/RichTextEditor";
 
 interface Template {
   trigger_name: string;
@@ -164,19 +165,16 @@ export default function CrmEmailTemplates() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center justify-between">
-                  <span>Corpo do email (HTML)</span>
-                  <span className="text-[10px] text-gray-500 normal-case font-normal">
-                    Variaveis: <code className="text-green-400">{"{{nome}}"}</code>
-                  </span>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 block">
+                  Corpo do email
                 </label>
-                <textarea
+                <RichTextEditor
                   value={draft.body_html}
-                  onChange={(e) => { setDraft({ ...draft, body_html: e.target.value }); setSaved(false); }}
-                  rows={12}
-                  className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-xs font-mono text-white focus:outline-none focus:border-green-600 resize-y"
-                  spellCheck={false}
+                  onChange={(html) => { setDraft({ ...draft, body_html: html }); setSaved(false); }}
                 />
+                <p className="text-[11px] text-gray-500 mt-1.5">
+                  Use a barra de ferramentas acima para formatar. O botao <code className="text-green-400">+ {"{{nome}}"}</code> insere o nome do destinatario automaticamente no lugar em que o cursor estiver.
+                </p>
               </div>
 
               <div className="flex items-center gap-2">
