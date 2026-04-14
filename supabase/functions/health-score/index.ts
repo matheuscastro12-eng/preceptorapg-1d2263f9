@@ -312,10 +312,14 @@ serve(async (req) => {
           else result.zone = "critical";
         }
 
-        // Upsert no banco (um score por dia)
-        const { error: upsertError } = await supabase
+        // Um score por user: apaga o anterior e insere novo.
+        // O unique index e composto (user_id, dia de calculado_em), entao
+        // upsert por user_id so nao funciona direto.
+        await supabase.from("crm_health_scores").delete().eq("user_id", lead.user_id);
+
+        const { error: insertError } = await supabase
           .from("crm_health_scores")
-          .upsert({
+          .insert({
             user_id: lead.user_id,
             lead_id: lead.lead_id ?? null,
             ...result,
@@ -327,11 +331,9 @@ serve(async (req) => {
             variacao_score: hasHistory ? result.score - metrics.score_anterior : 0,
             produto: lead.produto_interesse,
             calculado_em: new Date().toISOString(),
-          }, {
-            onConflict: "user_id",
           });
 
-        if (upsertError) throw upsertError;
+        if (insertError) throw insertError;
 
         // Disparar alerta se score crítico (< 40)
         if (result.score < 40) {
