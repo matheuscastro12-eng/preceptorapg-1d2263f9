@@ -231,14 +231,13 @@ serve(async (req) => {
         continue;
       }
 
-      // Marcar como 'sent' antes de enviar (evitar duplicados)
-      await supabase
-        .from("crm_automations_log")
-        .update({ status: "sent", sent_at: new Date().toISOString() })
-        .eq("id", automation.id);
-
       // Enviar por canal
       if (automation.channel === "email") {
+        // Marcar como 'sent' antes de chamar Resend (evita duplicados se der timeout)
+        await supabase
+          .from("crm_automations_log")
+          .update({ status: "sent", sent_at: new Date().toISOString() })
+          .eq("id", automation.id);
         const sendResult = await sendEmail(
           email,
           automation.trigger_name,
