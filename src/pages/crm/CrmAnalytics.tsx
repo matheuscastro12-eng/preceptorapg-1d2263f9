@@ -50,19 +50,34 @@ export default function CrmAnalytics() {
     const bounceSessions = Object.values(sessionPageCounts).filter((c) => c === 1).length;
     const bounceRate = totalSessions > 0 ? Math.round((bounceSessions / totalSessions) * 100) : 0;
 
-    // Avg visit duration estimate (time between first and last page view in session)
-    const sessionTimes: Record<string, { first: number; last: number }> = {};
+    // Avg visit duration — soma os gaps entre pageviews consecutivos da sessao,
+    // capando cada gap em 30 min (threshold de inatividade). Gaps maiores
+    // significam que o usuario saiu/voltou e nao devem ser contados.
+    // Pageviews isolados (sessao de 1 view) contam como 10s default.
+    const IDLE_THRESHOLD_MS = 30 * 60 * 1000; // 30 min
+    const SINGLE_VIEW_DEFAULT_MS = 10 * 1000; // 10s estimado para bounces
+
+    const sessionEvents: Record<string, number[]> = {};
     views.forEach((v) => {
       const t = new Date(v.created_at).getTime();
-      if (!sessionTimes[v.session_id]) sessionTimes[v.session_id] = { first: t, last: t };
-      else {
-        if (t < sessionTimes[v.session_id].first) sessionTimes[v.session_id].first = t;
-        if (t > sessionTimes[v.session_id].last) sessionTimes[v.session_id].last = t;
-      }
+      if (!sessionEvents[v.session_id]) sessionEvents[v.session_id] = [];
+      sessionEvents[v.session_id].push(t);
     });
-    const durations = Object.values(sessionTimes)
-      .map((s) => s.last - s.first)
+
+    const durations = Object.values(sessionEvents)
+      .map((times) => {
+        if (times.length <= 1) return SINGLE_VIEW_DEFAULT_MS;
+        const sorted = [...times].sort((a, b) => a - b);
+        let total = 0;
+        for (let i = 1; i < sorted.length; i++) {
+          const gap = sorted[i] - sorted[i - 1];
+          // Cap gap em IDLE_THRESHOLD — gaps maiores significam usuario inativo
+          total += Math.min(gap, IDLE_THRESHOLD_MS);
+        }
+        return total;
+      })
       .filter((d) => d > 0);
+
     const avgDurationMs = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
     const avgDurationMin = Math.floor(avgDurationMs / 60000);
     const avgDurationSec = Math.floor((avgDurationMs % 60000) / 1000);
