@@ -103,108 +103,160 @@ export default function CrmEmailTemplates() {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
-            <FileText className="w-5 h-5 text-green-400" /> Templates de Email
-          </h1>
-          <p className="text-xs md:text-sm text-gray-500 mt-0.5">
-            Personalize o assunto, preview e corpo de cada automacao. Usa <code className="text-green-400">{"{{nome}}"}</code> para substituir pelo nome do destinatario.
-          </p>
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6">
+      {/* Hero header */}
+      <div className="relative overflow-hidden rounded-2xl border border-green-900/40 bg-gradient-to-br from-green-950/60 via-gray-900 to-gray-900 p-6 md:p-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20">
+              <FileText className="w-6 h-6 text-green-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-white">Templates de Email</h1>
+              <p className="text-sm text-gray-400 mt-1 max-w-2xl">
+                Personalize cada automacao com um editor estilo Word. Use <code className="text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded text-xs">{"{{nome}}"}</code> para incluir o nome do destinatario automaticamente.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-6 text-xs">
+            <div>
+              <p className="text-gray-500">Total</p>
+              <p className="text-2xl font-bold text-white">{templates.length}</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5">
         {/* Lista de templates */}
-        <div className="bg-gray-900/80 border border-gray-800 rounded-xl overflow-hidden">
-          <div className="p-3 border-b border-gray-800">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Templates ({templates.length})</p>
+        <div className="bg-gray-900/60 backdrop-blur border border-gray-800 rounded-2xl overflow-hidden h-fit sticky top-4">
+          <div className="px-4 py-3 border-b border-gray-800 bg-gray-900/80">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+              <Mail className="w-3.5 h-3.5" /> Automacoes
+            </p>
           </div>
-          <div className="divide-y divide-gray-800/50 max-h-[600px] overflow-y-auto crm-scrollbar">
+          <div className="divide-y divide-gray-800/40 max-h-[620px] overflow-y-auto crm-scrollbar py-1">
             {templates.map((t) => (
               <button
                 key={t.trigger_name}
                 onClick={() => setSelected(t.trigger_name)}
-                className={`w-full text-left px-3 py-2.5 hover:bg-gray-800/50 transition-colors ${
-                  selected === t.trigger_name ? "bg-green-900/20 border-l-2 border-green-400" : ""
+                className={`group w-full text-left px-4 py-3 transition-all ${
+                  selected === t.trigger_name
+                    ? "bg-gradient-to-r from-green-500/15 to-transparent border-l-[3px] border-green-400"
+                    : "border-l-[3px] border-transparent hover:bg-gray-800/40"
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                  <p className="text-sm font-medium text-white truncate">{t.label}</p>
-                </div>
+                <p className={`text-sm font-semibold truncate ${selected === t.trigger_name ? "text-white" : "text-gray-200 group-hover:text-white"}`}>
+                  {t.label}
+                </p>
                 {t.description && (
-                  <p className="text-[11px] text-gray-500 mt-0.5 pl-5 truncate">{t.description}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5 truncate">{t.description}</p>
                 )}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Editor */}
+        {/* Editor + Preview side by side */}
         {current && (
-          <div className="space-y-4">
-            <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 md:p-5 space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Assunto</label>
-                <input
-                  value={draft.subject}
-                  onChange={(e) => { setDraft({ ...draft, subject: e.target.value }); setSaved(false); }}
-                  className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-green-600"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Preview (texto curto mostrado na caixa)</label>
-                <input
-                  value={draft.preview}
-                  onChange={(e) => { setDraft({ ...draft, preview: e.target.value }); setSaved(false); }}
-                  className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-green-600"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 block">
-                  Corpo do email
-                </label>
-                <RichTextEditor
-                  value={draft.body_html}
-                  onChange={(html) => { setDraft({ ...draft, body_html: html }); setSaved(false); }}
-                />
-                <p className="text-[11px] text-gray-500 mt-1.5">
-                  Use a barra de ferramentas acima para formatar. O botao <code className="text-green-400">+ {"{{nome}}"}</code> insere o nome do destinatario automaticamente no lugar em que o cursor estiver.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+            {/* Editor */}
+            <div className="bg-gray-900/60 backdrop-blur border border-gray-800 rounded-2xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-800 bg-gray-900/80 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-green-400 uppercase tracking-wider">Editando</p>
+                  <h2 className="text-base font-bold text-white truncate">{current.label}</h2>
+                </div>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-green-700 text-white hover:bg-green-600 disabled:opacity-50 transition-colors"
+                  className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    saved
+                      ? "bg-green-500/20 text-green-300 border border-green-500/40"
+                      : "bg-green-600 text-white hover:bg-green-500 shadow-lg shadow-green-900/30"
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                   {saved ? "Salvo" : saving ? "Salvando..." : "Salvar"}
                 </button>
-                <span className="text-[11px] text-gray-500">
-                  Ultima edicao: {new Date(current.updated_at).toLocaleString("pt-BR")}
-                </span>
+              </div>
+
+              <div className="p-5 space-y-5">
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">
+                    Assunto do email
+                  </label>
+                  <input
+                    value={draft.subject}
+                    onChange={(e) => { setDraft({ ...draft, subject: e.target.value }); setSaved(false); }}
+                    placeholder="Ex: Voce tem 20% OFF esperando..."
+                    className="w-full px-4 py-2.5 bg-gray-800/60 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">
+                    Pre-visualizacao <span className="text-gray-600 font-normal normal-case">(texto cinza que aparece na caixa de entrada ao lado do assunto)</span>
+                  </label>
+                  <input
+                    value={draft.preview}
+                    onChange={(e) => { setDraft({ ...draft, preview: e.target.value }); setSaved(false); }}
+                    placeholder="Frase curta que chama atencao"
+                    className="w-full px-4 py-2.5 bg-gray-800/60 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">
+                    Conteudo do email
+                  </label>
+                  <RichTextEditor
+                    value={draft.body_html}
+                    onChange={(html) => { setDraft({ ...draft, body_html: html }); setSaved(false); }}
+                  />
+                  <p className="text-[11px] text-gray-500 mt-2 flex items-start gap-1.5">
+                    <span className="text-green-400">💡</span>
+                    <span>Use a barra para formatar como no Word. O botao <code className="text-green-400 bg-green-500/10 px-1 py-0.5 rounded">+ {"{{nome}}"}</code> insere o nome do destinatario onde o cursor estiver.</span>
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t border-gray-800/60 text-[11px] text-gray-500">
+                  Ultima edicao: {new Date(current.updated_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                </div>
               </div>
             </div>
 
-            {/* Preview */}
-            <div className="bg-gray-900/80 border border-gray-800 rounded-xl overflow-hidden">
-              <div className="p-3 border-b border-gray-800 flex items-center gap-2">
+            {/* Preview — simula caixa de entrada */}
+            <div className="bg-gray-900/60 backdrop-blur border border-gray-800 rounded-2xl overflow-hidden xl:sticky xl:top-4 xl:h-fit">
+              <div className="px-5 py-4 border-b border-gray-800 bg-gray-900/80 flex items-center gap-2">
                 <Eye className="w-4 h-4 text-gray-400" />
-                <p className="text-sm font-semibold text-white">Preview</p>
-                <span className="text-[11px] text-gray-500 ml-auto">Renderizado com nome = "Matheus"</span>
+                <p className="text-sm font-bold text-white">Pre-visualizacao</p>
+                <span className="text-[10px] text-gray-500 ml-auto bg-gray-800/60 px-2 py-0.5 rounded-full">
+                  nome = "Matheus"
+                </span>
               </div>
-              <div className="bg-gray-800 p-4">
-                <div className="text-xs text-gray-400 mb-2"><strong>De:</strong> PreceptorMED &lt;noreply@thepreceptor.com.br&gt;</div>
-                <div className="text-xs text-gray-400 mb-3"><strong>Assunto:</strong> {draft.subject}</div>
+              <div className="p-4 bg-gradient-to-b from-gray-800/60 to-gray-900/40">
+                {/* Mock inbox header */}
+                <div className="bg-white rounded-t-xl border border-gray-200 px-5 py-4 space-y-1.5">
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-[11px] font-semibold text-gray-500 w-16 shrink-0">De:</span>
+                    <span className="text-xs text-gray-900">PreceptorMED <span className="text-gray-500">&lt;noreply@thepreceptor.com.br&gt;</span></span>
+                  </div>
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-[11px] font-semibold text-gray-500 w-16 shrink-0">Assunto:</span>
+                    <span className="text-sm font-semibold text-gray-900">{draft.subject || <em className="text-gray-400 font-normal">(vazio)</em>}</span>
+                  </div>
+                  {draft.preview && (
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-[11px] font-semibold text-gray-500 w-16 shrink-0">Preview:</span>
+                      <span className="text-xs text-gray-500 italic">{draft.preview}</span>
+                    </div>
+                  )}
+                </div>
                 <iframe
                   srcDoc={previewHtml}
-                  className="w-full h-[500px] border border-gray-700 rounded bg-white"
+                  className="w-full h-[560px] border border-t-0 border-gray-200 rounded-b-xl bg-white"
                   title="preview"
                 />
               </div>

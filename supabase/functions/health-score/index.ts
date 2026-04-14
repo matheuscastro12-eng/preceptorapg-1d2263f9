@@ -344,6 +344,7 @@ serve(async (req) => {
         if (result.score < 40) {
           await supabase.from("crm_automations_log").insert({
             user_id: lead.user_id,
+            lead_id: lead.lead_id ?? null,
             automation_type: "email",
             trigger_name: "health_alert",
             trigger_reason: `Health score crítico: ${result.score}/100 (zona: ${result.zone})`,
