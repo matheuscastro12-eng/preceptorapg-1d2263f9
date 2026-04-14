@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/crm/supabase";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Loader2, Eye, FileText, MousePointerClick, Clock, TrendingDown } from "lucide-react";
 import MetricCard from "@/components/crm/MetricCard";
