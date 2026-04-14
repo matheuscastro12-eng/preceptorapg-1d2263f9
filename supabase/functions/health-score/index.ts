@@ -298,11 +298,12 @@ serve(async (req) => {
 
         const result = calculateHealthScore(metrics);
 
-        // Primeira execucao: zera tendencia pra nao penalizar falta de historico.
-        // Delta contra score_anterior=0 sempre daria +20 artificial — forcamos neutro (12pts).
+        // Primeira execucao (sem historico): tendencia neutra so faz sentido
+        // se o user esta realmente usando. User dormente (baseScore=0) deve
+        // ficar em 0, nao em 12 artificial.
         if (!hasHistory) {
-          const neutral = 12;
           const baseScore = result.pts_frequencia + result.pts_desempenho + result.pts_engajamento;
+          const neutral = baseScore > 0 ? 12 : 0;
           result.pts_tendencia = neutral;
           result.score = Math.min(100, baseScore + neutral);
           if (result.score >= 80) result.zone = "healthy";
