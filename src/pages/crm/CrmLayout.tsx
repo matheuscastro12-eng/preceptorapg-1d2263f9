@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
 import Sidebar from "@/components/crm/Sidebar";
@@ -47,7 +47,13 @@ export default function CrmLayout() {
     <div className="flex h-screen overflow-hidden bg-gray-950">
       <Sidebar />
       <main className="flex-1 overflow-y-auto crm-scrollbar pt-14 lg:pt-0">
-        <Outlet />
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-96">
+            <Loader2 className="h-8 w-8 text-green-400 animate-spin" />
+          </div>
+        }>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );
