@@ -191,6 +191,28 @@ export async function getHealthScoresList({
   page?: number;
   pageSize?: number;
 }) {
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  // Sem filtro de plano: query direta com paginacao no DB (caminho original).
+  if (!planFilter || planFilter === "all") {
+    let query = supabase
+      .from("crm_health_scores")
+      .select(`*, crm_leads!lead_id ( email, nome, status )`, { count: "exact" })
+      .order("score", { ascending: true })
+      .range(from, to);
+
+    if (zone) query = query.eq("zone", zone);
+    if (produto) query = query.eq("produto", produto);
+
+    const { data, count, error } = await query;
+    if (error) throw error;
+
+    return { scores: (data ?? []) as CrmHealthScore[], total: count ?? 0 };
+  }
+
+  // Com filtro de plano: precisa cruzar com subscriptions. Carrega tudo
+  // e filtra client-side (nossa base cabe facil — ~60 users).
   let query = supabase
     .from("crm_health_scores")
     .select(`*, crm_leads!lead_id ( email, nome, status )`)
@@ -204,30 +226,24 @@ export async function getHealthScoresList({
 
   let scores = (data ?? []) as any[];
 
-  // Enrich with subscription data + filter by plan
-  if (planFilter && planFilter !== "all") {
-    const userIds = scores.map((s) => s.user_id).filter(Boolean);
-    const { data: subs } = await supabase
-      .from("subscriptions")
-      .select("user_id, plan_type, status, access_expires_at")
-      .in("user_id", userIds);
-    const subMap = new Map((subs ?? []).map((s: any) => [s.user_id, s]));
-    const isExpired = (s: any) => s?.access_expires_at && new Date(s.access_expires_at) < new Date();
+  const userIds = scores.map((s) => s.user_id).filter(Boolean);
+  const { data: subs } = await supabase
+    .from("subscriptions")
+    .select("user_id, plan_type, status, access_expires_at")
+    .in("user_id", userIds);
+  const subMap = new Map((subs ?? []).map((s: any) => [s.user_id, s]));
+  const isExpired = (s: any) => s?.access_expires_at && new Date(s.access_expires_at) < new Date();
 
-    scores = scores.filter((s) => {
-      const uid = s.user_id;
-      const sub = uid ? subMap.get(uid) : null;
-      if (planFilter === "paying") return (sub as any)?.status === "active" && ((sub as any)?.plan_type === "monthly" || (sub as any)?.plan_type === "annual" || (sub as any)?.plan_type === "biannual");
-      if (planFilter === "free") return (sub as any)?.status === "active" && (sub as any)?.plan_type === "free_access" && !isExpired(sub);
-      if (planFilter === "none") return !sub || (sub as any).status !== "active" || isExpired(sub);
-      return true;
-    });
-  }
+  scores = scores.filter((s) => {
+    const sub: any = subMap.get(s.user_id);
+    if (planFilter === "paying") return sub?.status === "active" && (sub?.plan_type === "monthly" || sub?.plan_type === "annual" || sub?.plan_type === "biannual");
+    if (planFilter === "free") return sub?.status === "active" && sub?.plan_type === "free_access" && !isExpired(sub);
+    if (planFilter === "none") return !sub || sub.status !== "active" || isExpired(sub);
+    return true;
+  });
 
   const total = scores.length;
-  const from = (page - 1) * pageSize;
   const paged = scores.slice(from, from + pageSize);
-
   return { scores: paged as CrmHealthScore[], total };
 }
 
