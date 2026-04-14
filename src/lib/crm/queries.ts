@@ -193,7 +193,7 @@ export async function getHealthScoresList({
 }) {
   let query = supabase
     .from("crm_health_scores")
-    .select(`*, crm_leads!lead_id ( email, nome, status, user_id )`)
+    .select(`*, crm_leads!lead_id ( email, nome, status )`)
     .order("score", { ascending: true });
 
   if (zone) query = query.eq("zone", zone);
@@ -206,7 +206,7 @@ export async function getHealthScoresList({
 
   // Enrich with subscription data + filter by plan
   if (planFilter && planFilter !== "all") {
-    const userIds = scores.map((s) => s.crm_leads?.user_id).filter(Boolean);
+    const userIds = scores.map((s) => s.user_id).filter(Boolean);
     const { data: subs } = await supabase
       .from("subscriptions")
       .select("user_id, plan_type, status, access_expires_at")
@@ -215,7 +215,7 @@ export async function getHealthScoresList({
     const isExpired = (s: any) => s?.access_expires_at && new Date(s.access_expires_at) < new Date();
 
     scores = scores.filter((s) => {
-      const uid = s.crm_leads?.user_id;
+      const uid = s.user_id;
       const sub = uid ? subMap.get(uid) : null;
       if (planFilter === "paying") return (sub as any)?.status === "active" && ((sub as any)?.plan_type === "monthly" || (sub as any)?.plan_type === "annual" || (sub as any)?.plan_type === "biannual");
       if (planFilter === "free") return (sub as any)?.status === "active" && (sub as any)?.plan_type === "free_access" && !isExpired(sub);
