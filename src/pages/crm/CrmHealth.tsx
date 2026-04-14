@@ -7,10 +7,18 @@ import { HEALTH_ZONE_LABELS, HEALTH_ZONE_COLORS, type HealthZone } from "@/lib/c
 export default function CrmHealth() {
   const [searchParams, setSearchParams] = useSearchParams();
   const zone = searchParams.get("zone") as HealthZone | undefined;
+  const planFilter = (searchParams.get("plan") as "all" | "paying" | "free" | "none" | null) ?? "all";
   const page = parseInt(searchParams.get("page") ?? "1");
 
   const { data: distribution, isLoading } = useHealthDistribution();
-  const { data: scoresData } = useHealthScoresList({ zone: zone || undefined, page });
+  const { data: scoresData } = useHealthScoresList({ zone: zone || undefined, planFilter, page });
+
+  const setPlanFilter = (p: "all" | "paying" | "free" | "none") => {
+    const params = Object.fromEntries(searchParams.entries());
+    if (p === "all") delete params.plan; else params.plan = p;
+    delete params.page;
+    setSearchParams(params);
+  };
 
   const scores = scoresData?.scores ?? [];
   const total = scoresData?.total ?? 0;
@@ -82,9 +90,31 @@ export default function CrmHealth() {
       </div>
 
       <div className="bg-gray-900/80 border border-gray-800 rounded-xl overflow-hidden">
+        <div className="p-3 md:p-4 border-b border-gray-800 flex gap-2 overflow-x-auto items-center">
+          <span className="text-[10px] uppercase tracking-wider text-gray-600 font-semibold whitespace-nowrap">Plano:</span>
+          {([
+            { key: "all", label: "Todos" },
+            { key: "paying", label: "Pagantes" },
+            { key: "free", label: "Gratuitos" },
+            { key: "none", label: "Sem acesso" },
+          ] as const).map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setPlanFilter(p.key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${planFilter === p.key ? "bg-[#1B5E3B] text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700"}`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
         <div className="p-3 md:p-4 border-b border-gray-800 flex gap-2 overflow-x-auto">
           <button
-            onClick={() => setSearchParams({})}
+            onClick={() => {
+              const params = Object.fromEntries(searchParams.entries());
+              delete params.zone;
+              delete params.page;
+              setSearchParams(params);
+            }}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${!zone ? "bg-[#1B5E3B] text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700"}`}
           >
             Todos ({total})
@@ -94,7 +124,12 @@ export default function CrmHealth() {
             return (
               <button
                 key={z}
-                onClick={() => setSearchParams({ zone: z })}
+                onClick={() => {
+                  const params = Object.fromEntries(searchParams.entries());
+                  params.zone = z;
+                  delete params.page;
+                  setSearchParams(params);
+                }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${zone === z ? "text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700"}`}
                 style={zone === z ? { backgroundColor: HEALTH_ZONE_COLORS[z] } : {}}
               >

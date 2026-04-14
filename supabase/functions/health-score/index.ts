@@ -128,11 +128,10 @@ serve(async (req) => {
 
     const { batch_size = 200, user_id } = await req.json().catch(() => ({}));
 
-    // Buscar usuários assinantes ativos
+    // Buscar todos os leads com user_id (inclui assinantes, trials e leads qualificados)
     let query = supabase
       .from("crm_leads")
       .select("user_id, produto_interesse")
-      .eq("status", "subscriber")
       .not("user_id", "is", null);
 
     if (user_id) {

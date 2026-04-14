@@ -181,30 +181,54 @@ export async function getHealthDistribution(): Promise<HealthDistribution[]> {
 export async function getHealthScoresList({
   zone,
   produto,
+  planFilter,
   page = 1,
   pageSize = 50,
 }: {
   zone?: string;
   produto?: Produto;
+  planFilter?: "all" | "paying" | "free" | "none";
   page?: number;
   pageSize?: number;
 }) {
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-
   let query = supabase
     .from("crm_health_scores")
-    .select(`*, crm_leads!lead_id ( email, nome, status )`, { count: "exact" })
-    .order("score", { ascending: true })
-    .range(from, to);
+    .select(`*, crm_leads!lead_id ( email, nome, status, user_id )`)
+    .order("score", { ascending: true });
 
   if (zone) query = query.eq("zone", zone);
   if (produto) query = query.eq("produto", produto);
 
-  const { data, count, error } = await query;
+  const { data, error } = await query;
   if (error) throw error;
 
-  return { scores: (data ?? []) as CrmHealthScore[], total: count ?? 0 };
+  let scores = (data ?? []) as any[];
+
+  // Enrich with subscription data + filter by plan
+  if (planFilter && planFilter !== "all") {
+    const userIds = scores.map((s) => s.crm_leads?.user_id).filter(Boolean);
+    const { data: subs } = await supabase
+      .from("subscriptions")
+      .select("user_id, plan_type, status, access_expires_at")
+      .in("user_id", userIds);
+    const subMap = new Map((subs ?? []).map((s: any) => [s.user_id, s]));
+    const isExpired = (s: any) => s?.access_expires_at && new Date(s.access_expires_at) < new Date();
+
+    scores = scores.filter((s) => {
+      const uid = s.crm_leads?.user_id;
+      const sub = uid ? subMap.get(uid) : null;
+      if (planFilter === "paying") return (sub as any)?.status === "active" && ((sub as any)?.plan_type === "monthly" || (sub as any)?.plan_type === "annual" || (sub as any)?.plan_type === "biannual");
+      if (planFilter === "free") return (sub as any)?.status === "active" && (sub as any)?.plan_type === "free_access" && !isExpired(sub);
+      if (planFilter === "none") return !sub || (sub as any).status !== "active" || isExpired(sub);
+      return true;
+    });
+  }
+
+  const total = scores.length;
+  const from = (page - 1) * pageSize;
+  const paged = scores.slice(from, from + pageSize);
+
+  return { scores: paged as CrmHealthScore[], total };
 }
 
 // ── CHURN PREDICTIONS ─────────────────────────────────────────

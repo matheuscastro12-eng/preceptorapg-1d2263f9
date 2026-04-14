@@ -58,6 +58,7 @@ export function useHealthDistribution() {
 export function useHealthScoresList(params: {
   zone?: string;
   produto?: Produto;
+  planFilter?: "all" | "paying" | "free" | "none";
   page?: number;
 }) {
   return useQuery({
