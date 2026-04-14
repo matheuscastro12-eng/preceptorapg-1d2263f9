@@ -73,20 +73,34 @@ const AUTOMATION_TEMPLATES: Record<string, { subject: string; preview: string }>
   },
 };
 
+interface BrandSettings {
+  logo_url?: string;
+  logo_text?: string;
+  header_bg?: string;
+  header_text_color?: string;
+  footer_text?: string;
+}
+
 function buildEmailHtml(
   template: string,
   tmpl: { subject: string; preview: string; body_html?: string },
-  metadata: Record<string, unknown>
+  metadata: Record<string, unknown>,
+  brand?: BrandSettings
 ): string {
   const nome = (metadata.nome as string) || "estudante";
+  const b = brand ?? {};
+  const headerInner = b.logo_url
+    ? `<img src="${b.logo_url}" alt="${b.logo_text ?? ''}" style="max-height:48px;max-width:240px;display:block;margin:0 auto" />`
+    : `<h1 style="color:${b.header_text_color ?? '#C9A84C'};margin:0;font-size:22px">${b.logo_text ?? 'PreceptorMED'}</h1>`;
+
   const wrap = (body: string) => `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-      <div style="background: #1B5E3B; padding: 24px; text-align: center;">
-        <h1 style="color: #C9A84C; margin: 0; font-size: 22px;">PreceptorMED</h1>
+      <div style="background: ${b.header_bg ?? '#1B5E3B'}; padding: 24px; text-align: center;">
+        ${headerInner}
       </div>
       <div style="padding: 32px 28px;">${body}</div>
       <div style="background: #f5f5f5; padding: 20px; text-align: center; font-size: 11px; color: #999;">
-        Preceptor Group &copy; 2026 | Voce recebeu este email por ser assinante do PreceptorMED
+        ${b.footer_text ?? 'Preceptor Group &copy; 2026 | Voce recebeu este email por ser assinante do PreceptorMED'}
       </div>
     </div>
   `;
@@ -171,6 +185,13 @@ async function sendEmail(
   const tmpl = dbTpl ?? AUTOMATION_TEMPLATES[template];
   if (!tmpl) return { success: false, error: "Template nao encontrado" };
 
+  // Carrega config de branding (header + footer)
+  const { data: brand } = await supabase
+    .from("crm_email_settings")
+    .select("logo_url, logo_text, header_bg, header_text_color, footer_text")
+    .limit(1)
+    .maybeSingle();
+
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -182,7 +203,7 @@ async function sendEmail(
         from: "PreceptorMED <noreply@thepreceptor.com.br>",
         to,
         subject: tmpl.subject,
-        html: buildEmailHtml(template, tmpl, metadata),
+        html: buildEmailHtml(template, tmpl, metadata, brand ?? undefined),
         tags: [{ name: "trigger", value: template }],
       }),
     });
