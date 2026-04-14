@@ -135,13 +135,18 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { threshold = 0.40, batch_size = 200 } = await req.json().catch(() => ({}));
+    const { threshold = 0.40, batch_size = 500, fresh = false } = await req.json().catch(() => ({}));
 
-    // Buscar assinantes ativos
+    // fresh=true: apaga predictions antigas antes de recalcular
+    if (fresh) {
+      await supabase.from("crm_churn_predictions").delete().neq("user_id", "00000000-0000-0000-0000-000000000000");
+    }
+
+    // Processa todos os leads com user_id (nao so subscribers — trials e
+    // leads aquecidos tambem podem churnar antes de converter).
     const { data: subscribers, error: subsError } = await supabase
       .from("crm_leads")
       .select("id, user_id, email, produto_interesse")
-      .eq("status", "subscriber")
       .not("user_id", "is", null)
       .limit(batch_size);
 
@@ -236,9 +241,12 @@ serve(async (req) => {
         // Salvar/atualizar predição
         const validUntil = new Date(now.getTime() + 14 * 86400000);
 
-        const { error: upsertError } = await supabase
+        // Uma predicao por user (sem unique constraint, usar delete+insert)
+        await supabase.from("crm_churn_predictions").delete().eq("user_id", sub.user_id);
+
+        const { error: insertError } = await supabase
           .from("crm_churn_predictions")
-          .upsert({
+          .insert({
             user_id: sub.user_id,
             lead_id: sub.id,
             churn_probability: prediction.churn_probability,
@@ -250,11 +258,9 @@ serve(async (req) => {
             valid_until: validUntil.toISOString(),
             produto: sub.produto_interesse,
             updated_at: now.toISOString(),
-          }, {
-            onConflict: "user_id",
           });
 
-        if (upsertError) throw upsertError;
+        if (insertError) throw insertError;
 
         // Enfileirar automação de intervenção se não foi enviada ainda
         if (prediction.intervention_type !== "none") {
