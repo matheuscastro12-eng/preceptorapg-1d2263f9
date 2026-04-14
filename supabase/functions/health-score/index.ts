@@ -28,15 +28,17 @@ interface UserMetrics {
   features_usadas: number;
   streak_atual: number;
   score_anterior: number;
+  fechamentos_7d: number;
+  outras_geracoes_7d: number;
 }
 
 /**
- * Calcula o Health Score baseado em 4 componentes:
+ * Health Score (0-100) — mede USO da plataforma, nao inteligencia.
  *
- * 1. Frequência     (30 pts) — dias ativos nos últimos 14 dias + streak
- * 2. Desempenho     (25 pts) — % de acertos nas questões
- * 3. Engajamento    (25 pts) — diversidade de features usadas + questões nos últimos 7 dias
- * 4. Tendência      (20 pts) — melhora ou piora em relação à semana anterior
+ * 1. Frequencia   (30) — dias ativos 14d + streak
+ * 2. Fechamentos  (25) — geracoes do carro-chefe nos ultimos 7d
+ * 3. Engajamento  (25) — outras features (chat/questoes/flashcards/mentor) + diversidade
+ * 4. Tendencia    (20) — melhora/piora vs run anterior
  */
 function calculateHealthScore(metrics: UserMetrics): HealthScoreResult {
   let pts_frequencia = 0;
@@ -44,40 +46,39 @@ function calculateHealthScore(metrics: UserMetrics): HealthScoreResult {
   let pts_engajamento = 0;
   let pts_tendencia = 0;
 
-  // ── FREQUÊNCIA (30 pts) ──────────────────────────────────
-  // Dias ativos nos últimos 14 (max 20 pts)
-  const diasPct = metrics.dias_ativos_14d / 14;
-  pts_frequencia += Math.round(diasPct * 20);
+  // ── FREQUENCIA (30 pts) — medir recorrencia de uso ─────────
+  // Dias ativos nos ultimos 14d (max 22 pts, linear)
+  const diasPct = Math.min(1, metrics.dias_ativos_14d / 14);
+  pts_frequencia += Math.round(diasPct * 22);
 
-  // Streak atual (max 10 pts)
-  if (metrics.streak_atual >= 7) pts_frequencia += 10;
-  else if (metrics.streak_atual >= 5) pts_frequencia += 7;
-  else if (metrics.streak_atual >= 3) pts_frequencia += 5;
+  // Streak atual (max 8 pts)
+  if (metrics.streak_atual >= 7) pts_frequencia += 8;
+  else if (metrics.streak_atual >= 5) pts_frequencia += 6;
+  else if (metrics.streak_atual >= 3) pts_frequencia += 4;
   else if (metrics.streak_atual >= 1) pts_frequencia += 2;
 
-  // ── DESEMPENHO (25 pts) ──────────────────────────────────
-  // Baseado no % de acertos
-  const acertos = metrics.acertos_pct;
-  if (acertos >= 80) pts_desempenho = 25;
-  else if (acertos >= 70) pts_desempenho = 20;
-  else if (acertos >= 60) pts_desempenho = 15;
-  else if (acertos >= 50) pts_desempenho = 10;
-  else if (acertos >= 30) pts_desempenho = 5;
-  else if (acertos > 0) pts_desempenho = 2;
+  // ── FECHAMENTOS (25 pts) — carro-chefe do produto ──────────
+  // Peso maior que outras features pq e o core
+  const fech = metrics.fechamentos_7d;
+  if (fech >= 5) pts_desempenho = 25;
+  else if (fech >= 3) pts_desempenho = 20;
+  else if (fech >= 2) pts_desempenho = 15;
+  else if (fech >= 1) pts_desempenho = 10;
+  else pts_desempenho = 0;
 
-  // ── ENGAJAMENTO (25 pts) ─────────────────────────────────
-  // Questões nos últimos 7 dias (max 15 pts)
-  const q7d = metrics.questoes_7d;
-  if (q7d >= 50) pts_engajamento += 15;
-  else if (q7d >= 20) pts_engajamento += 12;
-  else if (q7d >= 10) pts_engajamento += 8;
-  else if (q7d >= 5) pts_engajamento += 5;
-  else if (q7d >= 1) pts_engajamento += 2;
+  // ── ENGAJAMENTO (25 pts) — outras features + diversidade ───
+  // Outras geracoes 7d (chat, questoes, flashcards, mentor, exam) max 15
+  const outras = metrics.outras_geracoes_7d;
+  if (outras >= 20) pts_engajamento += 15;
+  else if (outras >= 10) pts_engajamento += 12;
+  else if (outras >= 5) pts_engajamento += 8;
+  else if (outras >= 2) pts_engajamento += 5;
+  else if (outras >= 1) pts_engajamento += 2;
 
-  // Features usadas (max 10 pts) — indica profundidade de uso
+  // Diversidade (features distintas 30d) max 10 — recompensa uso amplo
   const features = metrics.features_usadas;
-  if (features >= 6) pts_engajamento += 10;
-  else if (features >= 4) pts_engajamento += 7;
+  if (features >= 5) pts_engajamento += 10;
+  else if (features >= 3) pts_engajamento += 7;
   else if (features >= 2) pts_engajamento += 4;
   else if (features >= 1) pts_engajamento += 2;
 
@@ -217,10 +218,10 @@ serve(async (req) => {
           acertos_pct = totalQ > 0 ? (totalC / totalQ) * 100 : 0;
         }
 
-        // ── Dias ativos nos últimos 14 dias (via generation_logs) ──
+        // ── Dias ativos ultimos 14d (via generation_logs) ──
         const { data: activityLogs } = await supabase
           .from("generation_logs")
-          .select("created_at")
+          .select("created_at, function_name")
           .eq("user_id", lead.user_id)
           .gte("created_at", new Date(Date.now() - 14 * 86400000).toISOString());
 
@@ -228,7 +229,15 @@ serve(async (req) => {
           (activityLogs ?? []).map((l) => l.created_at.split("T")[0])
         ).size;
 
-        // Features usadas (funções distintas nos últimos 30 dias)
+        // Geracoes 7d separadas: fechamentos vs outras
+        const sevenDaysAgoMs = Date.now() - 7 * 86400000;
+        const logs7d = (activityLogs ?? []).filter(
+          (l: any) => new Date(l.created_at).getTime() >= sevenDaysAgoMs
+        );
+        const fechamentos_7d = logs7d.filter((l: any) => l.function_name === "generate-fechamento").length;
+        const outras_geracoes_7d = logs7d.filter((l: any) => l.function_name !== "generate-fechamento").length;
+
+        // Features distintas nos ultimos 30d
         const { data: featureLogs } = await supabase
           .from("generation_logs")
           .select("function_name")
@@ -283,6 +292,8 @@ serve(async (req) => {
           features_usadas: featuresUsadas,
           streak_atual: streak,
           score_anterior: hasHistory ? prevScore!.score : 0,
+          fechamentos_7d,
+          outras_geracoes_7d,
         };
 
         const result = calculateHealthScore(metrics);

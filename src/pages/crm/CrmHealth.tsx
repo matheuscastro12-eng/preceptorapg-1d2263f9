@@ -56,10 +56,10 @@ export default function CrmHealth() {
           <h2 className="text-sm md:text-base font-semibold text-white mb-4">Como o Score e Calculado</h2>
           <div className="grid grid-cols-2 gap-3 md:gap-4">
             {[
-              { label: "Frequencia", pts: 30, color: "#3b82f6", items: ["Dias ativos 14d (20pts)", "Streak atual (10pts)"] },
-              { label: "Desempenho", pts: 25, color: "#8b5cf6", items: ["% acertos questoes", "80%+ = 25pts"] },
-              { label: "Engajamento", pts: 25, color: "#f59e0b", items: ["Questoes 7d (15pts)", "Features usadas (10pts)"] },
-              { label: "Tendencia", pts: 20, color: "#16a34a", items: ["vs semana anterior", "+10pts delta = 20pts"] },
+              { label: "Frequencia", pts: 30, color: "#3b82f6", items: ["Dias ativos 14d (22pts)", "Streak atual (8pts)"] },
+              { label: "Fechamentos", pts: 25, color: "#8b5cf6", items: ["Geracoes 7d do carro-chefe", "5+ = 25pts"] },
+              { label: "Engajamento", pts: 25, color: "#f59e0b", items: ["Outras features 7d (15pts)", "Diversidade 30d (10pts)"] },
+              { label: "Tendencia", pts: 20, color: "#16a34a", items: ["vs run anterior", "+10pts delta = 20pts"] },
             ].map((c) => (
               <div key={c.label} className="p-3 md:p-4 rounded-xl border" style={{ borderColor: `${c.color}30`, backgroundColor: `${c.color}08` }}>
                 <div className="flex items-center justify-between mb-2">
@@ -170,7 +170,7 @@ export default function CrmHealth() {
                 </div>
                 <div className="grid grid-cols-4 gap-2 text-center">
                   <div><p className="text-[10px] text-gray-600">Freq</p><p className="text-xs font-medium text-blue-400">{hs.pts_frequencia}/30</p></div>
-                  <div><p className="text-[10px] text-gray-600">Desemp</p><p className="text-xs font-medium text-purple-400">{hs.pts_desempenho}/25</p></div>
+                  <div><p className="text-[10px] text-gray-600">Fech</p><p className="text-xs font-medium text-purple-400">{hs.pts_desempenho}/25</p></div>
                   <div><p className="text-[10px] text-gray-600">Engaj</p><p className="text-xs font-medium text-yellow-400">{hs.pts_engajamento}/25</p></div>
                   <div><p className="text-[10px] text-gray-600">Acertos</p><p className={`text-xs font-medium ${hs.acertos_pct >= 70 ? "text-green-400" : hs.acertos_pct >= 50 ? "text-yellow-400" : "text-red-400"}`}>{Math.round(hs.acertos_pct)}%</p></div>
                 </div>
@@ -191,7 +191,7 @@ export default function CrmHealth() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800">
-                {["Aluno", "Score", "Zona", "Frequencia", "Desempenho", "Engajamento", "Tendencia", "Questoes 7d", "Acertos"].map((h) => (
+                {["Aluno", "Score", "Zona", "Frequencia", "Fechamentos", "Engajamento", "Tendencia", "Questoes 7d", "Acertos"].map((h) => (
                   <th key={h} className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
