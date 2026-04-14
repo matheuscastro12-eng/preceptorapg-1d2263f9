@@ -128,20 +128,54 @@ serve(async (req) => {
 
     const { batch_size = 200, user_id } = await req.json().catch(() => ({}));
 
-    // Buscar todos os leads com user_id (inclui assinantes, trials e leads qualificados)
-    let query = supabase
-      .from("crm_leads")
-      .select("user_id, produto_interesse")
-      .not("user_id", "is", null);
+    // Buscar TODOS os perfis (inclusive quem nao tem lead ainda).
+    // O health score deve refletir toda a base cadastrada.
+    let profilesQuery = supabase
+      .from("profiles")
+      .select("user_id, email, full_name");
 
     if (user_id) {
-      query = query.eq("user_id", user_id);
+      profilesQuery = profilesQuery.eq("user_id", user_id);
     } else {
-      query = query.limit(batch_size);
+      profilesQuery = profilesQuery.limit(batch_size);
     }
 
-    const { data: leads, error: leadsError } = await query;
-    if (leadsError) throw leadsError;
+    const { data: profiles, error: profilesError } = await profilesQuery;
+    if (profilesError) throw profilesError;
+
+    // Buscar leads existentes pra mapear user_id -> lead (id, produto_interesse)
+    const userIds = (profiles ?? []).map((p: any) => p.user_id).filter(Boolean);
+    const { data: existingLeads } = await supabase
+      .from("crm_leads")
+      .select("id, user_id, produto_interesse")
+      .in("user_id", userIds);
+    const leadMap = new Map((existingLeads ?? []).map((l: any) => [l.user_id, l]));
+
+    // Backfill: criar leads minimos pra profiles sem registro no CRM
+    const missingProfiles = (profiles ?? []).filter((p: any) => p.user_id && !leadMap.has(p.user_id));
+    if (missingProfiles.length > 0) {
+      const { data: created } = await supabase
+        .from("crm_leads")
+        .insert(missingProfiles.map((p: any) => ({
+          user_id: p.user_id,
+          email: p.email ?? `${p.user_id}@unknown.local`,
+          nome: p.full_name ?? null,
+          status: "visitor",
+        })))
+        .select("id, user_id, produto_interesse");
+      (created ?? []).forEach((l: any) => leadMap.set(l.user_id, l));
+    }
+
+    const leads = (profiles ?? [])
+      .filter((p: any) => p.user_id)
+      .map((p: any) => {
+        const lead = leadMap.get(p.user_id);
+        return {
+          user_id: p.user_id,
+          lead_id: lead?.id ?? null,
+          produto_interesse: lead?.produto_interesse ?? "preceptormed",
+        };
+      });
 
     const results = [];
     const errors = [];
@@ -230,7 +264,7 @@ serve(async (req) => {
           }
         }
 
-        // Score anterior (último calculado)
+        // Score anterior (último calculado). Null = primeira vez (tendencia neutra).
         const { data: prevScore } = await supabase
           .from("crm_health_scores")
           .select("score")
@@ -239,6 +273,8 @@ serve(async (req) => {
           .limit(1)
           .single();
 
+        const hasHistory = prevScore?.score != null;
+
         const metrics: UserMetrics = {
           questoes_7d: q7d,
           questoes_30d: q30d,
@@ -246,23 +282,37 @@ serve(async (req) => {
           dias_ativos_14d: uniqueDays14,
           features_usadas: featuresUsadas,
           streak_atual: streak,
-          score_anterior: prevScore?.score ?? 50,
+          score_anterior: hasHistory ? prevScore!.score : 0,
         };
 
         const result = calculateHealthScore(metrics);
+
+        // Primeira execucao: zera tendencia pra nao penalizar falta de historico.
+        // Delta contra score_anterior=0 sempre daria +20 artificial — forcamos neutro (12pts).
+        if (!hasHistory) {
+          const neutral = 12;
+          const baseScore = result.pts_frequencia + result.pts_desempenho + result.pts_engajamento;
+          result.pts_tendencia = neutral;
+          result.score = Math.min(100, baseScore + neutral);
+          if (result.score >= 80) result.zone = "healthy";
+          else if (result.score >= 60) result.zone = "attention";
+          else if (result.score >= 40) result.zone = "risk";
+          else result.zone = "critical";
+        }
 
         // Upsert no banco (um score por dia)
         const { error: upsertError } = await supabase
           .from("crm_health_scores")
           .upsert({
             user_id: lead.user_id,
+            lead_id: lead.lead_id ?? null,
             ...result,
             questoes_7d: metrics.questoes_7d,
             questoes_30d: metrics.questoes_30d,
             acertos_pct: Math.round(acertos_pct * 100) / 100,
             dias_ativos_14d: metrics.dias_ativos_14d,
-            score_semana_anterior: metrics.score_anterior,
-            variacao_score: result.score - metrics.score_anterior,
+            score_semana_anterior: hasHistory ? metrics.score_anterior : result.score,
+            variacao_score: hasHistory ? result.score - metrics.score_anterior : 0,
             produto: lead.produto_interesse,
             calculado_em: new Date().toISOString(),
           }, {
