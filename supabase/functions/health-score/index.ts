@@ -127,7 +127,12 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { batch_size = 200, user_id } = await req.json().catch(() => ({}));
+    const { batch_size = 200, user_id, fresh = false } = await req.json().catch(() => ({}));
+
+    // fresh=true: apaga tudo antes de recalcular (calibra tendencia do zero)
+    if (fresh) {
+      await supabase.from("crm_health_scores").delete().neq("user_id", "00000000-0000-0000-0000-000000000000");
+    }
 
     // Buscar TODOS os perfis (inclusive quem nao tem lead ainda).
     // O health score deve refletir toda a base cadastrada.
