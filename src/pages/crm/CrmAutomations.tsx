@@ -1,6 +1,13 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAutomationsPerformance, useRecentAutomations } from "@/hooks/useCrm";
 import { AUTOMATION_TRIGGER_LABELS, type AutomationTrigger } from "@/lib/crm/types";
-import { Zap, Mail, MessageSquare, Bell, Smartphone, CheckCircle } from "lucide-react";
+import { Zap, Mail, MessageSquare, Bell, Smartphone, CheckCircle, Send, Loader2, FileText } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+
+const API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-automations`;
+const API_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 const CHANNEL_ICONS: Record<string, React.ElementType> = {
   email: Mail, whatsapp: MessageSquare, push: Bell, in_app: Smartphone,
@@ -19,6 +26,34 @@ const STATUS_LABELS: Record<string, string> = {
 export default function CrmAutomations() {
   const { data: performance, isLoading } = useAutomationsPerformance();
   const { data: automationsData } = useRecentAutomations({ pageSize: 100 });
+  const queryClient = useQueryClient();
+  const [sendingId, setSendingId] = useState<string | null>(null);
+
+  const handleSend = async (automationId: string, triggerName: string) => {
+    setSendingId(automationId);
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: API_KEY, Authorization: `Bearer ${API_KEY}` },
+        body: JSON.stringify({ automation_id: automationId }),
+      });
+      const data = await res.json();
+      if (data.success && data.sent > 0) {
+        toast.success(`Email de ${triggerName} enviado`);
+      } else if (data.skipped > 0) {
+        toast.error("Sem email valido ou canal nao suportado");
+      } else if (data.failed > 0) {
+        toast.error("Falha no envio — ver logs");
+      } else {
+        toast.error(data.error ?? "Nao foi possivel enviar");
+      }
+      queryClient.invalidateQueries({ queryKey: ["crm", "automations"] });
+    } catch (err) {
+      toast.error("Erro ao conectar");
+    } finally {
+      setSendingId(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -49,9 +84,18 @@ export default function CrmAutomations() {
 
   return (
     <div className="p-4 md:p-6 space-y-5 md:space-y-6">
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-white">Automacoes</h1>
-        <p className="text-xs md:text-sm text-gray-500 mt-0.5">12 automacoes ativas &middot; Email, Push e WhatsApp</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Automacoes</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">Envio manual — aperte "Enviar" na linha desejada</p>
+        </div>
+        <Link
+          to="/admin/crm-mkt/templates-email"
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors self-start"
+        >
+          <FileText className="w-3.5 h-3.5" />
+          Editar templates
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
@@ -158,7 +202,7 @@ export default function CrmAutomations() {
           <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="border-b border-gray-800">
-                {["Tipo", "Canal", "Status", "Motivo", "Produto", "Quando"].map((h) => (
+                {["Tipo", "Canal", "Status", "Motivo", "Produto", "Quando", "Acao"].map((h) => (
                   <th key={h} className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -182,6 +226,20 @@ export default function CrmAutomations() {
                     <td className="py-2.5 px-4"><span className="text-xs text-gray-600 capitalize">{auto.produto.replace("preceptor", "P.")}</span></td>
                     <td className="py-2.5 px-4">
                       <span className="text-xs text-gray-600">{new Date(auto.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
+                    </td>
+                    <td className="py-2.5 px-4">
+                      {auto.status === "pending" && auto.channel === "email" ? (
+                        <button
+                          onClick={() => handleSend(auto.id, AUTOMATION_TRIGGER_LABELS[auto.trigger_name] ?? auto.trigger_name)}
+                          disabled={sendingId === auto.id}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-900/40 text-green-300 hover:bg-green-800/60 disabled:opacity-50 transition-colors"
+                        >
+                          {sendingId === auto.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                          Enviar
+                        </button>
+                      ) : (
+                        <span className="text-xs text-gray-700">—</span>
+                      )}
                     </td>
                   </tr>
                 );

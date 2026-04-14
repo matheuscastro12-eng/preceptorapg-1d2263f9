@@ -63,6 +63,7 @@ const CrmFunnel = lazy(() => import("./pages/crm/CrmFunnel"));
 const CrmHealth = lazy(() => import("./pages/crm/CrmHealth"));
 const CrmChurn = lazy(() => import("./pages/crm/CrmChurn"));
 const CrmAutomations = lazy(() => import("./pages/crm/CrmAutomations"));
+const CrmEmailTemplates = lazy(() => import("./pages/crm/CrmEmailTemplates"));
 const CrmUsers = lazy(() => import("./pages/crm/CrmUsers"));
 const CrmAnalytics = lazy(() => import("./pages/crm/CrmAnalytics"));
 
@@ -125,6 +126,7 @@ const App = () => (
                   <Route path="health" element={<CrmHealth />} />
                   <Route path="churn" element={<CrmChurn />} />
                   <Route path="automations" element={<CrmAutomations />} />
+                  <Route path="templates-email" element={<CrmEmailTemplates />} />
                   <Route path="users" element={<CrmUsers />} />
                   <Route path="analytics" element={<CrmAnalytics />} />
                   <Route path="suporte" element={<CrmSuporte />} />

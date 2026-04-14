@@ -75,7 +75,7 @@ const AUTOMATION_TEMPLATES: Record<string, { subject: string; preview: string }>
 
 function buildEmailHtml(
   template: string,
-  tmpl: { subject: string; preview: string },
+  tmpl: { subject: string; preview: string; body_html?: string },
   metadata: Record<string, unknown>
 ): string {
   const nome = (metadata.nome as string) || "estudante";
@@ -90,6 +90,12 @@ function buildEmailHtml(
       </div>
     </div>
   `;
+
+  // Se vem do banco (editado pelo time), usa o body_html substituindo variaveis
+  if (tmpl.body_html) {
+    const body = tmpl.body_html.replace(/\{\{nome\}\}/g, nome);
+    return wrap(body);
+  }
 
   // Inadimplencia templates
   if (template === "inadimplencia_d1") {
@@ -152,10 +158,18 @@ async function sendEmail(
   to: string,
   template: string,
   metadata: Record<string, unknown>,
-  resendApiKey: string
+  resendApiKey: string,
+  supabase: ReturnType<typeof createClient>
 ): Promise<{ success: boolean; message_id?: string; error?: string }> {
-  const tmpl = AUTOMATION_TEMPLATES[template];
-  if (!tmpl) return { success: false, error: "Template não encontrado" };
+  // Primeiro tenta ler do banco (templates editaveis pelo time de mkt)
+  const { data: dbTpl } = await supabase
+    .from("crm_email_templates")
+    .select("subject, preview, body_html")
+    .eq("trigger_name", template)
+    .maybeSingle();
+
+  const tmpl = dbTpl ?? AUTOMATION_TEMPLATES[template];
+  if (!tmpl) return { success: false, error: "Template nao encontrado" };
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -195,8 +209,20 @@ serve(async (req) => {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
     const body = await req.json().catch(() => ({}));
     const specificTrigger: string | undefined = body.trigger;
+    const automationId: string | undefined = body.automation_id;
 
-    // Buscar automações pendentes (max 50 por vez)
+    // Envio manual: o time do CRM aperta "Enviar" em uma linha especifica.
+    // Sem automation_id ou trigger especifico, nao processa nada automaticamente.
+    if (!automationId && !specificTrigger) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Envio automatico desabilitado. Envie automation_id (linha especifica) ou trigger (batch manual por tipo).",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     let query = supabase
       .from("crm_automations_log")
       .select(`
@@ -209,7 +235,9 @@ serve(async (req) => {
       .order("created_at", { ascending: true })
       .limit(50);
 
-    if (specificTrigger) {
+    if (automationId) {
+      query = query.eq("id", automationId);
+    } else if (specificTrigger) {
       query = query.eq("trigger_name", specificTrigger);
     }
 
@@ -246,7 +274,8 @@ serve(async (req) => {
             nome: leadData?.nome,
             trigger_reason: automation.trigger_reason,
           },
-          RESEND_API_KEY
+          RESEND_API_KEY,
+          supabase
         );
 
         if (sendResult.success) {
