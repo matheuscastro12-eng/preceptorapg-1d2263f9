@@ -335,6 +335,137 @@ const Landing = () => {
           </div>
         </section>
 
+        {/* ─── Exemplo real — Resumo de PBL ──────────────── */}
+        <section className="py-16 sm:py-28 bg-[#fafbfa] border-t border-slate-100">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="mb-12 sm:mb-16 max-w-2xl">
+              <p className="text-sm text-[#006D5B] font-semibold mb-3">Exemplo real da plataforma</p>
+              <h2
+                className="text-2xl sm:text-4xl font-bold leading-tight text-[#191c1d]"
+                style={{ fontFamily: "'Manrope', sans-serif" }}
+              >
+                Resumos de PBL com correlação clínico-básica, gerados em segundos.
+              </h2>
+              <p className="text-base text-slate-600 leading-relaxed mt-4">
+                Não é "resumo de slides". Fisiopatologia em cascata, mecanismos moleculares e anatomia aplicada ao caso — no padrão do fechamento acadêmico que o PBL exige.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-12 gap-6 lg:gap-10">
+              {/* Resumo real */}
+              <div className="col-span-12 lg:col-span-8">
+                <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+                  <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-200">
+                    <span className="text-xs font-semibold text-slate-600">Endocrinologia · Emergência</span>
+                    <span className="text-[10px] px-2 py-0.5 bg-[#005344] text-white font-semibold rounded">Gerado em 18s</span>
+                  </div>
+                  <div className="p-5 sm:p-7 space-y-5">
+                    <div>
+                      <h3
+                        className="text-lg sm:text-xl font-bold text-[#191c1d] mb-1"
+                        style={{ fontFamily: "'Manrope', sans-serif" }}
+                      >
+                        Cetoacidose Diabética (CAD)
+                      </h3>
+                      <p className="text-xs text-slate-500">Objetivo de aprendizagem · Fisiopatologia, diagnóstico e manejo inicial</p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-bold text-[#005344] mb-2 uppercase tracking-wide">Fisiopatologia em cascata</h4>
+                      <p className="text-sm text-slate-700 leading-relaxed">
+                        A deficiência absoluta ou relativa de <span className="font-semibold">insulina</span>, somada ao excesso de hormônios contrarreguladores (<span className="font-semibold">glucagon, cortisol, catecolaminas, GH</span>), desencadeia três vias simultâneas: (1) glicogenólise e gliconeogênese hepática → hiperglicemia; (2) lipólise em tecido adiposo → liberação de ácidos graxos livres → β-oxidação hepática → produção de corpos cetônicos (β-hidroxibutirato, acetoacetato); (3) proteólise muscular. A cetogênese é mediada pela ativação da <span className="font-semibold">CPT-1</span> (carnitina-palmitoil-transferase 1), normalmente inibida por malonil-CoA — que cai na ausência de insulina.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-bold text-[#005344] mb-2 uppercase tracking-wide">Correlação clínico-básica</h4>
+                      <p className="text-sm text-slate-700 leading-relaxed">
+                        A <span className="font-semibold">respiração de Kussmaul</span> (taquipneia profunda) é compensação respiratória à acidose metabólica — o centro bulbar responde à queda do pH arterial estimulando os quimiorreceptores periféricos. A <span className="font-semibold">dor abdominal</span> em CAD correlaciona com grau de acidose (pH &lt; 7,10 em 80% dos casos com dor), por irritação do plexo celíaco pelos cetoácidos circulantes. O <span className="font-semibold">hálito cetônico</span> reflete eliminação pulmonar de acetona volátil.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-bold text-[#005344] mb-2 uppercase tracking-wide">Critérios diagnósticos (ADA 2024)</h4>
+                      <ul className="text-sm text-slate-700 leading-relaxed space-y-1 list-disc list-inside">
+                        <li>Glicemia &gt; 250 mg/dL (pode ser normal em <em>CAD euglicêmica</em> — uso de iSGLT2)</li>
+                        <li>pH arterial &lt; 7,30 <span className="text-slate-500">ou</span> HCO₃⁻ &lt; 18 mEq/L</li>
+                        <li>Cetonemia / cetonúria positiva (β-hidroxibutirato &gt; 3 mmol/L)</li>
+                        <li>Anion gap &gt; 10–12 mEq/L</li>
+                      </ul>
+                    </div>
+
+                    <div className="relative">
+                      <h4 className="text-sm font-bold text-[#005344] mb-2 uppercase tracking-wide">Manejo inicial — primeiras 4 horas</h4>
+                      <p className="text-sm text-slate-700 leading-relaxed">
+                        Prioridade em ordem: (1) <span className="font-semibold">reposição volêmica</span> com SF 0,9% 15–20 mL/kg na 1ª hora, reavaliando perfusão; (2) <span className="font-semibold">potássio</span> antes da insulina se K⁺ &lt; 3,3 mEq/L (insulina causa shift intracelular, risco de arritmia); (3) <span className="font-semibold">insulina regular</span> 0,1 U/kg/h em infusão contínua, meta de redução de glicemia 50–75 mg/dL/h;
+                      </p>
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent" />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 mt-3 italic">
+                  Resumo com estrutura completa inclui ainda diagnóstico diferencial, complicações e referências Harrison/Goldman-Cecil.
+                </p>
+              </div>
+
+              {/* O que difere */}
+              <div className="col-span-12 lg:col-span-4 space-y-7">
+                <div>
+                  <p className="text-sm text-[#006D5B] font-semibold mb-4">O que faz diferente</p>
+                </div>
+
+                <div className="border-l-2 border-[#006D5B] pl-5">
+                  <h4
+                    className="text-base font-bold mb-1.5 text-[#191c1d]"
+                    style={{ fontFamily: "'Manrope', sans-serif" }}
+                  >
+                    Mecanismos moleculares
+                  </h4>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    Receptores, cascatas de sinalização e enzimas com nome — não só "aumenta insulina".
+                  </p>
+                </div>
+
+                <div className="border-l-2 border-[#006D5B] pl-5">
+                  <h4
+                    className="text-base font-bold mb-1.5 text-[#191c1d]"
+                    style={{ fontFamily: "'Manrope', sans-serif" }}
+                  >
+                    Cada sintoma explicado
+                  </h4>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    Kussmaul, hálito cetônico, dor abdominal — cada sinal ligado ao mecanismo que o produz.
+                  </p>
+                </div>
+
+                <div className="border-l-2 border-[#006D5B] pl-5">
+                  <h4
+                    className="text-base font-bold mb-1.5 text-[#191c1d]"
+                    style={{ fontFamily: "'Manrope', sans-serif" }}
+                  >
+                    Valores numéricos reais
+                  </h4>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    Cut-offs, doses, metas. ADA 2024, não "nível elevado". Pronto para prova e enfermaria.
+                  </p>
+                </div>
+
+                <div className="border-l-2 border-[#006D5B] pl-5">
+                  <h4
+                    className="text-base font-bold mb-1.5 text-[#191c1d]"
+                    style={{ fontFamily: "'Manrope', sans-serif" }}
+                  >
+                    Terminologia técnica
+                  </h4>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    Dispneia, cetogênese, anion gap — linguagem de médico, não leiga.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ─── Depoimentos ──────────────────────────────── */}
         <section id="depoimentos" className="py-16 sm:py-28 bg-[#fafbfa] border-t border-slate-100">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
