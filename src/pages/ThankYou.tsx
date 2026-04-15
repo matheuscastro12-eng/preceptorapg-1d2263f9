@@ -39,7 +39,7 @@ export default function ThankYou() {
             onClick={() => navigate('/menu')}
             className="px-4 sm:px-6 py-2 sm:py-2.5 bg-[#006D5B] text-white rounded-lg font-bold shadow-lg hover:bg-[#005344] active:scale-95 transition-all text-xs sm:text-sm"
           >
-            Comecar agora
+            Começar agora
           </button>
         </nav>
       </header>
@@ -52,25 +52,29 @@ export default function ThankYou() {
           transition={{ duration: 0.6 }}
           className="text-center mb-10 md:mb-14"
         >
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 200, delay: 0.15 }}
-            className="inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-[#006D5B] to-[#005344] mb-5 shadow-[0_14px_40px_rgba(0,109,91,0.35)]"
-          >
-            <CheckCircle className="w-10 h-10 md:w-12 md:h-12 text-white" strokeWidth={2.5} />
-          </motion.div>
+          <div className="flex justify-center mb-4">
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 200, delay: 0.15 }}
+              className="flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-[#006D5B] to-[#005344] shadow-[0_14px_40px_rgba(0,109,91,0.35)]"
+            >
+              <CheckCircle className="w-10 h-10 md:w-12 md:h-12 text-white" strokeWidth={2.5} />
+            </motion.div>
+          </div>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#C9A84C]/15 border border-[#C9A84C]/30 mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-[#C9A84C]" />
-            <span className="text-xs font-bold text-[#8a6f26] tracking-wide uppercase">Teste gratis de 3 dias ativo</span>
+          <div className="flex justify-center mb-5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#C9A84C]/15 border border-[#C9A84C]/30">
+              <Sparkles className="w-3.5 h-3.5 text-[#C9A84C]" />
+              <span className="text-xs font-bold text-[#8a6f26] tracking-wide uppercase">Teste grátis de 3 dias ativo</span>
+            </div>
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#191C1D] mb-3 tracking-tight" style={{ fontFamily: "'Manrope', sans-serif" }}>
             Bem-vindo, {userName}!
           </h1>
           <p className="text-base md:text-lg text-[#4a5568] max-w-2xl mx-auto leading-relaxed">
-            Voce tem <strong className="text-[#006D5B]">3 dias gratis</strong> pra explorar tudo. Sem cartao, sem compromisso — so voce e a plataforma inteira na palma da mao.
+            Você tem <strong className="text-[#006D5B]">3 dias grátis</strong> pra explorar tudo. Sem cartão, sem compromisso — só você e a plataforma inteira na palma da mão.
           </p>
 
           <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-gray-200 shadow-sm">
@@ -94,15 +98,15 @@ export default function ThankYou() {
               {
                 day: 'Hoje',
                 title: 'Gere seu primeiro fechamento de PBL',
-                desc: 'Cole um caso clinico ou tema e veja a IA entregar um resumo denso em minutos. E o carro-chefe do app.',
+                desc: 'Cole um caso clínico ou tema e veja a IA entregar um resumo denso em minutos. É o carro-chefe do app.',
                 icon: BookOpen,
                 action: () => navigate('/dashboard'),
                 cta: 'Gerar agora',
               },
               {
-                day: 'Amanha',
+                day: 'Amanhã',
                 title: 'Teste o chat com PubMed e o banco ENAMED',
-                desc: 'Pergunte qualquer duvida clinica com evidencia cientifica. Depois tente 10 questoes do ENAMED pra calibrar onde voce esta.',
+                desc: 'Pergunte qualquer dúvida clínica com evidência científica. Depois tente 10 questões do ENAMED pra calibrar onde você está.',
                 icon: Brain,
                 action: () => navigate('/ai-chat'),
                 cta: 'Abrir chat',
@@ -110,7 +114,7 @@ export default function ThankYou() {
               {
                 day: 'Dia 3',
                 title: 'Configure flashcards e acompanhe seu progresso',
-                desc: 'O sistema SM-2 organiza revisoes pra voce nao esquecer o que estudou. Crie uns cards a partir dos fechamentos.',
+                desc: 'O sistema SM-2 organiza revisões pra você não esquecer o que estudou. Crie uns cards a partir dos fechamentos.',
                 icon: Zap,
                 action: () => navigate('/flashcards'),
                 cta: 'Ver flashcards',
@@ -163,10 +167,10 @@ export default function ThankYou() {
         >
           <MI name="rocket_launch" fill className="text-white text-4xl md:text-5xl mb-2" />
           <h2 className="text-xl md:text-2xl font-extrabold text-white mb-2" style={{ fontFamily: "'Manrope', sans-serif" }}>
-            Pronto pra comecar?
+            Pronto pra começar?
           </h2>
           <p className="text-sm md:text-base text-white/85 mb-5 max-w-md mx-auto">
-            Cada dia do teste e uma chance de encurtar sua jornada pra residencia. Nao deixa passar.
+            Cada dia do teste é uma chance de encurtar sua jornada pra residência. Não deixa passar.
           </p>
           <button
             onClick={() => navigate('/menu')}
@@ -176,7 +180,7 @@ export default function ThankYou() {
             <ArrowRight className="w-4 h-4" />
           </button>
           <p className="text-[11px] text-white/60 mt-4">
-            Apos os 3 dias, voce pode escolher um plano ou seguir com o acesso limitado.
+            Após os 3 dias, você pode escolher um plano ou seguir com o acesso limitado.
           </p>
         </motion.section>
       </main>
@@ -184,7 +188,7 @@ export default function ThankYou() {
       {/* Footer */}
       <footer className="border-t border-gray-200 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-5 text-center text-xs text-gray-500">
-          <p>Teste gratis &middot; Sem cartao de credito &middot; Cancele quando quiser</p>
+          <p>Teste grátis &middot; Sem cartão de crédito &middot; Cancele quando quiser</p>
           <p className="mt-1">Preceptor Group &copy; 2026</p>
         </div>
       </footer>
