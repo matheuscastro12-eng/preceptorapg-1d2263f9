@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/crm/supabase";
-import { Mail, Save, Eye, Loader2, FileText, Check, Settings, X, Image as ImageIcon, RefreshCw } from "lucide-react";
+import { Mail, Save, Eye, Loader2, FileText, Check, Settings, X, Image as ImageIcon, RefreshCw, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import RichTextEditor from "@/components/crm/RichTextEditor";
 
@@ -62,6 +62,9 @@ export default function CrmEmailTemplates() {
   const [brandModal, setBrandModal] = useState(false);
   const [brandDraft, setBrandDraft] = useState<BrandSettings>(DEFAULT_BRAND);
   const [brandSaving, setBrandSaving] = useState(false);
+  const [createModal, setCreateModal] = useState(false);
+  const [createDraft, setCreateDraft] = useState({ trigger_name: "", label: "", subject: "", description: "" });
+  const [creating, setCreating] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -136,6 +139,54 @@ export default function CrmEmailTemplates() {
     }
   }, [current]);
 
+  const createTemplate = async () => {
+    const key = createDraft.trigger_name.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    if (!key || !createDraft.label.trim() || !createDraft.subject.trim()) {
+      toast.error("Identificador, nome e assunto sao obrigatorios");
+      return;
+    }
+    if (templates.some((t) => t.trigger_name === key)) {
+      toast.error(`Ja existe template com identificador "${key}"`);
+      return;
+    }
+    setCreating(true);
+    const { error, data } = await supabase.from("crm_email_templates").insert({
+      trigger_name: key,
+      label: createDraft.label.trim(),
+      subject: createDraft.subject.trim(),
+      preview: "",
+      description: createDraft.description.trim() || null,
+      body_html: `<p style="font-size:16px;color:#333">Ola, <strong>{{nome}}</strong>!</p><p style="color:#555;line-height:1.6">Edite este corpo no editor.</p>`,
+      auto_send: false,
+    }).select();
+    if (error) {
+      toast.error("Erro: " + error.message);
+    } else if (!data || data.length === 0) {
+      toast.error("Nao foi criado no banco (permissao negada)");
+    } else {
+      toast.success("Template criado");
+      setCreateModal(false);
+      setCreateDraft({ trigger_name: "", label: "", subject: "", description: "" });
+      await load();
+      setSelected(key);
+    }
+    setCreating(false);
+  };
+
+  const deleteTemplate = async (triggerName: string, label: string) => {
+    if (!confirm(`Apagar o template "${label}"? Essa acao nao pode ser desfeita.`)) return;
+    const { error, data } = await supabase.from("crm_email_templates").delete().eq("trigger_name", triggerName).select();
+    if (error) {
+      toast.error("Erro: " + error.message);
+    } else if (!data || data.length === 0) {
+      toast.error("Nao foi apagado (permissao negada)");
+    } else {
+      toast.success("Template apagado");
+      if (selected === triggerName) setSelected(null);
+      await load();
+    }
+  };
+
   const handleSave = async () => {
     if (!selected) return;
     setSaving(true);
@@ -207,6 +258,13 @@ export default function CrmEmailTemplates() {
               <RefreshCw className="w-4 h-4" />
             </button>
             <button
+              onClick={() => { setCreateDraft({ trigger_name: "", label: "", subject: "", description: "" }); setCreateModal(true); }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-green-600 text-white hover:bg-green-500 transition-colors shadow-lg shadow-green-900/30"
+            >
+              <Plus className="w-4 h-4" />
+              Novo template
+            </button>
+            <button
               onClick={() => { setBrandDraft(brand); setBrandModal(true); }}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gray-800/80 text-gray-200 hover:bg-gray-700 border border-gray-700 transition-colors"
             >
@@ -222,6 +280,91 @@ export default function CrmEmailTemplates() {
       </div>
 
       {/* Modal Branding */}
+      {/* Modal Criar Template */}
+      {createModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => !creating && setCreateModal(false)}>
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Plus className="w-4 h-4 text-green-400" />
+                <h3 className="text-base font-bold text-white">Novo template de email</h3>
+              </div>
+              <button onClick={() => setCreateModal(false)} disabled={creating} className="text-gray-500 hover:text-white disabled:opacity-50">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">
+                  Identificador (chave unica, minusculo e underline)
+                </label>
+                <input
+                  value={createDraft.trigger_name}
+                  onChange={(e) => setCreateDraft({ ...createDraft, trigger_name: e.target.value })}
+                  placeholder="ex: reativacao_30dias"
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500 font-mono"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">
+                  Usado internamente pra disparar o email. Nao pode repetir. Ex: <code className="text-green-400">boas_vindas_estudante</code>
+                </p>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">
+                  Nome amigavel (aparece na lista)
+                </label>
+                <input
+                  value={createDraft.label}
+                  onChange={(e) => setCreateDraft({ ...createDraft, label: e.target.value })}
+                  placeholder="Reativacao 30 dias"
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">
+                  Assunto do email
+                </label>
+                <input
+                  value={createDraft.subject}
+                  onChange={(e) => setCreateDraft({ ...createDraft, subject: e.target.value })}
+                  placeholder="Voltamos com novidades pra voce"
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">
+                  Descricao (opcional, so pra voce lembrar quando usar)
+                </label>
+                <input
+                  value={createDraft.description}
+                  onChange={(e) => setCreateDraft({ ...createDraft, description: e.target.value })}
+                  placeholder="Disparado 30 dias depois de churn"
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500"
+                />
+              </div>
+              <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                <p className="text-[11px] text-blue-200 leading-relaxed">
+                  Apos criar, o template abre no editor com um corpo padrao — escreva a mensagem usando a barra de ferramentas.
+                  Envio e <strong>manual</strong> por padrao; marque como auto no editor se quiser disparar automaticamente.
+                </p>
+              </div>
+            </div>
+            <div className="px-5 py-4 border-t border-gray-800 flex items-center justify-end gap-2">
+              <button onClick={() => setCreateModal(false)} disabled={creating} className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors disabled:opacity-50">
+                Cancelar
+              </button>
+              <button
+                onClick={createTemplate}
+                disabled={creating || !createDraft.trigger_name.trim() || !createDraft.label.trim() || !createDraft.subject.trim()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-500 disabled:opacity-50 transition-colors"
+              >
+                {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                Criar template
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {brandModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setBrandModal(false)}>
           <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-lg shadow-2xl" onClick={(e) => e.stopPropagation()}>
@@ -354,29 +497,40 @@ export default function CrmEmailTemplates() {
           </div>
           <div className="divide-y divide-gray-800/40 max-h-[620px] overflow-y-auto crm-scrollbar py-1">
             {templates.map((t) => (
-              <button
+              <div
                 key={t.trigger_name}
-                onClick={() => setSelected(t.trigger_name)}
-                className={`group w-full text-left px-4 py-3 transition-all ${
+                className={`group relative flex items-start gap-1 transition-all ${
                   selected === t.trigger_name
                     ? "bg-gradient-to-r from-green-500/15 to-transparent border-l-[3px] border-green-400"
                     : "border-l-[3px] border-transparent hover:bg-gray-800/40"
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <p className={`text-sm font-semibold truncate flex-1 ${selected === t.trigger_name ? "text-white" : "text-gray-200 group-hover:text-white"}`}>
-                    {t.label}
-                  </p>
-                  <span className={`shrink-0 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
-                    t.auto_send ? "bg-green-500/15 text-green-400" : "bg-gray-700/60 text-gray-400"
-                  }`}>
-                    {t.auto_send ? "Auto" : "Manual"}
-                  </span>
-                </div>
-                {t.description && (
-                  <p className="text-[11px] text-gray-500 mt-0.5 truncate">{t.description}</p>
-                )}
-              </button>
+                <button
+                  onClick={() => setSelected(t.trigger_name)}
+                  className="flex-1 text-left px-4 py-3 min-w-0"
+                >
+                  <div className="flex items-center gap-2">
+                    <p className={`text-sm font-semibold truncate flex-1 ${selected === t.trigger_name ? "text-white" : "text-gray-200 group-hover:text-white"}`}>
+                      {t.label}
+                    </p>
+                    <span className={`shrink-0 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                      t.auto_send ? "bg-green-500/15 text-green-400" : "bg-gray-700/60 text-gray-400"
+                    }`}>
+                      {t.auto_send ? "Auto" : "Manual"}
+                    </span>
+                  </div>
+                  {t.description && (
+                    <p className="text-[11px] text-gray-500 mt-0.5 truncate">{t.description}</p>
+                  )}
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); deleteTemplate(t.trigger_name, t.label); }}
+                  title="Apagar template"
+                  className="opacity-0 group-hover:opacity-100 p-2 m-1 rounded text-gray-500 hover:bg-red-900/40 hover:text-red-300 transition-all"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             ))}
           </div>
         </div>

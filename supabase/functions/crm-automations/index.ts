@@ -240,31 +240,42 @@ serve(async (req) => {
       if (!template || !user_email) {
         return json({ error: "template e user_email sao obrigatorios" }, 400);
       }
+
+      const emailNorm = user_email.toLowerCase().trim();
+
+      // Busca profile antes pra pegar full_name se nome nao foi passado
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .ilike("email", emailNorm)
+        .maybeSingle();
+
+      // Fallback de nome: form > profile.full_name > primeira parte do email
+      const nomeFinal = (nome && nome.trim()) || profile?.full_name || emailNorm.split("@")[0];
+
       const send = await sendEmail(
-        user_email.toLowerCase().trim(),
+        emailNorm,
         template,
-        { nome: nome ?? user_email },
+        { nome: nomeFinal },
         RESEND_API_KEY,
         supabase,
       );
       if (!send.success) return json({ error: send.error, success: false }, 500);
 
-      // Registra no log pra manter historico
-      const { data: profile } = await supabase.from("profiles").select("user_id").ilike("email", user_email).maybeSingle();
       await supabase.from("crm_automations_log").insert({
         user_id: profile?.user_id ?? null,
         automation_type: "email",
         trigger_name: template,
-        trigger_reason: `Envio manual ad-hoc pra ${user_email}`,
+        trigger_reason: `Envio manual ad-hoc pra ${emailNorm}`,
         channel: "email",
         status: "delivered",
         sent_at: new Date().toISOString(),
         delivered_at: new Date().toISOString(),
-        metadata: { email: user_email, nome, message_id: send.message_id, ad_hoc: true },
+        metadata: { email: emailNorm, nome: nomeFinal, message_id: send.message_id, ad_hoc: true },
         produto: "preceptormed",
       });
 
-      return json({ success: true, message_id: send.message_id });
+      return json({ success: true, message_id: send.message_id, nome_used: nomeFinal });
     }
 
     // Envio manual: admin aperta "Enviar" em uma linha especifica.
