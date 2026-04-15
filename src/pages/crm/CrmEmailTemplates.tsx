@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/crm/supabase";
-import { Mail, Save, Eye, Loader2, FileText, Check, Settings, X, Image as ImageIcon } from "lucide-react";
+import { Mail, Save, Eye, Loader2, FileText, Check, Settings, X, Image as ImageIcon, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import RichTextEditor from "@/components/crm/RichTextEditor";
 
@@ -79,6 +79,21 @@ export default function CrmEmailTemplates() {
   };
 
   useEffect(() => { load(); }, []);
+
+  // Re-fetcha quando a aba volta a ter foco — evita ver versao stale
+  // quando outro admin editou enquanto voce estava em outra janela.
+  useEffect(() => {
+    const onFocus = () => load();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
 
   const saveBrand = async () => {
     setBrandSaving(true);
@@ -177,6 +192,13 @@ export default function CrmEmailTemplates() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => { load(); toast.success("Templates atualizados"); }}
+              title="Buscar versao mais recente (caso outro admin tenha editado)"
+              className="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold bg-gray-800/80 text-gray-200 hover:bg-gray-700 border border-gray-700 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
             <button
               onClick={() => { setBrandDraft(brand); setBrandModal(true); }}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gray-800/80 text-gray-200 hover:bg-gray-700 border border-gray-700 transition-colors"
