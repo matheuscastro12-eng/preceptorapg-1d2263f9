@@ -97,7 +97,7 @@ const Auth = () => {
       // Signup organico → pagina de obrigado (teste de 3 dias).
       // Signup com plan (paid_signup) → checkout Easyflow abre via useEffect.
       if (!planType) {
-        navigate('/obrigado', { replace: true });
+        navigate('/inscricao', { replace: true });
       }
       setLoading(false);
     }
