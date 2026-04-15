@@ -190,7 +190,7 @@ const AIChat = () => {
         <div className="flex items-center gap-2">
           <img src={logoIcon} alt="PreceptorMED" className="h-7 w-7" />
           <div>
-            <span className="font-bold text-emerald-900 text-sm" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+            <span className="font-bold text-emerald-900 text-sm" style={{ fontFamily: 'var(--font-display)' }}>
               PreceptorMED <span style={{ color: '#126b62' }}>Chat</span>
             </span>
             <span className="text-[10px] text-slate-400 block leading-none">Assistente Acadêmico</span>
@@ -228,7 +228,7 @@ const AIChat = () => {
               className="text-center max-w-lg"
             >
               <img src={logoIcon} alt="PreceptorMED" className="h-14 w-14 mx-auto mb-5" />
-              <h2 className="text-xl sm:text-2xl font-bold text-emerald-900 mb-2" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+              <h2 className="text-xl sm:text-2xl font-bold text-emerald-900 mb-2" style={{ fontFamily: 'var(--font-display)' }}>
                 Olá! Sou o <span style={{ color: '#126b62' }}>PreceptorMED</span>
               </h2>
               <p className="text-sm text-slate-500 mb-8 leading-relaxed">
@@ -332,7 +332,7 @@ const AIChat = () => {
           <div className="flex gap-2 items-end">
             <Textarea
               ref={textareaRef}
-              placeholder={hasReachedLimit && !isSubscriber ? 'Limite diário atingido — assine para continuar' : usePubMed ? 'Pergunte com evidências do PubMed...' : 'Pergunte sobre qualquer tema médico...'}
+              placeholder={hasReachedLimit && !isSubscriber ? 'Limite diário atingido — assine para continuar' : 'Pergunte sobre qualquer tema médico...'}
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}

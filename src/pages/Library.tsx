@@ -79,7 +79,7 @@ const Library = () => {
               <span className="hidden sm:inline">Biblioteca</span>
             </button>
             <div className="h-4 w-px bg-slate-200 hidden sm:block" />
-            <span className="text-sm font-semibold text-emerald-900 truncate max-w-[200px] sm:max-w-xs" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+            <span className="text-sm font-semibold text-emerald-900 truncate max-w-[200px] sm:max-w-xs" style={{ fontFamily: 'var(--font-display)' }}>
               {selectedFechamento.tema}
             </span>
           </div>
@@ -119,7 +119,7 @@ const Library = () => {
             ) : (
               <ScrollArea className="h-full">
                 <div id="fechamento-content" className="mx-auto px-6 sm:px-12 py-8 max-w-4xl">
-                  <h1 className="text-2xl font-bold text-emerald-900 mb-6" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                  <h1 className="text-2xl font-bold text-emerald-900 mb-6" style={{ fontFamily: 'var(--font-display)' }}>
                     {selectedFechamento.tema}
                   </h1>
                   <div className="prose prose-sm max-w-none prose-headings:font-headline prose-headings:text-emerald-900">
@@ -140,7 +140,7 @@ const Library = () => {
     <DashboardLayout>
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl font-extrabold tracking-tight text-emerald-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+          <h1 className="text-2xl font-extrabold tracking-tight text-emerald-900" style={{ fontFamily: 'var(--font-display)' }}>
             Biblioteca <span className="italic" style={{ color: '#126b62' }}>Digital</span>
           </h1>
           <p className="text-sm text-slate-500 mt-1">Todos os seus resumos, provas e casos clínicos salvos.</p>

@@ -33,7 +33,7 @@ export default function SubscriptionThankYou() {
   }, [plan.label]);
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] flex flex-col" style={{ fontFamily: "'DM Sans', 'Inter', sans-serif" }}>
+    <div className="min-h-screen bg-[#f8f9fa] flex flex-col" style={{ fontFamily: 'var(--font-body)' }}>
 
       {/* Header — minimal */}
       <header className="bg-white/80 backdrop-blur-xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] sticky top-0 z-50">

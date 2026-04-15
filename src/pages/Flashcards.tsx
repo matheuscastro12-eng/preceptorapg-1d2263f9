@@ -156,7 +156,7 @@ const Flashcards = () => {
               <ArrowLeft className="h-4 w-4" /> Decks
             </button>
           )}
-          <h1 className="text-2xl font-extrabold tracking-tight text-emerald-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+          <h1 className="text-2xl font-extrabold tracking-tight text-emerald-900" style={{ fontFamily: 'var(--font-display)' }}>
             {selectedDeck ? 'Revisando' : 'Flashcards'}
           </h1>
         </div>
@@ -174,7 +174,7 @@ const Flashcards = () => {
             <div className="h-12 w-12 rounded-full flex items-center justify-center mb-4" style={{ background: 'rgba(18,107,98,0.1)' }}>
               <Check className="h-6 w-6" style={{ color: '#126b62' }} />
             </div>
-            <h2 className="text-lg font-semibold text-emerald-900 mb-1" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Nenhum card pendente</h2>
+            <h2 className="text-lg font-semibold text-emerald-900 mb-1" style={{ fontFamily: 'var(--font-display)' }}>Nenhum card pendente</h2>
             <p className="text-sm text-slate-500 mb-6">Tudo em dia neste deck. Volte amanhã!</p>
             <Button variant="outline" onClick={() => setSelectedDeck(null)}>Voltar aos decks</Button>
           </div>
@@ -218,7 +218,7 @@ function DeckList({ decks, totalDue, totalAll, onStartDeck, onDeleteDeck }: { de
                 <BookOpen className="h-4 w-4 transition-colors duration-200 group-hover:text-emerald-600" style={{ color: '#126b62' }} strokeWidth={1.5} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-slate-800 truncate transition-colors duration-200 group-hover:text-emerald-800" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{deck.label}</p>
+                <p className="text-[13px] font-semibold text-slate-800 truncate transition-colors duration-200 group-hover:text-emerald-800" style={{ fontFamily: 'var(--font-display)' }}>{deck.label}</p>
                 <p className="text-[11px] text-slate-400">
                   {deck.totalCards} cards
                   {deck.dueCards > 0 && <span className="ml-1.5 font-semibold" style={{ color: '#126b62' }}>· {deck.dueCards} pendentes</span>}
@@ -316,7 +316,7 @@ function EmptyState({ navigate }: { navigate: (p: string) => void }) {
       <div className="h-14 w-14 rounded-xl flex items-center justify-center mb-5" style={{ background: 'rgba(18,107,98,0.1)' }}>
         <Layers className="h-7 w-7" style={{ color: '#126b62' }} strokeWidth={1.5} />
       </div>
-      <h2 className="text-lg font-bold text-emerald-900 mb-2" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Nenhum flashcard ainda</h2>
+      <h2 className="text-lg font-bold text-emerald-900 mb-2" style={{ fontFamily: 'var(--font-display)' }}>Nenhum flashcard ainda</h2>
       <p className="text-sm text-slate-500 mb-8 leading-relaxed">Gere flashcards a partir dos seus resumos na Biblioteca ou ao errar questões em simulados.</p>
       <div className="flex gap-3">
         <button onClick={() => navigate('/library')} className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-semibold text-[#e2fff9]" style={{ background: 'linear-gradient(135deg, #126b62, #005e56)' }}>
