@@ -58,6 +58,21 @@ export default function AdminDashboard() {
     return Object.entries(byMonth).sort().map(([date, value]) => ({ date, value: Math.round(value) }));
   };
 
+  const loadBurnHistory = async (): Promise<DrillDownPoint[]> => {
+    const since = new Date(Date.now() - 180 * 86400000).toISOString();
+    const { data } = await supabase
+      .from("admin_despesas")
+      .select("valor, data")
+      .gte("data", since);
+    const rows = data ?? [];
+    const byMonth: Record<string, number> = {};
+    for (const r of rows) {
+      const mo = (r.data as string).slice(0, 7);
+      byMonth[mo] = (byMonth[mo] ?? 0) + Number(r.valor ?? 0);
+    }
+    return Object.entries(byMonth).sort().map(([date, value]) => ({ date, value: Math.round(value) }));
+  };
+
   const loadHeadcountHistory = async (): Promise<DrillDownPoint[]> => {
     const { data } = await supabase.from("admin_membros").select("data_admissao, data_saida, ativo");
     const membros = data ?? [];
@@ -116,13 +131,54 @@ export default function AdminDashboard() {
         <RevenueIntelligence />
       </div>
 
-      {/* KPI Bar — clicar abre drill-down */}
+      {/* KPI Bar — clicar abre drill-down, passar mouse mostra tooltip */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-        <MetricCard title="MRR" value={k.mrr} format="currency" icon={DollarSign} color="green" subtitle="Receita mensal · Clique p/ detalhar" onClick={() => setDrillKey("mrr")} />
-        <MetricCard title="ARR" value={k.arr} format="currency" icon={TrendingUp} color="green" subtitle="MRR x 12" />
-        <MetricCard title="Runway" value={`${k.runway} meses`} icon={ArrowLeftRight} color={k.runway < 3 ? "red" : "gold"} subtitle="Saldo / burn rate" />
-        <MetricCard title="Headcount" value={k.headcount} icon={Users} color="blue" subtitle="Membros ativos · Clique p/ detalhar" onClick={() => setDrillKey("headcount")} />
-        <MetricCard title="Burn Rate" value={k.burnRate} format="currency" icon={TrendingDown} color="red" subtitle="Despesas do mes" />
+        <MetricCard
+          title="MRR"
+          value={k.mrr}
+          format="currency"
+          icon={DollarSign}
+          color="green"
+          subtitle="Receita mensal · Clique p/ detalhar"
+          tooltip="Monthly Recurring Revenue. Soma do valor mensal de todos os assinantes ativos: mensais (R$49,90), anuais (R$29,24/mes) e bianuais (R$99,98/mes). Exclui trials, free_access e inadimplentes."
+          onClick={() => setDrillKey("mrr")}
+        />
+        <MetricCard
+          title="ARR"
+          value={k.arr}
+          format="currency"
+          icon={TrendingUp}
+          color="green"
+          subtitle="MRR x 12"
+          tooltip="Annual Recurring Revenue — projecao anual do MRR atual. So faz sentido se a base esta relativamente estavel no periodo."
+        />
+        <MetricCard
+          title="Runway"
+          value={`${k.runway} meses`}
+          icon={ArrowLeftRight}
+          color={k.runway < 3 ? "red" : "gold"}
+          subtitle="Saldo / burn rate"
+          tooltip="Quantos meses de operacao o saldo atual aguenta na taxa de queima atual (burn rate). Menos de 3 meses e zona vermelha — acao urgente."
+        />
+        <MetricCard
+          title="Headcount"
+          value={k.headcount}
+          icon={Users}
+          color="blue"
+          subtitle="Membros ativos · Clique p/ detalhar"
+          tooltip="Numero de membros do time com data_saida nula em admin_membros."
+          onClick={() => setDrillKey("headcount")}
+        />
+        <MetricCard
+          title="Burn Rate"
+          value={k.burnRate}
+          format="currency"
+          icon={TrendingDown}
+          color="red"
+          subtitle="Despesas do mes · Clique p/ detalhar"
+          tooltip="Soma de todas as despesas do mes atual em admin_despesas: salarios, infra, marketing, ferramentas, etc."
+          onClick={() => setDrillKey("burn")}
+        />
       </div>
 
       <MetricDrillDown
@@ -142,6 +198,15 @@ export default function AdminDashboard() {
         format="number"
         loader={loadHeadcountHistory}
         accentColor="#3b82f6"
+      />
+      <MetricDrillDown
+        open={drillKey === "burn"}
+        onClose={() => setDrillKey(null)}
+        title="Burn Rate — Historico de despesas"
+        currentValue={new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(k.burnRate)}
+        format="currency"
+        loader={loadBurnHistory}
+        accentColor="#f87171"
       />
 
       {/* Secondary KPIs */}

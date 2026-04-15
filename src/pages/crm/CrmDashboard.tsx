@@ -69,12 +69,57 @@ export default function CrmDashboard() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4">
-        <MetricCard title="MRR" value={k.mrr} format="currency" icon={DollarSign} color="green" subtitle="Receita mensal recorrente" />
-        <MetricCard title="Assinantes" value={k.totalSubscribers} icon={Users} color="blue" subtitle="Meta: 1.000" />
-        <MetricCard title="Churn Rate" value={k.churnRate} format="percent" icon={TrendingDown} color="red" subtitle="Ultimos 30 dias" />
-        <MetricCard title="Em Risco" value={k.churnRisks} icon={AlertTriangle} color="gold" subtitle="Previsao de churn" />
-        <MetricCard title="Automacoes" value={k.automationsToday} icon={Zap} color="purple" subtitle="Emails + Push + WhatsApp" />
-        <MetricCard title="LTV Medio" value={k.avgLtv} format="currency" icon={Target} color="green" subtitle="Life-time value" />
+        <MetricCard
+          title="MRR"
+          value={k.mrr}
+          format="currency"
+          icon={DollarSign}
+          color="green"
+          subtitle="Receita mensal recorrente"
+          tooltip="Soma mensal dos planos ativos. Mensal R$49,90 · Anual R$29,24/mes · Bianual R$99,98/mes."
+        />
+        <MetricCard
+          title="Assinantes"
+          value={k.totalSubscribers}
+          icon={Users}
+          color="blue"
+          subtitle="Meta: 1.000"
+          tooltip="Total de users com subscriptions.status='active' e plan_type pago."
+        />
+        <MetricCard
+          title="Churn Rate"
+          value={k.churnRate}
+          format="percent"
+          icon={TrendingDown}
+          color="red"
+          subtitle="Ultimos 30 dias"
+          tooltip="% de assinantes que cancelaram nos ultimos 30 dias. Benchmark SaaS educacional: <5%/mes e saudavel."
+        />
+        <MetricCard
+          title="Em Risco"
+          value={k.churnRisks}
+          icon={AlertTriangle}
+          color="gold"
+          subtitle="Previsao de churn"
+          tooltip="Numero de assinantes que o motor de ML detectou como propenso a cancelar nos proximos 14 dias (churn_probability >= 40%)."
+        />
+        <MetricCard
+          title="Automacoes"
+          value={k.automationsToday}
+          icon={Zap}
+          color="purple"
+          subtitle="Emails + Push + WhatsApp"
+          tooltip="Quantidade de automacoes disparadas hoje em crm_automations_log — emails transacionais, alertas de engajamento, etc."
+        />
+        <MetricCard
+          title="LTV Medio"
+          value={k.avgLtv}
+          format="currency"
+          icon={Target}
+          color="green"
+          subtitle="Life-time value"
+          tooltip="Valor total medio que cada assinante gerou desde que se inscreveu. Calculado como (receita total / total de assinantes)."
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6">
