@@ -137,7 +137,13 @@ serve(async (req) => {
     if (action === "list_subscriptions") {
       const { page = 1, limit = 20, email, status } = body;
       const filter: Record<string, any> = {};
-      if (email) filter.email = email;
+      if (email) {
+        // Tenta varios formatos — EasyFlow aceita um deles
+        filter.email = email;
+        filter.customerEmail = email;
+        filter.buyerEmail = email;
+        filter.search = email;
+      }
       if (status) filter.status = status;
 
       const url = `${EASYFLOW_BASE}/subscriptions/filter?page=${page}&limit=${limit}`;
@@ -168,7 +174,12 @@ serve(async (req) => {
     if (action === "list_sales") {
       const { page = 1, limit = 20, email, status, initialDate, endDate } = body;
       const filter: Record<string, any> = {};
-      if (email) filter.email = email;
+      if (email) {
+        filter.email = email;
+        filter.buyerEmail = email;
+        filter.customerEmail = email;
+        filter.search = email;
+      }
       if (status) filter.status = status;
       if (initialDate) filter.initialDate = initialDate;
       if (endDate) filter.endDate = endDate;
