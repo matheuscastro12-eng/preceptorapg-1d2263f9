@@ -84,6 +84,7 @@ const AdminRelatorio = lazy(() => import("./pages/crm-admin/AdminRelatorio"));
 const AdminForecast = lazy(() => import("./pages/crm-admin/AdminForecast"));
 const AdminDRE = lazy(() => import("./pages/crm-admin/AdminDRE"));
 const AdminEasyflow = lazy(() => import("./pages/crm-admin/AdminEasyflow"));
+const AdminWebhooks = lazy(() => import("./pages/crm-admin/AdminWebhooks"));
 const AdminInadimplencia = lazy(() => import("./pages/crm-admin/AdminInadimplencia"));
 const CrmSuporte = lazy(() => import("./pages/crm/CrmSuporte"));
 
@@ -147,6 +148,7 @@ const App = () => (
                   <Route path="forecast" element={<AdminForecast />} />
                   <Route path="dre" element={<AdminDRE />} />
                   <Route path="easyflow" element={<AdminEasyflow />} />
+                  <Route path="webhooks" element={<AdminWebhooks />} />
                   <Route path="inadimplencia" element={<AdminInadimplencia />} />
                 </Route>
                 <Route path="/profile" element={<Profile />} />

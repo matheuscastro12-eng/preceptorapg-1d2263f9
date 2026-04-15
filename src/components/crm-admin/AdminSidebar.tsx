@@ -32,6 +32,7 @@ const sections: NavSection[] = [
       { to: "/admin/crm-admin/despesas", label: "Despesas", icon: CreditCard },
       { to: "/admin/crm-admin/fluxo-caixa", label: "Fluxo de Caixa", icon: ArrowLeftRight },
       { to: "/admin/crm-admin/easyflow", label: "EasyFlow", icon: Wallet },
+      { to: "/admin/crm-admin/webhooks", label: "Webhooks", icon: AlertTriangle },
       { to: "/admin/crm-admin/inadimplencia", label: "Inadimplencia", icon: AlertTriangle },
     ],
   },

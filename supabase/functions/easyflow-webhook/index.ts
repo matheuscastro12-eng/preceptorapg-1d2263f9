@@ -66,13 +66,17 @@ serve(async (req) => {
       ""
     ).toLowerCase().trim();
 
-    // ── Fallback: payment.paid sem email — buscar por holderName ou subscription existente ──
+    // ── Fallbacks pra payment.paid sem email ──
+    // Ordem por confiabilidade:
+    //   1. ID do pagamento → subscription existente (exato, instantaneo)
+    //   2. EasyFlow API /sales/filter pelo payment ID (autoritativo, traz email real)
+    //   3. holderName → profiles.full_name (heuristica, exige match UNICO + signup recente)
+    //   4. holderName → auth.users (heuristica, mesma protecao)
     let fallbackUserId: string | null = null;
     if (!email && (event === "payment.paid" || event === "subscriptionrecurrence.paid")) {
       console.log(`[EasyFlow] No email in ${event} payload, trying fallbacks...`);
 
-      // Fallback 1: buscar subscription existente pelo stripe_customer_id/stripe_subscription_id
-      // (o order.paid/subscription.created original salvou esse ID — o payment.paid tem o mesmo)
+      // ── Fallback 1: ID do pagamento -> subscription existente ──
       const paymentId = payload.id || "";
       if (paymentId) {
         const { data: subByCustomer } = await supabase
@@ -86,90 +90,102 @@ serve(async (req) => {
         }
       }
 
-      // Fallback 2: buscar por holderName do cartao no profiles.full_name
-      if (!fallbackUserId) {
-        const holderName = (payload.creditCard?.holderName || "").trim();
-        if (holderName) {
-          // Busca case-insensitive por nome completo
-          const { data: profileByName } = await supabase
-            .from("profiles")
-            .select("user_id, email")
-            .ilike("full_name", holderName)
-            .maybeSingle();
-          if (profileByName) {
-            fallbackUserId = profileByName.user_id;
-            email = (profileByName.email || "").toLowerCase().trim();
-            console.log(`[EasyFlow] Fallback 2 (holderName match): ${holderName} -> ${email}`);
-          }
-        }
-      }
-
-      // Fallback 3: buscar via EasyFlow API (POST /sales/filter)
-      if (!fallbackUserId) {
+      // ── Fallback 2: EasyFlow API /sales/filter (autoritativo) ──
+      if (!fallbackUserId && paymentId) {
         const EF_API = "https://9iq81tsdy4.execute-api.sa-east-1.amazonaws.com";
         const EF_SECRET = Deno.env.get("EASYFLOW_API_SECRET") ?? "";
-        if (EF_SECRET) {
+        const EF_SECRET2 = Deno.env.get("EASYFLOW2_API_SECRET") ?? "";
+        const secrets = [EF_SECRET, EF_SECRET2].filter(Boolean);
+
+        for (const secret of secrets) {
           try {
+            // Timeout de 5s — se EasyFlow API esta lenta, cai pro proximo fallback
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), 5000);
             const salesRes = await fetch(`${EF_API}/sales/filter`, {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${EF_SECRET}`,
-              },
-              body: JSON.stringify({ paymentId: payload.id }),
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${secret}` },
+              body: JSON.stringify({ paymentId, search: paymentId }),
+              signal: ctrl.signal,
             });
+            clearTimeout(t);
             if (salesRes.ok) {
               const salesData = await salesRes.json();
               const sales = salesData?.data || salesData?.items || salesData || [];
               const sale = Array.isArray(sales) ? sales[0] : sales;
-              const saleEmail = (
-                sale?.buyer?.email || sale?.customer?.email || sale?.email || ""
-              ).toLowerCase().trim();
+              const saleEmail = (sale?.buyer?.email || sale?.customer?.email || sale?.email || "").toLowerCase().trim();
               if (saleEmail) {
                 email = saleEmail;
-                console.log(`[EasyFlow] Fallback 3 (EasyFlow API sales/filter): found email ${email}`);
-                // Agora buscar user_id com esse email
-                const { data: p } = await supabase
-                  .from("profiles")
-                  .select("user_id")
-                  .ilike("email", email)
-                  .maybeSingle();
-                if (p) fallbackUserId = p.user_id;
+                console.log(`[EasyFlow] Fallback 2 (API /sales/filter): found email ${email}`);
+                const { data: p } = await supabase.from("profiles").select("user_id").ilike("email", email).maybeSingle();
+                if (p) {
+                  fallbackUserId = p.user_id;
+                  break;
+                }
               }
-            } else {
-              console.warn(`[EasyFlow] Fallback 3 API returned ${salesRes.status}`);
             }
           } catch (apiErr) {
-            console.warn(`[EasyFlow] Fallback 3 API error: ${(apiErr as Error).message}`);
+            console.warn(`[EasyFlow] Fallback 2 API error: ${(apiErr as Error).message}`);
           }
         }
       }
 
-      // Fallback 4: buscar no auth.users pelo nome
+      // ── Fallback 3: holderName -> profiles.full_name (PROTEGIDO contra homonimo) ──
+      // Match so se houver EXATAMENTE 1 profile com esse nome (evita ativar conta errada)
+      // E so considera signup recente (< 30 dias) — assinatura nova provavelmente vem de
+      // signup recente, alem de reduzir o universo de candidatos.
+      if (!fallbackUserId) {
+        const holderName = (payload.creditCard?.holderName || "").trim();
+        if (holderName) {
+          const cutoff = new Date(Date.now() - 30 * 86400000).toISOString();
+          const { data: matches } = await supabase
+            .from("profiles")
+            .select("user_id, email, created_at")
+            .ilike("full_name", holderName)
+            .gte("created_at", cutoff)
+            .limit(2);
+
+          if (matches && matches.length === 1) {
+            fallbackUserId = matches[0].user_id;
+            email = (matches[0].email || "").toLowerCase().trim();
+            console.log(`[EasyFlow] Fallback 3 (holderName match unico, signup recente): ${holderName} -> ${email}`);
+          } else if (matches && matches.length > 1) {
+            console.warn(`[EasyFlow] Fallback 3 ABORTADO: ${matches.length} profiles homonimos para "${holderName}" — risco de ativar conta errada`);
+          }
+        }
+      }
+
+      // ── Fallback 4: holderName -> auth.users (mesma protecao) ──
       if (!fallbackUserId) {
         const holderName = (payload.creditCard?.holderName || "").trim().toLowerCase();
         if (holderName) {
           const { data: authList } = await supabase.auth.admin.listUsers();
-          const found = authList?.users?.find((u: any) => {
+          const cutoff = Date.now() - 30 * 86400000;
+          const candidates = (authList?.users ?? []).filter((u: any) => {
             const meta = u.user_metadata || {};
-            return (meta.full_name || "").toLowerCase().trim() === holderName;
+            const nameMatch = (meta.full_name || "").toLowerCase().trim() === holderName;
+            const recent = new Date(u.created_at).getTime() >= cutoff;
+            return nameMatch && recent;
           });
-          if (found) {
-            fallbackUserId = found.id;
-            email = (found.email || "").toLowerCase().trim();
-            console.log(`[EasyFlow] Fallback 4 (auth.users name match): ${holderName} -> ${email}`);
+          if (candidates.length === 1) {
+            fallbackUserId = candidates[0].id;
+            email = (candidates[0].email || "").toLowerCase().trim();
+            console.log(`[EasyFlow] Fallback 4 (auth.users name match unico, signup recente): ${holderName} -> ${email}`);
+          } else if (candidates.length > 1) {
+            console.warn(`[EasyFlow] Fallback 4 ABORTADO: ${candidates.length} users homonimos para "${holderName}"`);
           }
         }
       }
 
       if (!fallbackUserId) {
         const holderName = payload.creditCard?.holderName || "desconhecido";
-        console.error(`[EasyFlow] ${event} sem email e fallbacks falharam. holderName: ${holderName}`);
+        const paymentMethod = payload.paymentMethod || "desconhecido";
+        console.error(`[EasyFlow] ${event} sem email e fallbacks falharam. method=${paymentMethod} holderName=${holderName}`);
         await supabase.from("webhook_events").update({
           processed: false,
-          error_message: `no_email_all_fallbacks_failed: holderName=${holderName}`,
+          error_message: `no_email_all_fallbacks_failed: method=${paymentMethod} holderName=${holderName} paymentId=${payload.id}`,
         }).eq("provider", "easyflow").eq("event_type", event).order("created_at", { ascending: false }).limit(1);
-        return json({ received: true, action: "skipped_no_email_fallbacks_failed", holderName });
+        return json({ received: true, action: "skipped_no_email_fallbacks_failed", holderName, paymentMethod });
       }
     }
 
