@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Star } from 'lucide-react';
+import { Loader2, Star, FileText, ArrowRight } from 'lucide-react';
 
 interface Fechamento {
   id: string;
@@ -24,6 +25,7 @@ const MI = ({ name, className = '' }: { name: string; className?: string }) => (
 );
 
 const ContentSelector = ({ selectedIds, onSelectionChange, disabled }: ContentSelectorProps) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [fechamentos, setFechamentos] = useState<Fechamento[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,11 +85,30 @@ const ContentSelector = ({ selectedIds, onSelectionChange, disabled }: ContentSe
           <Loader2 className="h-5 w-5 animate-spin text-[#006D5B]" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="py-8 text-center text-[#6e7975] text-sm">
-          {fechamentos.length === 0
-            ? 'Nenhum resumo salvo. Gere e salve conteúdo no Estudo com IA primeiro.'
-            : 'Nenhum resultado encontrado.'}
-        </div>
+        fechamentos.length === 0 ? (
+          <div className="py-8 px-5 text-center bg-gradient-to-br from-[#FFF9E8] to-[#FEF3CD] border border-[#C9A84C]/30 rounded-xl">
+            <div className="mx-auto w-12 h-12 rounded-full bg-[#C9A84C]/15 flex items-center justify-center mb-3">
+              <FileText className="w-6 h-6 text-[#8a6f26]" />
+            </div>
+            <h3 className="text-base font-bold text-[#191c1d] mb-1 font-['Manrope']">
+              Voce precisa gerar um resumo primeiro
+            </h3>
+            <p className="text-sm text-[#4a5568] max-w-md mx-auto mb-4 leading-relaxed">
+              Os simulados sao construidos a partir dos resumos/fechamentos que voce salva na biblioteca. Gere pelo menos um em <strong>Estudos com IA</strong> antes de vir pra ca.
+            </p>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#006D5B] text-white text-sm font-bold rounded-lg hover:bg-[#005344] active:scale-95 transition-all shadow-md"
+            >
+              Ir para Estudos com IA
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="py-8 text-center text-[#6e7975] text-sm">
+            Nenhum resultado encontrado.
+          </div>
+        )
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {filtered.map((f) => {
