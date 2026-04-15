@@ -434,7 +434,21 @@ const Landing = () => {
                 </p>
 
                 <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#006D5B] to-[#005344] flex items-center justify-center text-white font-bold text-sm shadow-md">
+                  <img
+                    src="/alicia-cosendey.jpg"
+                    alt="Alicia Cosendey"
+                    onError={(e) => {
+                      // Fallback pras iniciais caso a imagem nao exista ainda
+                      e.currentTarget.style.display = "none";
+                      const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+                      if (fallback) fallback.style.display = "flex";
+                    }}
+                    className="w-11 h-11 rounded-full object-cover shadow-md"
+                  />
+                  <div
+                    style={{ display: "none" }}
+                    className="w-11 h-11 rounded-full bg-gradient-to-br from-[#006D5B] to-[#005344] items-center justify-center text-white font-bold text-sm shadow-md"
+                  >
                     AC
                   </div>
                   <div>
