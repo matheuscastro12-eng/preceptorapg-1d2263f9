@@ -13,53 +13,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const EASYFLOW_BASE = "https://9iq81tsdy4.execute-api.sa-east-1.amazonaws.com";
-
-function getEasyflowHeaders(): Array<Record<string, string>> {
-  const headers: Array<Record<string, string>> = [];
-  const k1 = Deno.env.get("EASYFLOW_API_KEY");
-  const s1 = Deno.env.get("EASYFLOW_API_SECRET");
-  const b1 = Deno.env.get("EASYFLOW_BUSINESS_ID");
-  if (k1 && s1) headers.push({ "Content-Type": "application/json", "x-api-key": k1, "x-api-secret": s1, ...(b1 ? { "business-id": b1 } : {}) });
-  const k2 = Deno.env.get("EASYFLOW2_API_KEY");
-  const s2 = Deno.env.get("EASYFLOW2_API_SECRET");
-  const b2 = Deno.env.get("EASYFLOW2_BUSINESS_ID");
-  if (k2 && s2) headers.push({ "Content-Type": "application/json", "x-api-key": k2, "x-api-secret": s2, ...(b2 ? { "business-id": b2 } : {}) });
-  return headers;
-}
-
-// Tenta cancelar subscription remotamente. Testa DELETE e POST /cancel em
-// cada conta ate achar uma que funcione. Retorna true se algum conseguiu.
-async function cancelRemote(subscriptionId: string): Promise<{ ok: boolean; detail: string }> {
-  const headersList = getEasyflowHeaders();
-  if (headersList.length === 0) return { ok: false, detail: "sem credenciais EasyFlow" };
-
-  const attempts: Array<{ method: string; path: string }> = [
-    { method: "DELETE", path: `/subscriptions/${subscriptionId}` },
-    { method: "POST", path: `/subscriptions/${subscriptionId}/cancel` },
-    { method: "PATCH", path: `/subscriptions/${subscriptionId}` },
-  ];
-
-  const logs: string[] = [];
-  for (const headers of headersList) {
-    for (const a of attempts) {
-      try {
-        const res = await fetch(`${EASYFLOW_BASE}${a.path}`, {
-          method: a.method,
-          headers,
-          body: a.method === "PATCH" ? JSON.stringify({ status: "cancelled" }) : undefined,
-        });
-        logs.push(`${a.method} ${a.path} -> ${res.status}`);
-        if (res.ok) {
-          return { ok: true, detail: `${a.method} ${a.path} ${res.status}` };
-        }
-      } catch (err) {
-        logs.push(`${a.method} ${a.path} -> ${(err as Error).message}`);
-      }
-    }
-  }
-  return { ok: false, detail: logs.join("; ") };
-}
+// NOTA: A API da EasyFlow NAO oferece endpoint publico de cancelar
+// assinatura (so GET /subscriptions/filter e GET /subscriptions/{id}).
+// Entao o "cancelamento" aqui e 100% local:
+//   - immediate: encerra o acesso agora no nosso BD.
+//   - end_of_period: marca cancel_at_period_end=true.
+// Pra realmente parar a cobranca no cartao, o dono da conta precisa
+// cancelar manualmente no painel da EasyFlow (ou a gente usar
+// DELETE /customers/remove/{id} que remove o customer inteiro — perigoso).
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -81,22 +42,7 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const mode = (body.mode as "immediate" | "end_of_period") ?? "end_of_period";
 
-    // Carrega subscription pra pegar o stripe_subscription_id (id da EasyFlow)
-    const { data: sub } = await supabase
-      .from("subscriptions")
-      .select("stripe_subscription_id, plan_type, status")
-      .eq("user_id", userId)
-      .maybeSingle();
-
     const now = new Date().toISOString();
-
-    // Tenta cancelar na EasyFlow (so se tem ID remoto valido). Nao bloqueia
-    // em caso de falha — user ainda consegue desativar localmente.
-    let remoteResult: { ok: boolean; detail: string } | null = null;
-    if (sub?.stripe_subscription_id) {
-      remoteResult = await cancelRemote(sub.stripe_subscription_id);
-      console.log(`[cancel-subscription] remote: ${remoteResult.ok ? "OK" : "FAIL"} ${remoteResult.detail}`);
-    }
 
     if (mode === "immediate") {
       const { error } = await supabase
@@ -121,12 +67,7 @@ serve(async (req) => {
       return json({
         success: true,
         mode: "immediate",
-        message: remoteResult?.ok
-          ? "Assinatura cancelada agora. Acesso encerrado e cobranca do cartao parada."
-          : remoteResult
-            ? "Acesso encerrado. ATENCAO: nao conseguimos parar a cobranca na EasyFlow automaticamente — entre em contato com suporte se precisar."
-            : "Assinatura cancelada agora. Acesso encerrado.",
-        remote: remoteResult,
+        message: "Acesso encerrado. IMPORTANTE: pra parar a cobranca no cartao, cancele tambem no painel da EasyFlow — a API deles nao permite cancelamento automatico.",
       });
     }
 
@@ -144,12 +85,7 @@ serve(async (req) => {
     return json({
       success: true,
       mode: "end_of_period",
-      message: remoteResult?.ok
-        ? "Renovacao cancelada na EasyFlow. Voce continua com acesso ate o fim do periodo atual e nao sera cobrado novamente."
-        : remoteResult
-          ? "Renovacao marcada como cancelada. ATENCAO: cobranca na EasyFlow pode continuar no proximo ciclo — contate o suporte se precisar."
-          : "Renovacao cancelada. Voce continua com acesso ate o fim do periodo atual.",
-      remote: remoteResult,
+      message: "Renovacao marcada como cancelada. Voce continua com acesso ate o fim do periodo. IMPORTANTE: cancele tambem no painel da EasyFlow pra garantir que nao sera cobrado no proximo ciclo.",
     });
   } catch (err) {
     return json({ error: (err as Error).message }, 500);

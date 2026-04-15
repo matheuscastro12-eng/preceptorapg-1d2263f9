@@ -260,9 +260,11 @@ export default function SubscriptionManager() {
                   <p className="text-sm text-[#4a5568]">
                     Seu acesso será encerrado imediatamente. Não há reembolso proporcional dos dias restantes.
                   </p>
-                  <p className="text-xs text-[#6e7975]">
-                    O cancelamento da cobrança no cartão precisa ser feito pelo painel de pagamento do EasyFlow. Se precisar de ajuda, entre em contato no suporte.
-                  </p>
+                  <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
+                    <p className="text-xs text-amber-800 leading-relaxed">
+                      <strong>Importante:</strong> isso encerra o acesso aqui. Pra parar a cobrança no cartão, entre em contato com o suporte — o cancelamento da recorrência é feito pelo nosso time via EasyFlow.
+                    </p>
+                  </div>
                 </>
               )}
               {confirm === 'end_of_period' && (
@@ -270,9 +272,11 @@ export default function SubscriptionManager() {
                   <p className="text-sm text-[#4a5568]">
                     Você continua com acesso completo até <strong>{periodEndFmt}</strong>. Depois dessa data, a assinatura não será renovada.
                   </p>
-                  <p className="text-xs text-[#6e7975]">
-                    Você pode reativar a qualquer momento antes do vencimento.
-                  </p>
+                  <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
+                    <p className="text-xs text-amber-800 leading-relaxed">
+                      <strong>Importante:</strong> pra garantir que não seja cobrado no próximo ciclo, entre em contato com o suporte — o cancelamento da recorrência no cartão é feito pelo nosso time.
+                    </p>
+                  </div>
                 </>
               )}
             </div>

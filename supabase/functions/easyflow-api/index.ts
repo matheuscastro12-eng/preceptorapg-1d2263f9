@@ -20,6 +20,9 @@ interface EFAccount {
 function getAccounts(): EFAccount[] {
   const accounts: EFAccount[] = [];
 
+  // EasyFlow docs: auth = Bearer token. Usa o API_SECRET como token.
+  // Mantem headers antigos (x-api-key) como fallback caso a API aceite ambos.
+
   // Account 1: Recorrente (mensal)
   const k1 = Deno.env.get("EASYFLOW_API_KEY");
   const s1 = Deno.env.get("EASYFLOW_API_SECRET");
@@ -29,6 +32,7 @@ function getAccounts(): EFAccount[] {
       name: "recorrente",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${s1}`,
         "x-api-key": k1,
         "x-api-secret": s1,
         ...(b1 ? { "business-id": b1 } : {}),
@@ -45,6 +49,7 @@ function getAccounts(): EFAccount[] {
       name: "avulsa",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${s2}`,
         "x-api-key": k2,
         "x-api-secret": s2,
         ...(b2 ? { "business-id": b2 } : {}),
