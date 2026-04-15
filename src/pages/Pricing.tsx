@@ -130,17 +130,18 @@ const Pricing = () => {
               </button>
             </div>
 
-            {/* Anual — highlighted */}
+            {/* Anual — highlighted como MAIS POPULAR */}
             <div className="flex-1 bg-white p-10 rounded-2xl shadow-xl border-2 border-[#006D5B] relative overflow-hidden hover:shadow-2xl transition-all duration-300">
-              <div className="absolute top-0 right-0 bg-[#005344] text-white px-4 py-1 text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
-                Melhor Valor
+              <div className="absolute top-0 right-0 bg-[#006D5B] text-white px-4 py-1 text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
+                Mais Popular
               </div>
               <h3 className="text-xl font-bold mb-2 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Anual</h3>
+              <p className="text-sm text-slate-400 line-through mb-0.5">De R$ 598,80</p>
               <div className="mb-2">
                 <span className="text-4xl font-extrabold text-[#005344]">R$ 350,90</span>
                 <span className="text-slate-500">/ano</span>
               </div>
-              <p className="text-xs text-[#006D5B] font-semibold mb-6">Equivale a R$ 29,24/mês (Economia de 41%)</p>
+              <p className="text-xs text-[#006D5B] font-semibold mb-6">Equivale a R$ 29,24/mês — Economia de 41%</p>
               <ul className="space-y-4 mb-10 text-sm text-[#191c1d]">
                 <li className="flex items-center gap-3 font-semibold">
                   <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
@@ -148,11 +149,19 @@ const Pricing = () => {
                 </li>
                 <li className="flex items-center gap-3">
                   <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
-                  Economia de mais de 40%
+                  Faça parte do grupo VIP
                 </li>
                 <li className="flex items-center gap-3">
                   <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
                   Suporte prioritário
+                </li>
+                <li className="flex items-center gap-3">
+                  <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
+                  Receba atualizações em primeira mão
+                </li>
+                <li className="flex items-center gap-3">
+                  <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
+                  Oportunidade de se tornar embaixador
                 </li>
               </ul>
               <button
@@ -168,11 +177,12 @@ const Pricing = () => {
             {/* Bianual */}
             <div className="flex-1 bg-white p-10 rounded-2xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] border border-slate-200/30 hover:shadow-xl transition-all duration-300">
               <h3 className="text-xl font-bold mb-2 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Bianual</h3>
+              <p className="text-sm text-slate-400 line-through mb-0.5">De R$ 1.197,60</p>
               <div className="mb-2">
                 <span className="text-4xl font-extrabold text-[#005344]">R$ 599,90</span>
                 <span className="text-slate-500">/2 anos</span>
               </div>
-              <p className="text-xs text-[#006D5B] font-semibold mb-6">Equivale a R$ 24,99/mês (Economia de 50%)</p>
+              <p className="text-xs text-[#006D5B] font-semibold mb-6">Equivale a R$ 24,99/mês — Economia de 50%</p>
               <ul className="space-y-4 mb-10 text-sm text-[#191c1d]">
                 <li className="flex items-center gap-3 font-semibold">
                   <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
@@ -184,7 +194,15 @@ const Pricing = () => {
                 </li>
                 <li className="flex items-center gap-3">
                   <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
-                  Suporte prioritário
+                  Suporte prioritário VIP
+                </li>
+                <li className="flex items-center gap-3">
+                  <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
+                  Acesso antecipado a novos recursos
+                </li>
+                <li className="flex items-center gap-3">
+                  <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
+                  Seja embaixador PreceptorMED
                 </li>
               </ul>
               <button
