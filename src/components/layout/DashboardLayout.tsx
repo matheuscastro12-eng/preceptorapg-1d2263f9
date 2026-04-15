@@ -135,7 +135,7 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="px-6 mb-10">
+      <div className="px-6 mb-8">
         <button onClick={() => navigate('/menu')} className="group flex items-center gap-2.5">
           <img
             src="/favicon.png"
@@ -146,6 +146,8 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
             PreceptorMED
           </span>
         </button>
+        {/* Gold accent line — assinatura visual */}
+        <div className="mt-4 h-px w-12 bg-gradient-to-r from-brand-gold to-transparent" />
       </div>
 
       {/* Nav */}
@@ -222,17 +224,20 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
 
       {/* Bottom section */}
       <div className="mt-auto pt-6 border-t border-white/15 px-4">
-        {/* PRO Plan card */}
+        {/* PRO Plan card — free users only */}
         {isFreeUser && !subLoading && (
-          <div className="mb-5 px-3 py-4 rounded-xl bg-white/10 border border-white/10">
-            <p className="text-xs font-bold text-white mb-1 uppercase tracking-wider">Upgrade to Pro</p>
-            <p className="text-[10px] text-white/60 mb-3">Acesse resumos ilimitados e casos avançados.</p>
-            <button
-              onClick={() => navigate('/pricing')}
-              className="btn-shimmer relative overflow-hidden w-full text-[10px] font-bold uppercase tracking-wider text-[#005344] bg-white py-2.5 rounded-lg hover:bg-white/90 transition-all active:scale-95"
-            >
-              Assinar
-            </button>
+          <div className="relative overflow-hidden mb-5 px-4 py-4 rounded-xl bg-gradient-to-br from-brand-gold/25 via-brand-gold/10 to-transparent border border-brand-gold/30">
+            <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-brand-gold/15 blur-2xl pointer-events-none" />
+            <div className="relative">
+              <p className="text-xs font-bold text-brand-gold mb-1">✦ Desbloqueie tudo</p>
+              <p className="text-[11px] text-white/80 mb-3 leading-relaxed">Resumos ilimitados, simulados IA, biblioteca pessoal.</p>
+              <button
+                onClick={() => navigate('/pricing')}
+                className="w-full text-xs font-semibold text-brand-primary-darker bg-brand-gold py-2 rounded-lg hover:bg-brand-gold/90 transition-colors"
+              >
+                Conhecer planos
+              </button>
+            </div>
           </div>
         )}
 
