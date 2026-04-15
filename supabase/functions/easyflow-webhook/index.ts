@@ -104,7 +104,48 @@ serve(async (req) => {
         }
       }
 
-      // Fallback 3: buscar no auth.users pelo nome
+      // Fallback 3: buscar via EasyFlow API (POST /sales/filter)
+      if (!fallbackUserId) {
+        const EF_API = "https://9iq81tsdy4.execute-api.sa-east-1.amazonaws.com";
+        const EF_SECRET = Deno.env.get("EASYFLOW_API_SECRET") ?? "";
+        if (EF_SECRET) {
+          try {
+            const salesRes = await fetch(`${EF_API}/sales/filter`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${EF_SECRET}`,
+              },
+              body: JSON.stringify({ paymentId: payload.id }),
+            });
+            if (salesRes.ok) {
+              const salesData = await salesRes.json();
+              const sales = salesData?.data || salesData?.items || salesData || [];
+              const sale = Array.isArray(sales) ? sales[0] : sales;
+              const saleEmail = (
+                sale?.buyer?.email || sale?.customer?.email || sale?.email || ""
+              ).toLowerCase().trim();
+              if (saleEmail) {
+                email = saleEmail;
+                console.log(`[EasyFlow] Fallback 3 (EasyFlow API sales/filter): found email ${email}`);
+                // Agora buscar user_id com esse email
+                const { data: p } = await supabase
+                  .from("profiles")
+                  .select("user_id")
+                  .ilike("email", email)
+                  .maybeSingle();
+                if (p) fallbackUserId = p.user_id;
+              }
+            } else {
+              console.warn(`[EasyFlow] Fallback 3 API returned ${salesRes.status}`);
+            }
+          } catch (apiErr) {
+            console.warn(`[EasyFlow] Fallback 3 API error: ${(apiErr as Error).message}`);
+          }
+        }
+      }
+
+      // Fallback 4: buscar no auth.users pelo nome
       if (!fallbackUserId) {
         const holderName = (payload.creditCard?.holderName || "").trim().toLowerCase();
         if (holderName) {
@@ -116,7 +157,7 @@ serve(async (req) => {
           if (found) {
             fallbackUserId = found.id;
             email = (found.email || "").toLowerCase().trim();
-            console.log(`[EasyFlow] Fallback 3 (auth.users name match): ${holderName} -> ${email}`);
+            console.log(`[EasyFlow] Fallback 4 (auth.users name match): ${holderName} -> ${email}`);
           }
         }
       }
@@ -325,4 +366,59 @@ serve(async (req) => {
         const { data: prof } = await supabase.from("profiles")
           .select("full_name").eq("user_id", profile.user_id).maybeSingle();
 
-        // Upsert inadimplenc
+        // Upsert inadimplencia record
+        const { data: existing } = await supabase.from("admin_inadimplencias")
+          .select("id, tentativas").eq("user_id", profile.user_id).eq("status", "em_cobranca").maybeSingle();
+
+        if (existing) {
+          await supabase.from("admin_inadimplencias")
+            .update({
+              tentativas: (existing.tentativas ?? 0) + 1,
+              ultimo_evento: event,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existing.id);
+        } else {
+          const PLAN_VALORES: Record<string, number> = {
+            monthly: 49.90, annual: 350.90 / 12, biannual: 599.90 / 6,
+          };
+          await supabase.from("admin_inadimplencias").insert({
+            user_id: profile.user_id,
+            email,
+            nome: prof?.full_name ?? email,
+            plano: sub?.plan_type ?? "unknown",
+            valor_devido: PLAN_VALORES[sub?.plan_type ?? ""] ?? 0,
+            status: "em_cobranca",
+            tentativas: 1,
+            ultimo_evento: event,
+            data_ocorrencia: new Date().toISOString(),
+          });
+        }
+
+        console.log(`[EasyFlow] Payment issue: ${email} (${event})`);
+      }
+      return json({ received: true, action: "payment_issue_tracked", email, event });
+    }
+
+    // ══════════════════════════════════════════════
+    // UPDATES / OTHER EVENTS
+    // ══════════════════════════════════════════════
+    if (event === "order.updated" || event === "subscription.updated") {
+      console.log(`[EasyFlow] Update event: ${event} for ${email}`);
+      return json({ received: true, action: "updated", email, event });
+    }
+
+    console.log(`[EasyFlow] Unhandled: ${event}`);
+    return json({ received: true, action: "unhandled", event });
+
+  } catch (err) {
+    console.error("[EasyFlow Error]", (err as Error).message);
+    return json({ error: (err as Error).message }, 500);
+  }
+});
+
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
