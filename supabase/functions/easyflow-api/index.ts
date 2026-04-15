@@ -301,25 +301,41 @@ serve(async (req) => {
       const subsTotals = subsResult.status === "fulfilled" ? subsResult.value.totals : { transactionValue: 0, commissions: 0, ticketsCount: 0, totalDocs: 0 };
       const balance = balanceResult.status === "fulfilled" ? balanceResult.value : null;
 
-      // Usa totals da propria API (mais precisos) e fallback pra calculo local
-      const totalTransactionValue = salesTotals.transactionValue || salesItems.reduce((s: number, x: any) => s + (x.valueInCents || x.valuePaidInCents || 0), 0);
-      const totalCommissions = salesTotals.commissions || salesItems.reduce((s: number, x: any) => s + (x.commissionInCents || x.feeInCents || 0), 0);
-      const totalSalesCount = salesTotals.totalDocs || salesItems.length;
+      // Calculo correto: separar o que vendemos do que o cliente pagou (com juros de parcelamento)
+      // - totalSold: valor do produto (sem juros). E o que efetivamente vendemos.
+      // - totalReceived: soma das comissoes que recebemos (liquido de taxas EasyFlow).
+      // - totalInterest: juros de parcelamento (pago pelo cliente, vai pra EasyFlow).
+      // - totalCharged: o que o cliente pagou no cartao (vendido + juros).
+      const sumSale = (key: string) => salesItems.reduce((s: number, x: any) => s + Number(x[key] ?? 0), 0);
 
+      const totalCharged = sumSale("totalValueInCents");           // R$ pago pelo cliente (com juros)
+      const totalInterest = sumSale("totalInterestValueInCents");  // Juros de parcelamento
+      const totalSold = totalCharged - totalInterest;              // O que vendemos (preco do plano)
+
+      // Comissoes vem em receivers[].commissionValueInCents (1 ou mais por venda)
+      const totalReceived = salesItems.reduce((sum: number, s: any) => {
+        const recv = Array.isArray(s.receivers) ? s.receivers : [];
+        return sum + recv.reduce((a: number, r: any) => a + Number(r.commissionValueInCents ?? 0), 0);
+      }, 0);
+
+      const totalSalesCount = salesTotals.totalDocs || salesItems.length;
       const paidSales = salesItems.filter((s: any) => s.status === "paid" || s.status === "approved");
-      const totalPaidValue = paidSales.reduce(
-        (sum: number, s: any) => sum + (s.totalValueInCents || s.valueInCents || s.valuePaidInCents || 0),
-        0
-      );
 
       const activeSubs = subsItems.filter((s: any) => s.status === "active");
       const canceledSubs = subsItems.filter((s: any) => s.status === "canceled" || s.status === "cancelled");
 
       return json({
-        totalTransactionValue,
-        totalPaidValue,
+        // Novos nomes (claros)
+        totalSold,        // R$ que vendemos (sem juros)
+        totalReceived,    // R$ liquido recebido
+        totalInterest,    // R$ juros de parcelamento (informativo)
+        totalCharged,     // R$ pago pelo cliente (vendido + juros)
+        // Nomes antigos pra nao quebrar o frontend (alias)
+        totalTransactionValue: totalSold,
+        totalPaidValue: totalReceived,
+        totalCommissions: totalReceived,
         totalSalesCount,
-        totalCommissions,
+        paidSalesCount: paidSales.length,
         subscriptions: {
           total: subsTotals.totalDocs || subsItems.length,
           active: activeSubs.length,
