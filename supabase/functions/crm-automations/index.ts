@@ -231,17 +231,62 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const specificTrigger: string | undefined = body.trigger;
     const automationId: string | undefined = body.automation_id;
+    const action: string | undefined = body.action;
+    const flushAuto = action === "flush_auto";
 
-    // Envio manual: o time do CRM aperta "Enviar" em uma linha especifica.
-    // Sem automation_id ou trigger especifico, nao processa nada automaticamente.
-    if (!automationId && !specificTrigger) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Envio automatico desabilitado. Envie automation_id (linha especifica) ou trigger (batch manual por tipo).",
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    // Envio ad-hoc: admin escolhe template + user e envia sem precisar de row pendente
+    if (action === "send_adhoc") {
+      const { template, user_email, nome } = body;
+      if (!template || !user_email) {
+        return json({ error: "template e user_email sao obrigatorios" }, 400);
+      }
+      const send = await sendEmail(
+        user_email.toLowerCase().trim(),
+        template,
+        { nome: nome ?? user_email },
+        RESEND_API_KEY,
+        supabase,
       );
+      if (!send.success) return json({ error: send.error, success: false }, 500);
+
+      // Registra no log pra manter historico
+      const { data: profile } = await supabase.from("profiles").select("user_id").ilike("email", user_email).maybeSingle();
+      await supabase.from("crm_automations_log").insert({
+        user_id: profile?.user_id ?? null,
+        automation_type: "email",
+        trigger_name: template,
+        trigger_reason: `Envio manual ad-hoc pra ${user_email}`,
+        channel: "email",
+        status: "delivered",
+        sent_at: new Date().toISOString(),
+        delivered_at: new Date().toISOString(),
+        metadata: { email: user_email, nome, message_id: send.message_id, ad_hoc: true },
+        produto: "preceptormed",
+      });
+
+      return json({ success: true, message_id: send.message_id });
+    }
+
+    // Envio manual: admin aperta "Enviar" em uma linha especifica.
+    // flush_auto: processa todos os pendentes cujo template esta marcado auto_send=true
+    if (!automationId && !specificTrigger && !flushAuto) {
+      return json({
+        success: false,
+        error: "Envie automation_id (linha especifica), trigger (batch por tipo), ou action=flush_auto (processar todos auto_send=true).",
+      }, 400);
+    }
+
+    // Pra flush_auto: busca os nomes de triggers que tem auto_send=true
+    let autoSendTriggers: string[] = [];
+    if (flushAuto) {
+      const { data: autoTpls } = await supabase
+        .from("crm_email_templates")
+        .select("trigger_name")
+        .eq("auto_send", true);
+      autoSendTriggers = (autoTpls ?? []).map((t: any) => t.trigger_name);
+      if (autoSendTriggers.length === 0) {
+        return json({ success: true, total_pending: 0, sent: 0, failed: 0, skipped: 0, message: "Nenhum template marcado como auto_send" });
+      }
     }
 
     let query = supabase
@@ -254,12 +299,14 @@ serve(async (req) => {
       .eq("status", "pending")
       .is("sent_at", null)
       .order("created_at", { ascending: true })
-      .limit(50);
+      .limit(200);
 
     if (automationId) {
       query = query.eq("id", automationId);
     } else if (specificTrigger) {
       query = query.eq("trigger_name", specificTrigger);
+    } else if (flushAuto) {
+      query = query.in("trigger_name", autoSendTriggers);
     }
 
     const { data: pending, error: pendingError } = await query;
@@ -349,3 +396,10 @@ serve(async (req) => {
     );
   }
 });
+
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}

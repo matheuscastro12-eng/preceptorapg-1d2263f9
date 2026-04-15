@@ -29,6 +29,7 @@ interface Template {
   body_html: string;
   description: string | null;
   variables: string[];
+  auto_send: boolean;
   updated_at: string;
 }
 
@@ -52,8 +53,8 @@ export default function CrmEmailTemplates() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
-  const [draft, setDraft] = useState<{ subject: string; preview: string; body_html: string }>({
-    subject: "", preview: "", body_html: "",
+  const [draft, setDraft] = useState<{ subject: string; preview: string; body_html: string; auto_send: boolean }>({
+    subject: "", preview: "", body_html: "", auto_send: false,
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -114,6 +115,7 @@ export default function CrmEmailTemplates() {
         subject: current.subject,
         preview: current.preview ?? "",
         body_html: current.body_html,
+        auto_send: current.auto_send ?? false,
       });
       setSaved(false);
     }
@@ -128,6 +130,7 @@ export default function CrmEmailTemplates() {
         subject: draft.subject,
         preview: draft.preview,
         body_html: draft.body_html,
+        auto_send: draft.auto_send,
         updated_at: new Date().toISOString(),
       })
       .eq("trigger_name", selected);
@@ -331,9 +334,16 @@ export default function CrmEmailTemplates() {
                     : "border-l-[3px] border-transparent hover:bg-gray-800/40"
                 }`}
               >
-                <p className={`text-sm font-semibold truncate ${selected === t.trigger_name ? "text-white" : "text-gray-200 group-hover:text-white"}`}>
-                  {t.label}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className={`text-sm font-semibold truncate flex-1 ${selected === t.trigger_name ? "text-white" : "text-gray-200 group-hover:text-white"}`}>
+                    {t.label}
+                  </p>
+                  <span className={`shrink-0 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                    t.auto_send ? "bg-green-500/15 text-green-400" : "bg-gray-700/60 text-gray-400"
+                  }`}>
+                    {t.auto_send ? "Auto" : "Manual"}
+                  </span>
+                </div>
                 {t.description && (
                   <p className="text-[11px] text-gray-500 mt-0.5 truncate">{t.description}</p>
                 )}
@@ -367,6 +377,31 @@ export default function CrmEmailTemplates() {
               </div>
 
               <div className="p-5 space-y-5">
+                {/* Toggle envio auto/manual */}
+                <div className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+                  draft.auto_send ? "bg-green-500/10 border-green-500/30" : "bg-gray-800/60 border-gray-700"
+                }`}>
+                  <button
+                    type="button"
+                    onClick={() => { setDraft({ ...draft, auto_send: !draft.auto_send }); setSaved(false); }}
+                    role="switch"
+                    aria-checked={draft.auto_send}
+                    className={`relative shrink-0 w-11 h-6 rounded-full transition-colors ${draft.auto_send ? "bg-green-500" : "bg-gray-600"}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${draft.auto_send ? "translate-x-5" : ""}`} />
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white">
+                      {draft.auto_send ? "Envio automatico" : "Envio manual"}
+                    </p>
+                    <p className="text-[11px] text-gray-400 leading-relaxed mt-0.5">
+                      {draft.auto_send
+                        ? "Quando o gatilho disparar, este email e enviado automaticamente (via 'Disparar automaticos' no painel de automacoes)."
+                        : "Este email so e enviado quando voce clica 'Enviar' manualmente no painel de automacoes."}
+                    </p>
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">
                     Assunto do email
