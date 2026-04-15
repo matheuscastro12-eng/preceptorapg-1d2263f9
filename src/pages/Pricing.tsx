@@ -122,12 +122,6 @@ const Pricing = () => {
                 {loadingPlan === 'monthly' && <Loader2 className="inline mr-2 h-4 w-4 animate-spin" />}
                 Começar mensal
               </button>
-              <button
-                onClick={() => setPixModal({ open: true, plan: 'monthly' })}
-                className="w-full mt-3 flex items-center justify-center gap-1.5 text-xs text-slate-400 hover:text-[#006D5B] transition-colors py-2"
-              >
-                <MI name="qr_code" className="text-base" /> Pagar com Pix
-              </button>
             </div>
 
             {/* Anual — highlighted como MAIS POPULAR */}
