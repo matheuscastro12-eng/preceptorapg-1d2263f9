@@ -14,11 +14,11 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
-        headline: ['Plus Jakarta Sans', 'sans-serif'],
-        body: ['Inter', 'sans-serif'],
-        label: ['Inter', 'sans-serif'],
+        sans: ['var(--font-body)', 'system-ui', 'sans-serif'],
+        body: ['var(--font-body)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'system-ui', 'sans-serif'],
+        headline: ['var(--font-display)', 'system-ui', 'sans-serif'],
+        label: ['var(--font-body)', 'system-ui', 'sans-serif'],
       },
       letterSpacing: {
         tightest: '-0.04em',
@@ -26,6 +26,12 @@ export default {
         tight: '-0.015em',
       },
       colors: {
+        'brand-primary': 'rgb(var(--brand-primary) / <alpha-value>)',
+        'brand-primary-dark': 'rgb(var(--brand-primary-dark) / <alpha-value>)',
+        'brand-primary-darker': 'rgb(var(--brand-primary-darker) / <alpha-value>)',
+        'brand-ink': 'rgb(var(--brand-ink) / <alpha-value>)',
+        'brand-ink-2': 'rgb(var(--brand-ink-2) / <alpha-value>)',
+        'brand-gold': 'rgb(var(--brand-gold) / <alpha-value>)',
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
