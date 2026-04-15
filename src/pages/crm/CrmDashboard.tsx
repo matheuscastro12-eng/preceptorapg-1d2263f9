@@ -6,6 +6,7 @@ import HealthMap from "@/components/crm/HealthMap";
 import ChurnTable from "@/components/crm/ChurnTable";
 import AutomationsLog from "@/components/crm/AutomationsLog";
 import { useDashboardKpis, useFunnelKpis, useHealthDistribution, useActiveChurnRisks, useRecentAutomations } from "@/hooks/useCrm";
+import { useCrmRealtime } from "@/hooks/useCrmRealtime";
 import { ErrorState, MetricRowSkeleton } from "@/components/crm/QueryState";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -16,6 +17,7 @@ const emptyFunnel = {
 };
 
 export default function CrmDashboard() {
+  useCrmRealtime(); // invalida queries quando vendas/leads/inadimplencias mudam + toasts
   const { data: kpis, isLoading: kpisLoading, isError: kpisError, error: kpisErrObj, refetch: refetchKpis } = useDashboardKpis();
   const { data: funnelData } = useFunnelKpis("preceptormed");
   const { data: healthData } = useHealthDistribution();

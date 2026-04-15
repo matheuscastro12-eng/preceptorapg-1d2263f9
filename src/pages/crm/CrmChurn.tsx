@@ -5,6 +5,7 @@ import ChurnTable from "@/components/crm/ChurnTable";
 import { RISK_LEVEL_COLORS, type RiskLevel } from "@/lib/crm/types";
 import { ErrorState, MetricRowSkeleton } from "@/components/crm/QueryState";
 import { Skeleton } from "@/components/ui/skeleton";
+import ExportButton from "@/components/crm/ExportButton";
 
 const RISK_LABELS: Record<RiskLevel, string> = { low: "Baixo", medium: "Medio", high: "Alto", critical: "Critico" };
 
@@ -58,9 +59,29 @@ export default function CrmChurn() {
 
   return (
     <div className="p-4 md:p-6 space-y-5 md:space-y-6">
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-white">Anti-Churn Engine</h1>
-        <p className="text-xs md:text-sm text-gray-500 mt-0.5">ML identifica risco de churn 14 dias antes &middot; Intervencoes automaticas</p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Anti-Churn Engine</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">ML identifica risco de churn 14 dias antes &middot; Intervencoes automaticas</p>
+        </div>
+        <ExportButton
+          data={allPredictions as any[]}
+          filename="churn-risks"
+          headers={{
+            risk_level: "Nivel de risco",
+            churn_probability: "Probabilidade",
+            signals: "Sinais",
+            intervention_type: "Intervencao",
+            intervention_sent: "Enviada?",
+            produto: "Produto",
+            created_at: "Criado em",
+          }}
+          transform={(p) => ({
+            ...p,
+            churn_probability: Math.round((p.churn_probability ?? 0) * 100) + "%",
+            signals: Array.isArray(p.signals) ? p.signals.join(", ") : String(p.signals ?? ""),
+          })}
+        />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">

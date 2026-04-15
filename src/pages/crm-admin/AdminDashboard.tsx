@@ -1,6 +1,7 @@
 import { DollarSign, Users, TrendingUp, TrendingDown, ArrowLeftRight, Target, Calendar, Crosshair, Star, LineChart as LineChartIcon } from "lucide-react";
 import { ErrorState, MetricRowSkeleton } from "@/components/crm/QueryState";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCrmRealtime } from "@/hooks/useCrmRealtime";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import MetricCard from "@/components/crm/MetricCard";
 import PageHeader from "@/components/crm-admin/PageHeader";
@@ -30,6 +31,7 @@ const CATEGORIA_COLORS: Record<string, string> = {
 };
 
 export default function AdminDashboard() {
+  useCrmRealtime();
   const { data: kpis, isLoading, isError, error, refetch } = useAdminDashboardKpis();
   const { data: mrrHistory } = useMrrHistory();
   const { data: despesasCat } = useDespesasPorCategoria();

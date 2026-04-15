@@ -37,6 +37,7 @@ const sections: NavSection[] = [
       { to: "/admin/crm-mkt/users", label: "Usuários", icon: UserCog },
       { to: "/admin/crm-mkt/leads", label: "Lead Intelligence", icon: Users },
       { to: "/admin/crm-mkt/funnel", label: "Funil de Conversão", icon: TrendingUp },
+      { to: "/admin/crm-mkt/cohorts", label: "Cohorts", icon: BarChart3 },
     ],
   },
   {

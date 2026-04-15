@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import MetricCard from "@/components/crm/MetricCard";
 import PageHeader from "@/components/crm-admin/PageHeader";
+import ExportButton from "@/components/crm/ExportButton";
 import {
   useInadimplencias, useInadimplenciaStats,
   useUpdateInadimplencia, useMarkAsPerdido,
@@ -55,10 +56,25 @@ export default function AdminInadimplencia() {
 
   return (
     <div className="p-4 md:p-6 space-y-5 md:space-y-6">
-      <PageHeader
-        title="Inadimplencia"
-        subtitle="Assinantes com pagamento atrasado ou falho (via EasyFlow webhook)"
-      />
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <PageHeader
+          title="Inadimplencia"
+          subtitle="Assinantes com pagamento atrasado ou falho (via EasyFlow webhook)"
+        />
+        <ExportButton
+          data={(items ?? []) as any[]}
+          filename="inadimplencia"
+          headers={{
+            email: "Email",
+            nome: "Nome",
+            plano: "Plano",
+            valor_devido: "Valor devido",
+            status: "Status",
+            tentativas: "Tentativas",
+            data_ocorrencia: "Data ocorrencia",
+          }}
+        />
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
