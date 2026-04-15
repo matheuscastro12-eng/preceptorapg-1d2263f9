@@ -139,7 +139,9 @@ export default function CrmEmailTemplates() {
   const handleSave = async () => {
     if (!selected) return;
     setSaving(true);
-    const { error } = await supabase
+    // IMPORTANTE: usar .select() depois do .update() — sem isso, supabase-js
+    // retorna sucesso mesmo quando RLS bloqueia e 0 rows foram afetadas.
+    const { data, error } = await supabase
       .from("crm_email_templates")
       .update({
         subject: draft.subject,
@@ -148,10 +150,15 @@ export default function CrmEmailTemplates() {
         auto_send: draft.auto_send,
         updated_at: new Date().toISOString(),
       })
-      .eq("trigger_name", selected);
+      .eq("trigger_name", selected)
+      .select();
 
     if (error) {
       toast.error("Erro ao salvar: " + error.message);
+    } else if (!data || data.length === 0) {
+      // RLS bloqueou ou trigger_name nao achou — avisa claro
+      toast.error("Nao foi salvo no banco (permissao negada). Contate o owner.");
+      console.error("[CrmEmailTemplates] update retornou 0 rows. Provavel RLS.");
     } else {
       toast.success("Template salvo");
       setSaved(true);
