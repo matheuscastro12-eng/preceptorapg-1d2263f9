@@ -13,6 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Camera, Edit2, Save, X, UserPlus, UserMinus, MessageCircle, TrendingUp, Target, Brain, Calendar, BarChart3, Layers, Flame, GraduationCap, MapPin, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import PageSkeleton from '@/components/PageSkeleton';
+import SubscriptionManager from '@/components/profile/SubscriptionManager';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area } from 'recharts';
@@ -89,7 +90,7 @@ const ProfilePage = () => {
   const [flashcardCount, setFlashcardCount] = useState(0);
   const [evoLoading, setEvoLoading] = useState(true);
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
-  const [activeTab, setActiveTab] = useState<'evolucao' | 'atividades'>('evolucao');
+  const [activeTab, setActiveTab] = useState<'evolucao' | 'atividades' | 'assinatura'>('evolucao');
 
   const targetUserId = userId || user?.id;
   const isOwnProfile = !userId || userId === user?.id;
@@ -470,7 +471,19 @@ const ProfilePage = () => {
                 >
                   Atividade
                 </button>
+                <button
+                  onClick={() => setActiveTab('assinatura')}
+                  className={`flex-1 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-['Manrope'] text-xs sm:text-sm font-bold transition-all ${
+                    activeTab === 'assinatura' ? 'bg-white text-[#006D5B] shadow-sm border border-slate-200/40' : 'text-[#6e7975] hover:bg-white/60'
+                  }`}
+                >
+                  Assinatura
+                </button>
               </div>
+
+              {activeTab === 'assinatura' && (
+                <SubscriptionManager />
+              )}
 
               {activeTab === 'evolucao' && (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">

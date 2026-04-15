@@ -25,21 +25,27 @@ serve(async (req) => {
     const { data: { user: caller }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !caller) throw new Error("Unauthorized");
 
-    // Checar role admin
-    const { data: role } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", caller.id)
-      .eq("role", "admin")
-      .maybeSingle();
+    const { user_id: bodyUserId, self = false } = await req.json();
 
-    if (!role) throw new Error("Forbidden: not admin");
+    // Modos:
+    // - self = true: usuario deletando a propria conta (nao precisa ser admin)
+    // - self = false: admin deletando qualquer outro user (exceto ele mesmo)
+    let user_id: string;
+    if (self) {
+      user_id = caller.id;
+    } else {
+      const { data: role } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", caller.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!role) throw new Error("Forbidden: not admin");
 
-    const { user_id } = await req.json();
-    if (!user_id) throw new Error("user_id required");
-
-    // Nao permitir deletar a si mesmo
-    if (user_id === caller.id) throw new Error("Cannot delete yourself");
+      if (!bodyUserId) throw new Error("user_id required");
+      if (bodyUserId === caller.id) throw new Error("Use self=true para deletar a propria conta");
+      user_id = bodyUserId;
+    }
 
     // Deletar dados publicos primeiro (cascade)
     await supabase.from("crm_funnel_events").delete().eq("user_id", user_id);

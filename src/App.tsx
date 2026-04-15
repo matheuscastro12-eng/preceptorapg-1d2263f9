@@ -51,7 +51,6 @@ const Enamed = lazy(() => import("./pages/Enamed"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Flashcards = lazy(() => import("./pages/Flashcards"));
 const ScientificStudio = lazy(() => import("./pages/ScientificStudio"));
-const Welcome = lazy(() => import("./pages/Welcome"));
 const ThankYou = lazy(() => import("./pages/ThankYou"));
 const SubscriptionThankYou = lazy(() => import("./pages/SubscriptionThankYou"));
 
@@ -111,7 +110,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/auth" element={<Auth />} />
-                <Route path="/welcome" element={<Welcome />} />
+                <Route path="/welcome" element={<Navigate to="/inscricao" replace />} />
                 <Route path="/menu" element={<MainMenu />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/library" element={<Library />} />
