@@ -300,11 +300,35 @@ serve(async (req) => {
         return json({ received: true, action: "error", error: subErr.message }, 500);
       }
 
-      // Update CRM lead (com checagem de erro)
-      const { error: leadErr } = await supabase.from("crm_leads")
-        .update({ status: "subscriber", converted_at: now })
-        .eq("user_id", profile.user_id);
-      if (leadErr) console.warn(`[EasyFlow] crm_leads update falhou (nao bloqueante): ${leadErr.message}`);
+      // Update or create CRM lead. UPDATE sozinho fica silencioso (0 rows)
+      // se o user nunca virou lead — checa existencia antes e insere se faltar.
+      const { data: existingLead } = await supabase
+        .from("crm_leads")
+        .select("id")
+        .eq("user_id", profile.user_id)
+        .maybeSingle();
+
+      if (existingLead) {
+        const { error: leadErr } = await supabase.from("crm_leads")
+          .update({ status: "subscriber", converted_at: now, updated_at: now })
+          .eq("user_id", profile.user_id);
+        if (leadErr) console.warn(`[EasyFlow] crm_leads update falhou: ${leadErr.message}`);
+      } else {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", profile.user_id)
+          .maybeSingle();
+        const { error: insErr } = await supabase.from("crm_leads").insert({
+          user_id: profile.user_id,
+          email,
+          nome: prof?.full_name ?? email,
+          status: "subscriber",
+          converted_at: now,
+        });
+        if (insErr) console.warn(`[EasyFlow] crm_leads insert falhou: ${insErr.message}`);
+        else console.log(`[EasyFlow] crm_leads CRIADO pro novo subscriber: ${email}`);
+      }
 
       // Resolve any open inadimplencia
       await supabase.from("admin_inadimplencias")
