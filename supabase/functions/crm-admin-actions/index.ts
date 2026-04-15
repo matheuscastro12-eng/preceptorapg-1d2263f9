@@ -12,16 +12,34 @@ const corsHeaders = {
 
 const CRM_TOKEN_SECRET = Deno.env.get("CRM_TOKEN_SECRET") ?? "";
 
-function verifyCrmToken(token: string): boolean {
-  if (!token || !CRM_TOKEN_SECRET) return false;
+// Valida HMAC-SHA256 do token gerado pela crm-auth. Sem isso, um token
+// forjado com payload manualmente construido passava — so checava exp.
+async function verifyCrmToken(token: string): Promise<Record<string, unknown> | null> {
+  if (!token || !CRM_TOKEN_SECRET) return null;
   try {
-    const [dataB64, sig] = token.split(".");
-    if (!dataB64 || !sig) return false;
-    const data = JSON.parse(atob(dataB64));
-    if (data.exp && data.exp < Date.now()) return false;
-    return true;
+    const [dataB64, sigB64] = token.split(".");
+    if (!dataB64 || !sigB64) return null;
+
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(CRM_TOKEN_SECRET),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"],
+    );
+
+    const dataBytes = Uint8Array.from(atob(dataB64), (c) => c.charCodeAt(0));
+    const sigBytes = Uint8Array.from(atob(sigB64), (c) => c.charCodeAt(0));
+
+    const valid = await crypto.subtle.verify("HMAC", key, sigBytes, dataBytes);
+    if (!valid) return null;
+
+    const payload = JSON.parse(new TextDecoder().decode(dataBytes));
+    if (payload.exp && Date.now() > payload.exp) return null;
+
+    return payload;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -32,8 +50,9 @@ serve(async (req) => {
     const body = await req.json();
     const { action, token } = body;
 
-    // Verify CRM admin token
-    if (!verifyCrmToken(token)) {
+    // Verify CRM admin token (agora com HMAC, nao so exp)
+    const payload = await verifyCrmToken(token);
+    if (!payload) {
       return json({ error: "Token CRM invalido ou expirado" }, 401);
     }
 

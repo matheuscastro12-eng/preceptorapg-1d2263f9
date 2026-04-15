@@ -14,6 +14,7 @@ import type {
   LeadStatus,
   Produto,
 } from "./types";
+import { MRR_BASELINE_DATE } from "./constants";
 
 // ── Helper: fetch subscriptions via edge function (bypasses RLS) ──
 
@@ -45,8 +46,9 @@ export async function getDashboardKpis() {
     .select("*", { count: "exact", head: true })
     .eq("status", "subscriber");
 
-  // Calculate MRR from actual subscription plans (only from baseline date forward)
-  const MRR_BASELINE = "2026-04-07T00:00:00.000Z";
+  // Calculate MRR from actual subscription plans (only from baseline date forward).
+  // MRR_BASELINE_DATE importado de ./constants pra manter consistente com useAdminDashboard.
+  const MRR_BASELINE = MRR_BASELINE_DATE;
   const allSubs = await fetchSubscriptionsViaEdge();
   const activeSubs = allSubs.filter((s: any) => s.status === "active");
 

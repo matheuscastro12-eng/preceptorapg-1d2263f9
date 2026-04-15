@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, TrendingUp } from "lucide-react";
+import { Search, TrendingUp, Users } from "lucide-react";
 import { useLeads, useUtmBreakdown } from "@/hooks/useCrm";
+import ExportButton from "@/components/crm/ExportButton";
 import { LEAD_STATUS_LABELS, PRODUTO_COLORS } from "@/lib/crm/types";
 import type { LeadStatus, Produto } from "@/lib/crm/types";
 
@@ -54,9 +55,26 @@ export default function CrmLeads() {
 
   return (
     <div className="p-4 md:p-6 space-y-5 md:space-y-6">
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-white">Lead Intelligence</h1>
-        <p className="text-xs md:text-sm text-gray-500 mt-0.5">{total.toLocaleString("pt-BR")} leads no banco &middot; Score automatico</p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Lead Intelligence</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">{total.toLocaleString("pt-BR")} leads no banco &middot; Score automatico</p>
+        </div>
+        <ExportButton
+          data={leads as any[]}
+          filename="leads"
+          headers={{
+            nome: "Nome",
+            email: "Email",
+            status: "Status",
+            lead_score: "Score",
+            fase_medica: "Fase medica",
+            utm_source: "UTM Source",
+            utm_medium: "UTM Medium",
+            utm_campaign: "UTM Campanha",
+            created_at: "Cadastro",
+          }}
+        />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
@@ -100,6 +118,21 @@ export default function CrmLeads() {
               </div>
             </form>
           </div>
+
+          {/* Empty state */}
+          {!isLoading && leads.length === 0 && (
+            <div className="py-16 px-6 text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-800 mb-3">
+                <Users className="w-5 h-5 text-gray-500" />
+              </div>
+              <p className="text-sm font-semibold text-white mb-1">Nenhum lead encontrado</p>
+              <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                {search || statusFilter || scoreFilter
+                  ? "Ajuste os filtros ou limpe a busca pra ver todos."
+                  : "Leads aparecerao aqui quando usuarios se cadastrarem no site."}
+              </p>
+            </div>
+          )}
 
           {/* Mobile card view */}
           <div className="md:hidden divide-y divide-gray-800/50">

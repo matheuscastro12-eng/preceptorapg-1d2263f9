@@ -55,7 +55,11 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
-  const TOKEN_SECRET = Deno.env.get("CRM_TOKEN_SECRET") ?? "fallback-insecure";
+  const TOKEN_SECRET = Deno.env.get("CRM_TOKEN_SECRET");
+  if (!TOKEN_SECRET) {
+    console.error("[crm-auth] CRM_TOKEN_SECRET nao esta setado — recusando autenticacao");
+    return json({ error: "Server misconfiguration: CRM_TOKEN_SECRET nao definido" }, 500);
+  }
 
   try {
     const body = await req.json();

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/crm/supabase";
+import { MRR_BASELINE_DATE } from "@/lib/crm/constants";
 
 const CRM_ACTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-admin-actions`;
 const API_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -55,7 +56,7 @@ async function fetchDashboardKpis(): Promise<DashboardKpis> {
   const inicioMes = `${mesAtual}-01`;
 
   // MRR real = soma dos assinantes pagantes ativos (apenas novos a partir de 07/04/2026)
-  const MRR_BASELINE_DATE = "2026-04-07T00:00:00.000Z";
+  // MRR_BASELINE_DATE importado de @/lib/crm/constants
   const allSubs = await fetchSubscriptions();
   const subs = allSubs.filter((s: any) => s.status === "active");
 
@@ -89,13 +90,13 @@ async function fetchDashboardKpis(): Promise<DashboardKpis> {
 
   const burnRate = (despesasMes ?? []).reduce((s, d) => s + Number(d.valor), 0);
 
-  // Saldo atual
+  // Saldo atual — maybeSingle pra nao crashar se a tabela esta vazia
   const { data: fluxo } = await supabase
     .from("admin_fluxo_caixa")
     .select("saldo_atual")
     .order("data_atualizacao", { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   const saldo = Number(fluxo?.saldo_atual ?? 0);
   const runway = burnRate > 0 ? saldo / burnRate : 0;

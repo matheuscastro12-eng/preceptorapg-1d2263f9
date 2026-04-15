@@ -371,13 +371,24 @@ serve(async (req) => {
           results.failed++;
         }
       }
-      // TODO: implementar push e WhatsApp
+      // TODO: implementar push e WhatsApp. Por enquanto nao mandam nada —
+      // marcamos como FAILED (nao skipped) pra admin nao achar que enviou.
       else if (automation.channel === "push") {
-        // Integrar com serviço de push (ex: OneSignal, Firebase)
-        results.skipped++;
+        console.warn(`[crm-automations] Push nao implementado. Automacao ${automation.id} marcada como failed.`);
+        await supabase.from("crm_automations_log").update({
+          status: "failed",
+          failed_at: new Date().toISOString(),
+          error_message: "Canal push nao implementado",
+        }).eq("id", automation.id);
+        results.failed++;
       } else if (automation.channel === "whatsapp") {
-        // Integrar com Evolution API ou Wati
-        results.skipped++;
+        console.warn(`[crm-automations] WhatsApp nao implementado. Automacao ${automation.id} marcada como failed.`);
+        await supabase.from("crm_automations_log").update({
+          status: "failed",
+          failed_at: new Date().toISOString(),
+          error_message: "Canal WhatsApp nao implementado",
+        }).eq("id", automation.id);
+        results.failed++;
       }
     }
 

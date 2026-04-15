@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import MetricCard from "@/components/crm/MetricCard";
+import ExportButton from "@/components/crm/ExportButton";
 import { useEFSubscriptions, useEFSales, useCancelEFSubscription } from "@/hooks/useEasyflow";
 import { X } from "lucide-react";
 
@@ -222,9 +223,29 @@ export default function CrmUsers() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">Gestao de Usuarios</h1>
-        <p className="text-sm text-gray-500 mt-0.5">{stats.total} usuarios cadastrados &middot; Gerencie acesso e planos</p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Gestao de Usuarios</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{stats.total} usuarios cadastrados &middot; Gerencie acesso e planos</p>
+        </div>
+        <ExportButton
+          data={filtered as any[]}
+          filename="usuarios"
+          headers={{
+            email: "Email",
+            full_name: "Nome",
+            phone: "Telefone",
+            created_at: "Cadastro",
+          }}
+          transform={(u) => ({
+            email: u.email,
+            full_name: u.full_name ?? "",
+            phone: u.phone ?? "",
+            created_at: u.created_at,
+            status: u.subscription?.status ?? "sem acesso",
+            plano: u.subscription?.plan_type ?? "—",
+          })}
+        />
       </div>
 
       {/* KPI Cards */}
