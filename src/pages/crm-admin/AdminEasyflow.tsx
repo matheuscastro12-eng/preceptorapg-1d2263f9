@@ -187,11 +187,16 @@ export default function AdminEasyflow() {
                       <p className="text-white text-xs font-medium">{sale.buyer?.name || "—"}</p>
                       <p className="text-[10px] text-gray-500">{sale.buyer?.email || "—"}</p>
                     </td>
-                    <td className="py-3 px-4 text-gray-300 text-xs">{sale.items?.[0]?.product?.name || "—"}</td>
+                    <td className="py-3 px-4 text-gray-300 text-xs">{sale.items?.[0]?.name || sale.items?.[0]?.product?.name || sale.description || "—"}</td>
                     <td className="py-3 px-4 text-white text-xs font-medium">
-                      R$ {((sale.valueInCents || 0) / 100).toFixed(2)}
+                      R$ {((sale.totalValueInCents || sale.valueInCents || 0) / 100).toFixed(2)}
                     </td>
-                    <td className="py-3 px-4 text-gray-400 text-xs">{sale.payments?.[0]?.paymentMethod || "—"}</td>
+                    <td className="py-3 px-4 text-gray-400 text-xs">{
+                      Array.isArray(sale.paymentMethod) ? sale.paymentMethod.join(", ")
+                        : sale.payments?.[0]?.paymentMethod
+                        || sale.paymentMethod
+                        || "—"
+                    }</td>
                     <td className="py-3 px-4">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                         sale.status === "paid" ? "bg-green-900/30 text-green-400" :
