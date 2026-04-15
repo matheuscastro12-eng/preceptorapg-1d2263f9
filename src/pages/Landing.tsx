@@ -118,341 +118,262 @@ const Landing = () => {
         <section className="relative pt-12 sm:pt-20 pb-16 sm:pb-32 px-4 sm:px-6 overflow-hidden">
           <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-10 sm:gap-16">
             <div className="lg:w-1/2 animate-fade-up">
-              <span className="inline-block px-3 sm:px-4 py-1.5 mb-4 sm:mb-6 text-[10px] sm:text-xs font-bold tracking-widest uppercase bg-[#c8eade] text-[#005344] rounded-full">
-                Curadoria Médica de Elite
-              </span>
+              <p className="mb-5 sm:mb-7 text-sm text-[#006D5B] font-semibold">
+                Para estudantes de medicina brasileiros
+              </p>
               <h1
-                className="text-3xl sm:text-5xl md:text-7xl font-extrabold leading-[1.1] mb-5 sm:mb-8 tracking-tighter text-[#191c1d]"
+                className="text-3xl sm:text-5xl md:text-6xl font-bold leading-[1.1] mb-5 sm:mb-7 tracking-tight text-[#191c1d]"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
-                Apoio clínico de elite para sua jornada médica.
+                Estudo clínico que acompanha seu raciocínio.
               </h1>
-              <p className="text-base sm:text-xl md:text-2xl text-slate-500 font-light leading-relaxed mb-8 sm:mb-10 max-w-xl">
-                Estude com resumos estruturados e casos reais gerados por IA acadêmica. Criado para quem não tem tempo a perder.
+              <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-8 sm:mb-10 max-w-xl">
+                Resumos de PBL com fisiopatologia integrada, simulados ENAMED no padrão INEP e chat com busca automática no PubMed. Em português, para a formação médica brasileira.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <button
                   onClick={() => navigate('/auth?tab=signup')}
-                  className="btn-shimmer relative overflow-hidden px-6 sm:px-8 py-3.5 sm:py-4 bg-[#005344] text-white text-xs sm:text-sm font-bold uppercase tracking-widest rounded-lg shadow-xl hover:shadow-2xl hover:-translate-y-0.5 active:scale-95 transition-all duration-300 text-center"
+                  className="px-6 sm:px-8 py-3.5 bg-[#005344] text-white text-sm font-semibold rounded-lg hover:bg-[#003d32] active:scale-[0.98] transition-colors text-center"
                 >
                   Começar agora
                 </button>
                 <button
                   onClick={() => document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="px-6 sm:px-8 py-3.5 sm:py-4 border border-slate-200 text-[#191c1d] text-xs sm:text-sm font-bold uppercase tracking-widest rounded-lg hover:bg-slate-50 active:scale-95 transition-all duration-300 text-center"
+                  className="px-6 sm:px-8 py-3.5 text-[#191c1d] text-sm font-semibold hover:text-[#005344] transition-colors text-center"
                 >
-                  Ver demonstração
+                  Ver como funciona →
                 </button>
               </div>
             </div>
 
             <div className="lg:w-1/2 relative animate-fade-up w-full" style={{ animationDelay: '0.2s' }}>
-              <div className="relative z-10 rounded-xl sm:rounded-2xl overflow-hidden shadow-xl sm:shadow-2xl rotate-1 sm:rotate-2 hover:rotate-0 transition-transform duration-500 bg-gradient-to-br from-[#e8f5f1] to-[#d0ebe4] p-1">
-                {/* App mockup */}
-                <div className="bg-white rounded-xl overflow-hidden">
-                  {/* Mockup top bar */}
-                  <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 border-b border-slate-100">
-                    <div className="flex gap-1.5">
-                      <div className="w-3 h-3 rounded-full bg-red-400" />
-                      <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                      <div className="w-3 h-3 rounded-full bg-green-400" />
-                    </div>
-                    <div className="flex-1 mx-8">
-                      <div className="bg-slate-200/60 rounded-full h-5 max-w-[200px] mx-auto" />
-                    </div>
-                  </div>
-                  {/* Mockup sidebar + content */}
-                  <div className="flex h-[300px] sm:h-[440px] lg:h-[540px]">
-                    {/* Mini sidebar */}
-                    <div className="w-14 flex-shrink-0 flex flex-col items-center py-4 gap-4" style={{ background: 'linear-gradient(180deg, #005344 0%, #006d5b 100%)' }}>
-                      <img src={logoIcon} alt="" className="w-7 h-7 brightness-0 invert" />
-                      <div className="mt-2 space-y-3">
-                        {['dashboard', 'auto_awesome', 'shutter_speed', 'library_books'].map((icon, i) => (
-                          <div key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center ${i === 1 ? 'bg-white/20' : 'hover:bg-white/10'} transition-colors`}>
-                            <span className="material-symbols-outlined text-white/80 text-[18px]">{icon}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    {/* Content area */}
-                    <div className="flex-1 bg-[#f8f9fa] p-3 sm:p-6 overflow-hidden">
-                      <div className="space-y-3 sm:space-y-4">
-                        <div className="flex items-center gap-2 mb-3 sm:mb-6">
-                          <div className="w-8 h-8 rounded-lg bg-[#006D5B]/10 flex items-center justify-center">
-                            <span className="material-symbols-outlined text-[#006D5B] text-[18px]">auto_awesome</span>
-                          </div>
-                          <div>
-                            <div className="h-3 w-28 bg-slate-300 rounded-full" />
-                            <div className="h-2 w-20 bg-slate-200 rounded-full mt-1" />
-                          </div>
-                        </div>
-                        {/* Mockup cards */}
-                        <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-[#006D5B]">
-                          <div className="h-3 w-32 bg-[#005344]/20 rounded-full mb-3" />
-                          <div className="space-y-2">
-                            <div className="h-2 w-full bg-slate-100 rounded-full" />
-                            <div className="h-2 w-5/6 bg-slate-100 rounded-full" />
-                            <div className="h-2 w-4/6 bg-slate-100 rounded-full" />
-                          </div>
-                        </div>
-                        <div className="bg-white rounded-xl p-4 shadow-sm">
-                          <div className="h-3 w-24 bg-slate-200 rounded-full mb-3" />
-                          <div className="space-y-2">
-                            <div className="h-2 w-full bg-slate-100 rounded-full" />
-                            <div className="h-2 w-3/4 bg-slate-100 rounded-full" />
-                          </div>
-                        </div>
-                        <div className="bg-white rounded-xl p-4 shadow-sm">
-                          <div className="h-3 w-28 bg-slate-200 rounded-full mb-3" />
-                          <div className="space-y-2">
-                            <div className="h-2 w-full bg-slate-100 rounded-full" />
-                            <div className="h-2 w-2/3 bg-slate-100 rounded-full" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div className="relative z-10 rounded-lg overflow-hidden border border-slate-200 shadow-lg">
+                <video
+                  src="/video-lp.mp4"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  className="block w-full h-auto"
+                />
               </div>
-              {/* Decorative blurs */}
-              <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-[#9df3dc]/30 rounded-full blur-3xl -z-10" />
-              <div className="absolute top-10 -right-10 w-48 h-48 bg-[#c8eade]/20 rounded-full blur-3xl -z-10" />
             </div>
           </div>
         </section>
 
-        {/* ─── Features Section ─────────────────────────── */}
-        <section id="recursos" className="py-14 sm:py-24 bg-[#f3f4f5]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="mb-10 sm:mb-20 text-center md:text-left max-w-3xl">
+        {/* ─── Recursos ──────────────────────────────────── */}
+        <section id="recursos" className="py-16 sm:py-28 bg-[#fafbfa] border-t border-slate-100">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="mb-12 sm:mb-16 max-w-2xl">
+              <p className="text-sm text-[#006D5B] font-semibold mb-3">O que você recebe</p>
               <h2
-                className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 sm:mb-6"
+                className="text-2xl sm:text-4xl font-bold leading-tight text-[#191c1d]"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
-                Ferramentas que falam a língua do médico.
+                Ferramentas construídas para a prática médica brasileira.
               </h2>
-              <p className="text-sm sm:text-lg text-slate-500 leading-relaxed">
-                Desenvolvemos uma interface que prioriza a cognição clínica. Sem ruído, apenas o que é essencial para o seu diagnóstico e aprendizado.
-              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden">
               {[
                 {
-                  icon: 'description',
-                  title: 'Resumos que vão ao ponto',
-                  desc: 'Resumos estruturados por IA com definição, fisiopatologia, diagnóstico e tratamento — prontos em segundos.',
+                  title: 'Fechamentos de PBL',
+                  desc: 'Resumos com correlação clínico-básica obrigatória: fisiopatologia em cascata, mecanismos moleculares e anatomia aplicada ao caso.',
+                  meta: 'Gerado em ~20 segundos',
                 },
                 {
-                  icon: 'clinical_notes',
-                  title: 'Simule a vida real',
-                  desc: 'Casos clínicos interativos e simulados estilo residência que testam seu raciocínio diagnóstico sob pressão.',
+                  title: 'Simulados ENAMED · REVALIDA',
+                  desc: 'Questões no padrão INEP com vinhetas clínicas extensas, laboratórios numéricos e distratores plausíveis. 5 áreas cobertas.',
+                  meta: 'Padrão INEP 2011–2025',
                 },
                 {
-                  icon: 'auto_awesome',
-                  title: 'Chat Acadêmico com IA',
-                  desc: 'Tire dúvidas em tempo real com o preceptor virtual. Respostas contextualizadas baseadas no que você está estudando.',
+                  title: 'Chat com PubMed integrado',
+                  desc: 'IA busca artigos na PubMed, resume em português e cita fontes inline. Não é busca cega — é síntese com evidência.',
+                  meta: 'Gemini 2.5 + E-utilities',
                 },
                 {
-                  icon: 'download',
-                  title: 'Exporte e estude offline',
-                  desc: 'Baixe seus resumos em PDF formatado, organize na sua biblioteca pessoal e acesse quando precisar.',
+                  title: 'Flashcards com SM-2',
+                  desc: 'Repetição espaçada real (SuperMemo 2). Intervalos ajustam pela sua performance — não fake streaks.',
+                  meta: 'Algoritmo real, não gamificado',
+                },
+                {
+                  title: 'Mentor Científico',
+                  desc: 'Revisão de TCC e artigos com validação ABNT e coerência metodológica. Cada seção avaliada independentemente.',
+                  meta: 'Estruturado em 7 seções',
+                },
+                {
+                  title: 'Biblioteca pessoal',
+                  desc: 'Todos os resumos, questões e flashcards ficam salvos e pesquisáveis. Exporte em PDF com formatação preservada.',
+                  meta: 'Exportação PDF nativa',
                 },
               ].map((feature, i) => (
-                <div
-                  key={i}
-                  className="bg-white p-5 sm:p-8 rounded-xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group"
-                >
-                  <div className="w-12 h-12 bg-[#006D5B]/10 flex items-center justify-center rounded-lg mb-6 group-hover:bg-[#006D5B] transition-colors duration-300">
-                    <MI name={feature.icon} className="text-[#006D5B] group-hover:text-white transition-colors duration-300" />
-                  </div>
+                <div key={i} className="bg-white p-6 sm:p-8">
                   <h3
-                    className="text-xl font-bold mb-4 text-[#191c1d]"
+                    className="text-lg font-bold mb-2 text-[#191c1d]"
                     style={{ fontFamily: "'Manrope', sans-serif" }}
                   >
                     {feature.title}
                   </h3>
-                  <p className="text-slate-500 text-sm leading-relaxed">{feature.desc}</p>
+                  <p className="text-sm text-slate-600 leading-relaxed mb-4">{feature.desc}</p>
+                  <p className="text-xs text-[#006D5B] font-semibold">{feature.meta}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ─── Editorial Content Block ─────────────────── */}
-        <section id="como-funciona" className="py-16 sm:py-32 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="grid grid-cols-12 gap-6 items-center">
-              <div className="col-span-12 lg:col-span-5 mb-8 lg:mb-0">
-                <div className="rounded-xl sm:rounded-2xl shadow-lg w-full h-[350px] sm:h-[500px] bg-gradient-to-br from-[#e8f5f1] to-[#d0ebe4] p-1 overflow-hidden">
-                  <div className="bg-white rounded-xl h-full overflow-hidden flex flex-col">
-                    {/* Mockup header */}
-                    <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 border-b border-slate-100">
-                      <div className="flex gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
-                      </div>
-                    </div>
-                    {/* Simulados mockup */}
-                    <div className="flex-1 bg-[#f8f9fa] p-3 sm:p-6 overflow-hidden">
-                      <div className="flex items-center gap-2 mb-3 sm:mb-5">
-                        <span className="material-symbols-outlined text-[#006D5B]">shutter_speed</span>
-                        <div className="h-3.5 w-32 bg-slate-300 rounded-full" />
-                      </div>
-                      {/* Practice type cards */}
-                      <div className="grid grid-cols-2 gap-3 mb-5">
-                        <div className="bg-white rounded-xl p-4 border-2 border-[#006D5B] shadow-sm">
-                          <div className="w-8 h-8 rounded-lg bg-[#006D5B]/10 flex items-center justify-center mb-2">
-                            <span className="material-symbols-outlined text-[#006D5B] text-[16px]">quiz</span>
-                          </div>
-                          <div className="h-2.5 w-16 bg-slate-200 rounded-full" />
+        {/* ─── Como funciona — Exemplo real ──────────────── */}
+        <section id="como-funciona" className="py-16 sm:py-28 bg-white border-t border-slate-100">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="mb-12 sm:mb-16 max-w-2xl">
+              <p className="text-sm text-[#006D5B] font-semibold mb-3">Exemplo real da plataforma</p>
+              <h2
+                className="text-2xl sm:text-4xl font-bold leading-tight text-[#191c1d]"
+                style={{ fontFamily: "'Manrope', sans-serif" }}
+              >
+                Questões ENAMED no padrão INEP, geradas sob demanda.
+              </h2>
+              <p className="text-base text-slate-600 leading-relaxed mt-4">
+                Vinhetas clínicas extensas, laboratórios com valores numéricos e distratores plausíveis — calibrados na distribuição histórica INEP 2011–2025.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-12 gap-6 lg:gap-10">
+              {/* Questão real */}
+              <div className="col-span-12 lg:col-span-7">
+                <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+                  <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-200">
+                    <span className="text-xs font-semibold text-slate-600">Clínica Médica · Nefrologia</span>
+                    <span className="text-[10px] px-2 py-0.5 bg-[#005344] text-white font-semibold rounded">Alta dificuldade</span>
+                  </div>
+                  <div className="p-5 sm:p-7">
+                    <p className="text-sm sm:text-[15px] text-slate-700 leading-relaxed mb-5">
+                      Mulher de 58 anos, hipertensa e diabética há 12 anos, em uso irregular de losartana e metformina, comparece ao ambulatório com queixa de edema progressivo em membros inferiores há 3 semanas. Ao exame: PA 168/102 mmHg, edema ++/4+ simétrico até joelhos. Exames: creatinina 2,1 mg/dL (prévia 1,3 há 8 meses), ureia 78 mg/dL, albumina 2,8 g/dL, proteinúria de 24h 4,2 g, sedimento urinário com cilindros hialinos e granulosos, sem hematúria dismórfica.
+                    </p>
+                    <p className="text-sm font-semibold text-[#191c1d] mb-3">Qual a conduta mais apropriada?</p>
+                    <div className="space-y-2 text-sm">
+                      {[
+                        { l: 'A', t: 'Iniciar corticoterapia em dose imunossupressora e solicitar biópsia renal de urgência.' },
+                        { l: 'B', t: 'Suspender losartana, iniciar furosemida e manter controle pressórico com anlodipino.' },
+                        { l: 'C', t: 'Otimizar bloqueio do SRAA, adicionar iSGLT2 e intensificar controle glicêmico e pressórico.', correct: true },
+                        { l: 'D', t: 'Encaminhar para hemodiálise de início programado pelo estágio de doença renal crônica.' },
+                      ].map(({ l, t, correct }) => (
+                        <div
+                          key={l}
+                          className={`flex gap-3 p-3 rounded border ${
+                            correct ? 'border-[#006D5B] bg-[#006D5B]/5' : 'border-slate-150 bg-white'
+                          }`}
+                        >
+                          <span className={`flex-shrink-0 w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${
+                            correct ? 'bg-[#006D5B] text-white' : 'bg-slate-100 text-slate-500'
+                          }`}>
+                            {l}
+                          </span>
+                          <span className={correct ? 'text-[#005344] font-medium' : 'text-slate-600'}>{t}</span>
                         </div>
-                        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center mb-2">
-                            <span className="material-symbols-outlined text-slate-400 text-[16px]">clinical_notes</span>
-                          </div>
-                          <div className="h-2.5 w-20 bg-slate-200 rounded-full" />
-                        </div>
-                      </div>
-                      {/* Content grid */}
-                      <div className="grid grid-cols-3 gap-2 mb-5">
-                        {[1,2,3,4,5,6].map(i => (
-                          <div key={i} className={`bg-white rounded-lg p-3 border ${i <= 2 ? 'border-[#006D5B]' : 'border-slate-200'} shadow-sm`}>
-                            <div className="h-2 w-full bg-slate-100 rounded-full mb-1.5" />
-                            <div className="h-1.5 w-2/3 bg-slate-50 rounded-full" />
-                          </div>
-                        ))}
-                      </div>
-                      {/* Generate button */}
-                      <div className="flex justify-center">
-                        <div className="h-10 w-40 rounded-lg" style={{ background: 'linear-gradient(135deg, #005344, #006d5b)' }} />
-                      </div>
+                      ))}
                     </div>
                   </div>
                 </div>
+                <p className="text-xs text-slate-400 mt-3 italic">
+                  Uma de milhares de questões no padrão ENAMED/REVALIDA disponíveis na plataforma.
+                </p>
               </div>
 
-              <div className="col-span-12 lg:col-span-6 lg:col-start-7">
-                <h2
-                  className="text-2xl sm:text-4xl font-bold mb-6 sm:mb-8 leading-tight text-[#191c1d]"
-                  style={{ fontFamily: "'Manrope', sans-serif" }}
-                >
-                  Inteligência artificial aplicada ao ensino médico.
-                </h2>
+              {/* Pilares */}
+              <div className="col-span-12 lg:col-span-5 space-y-7">
+                <div className="border-l-2 border-[#006D5B] pl-5">
+                  <h4
+                    className="text-base font-bold mb-1.5 text-[#191c1d]"
+                    style={{ fontFamily: "'Manrope', sans-serif" }}
+                  >
+                    Resumos de PBL
+                  </h4>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    Fechamentos acadêmicos com correlação clínico-básica: fisiopatologia em cascata, mecanismos moleculares e anatomia aplicada.
+                  </p>
+                </div>
 
-                <div className="space-y-6 sm:space-y-8">
-                  <div className="flex gap-4 sm:gap-6">
-                    <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-[#005344] text-white font-bold text-xs italic">01</div>
-                    <div>
-                      <h4
-                        className="text-lg font-bold mb-2 text-[#191c1d]"
-                        style={{ fontFamily: "'Manrope', sans-serif" }}
-                      >
-                        Resumos Estruturados por IA
-                      </h4>
-                      <p className="text-slate-500 leading-relaxed">
-                        Nossa IA acadêmica gera resumos completos com fisiopatologia, diagnóstico e tratamento em segundos — estruturados para retenção máxima.
-                      </p>
-                    </div>
-                  </div>
+                <div className="border-l-2 border-slate-200 pl-5">
+                  <h4
+                    className="text-base font-bold mb-1.5 text-[#191c1d]"
+                    style={{ fontFamily: "'Manrope', sans-serif" }}
+                  >
+                    Chat com PubMed
+                  </h4>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    IA acadêmica que busca, resume e cita artigos do PubMed em português — respostas baseadas em evidência, não em achismo.
+                  </p>
+                </div>
 
-                  <div className="flex gap-4 sm:gap-6">
-                    <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-[#005344] text-white font-bold text-xs italic">02</div>
-                    <div>
-                      <h4
-                        className="text-lg font-bold mb-2 text-[#191c1d]"
-                        style={{ fontFamily: "'Manrope', sans-serif" }}
-                      >
-                        Design Centrado na Retenção
-                      </h4>
-                      <p className="text-slate-500 leading-relaxed">
-                        Layouts limpos e tipografia estudada para reduzir a fadiga mental durante longas sessões de estudo.
-                      </p>
-                    </div>
-                  </div>
+                <div className="border-l-2 border-slate-200 pl-5">
+                  <h4
+                    className="text-base font-bold mb-1.5 text-[#191c1d]"
+                    style={{ fontFamily: "'Manrope', sans-serif" }}
+                  >
+                    Flashcards com SM-2
+                  </h4>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    Repetição espaçada real, baseada no algoritmo SuperMemo. Questões e cards voltam quando você está prestes a esquecer.
+                  </p>
+                </div>
 
-                  <div className="flex gap-4 sm:gap-6">
-                    <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-[#005344] text-white font-bold text-xs italic">03</div>
-                    <div>
-                      <h4
-                        className="text-lg font-bold mb-2 text-[#191c1d]"
-                        style={{ fontFamily: "'Manrope', sans-serif" }}
-                      >
-                        Estudo Personalizado
-                      </h4>
-                      <p className="text-slate-500 leading-relaxed">
-                        Escolha o tema, o nível de profundidade e o formato. A plataforma se adapta ao seu estilo de estudo e às suas necessidades.
-                      </p>
-                    </div>
-                  </div>
+                <div className="border-l-2 border-slate-200 pl-5">
+                  <h4
+                    className="text-base font-bold mb-1.5 text-[#191c1d]"
+                    style={{ fontFamily: "'Manrope', sans-serif" }}
+                  >
+                    Mentor Científico
+                  </h4>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    Revisão estruturada de TCC e artigos: valida metodologia, ABNT e coerência de cada seção independentemente.
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ─── Social Proof / Depoimentos ──────────────── */}
-        <section id="depoimentos" className="py-14 sm:py-24 bg-white">
+        {/* ─── Depoimentos ──────────────────────────────── */}
+        <section id="depoimentos" className="py-16 sm:py-28 bg-[#fafbfa] border-t border-slate-100">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="text-center mb-10 sm:mb-14">
-              <span className="inline-block px-3 sm:px-4 py-1.5 mb-4 sm:mb-5 text-[10px] sm:text-xs font-bold tracking-widest uppercase bg-[#c8eade] text-[#005344] rounded-full">
-                O que dizem os estudantes
-              </span>
+            <div className="mb-12 sm:mb-16 max-w-2xl">
+              <p className="text-sm text-[#006D5B] font-semibold mb-3">Depoimentos</p>
               <h2
-                className="text-2xl sm:text-4xl font-bold mb-3 sm:mb-4 tracking-tight text-[#191c1d]"
+                className="text-2xl sm:text-4xl font-bold leading-tight text-[#191c1d]"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
-                Aprovado por quem estuda de verdade.
+                Estudantes que já usam no dia a dia.
               </h2>
-              <p className="text-sm sm:text-base text-slate-500 max-w-xl mx-auto leading-relaxed">
-                Depoimentos reais de estudantes de medicina que já usam o PreceptorMED no dia a dia.
-              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-7">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-10 divide-y divide-slate-200 md:divide-y-0 [&>article]:pt-10 md:[&>article]:pt-0 first:[&>article]:pt-0">
               {/* Depoimento 1 — Alicia */}
-              <article className="group relative bg-white border border-slate-100 rounded-2xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(25,28,29,0.04)] hover:shadow-[0_10px_40px_rgba(0,109,91,0.12)] hover:-translate-y-1 hover:border-[#006D5B]/20 transition-all duration-500">
-                {/* Quote icon decorativo */}
-                <div className="absolute top-5 right-5 text-[#006D5B]/10 group-hover:text-[#006D5B]/20 transition-colors duration-500">
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.571-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z"/>
-                  </svg>
-                </div>
-
-                {/* Estrelas */}
-                <div className="flex gap-0.5 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} width="18" height="18" viewBox="0 0 24 24" fill="#C9A84C" aria-hidden="true">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
-                  ))}
-                </div>
-
-                <p className="text-sm sm:text-base text-slate-700 leading-relaxed mb-6 font-light italic">
-                  "A plataforma PreceptorMED é uma ferramenta fantástica para o auxílio nos estudos. Os resumos são bem estruturados e direcionados para os objetivos de aprendizagem do tema, além de que as fontes utilizadas são sempre relevantes. Particularmente, minha função preferida é a de geração de questões com base nos conteúdos, o que ajuda a reforçar os conhecimentos."
+              <article className="flex flex-col">
+                <p className="text-[15px] text-slate-700 leading-relaxed mb-6">
+                  A plataforma PreceptorMED é uma ferramenta fantástica para o auxílio nos estudos. Os resumos são bem estruturados e direcionados para os objetivos de aprendizagem do tema, além de que as fontes utilizadas são sempre relevantes. Particularmente, minha função preferida é a de geração de questões com base nos conteúdos, o que ajuda a reforçar os conhecimentos.
                 </p>
-
-                <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
+                <div className="flex items-center gap-3 mt-auto pt-6">
                   <img
                     src="/alicia-cosendey.jpg"
                     alt="Alicia Cosendey"
+                    className="w-10 h-10 rounded-full object-cover"
                     onError={(e) => {
-                      // Fallback pras iniciais caso a imagem nao exista ainda
-                      e.currentTarget.style.display = "none";
-                      const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
-                      if (fallback) fallback.style.display = "flex";
+                      const target = e.currentTarget as HTMLImageElement;
+                      target.style.display = 'none';
+                      const fallback = target.nextElementSibling as HTMLElement | null;
+                      if (fallback) fallback.style.display = 'flex';
                     }}
-                    className="w-11 h-11 rounded-full object-cover shadow-md"
                   />
                   <div
-                    style={{ display: "none" }}
-                    className="w-11 h-11 rounded-full bg-gradient-to-br from-[#006D5B] to-[#005344] items-center justify-center text-white font-bold text-sm shadow-md"
+                    className="w-10 h-10 rounded-full bg-[#005344] items-center justify-center text-white font-semibold text-xs"
+                    style={{ display: 'none' }}
                   >
                     AC
                   </div>
                   <div>
-                    <p className="font-bold text-[#191c1d] text-sm" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                    <p className="font-semibold text-[#191c1d] text-sm" style={{ fontFamily: "'Manrope', sans-serif" }}>
                       Alicia Cosendey
                     </p>
                     <p className="text-xs text-slate-500">Estudante de Medicina</p>
@@ -461,34 +382,53 @@ const Landing = () => {
               </article>
 
               {/* Depoimento 2 — João */}
-              <article className="group relative bg-white border border-slate-100 rounded-2xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(25,28,29,0.04)] hover:shadow-[0_10px_40px_rgba(0,109,91,0.12)] hover:-translate-y-1 hover:border-[#006D5B]/20 transition-all duration-500">
-                <div className="absolute top-5 right-5 text-[#006D5B]/10 group-hover:text-[#006D5B]/20 transition-colors duration-500">
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.571-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z"/>
-                  </svg>
-                </div>
-
-                <div className="flex gap-0.5 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} width="18" height="18" viewBox="0 0 24 24" fill="#C9A84C" aria-hidden="true">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
-                  ))}
-                </div>
-
-                <p className="text-sm sm:text-base text-slate-700 leading-relaxed mb-6 font-light italic">
-                  "Eu não tenho dúvidas que o PreceptorMED é o futuro da medicina! As respostas oferecidas pela IA são de longe as mais detalhadas. Não somente isso, a plataforma sempre utiliza referências nas quais eu confio. Me surpreende também a constante expansão das ferramentas da plataforma, que além de me ajudar nos meus estudos, também me auxilia na realização de trabalhos científicos.
+              <article className="flex flex-col">
+                <p className="text-[15px] text-slate-700 leading-relaxed mb-6">
+                  Eu não tenho dúvidas que o PreceptorMED é o futuro da medicina. As respostas oferecidas pela IA são de longe as mais detalhadas. Não somente isso, a plataforma sempre utiliza referências nas quais eu confio. Me surpreende também a constante expansão das ferramentas, que além de me ajudar nos estudos, também me auxilia na realização de trabalhos científicos.
                   <br /><br />
-                  <span className="not-italic font-semibold text-[#005344]">Simplificando: se você tiver a oportunidade de assinar o PreceptorMED, assine.</span>"
+                  <span className="font-semibold text-[#005344]">Se você tiver a oportunidade de assinar, assine.</span>
                 </p>
-
-                <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#005344] to-[#C9A84C] flex items-center justify-center text-white font-bold text-sm shadow-md">
+                <div className="flex items-center gap-3 mt-auto pt-6">
+                  <div className="w-10 h-10 rounded-full bg-[#005344] flex items-center justify-center text-white font-semibold text-xs">
                     JM
                   </div>
                   <div>
-                    <p className="font-bold text-[#191c1d] text-sm" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                    <p className="font-semibold text-[#191c1d] text-sm" style={{ fontFamily: "'Manrope', sans-serif" }}>
                       João Miyake
+                    </p>
+                    <p className="text-xs text-slate-500">Estudante de Medicina</p>
+                  </div>
+                </div>
+              </article>
+
+              {/* Depoimento 3 — Matheus Milani */}
+              <article className="flex flex-col">
+                <p className="text-[15px] text-slate-700 leading-relaxed mb-6">
+                  Minha experiência com a plataforma tem sido extremamente positiva. Os conteúdos são organizados, objetivos e atualizados, com linguagem acessível e foco prático — ajudam tanto na revisão teórica quanto na preparação para provas e atendimentos clínicos.
+                  <br /><br />
+                  <span className="font-semibold text-[#005344]">O PreceptorMED se tornou uma ferramenta valiosa para minha formação médica.</span>
+                </p>
+                <div className="flex items-center gap-3 mt-auto pt-6">
+                  <img
+                    src="/matheus-milani.jpg"
+                    alt="Matheus Milani"
+                    className="w-10 h-10 rounded-full object-cover"
+                    onError={(e) => {
+                      const target = e.currentTarget as HTMLImageElement;
+                      target.style.display = 'none';
+                      const fallback = target.nextElementSibling as HTMLElement | null;
+                      if (fallback) fallback.style.display = 'flex';
+                    }}
+                  />
+                  <div
+                    className="w-10 h-10 rounded-full bg-[#005344] items-center justify-center text-white font-semibold text-xs"
+                    style={{ display: 'none' }}
+                  >
+                    MM
+                  </div>
+                  <div>
+                    <p className="font-semibold text-[#191c1d] text-sm" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                      Matheus Milani
                     </p>
                     <p className="text-xs text-slate-500">Estudante de Medicina</p>
                   </div>
@@ -501,14 +441,17 @@ const Landing = () => {
         {/* ─── Pricing ──────────────────────────────────── */}
         <section id="precos" className="py-14 sm:py-24 bg-[#f3f4f5]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="text-center mb-10 sm:mb-16">
+            <div className="mb-12 sm:mb-16 max-w-2xl">
+              <p className="text-sm text-[#006D5B] font-semibold mb-3">Planos</p>
               <h2
-                className="text-2xl sm:text-4xl font-bold mb-3 sm:mb-4 tracking-tight text-[#191c1d]"
+                className="text-2xl sm:text-4xl font-bold leading-tight text-[#191c1d]"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
-                O plano certo para cada etapa.
+                Preço único, sem trava de aulas extras.
               </h2>
-              <p className="text-sm sm:text-base text-slate-500">Invista na sua excelência clínica com transparência.</p>
+              <p className="text-base text-slate-600 leading-relaxed mt-4">
+                Acesso completo à plataforma desde o primeiro dia. Cancele quando quiser.
+              </p>
             </div>
 
             <div className="flex flex-col md:flex-row justify-center gap-4 sm:gap-8 max-w-5xl mx-auto">
@@ -536,7 +479,7 @@ const Landing = () => {
                 <button
                   onClick={() => handleSubscribe('monthly')}
                   disabled={loadingPlan !== null}
-                  className="w-full py-3 sm:py-4 border border-slate-300 text-[#191c1d] text-xs sm:text-sm font-bold uppercase tracking-widest rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
+                  className="w-full py-3 sm:py-4 border border-slate-300 text-[#191c1d] text-sm font-semibold rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
                 >
                   {loadingPlan === 'monthly' && <Loader2 className="inline mr-2 h-4 w-4 animate-spin" />}
                   Começar mensal
@@ -582,7 +525,7 @@ const Landing = () => {
                 <button
                   onClick={() => handleSubscribe('annual')}
                   disabled={loadingPlan !== null}
-                  className="btn-shimmer relative overflow-hidden w-full py-3 sm:py-4 bg-[#005344] text-white text-xs sm:text-sm font-bold uppercase tracking-widest rounded-lg shadow-lg hover:bg-[#003d32] transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
+                  className="btn-shimmer relative overflow-hidden w-full py-3 sm:py-4 bg-[#005344] text-white text-sm font-semibold rounded-lg shadow-lg hover:bg-[#003d32] transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
                 >
                   {loadingPlan === 'annual' && <Loader2 className="inline mr-2 h-4 w-4 animate-spin" />}
                   Começar anual
@@ -628,7 +571,7 @@ const Landing = () => {
                 <button
                   onClick={() => handleSubscribe('biannual')}
                   disabled={loadingPlan !== null}
-                  className="w-full py-3 sm:py-4 border-2 border-[#005344] text-[#005344] text-xs sm:text-sm font-bold uppercase tracking-widest rounded-lg hover:bg-[#005344] hover:text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
+                  className="w-full py-3 sm:py-4 border-2 border-[#005344] text-[#005344] text-sm font-semibold rounded-lg hover:bg-[#005344] hover:text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
                 >
                   {loadingPlan === 'biannual' && <Loader2 className="inline mr-2 h-4 w-4 animate-spin" />}
                   Começar bianual
@@ -639,22 +582,22 @@ const Landing = () => {
         </section>
 
         {/* ─── Final CTA ────────────────────────────────── */}
-        <section className="py-14 sm:py-24" style={{ background: 'linear-gradient(135deg, #005344 0%, #006d5b 100%)' }}>
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+        <section className="py-16 sm:py-24 bg-[#005344]">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
             <h2
-              className="text-2xl sm:text-4xl md:text-5xl font-extrabold mb-5 sm:mb-8 tracking-tighter text-white"
+              className="text-2xl sm:text-4xl font-bold mb-5 tracking-tight text-white"
               style={{ fontFamily: "'Manrope', sans-serif" }}
             >
-              Pronto para elevar seu padrão clínico?
+              Comece seu próximo ciclo de PBL com o PreceptorMED.
             </h2>
-            <p className="text-base sm:text-xl text-white/70 mb-8 sm:mb-12 font-light">
-              Junte-se a milhares de médicos que já transformaram suas rotinas de estudo.
+            <p className="text-base sm:text-lg text-white/70 mb-8 sm:mb-10 leading-relaxed">
+              Criar conta é gratuito. Assine quando perceber que economiza horas por semana.
             </p>
             <button
               onClick={() => navigate('/auth?tab=signup')}
-              className="px-8 sm:px-10 py-4 sm:py-5 bg-white text-[#005344] rounded-lg text-sm sm:text-base font-bold uppercase tracking-widest shadow-2xl hover:scale-105 hover:shadow-[0_20px_60px_rgba(0,0,0,0.3)] transition-all duration-300 active:scale-95"
+              className="px-8 py-4 bg-white text-[#005344] rounded-lg text-sm font-semibold hover:bg-slate-100 active:scale-[0.98] transition-colors"
             >
-              Criar minha conta agora
+              Criar conta gratuita
             </button>
           </div>
         </section>

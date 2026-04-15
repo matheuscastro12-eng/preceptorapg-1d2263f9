@@ -39,7 +39,6 @@ const AIChat = () => {
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [usePubMed, setUsePubMed] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -103,7 +102,7 @@ const AIChat = () => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ messages: allMessages, usePubMed }),
+          body: JSON.stringify({ messages: allMessages }),
           signal: controller.signal,
         }
       );
@@ -352,22 +351,11 @@ const AIChat = () => {
             </Button>
           </div>
           <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setUsePubMed(!usePubMed)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
-                usePubMed
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                  : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-600 hover:border-slate-300'
-              }`}
-            >
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-700">
               <BookOpen className="h-3.5 w-3.5" />
-              <span>PubMed</span>
-              {usePubMed && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
-            </button>
-            <p className="text-[10px] text-slate-300">
-              {usePubMed ? 'Respostas com artigos científicos do PubMed' : 'PreceptorMED — ferramenta educacional'}
-            </p>
+              <span>Respostas com referências do PubMed</span>
+            </div>
+            <p className="text-[10px] text-slate-400">Ferramenta educacional</p>
           </div>
         </div>
       </div>
