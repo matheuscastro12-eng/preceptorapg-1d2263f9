@@ -297,4 +297,48 @@ serve(async (req) => {
 
       const salesItems = salesResult.status === "fulfilled" ? salesResult.value.items : [];
       const subsItems = subsResult.status === "fulfilled" ? subsResult.value.items : [];
-      const salesTotals = salesResult.status === "fulfilled" ? salesResult.value.totals : { transactionValue: 0, commissions: 0, 
+      const salesTotals = salesResult.status === "fulfilled" ? salesResult.value.totals : { transactionValue: 0, commissions: 0, ticketsCount: 0, totalDocs: 0 };
+      const subsTotals = subsResult.status === "fulfilled" ? subsResult.value.totals : { transactionValue: 0, commissions: 0, ticketsCount: 0, totalDocs: 0 };
+      const balance = balanceResult.status === "fulfilled" ? balanceResult.value : null;
+
+      // Usa totals da propria API (mais precisos) e fallback pra calculo local
+      const totalTransactionValue = salesTotals.transactionValue || salesItems.reduce((s: number, x: any) => s + (x.valueInCents || x.valuePaidInCents || 0), 0);
+      const totalCommissions = salesTotals.commissions || salesItems.reduce((s: number, x: any) => s + (x.commissionInCents || x.feeInCents || 0), 0);
+      const totalSalesCount = salesTotals.totalDocs || salesItems.length;
+
+      const paidSales = salesItems.filter((s: any) => s.status === "paid" || s.status === "approved");
+      const totalPaidValue = paidSales.reduce(
+        (sum: number, s: any) => sum + (s.totalValueInCents || s.valueInCents || s.valuePaidInCents || 0),
+        0
+      );
+
+      const activeSubs = subsItems.filter((s: any) => s.status === "active");
+      const canceledSubs = subsItems.filter((s: any) => s.status === "canceled" || s.status === "cancelled");
+
+      return json({
+        totalTransactionValue,
+        totalPaidValue,
+        totalSalesCount,
+        totalCommissions,
+        subscriptions: {
+          total: subsTotals.totalDocs || subsItems.length,
+          active: activeSubs.length,
+          canceled: canceledSubs.length,
+        },
+        balance: balance,
+        sales: salesItems.slice(0, 20),
+        subs: subsItems.slice(0, 20),
+      });
+    }
+
+    return json({ error: "Invalid action" }, 400);
+  } catch (err) {
+    return json({ error: (err as Error).message }, 500);
+  }
+});
+
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}

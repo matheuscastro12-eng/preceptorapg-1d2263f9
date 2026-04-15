@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { DollarSign, Users, Search, Loader2, CreditCard, RefreshCw } from "lucide-react";
 import MetricCard from "@/components/crm/MetricCard";
-import { useEFSubscriptions, useEFSales, useEFDashboard, useCancelEFSubscription } from "@/hooks/useEasyflow";
+import { useEFSubscriptions, useEFSales, useCancelEFSubscription } from "@/hooks/useEasyflow";
 
 export default function AdminEasyflow() {
   const [searchEmail, setSearchEmail] = useState("");
@@ -10,27 +10,12 @@ export default function AdminEasyflow() {
   const [salePage, setSalePage] = useState(1);
   const [subStatusFilter, setSubStatusFilter] = useState("");
 
-  // Dashboard KPIs — carrega automaticamente no page load (sem email)
-  const { data: dashboard, isLoading: dashLoading, refetch: refetchDash } = useEFDashboard();
-
-  // Busca filtrada por email (so roda quando usuario busca)
   const { data: subsData, isLoading: subsLoading, refetch: refetchSubs } = useEFSubscriptions(activeEmail || undefined, subPage);
   const { data: salesData, isLoading: salesLoading, refetch: refetchSales } = useEFSales(activeEmail || undefined, salePage);
   const cancelSub = useCancelEFSubscription();
 
-  // Quando tem email ativo, usa os dados filtrados. Senao, usa o dashboard
-  const subs = activeEmail
-    ? (subsData?.data?.docs || subsData?.data || subsData?.items || (Array.isArray(subsData) ? subsData : []))
-    : (dashboard?.subs || []);
-  const sales = activeEmail
-    ? (salesData?.data?.sales?.docs || salesData?.data || salesData?.items || (Array.isArray(salesData) ? salesData : []))
-    : (dashboard?.sales || []);
-
-  // KPIs — sempre do dashboard (dados globais)
-  const totalVendas = (dashboard?.totalTransactionValue || 0) / 100;
-  const nVendas = dashboard?.totalSalesCount || 0;
-  const totalSubs = dashboard?.subscriptions?.total || 0;
-  const totalComissoes = (dashboard?.totalCommissions || 0) / 100;
+  const subs = subsData?.data?.docs || subsData?.data || subsData?.items || (Array.isArray(subsData) ? subsData : []);
+  const sales = salesData?.data?.sales?.docs || salesData?.data || salesData?.items || (Array.isArray(salesData) ? salesData : []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,8 +28,6 @@ export default function AdminEasyflow() {
     ? subs.filter((s: any) => s.status === subStatusFilter)
     : subs;
 
-  const isLoading = dashLoading || (activeEmail && (subsLoading || salesLoading));
-
   return (
     <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       {/* Header */}
@@ -53,18 +36,18 @@ export default function AdminEasyflow() {
           <h1 className="text-xl md:text-2xl font-bold text-white">EasyFlow</h1>
           <p className="text-xs md:text-sm text-gray-500 mt-0.5">Dados financeiros e gestão de assinaturas</p>
         </div>
-        <button onClick={() => { refetchDash(); if (activeEmail) { refetchSubs(); refetchSales(); } }}
+        <button onClick={() => { refetchSubs(); refetchSales(); }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 text-gray-300 hover:bg-gray-700">
-          <RefreshCw className={`w-3.5 h-3.5 ${dashLoading ? "animate-spin" : ""}`} />Atualizar
+          <RefreshCw className="w-3.5 h-3.5" />Atualizar
         </button>
       </div>
 
-      {/* KPIs — dados globais do dashboard */}
+      {/* KPIs from sales data */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <MetricCard title="Total Vendas" value={totalVendas} format="currency" icon={DollarSign} color="green" subtitle="Valor acumulado" />
-        <MetricCard title="Nº de Vendas" value={nVendas} icon={CreditCard} color="blue" subtitle="Pedidos" />
-        <MetricCard title="Assinaturas" value={totalSubs} icon={Users} color="gold" subtitle="Total encontradas" />
-        <MetricCard title="Comissões" value={totalComissoes} format="currency" icon={DollarSign} color="purple" subtitle="EasyFlow fees" />
+        <MetricCard title="Total Vendas" value={salesData?.data?.totalTransactionValue ? (salesData.data.totalTransactionValue / 100) : 0} format="currency" icon={DollarSign} color="green" subtitle="Valor acumulado" />
+        <MetricCard title="Nº de Vendas" value={salesData?.data?.sales?.totalDocs ?? 0} icon={CreditCard} color="blue" subtitle="Pedidos" />
+        <MetricCard title="Assinaturas" value={subsData?.data?.totalDocs ?? 0} icon={Users} color="gold" subtitle="Total encontradas" />
+        <MetricCard title="Comissões" value={salesData?.data?.totalCommissions ? (salesData.data.totalCommissions / 100) : 0} format="currency" icon={DollarSign} color="purple" subtitle="EasyFlow fees" />
       </div>
 
       {/* Search */}
@@ -101,7 +84,7 @@ export default function AdminEasyflow() {
           </div>
         </div>
 
-        {(dashLoading || (activeEmail && subsLoading)) ? (
+        {subsLoading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-[#C9A84C]" /></div>
         ) : (
           <div className="overflow-x-auto">
@@ -148,7 +131,7 @@ export default function AdminEasyflow() {
                 ))}
                 {filteredSubs.length === 0 && (
                   <tr><td colSpan={7} className="py-8 text-center text-gray-600 text-xs">
-                    {dashLoading ? "Carregando..." : activeEmail ? "Nenhuma assinatura para este email" : "Nenhuma assinatura encontrada"}
+                    {activeEmail ? "Nenhuma assinatura para este email" : "Busque por email para ver assinaturas"}
                   </td></tr>
                 )}
               </tbody>
@@ -163,7 +146,7 @@ export default function AdminEasyflow() {
           <h2 className="text-sm font-semibold text-white">Vendas {activeEmail ? `— ${activeEmail}` : "(todas)"}</h2>
         </div>
 
-        {(dashLoading || (activeEmail && salesLoading)) ? (
+        {salesLoading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-[#C9A84C]" /></div>
         ) : (
           <div className="overflow-x-auto">
@@ -201,7 +184,7 @@ export default function AdminEasyflow() {
                 ))}
                 {sales.length === 0 && (
                   <tr><td colSpan={6} className="py-8 text-center text-gray-600 text-xs">
-                    {dashLoading ? "Carregando..." : activeEmail ? "Nenhuma venda para este email" : "Nenhuma venda encontrada"}
+                    {activeEmail ? "Nenhuma venda para este email" : "Busque por email para ver vendas"}
                   </td></tr>
                 )}
               </tbody>

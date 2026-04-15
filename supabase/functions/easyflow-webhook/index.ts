@@ -401,4 +401,64 @@ serve(async (req) => {
 
         // Get subscription details for inadimplencia record
         const { data: sub } = await supabase.from("subscriptions")
-          .select("plan_type").eq("user_id", prof
+          .select("plan_type").eq("user_id", profile.user_id).maybeSingle();
+
+        const { data: prof } = await supabase.from("profiles")
+          .select("full_name").eq("user_id", profile.user_id).maybeSingle();
+
+        // Upsert inadimplencia record
+        const { data: existing } = await supabase.from("admin_inadimplencias")
+          .select("id, tentativas").eq("user_id", profile.user_id).eq("status", "em_cobranca").maybeSingle();
+
+        if (existing) {
+          await supabase.from("admin_inadimplencias")
+            .update({
+              tentativas: (existing.tentativas ?? 0) + 1,
+              ultimo_evento: event,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existing.id);
+        } else {
+          const PLAN_VALORES: Record<string, number> = {
+            monthly: 49.90, annual: 350.90 / 12, biannual: 599.90 / 6,
+          };
+          await supabase.from("admin_inadimplencias").insert({
+            user_id: profile.user_id,
+            email,
+            nome: prof?.full_name ?? email,
+            plano: sub?.plan_type ?? "unknown",
+            valor_devido: PLAN_VALORES[sub?.plan_type ?? ""] ?? 0,
+            status: "em_cobranca",
+            tentativas: 1,
+            ultimo_evento: event,
+            data_ocorrencia: new Date().toISOString(),
+          });
+        }
+
+        console.log(`[EasyFlow] Payment issue: ${email} (${event})`);
+      }
+      return json({ received: true, action: "payment_issue_tracked", email, event });
+    }
+
+    // ══════════════════════════════════════════════
+    // UPDATES / OTHER EVENTS
+    // ══════════════════════════════════════════════
+    if (event === "order.updated" || event === "subscription.updated") {
+      console.log(`[EasyFlow] Update event: ${event} for ${email}`);
+      return json({ received: true, action: "updated", email, event });
+    }
+
+    console.log(`[EasyFlow] Unhandled: ${event}`);
+    return json({ received: true, action: "unhandled", event });
+
+  } catch (err) {
+    console.error("[EasyFlow Error]", (err as Error).message);
+    return json({ error: (err as Error).message }, 500);
+  }
+});
+
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
