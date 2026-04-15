@@ -78,24 +78,13 @@ const MainMenu = () => {
     }
   }, [searchParams, toast]);
 
-  // Check if user needs onboarding (no fase_medica set)
+  // Nota: checkagem de fase_medica foi removida — a pagina /welcome
+  // nao existe mais, fase_medica e opcional. User pode configurar depois
+  // no /profile. Antes isso causava loop infinito /menu -> /welcome ->
+  // /inscricao -> /menu.
   useEffect(() => {
-    if (!user || phaseAlreadyChecked) { setCheckingPhase(false); return; }
-    const check = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('fase_medica')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (data && !data.fase_medica) {
-        navigate('/welcome', { replace: true });
-        return;
-      }
-      sessionStorage.setItem('preceptor_phase_ok', user.id);
-      setCheckingPhase(false);
-    };
-    check();
-  }, [user, navigate, phaseAlreadyChecked]);
+    setCheckingPhase(false);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;

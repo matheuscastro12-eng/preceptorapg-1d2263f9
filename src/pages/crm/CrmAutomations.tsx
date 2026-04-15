@@ -51,7 +51,14 @@ export default function CrmAutomations() {
 
   useEffect(() => {
     supabase.from("crm_email_templates").select("trigger_name, label, auto_send").order("label")
-      .then(({ data }) => setTemplates((data ?? []) as Template[]));
+      .then(({ data, error }) => {
+        if (error) {
+          console.warn("[CrmAutomations] Falha ao carregar templates:", error.message);
+          toast.error("Nao carregou templates: " + error.message);
+          return;
+        }
+        setTemplates((data ?? []) as Template[]);
+      });
   }, []);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["crm", "automations"] });
