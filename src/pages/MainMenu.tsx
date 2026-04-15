@@ -10,7 +10,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import GamificationWidget from '@/components/GamificationWidget';
 import TrialBanner from '@/components/TrialBanner';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -39,25 +39,17 @@ interface RecentItem {
 }
 
 const practiceItems = [
-  { icon: 'history_edu',    label: 'ENAMED',          desc: 'Provas anteriores',     path: '/enamed',                  bg: 'bg-[#c8eade]', color: 'text-[#4c6a62]' },
-  { icon: 'stethoscope',    label: 'Simulados',       desc: 'Casos práticos',        path: '/exam?mode=prova',         bg: 'bg-[#9df3dc]', color: 'text-[#00201a]' },
-  { icon: 'clinical_notes', label: 'Casos Clínicos',  desc: 'Revisão aprofundada',   path: '/exam?mode=caso_clinico',  bg: 'bg-[#ffdad3]', color: 'text-[#743425]' },
-  { icon: 'style',          label: 'Flashcards',      desc: 'Repetição espaçada',    path: '/flashcards',              bg: 'bg-[#c8eade]', color: 'text-[#2e4c44]' },
+  { icon: 'history_edu',    label: 'ENAMED',          desc: 'Provas anteriores',     path: '/enamed' },
+  { icon: 'stethoscope',    label: 'Simulados',       desc: 'Casos práticos',        path: '/exam?mode=prova' },
+  { icon: 'clinical_notes', label: 'Casos Clínicos',  desc: 'Revisão aprofundada',   path: '/exam?mode=caso_clinico' },
+  { icon: 'style',          label: 'Flashcards',      desc: 'Repetição espaçada',    path: '/flashcards' },
 ];
 
 const getTypeConfig = (tipo: string) => {
   switch (tipo) {
-    case 'prova':        return { label: 'Simulado', bg: 'bg-blue-100', text: 'text-blue-700' };
-    case 'caso_clinico': return { label: 'Caso Clínico', bg: 'bg-amber-100', text: 'text-amber-700' };
-    default:             return { label: 'Resumo', bg: 'bg-[#c8eade]', text: 'text-[#4c6a62]' };
-  }
-};
-
-const getPlaceholderGradient = (tipo: string) => {
-  switch (tipo) {
-    case 'prova':        return 'from-blue-100 to-blue-200';
-    case 'caso_clinico': return 'from-amber-100 to-amber-200';
-    default:             return 'from-emerald-100 to-emerald-200';
+    case 'prova':        return { label: 'Simulado', bg: 'bg-slate-100', text: 'text-slate-700' };
+    case 'caso_clinico': return { label: 'Caso Clínico', bg: 'bg-slate-100', text: 'text-slate-700' };
+    default:             return { label: 'Resumo', bg: 'bg-brand-primary/10', text: 'text-brand-primary-dark' };
   }
 };
 
@@ -127,183 +119,162 @@ const MainMenu = () => {
     <DashboardLayout>
       <OnboardingTour steps={menuTourSteps} tourKey="main-menu" />
 
-      <div className="space-y-8">
-        {/* Greeting — compact */}
-        <section className="animate-fade-up">
-          <h2 className="font-['Manrope'] text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#191c1d] mb-1 tracking-tight">
-            Olá, Dr. {userName}!
+      <div className="space-y-10">
+        {/* Greeting */}
+        <section>
+          <h2 className="text-2xl sm:text-3xl font-bold text-brand-ink mb-1.5">
+            Olá, Dr. {userName}
           </h2>
-          <p className="text-sm text-[#3e4945]">
+          <p className="text-sm text-brand-ink-2">
             {isFreeUser
-              ? 'Modo demo ativo — experimente grátis ou assine para acesso completo.'
+              ? 'Modo demo — experimente grátis ou assine para acesso completo.'
               : 'Pronto para continuar seus estudos?'}
           </p>
           {isFreeUser && (
-            <button onClick={() => navigate('/pricing')} className="mt-2 px-4 py-1.5 text-xs font-bold text-[#006D5B] bg-[#006D5B]/10 rounded-lg hover:bg-[#006D5B]/15 transition-colors">
-              Assinar agora &rarr;
+            <button onClick={() => navigate('/pricing')} className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-brand-primary bg-brand-primary/5 border border-brand-primary/20 rounded-lg hover:bg-brand-primary/10 transition-colors">
+              Assinar agora →
             </button>
           )}
         </section>
 
-        {/* Trial banner — only shows for users in 3-day free trial */}
-        <section className="animate-fade-up" style={{ animationDelay: '0.02s' }}>
-          <TrialBanner />
-        </section>
+        {/* Trial banner */}
+        <section><TrialBanner /></section>
 
         {/* Gamification widget */}
         {!isFreeUser && (
-          <section className="animate-fade-up" style={{ animationDelay: '0.03s' }}>
-            <GamificationWidget variant="card" />
-          </section>
+          <section><GamificationWidget variant="card" /></section>
         )}
 
         {/* Primary Feature Cards */}
-        <section
-          className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 animate-fade-up"
-          style={{ animationDelay: '0.06s' }}
-        >
-          {/* Study with AI */}
-          <div
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+          {/* Study with AI — primary CTA */}
+          <button
             data-tour="estudo"
-            className="rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:scale-[1.015] hover:-translate-y-1 active:scale-[0.99] transition-all duration-500"
-            style={{ background: 'linear-gradient(135deg, #005344 0%, #006d5b 100%)' }}
+            type="button"
             onClick={() => go('/dashboard')}
+            className="text-left rounded-xl p-6 sm:p-8 text-white bg-brand-primary-dark hover:bg-brand-primary-darker transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
           >
-            <div className="absolute -right-10 -bottom-10 opacity-10 scale-150 group-hover:scale-[2] group-hover:opacity-[0.18] group-hover:rotate-12 transition-all duration-1000 pointer-events-none">
-              <MI name="psychology" className="text-[160px]" />
+            <div className="bg-white/15 w-12 h-12 rounded-lg flex items-center justify-center mb-5">
+              <MI name="auto_awesome" fill className="text-white text-[22px]" />
             </div>
-            <div className="absolute -left-8 -top-8 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all duration-700" />
-            <div className="relative z-10">
-              <div className="bg-white/20 backdrop-blur-md w-14 h-14 rounded-xl flex items-center justify-center mb-6 group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300">
-                <MI name="auto_awesome" fill className="text-white text-[24px]" />
-              </div>
-              <h3 className="font-['Manrope'] text-xl sm:text-2xl font-bold mb-3">Estudo com IA</h3>
-              <p className="text-white/80 text-sm leading-relaxed mb-8 max-w-xs">
-                Gere resumos estruturados e roteiros de seminário sobre qualquer tema médico, potencializados por IA.
-              </p>
-              <span className="inline-flex items-center gap-2 bg-white text-[#005344] px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest group-hover:shadow-lg group-hover:gap-3 transition-all duration-300">
-                Começar
-                <MI name="arrow_forward" className="text-[16px] group-hover:translate-x-1 transition-transform duration-200" />
-              </span>
-            </div>
-          </div>
+            <h3 className="text-xl sm:text-2xl font-bold mb-2">Estudo com IA</h3>
+            <p className="text-white/80 text-sm leading-relaxed mb-6 max-w-sm">
+              Gere resumos estruturados e roteiros de seminário sobre qualquer tema médico.
+            </p>
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
+              Começar
+              <MI name="arrow_forward" className="text-[16px]" />
+            </span>
+          </button>
 
-          {/* Preceptor Chat */}
-          <div
-            className="bg-white border border-slate-200/60 rounded-2xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(25,28,29,0.06)] relative overflow-hidden group cursor-pointer hover:shadow-xl hover:scale-[1.015] hover:-translate-y-1 active:scale-[0.99] transition-all duration-500"
-            onClick={() => navigate('/ai-chat')}
+          {/* Preceptor Chat — secondary */}
+          <button
+            type="button"
             data-tour="preceptoria"
+            onClick={() => navigate('/ai-chat')}
+            className="text-left bg-white border border-slate-200 rounded-xl p-6 sm:p-8 hover:border-brand-primary/40 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
           >
-            <div className="absolute -right-10 -bottom-10 text-[#006D5B] opacity-5 scale-150 group-hover:scale-[2] group-hover:opacity-[0.12] group-hover:rotate-12 transition-all duration-1000 pointer-events-none">
-              <MI name="forum" className="text-[160px]" />
+            <div className="bg-brand-primary/10 w-12 h-12 rounded-lg flex items-center justify-center mb-5">
+              <MI name="chat_bubble" fill className="text-brand-primary text-[22px]" />
             </div>
-            <div className="absolute -left-6 -top-6 w-24 h-24 bg-[#006D5B]/3 rounded-full blur-2xl group-hover:bg-[#006D5B]/6 transition-all duration-700" />
-            <div className="relative z-10">
-              <div className="bg-[#006D5B]/10 w-14 h-14 rounded-xl flex items-center justify-center mb-6 group-hover:bg-[#006D5B]/15 group-hover:scale-110 transition-all duration-300">
-                <MI name="chat_bubble" fill className="text-[#006D5B] text-[24px]" />
-              </div>
-              <h3 className="font-['Manrope'] text-xl sm:text-2xl font-bold text-[#191c1d] mb-3">Preceptor Chat</h3>
-              <p className="text-[#3e4945] text-sm leading-relaxed mb-8 max-w-xs">
-                Acesso direto ao suporte acadêmico e orientação especializada para a sua preparação.
-              </p>
-              <span className="inline-flex items-center gap-2 bg-[#005344] text-white px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest group-hover:shadow-lg group-hover:gap-3 transition-all duration-300">
-                Abrir Chat
-                <MI name="arrow_forward" className="text-[16px] group-hover:translate-x-1 transition-transform duration-200" />
-              </span>
-            </div>
-          </div>
+            <h3 className="text-xl sm:text-2xl font-bold text-brand-ink mb-2">Preceptor Chat</h3>
+            <p className="text-brand-ink-2 text-sm leading-relaxed mb-6 max-w-sm">
+              Tire dúvidas com IA em tempo real. Respostas com referências do PubMed.
+            </p>
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-primary">
+              Abrir chat
+              <MI name="arrow_forward" className="text-[16px]" />
+            </span>
+          </button>
         </section>
 
         {/* Practice & Assessment */}
-        <section
-          className="space-y-6 animate-fade-up relative z-10"
-          style={{ animationDelay: '0.14s' }}
-        >
-          <h3 className="font-['Manrope'] text-xl font-bold text-[#191c1d]">Prática & Avaliação</h3>
+        <section className="space-y-5">
+          <h3 className="text-lg font-bold text-brand-ink">Prática & Avaliação</h3>
 
-          <div data-tour="pratica" className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-            {practiceItems.map((item, i) => (
-              <div
-                key={item.path}
-                onClick={() => go(item.path)}
-                style={{ animationDelay: `${0.14 + i * 0.06}s` }}
-                className="animate-fade-up bg-white border border-slate-100 hover:border-[#006D5B]/20 hover:shadow-lg transition-all duration-300 p-5 sm:p-6 rounded-2xl flex flex-col items-center text-center group cursor-pointer hover:-translate-y-1 active:translate-y-0 active:scale-[0.98]"
-                {...(item.label === 'Flashcards' ? { 'data-tour': 'flashcards' } : {})}
-              >
-                <div className={`${item.bg} ${item.color} w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center mb-3 sm:mb-4 transition-all duration-300 group-hover:scale-110 group-hover:shadow-md relative`}>
-                  <MI name={item.icon} className="text-[22px] sm:text-[24px]" />
-                  {isFreeUser && !FREE_ALLOWED.some(r => item.path.startsWith(r)) && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-slate-500 rounded-full flex items-center justify-center shadow-sm">
-                      <Lock className="w-2.5 h-2.5 text-white" />
-                    </div>
+          <div data-tour="pratica" className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            {practiceItems.map((item) => {
+              const locked = isFreeUser && !FREE_ALLOWED.some(r => item.path.startsWith(r));
+              return (
+                <button
+                  key={item.path}
+                  type="button"
+                  onClick={() => go(item.path)}
+                  className="group bg-white border border-slate-200 rounded-xl p-4 sm:p-5 flex flex-col items-start text-left hover:border-brand-primary/40 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
+                  {...(item.label === 'Flashcards' ? { 'data-tour': 'flashcards' } : {})}
+                >
+                  <div className="bg-brand-primary/10 text-brand-primary w-10 h-10 rounded-lg flex items-center justify-center mb-3 relative">
+                    <MI name={item.icon} className="text-[20px]" />
+                    {locked && (
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-slate-700 rounded-full flex items-center justify-center">
+                        <Lock className="w-2 h-2 text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <span className="font-semibold text-sm text-brand-ink group-hover:text-brand-primary transition-colors">{item.label}</span>
+                  <span className="text-xs text-brand-ink-2 mt-0.5">{item.desc}</span>
+                  {locked && (
+                    <span className="text-[10px] text-slate-400 font-semibold mt-1">PRO</span>
                   )}
-                </div>
-                <span className="font-bold text-sm text-[#191c1d] mb-0.5 group-hover:text-[#006D5B] transition-colors duration-200">{item.label}</span>
-                <span className="text-[10px] text-[#6e7975] uppercase tracking-widest hidden sm:block">{item.desc}</span>
-                {isFreeUser && !FREE_ALLOWED.some(r => item.path.startsWith(r)) && (
-                  <span className="text-[8px] text-slate-400 font-semibold uppercase mt-0.5">PRO</span>
-                )}
-              </div>
-            ))}
+                </button>
+              );
+            })}
           </div>
         </section>
 
         {/* Recent Library Activity */}
-        <section
-          className="space-y-6 animate-fade-up relative z-10"
-          style={{ animationDelay: '0.2s' }}
-          data-tour="biblioteca"
-        >
+        <section className="space-y-5" data-tour="biblioteca">
           <div className="flex items-center justify-between">
-            <h3 className="font-['Manrope'] text-xl font-bold text-[#191c1d]">Atividade Recente</h3>
+            <h3 className="text-lg font-bold text-brand-ink">Atividade Recente</h3>
             <button
               onClick={() => go('/library')}
-              className="text-[#006D5B] font-bold text-sm hover:underline underline-offset-4 transition-all flex items-center gap-1 group"
+              className="text-brand-primary font-semibold text-sm hover:underline underline-offset-4 inline-flex items-center gap-1"
             >
               Ver tudo
-              <MI name="arrow_forward" className="text-[16px] group-hover:translate-x-1 transition-transform duration-200" />
+              <MI name="arrow_forward" className="text-[14px]" />
             </button>
           </div>
 
           {recentItems.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {recentItems.map((item) => {
                 const typeConfig = getTypeConfig(item.tipo);
-                const gradient = getPlaceholderGradient(item.tipo);
                 return (
-                  <div
+                  <button
                     key={item.id}
+                    type="button"
                     onClick={() => go('/library')}
-                    className="bg-white p-4 sm:p-5 rounded-2xl flex items-start gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group border border-slate-100 hover:border-[#006D5B]/20"
+                    className="text-left bg-white p-4 rounded-xl flex items-start gap-3 hover:border-brand-primary/40 hover:shadow-sm transition-all border border-slate-200 group"
                   >
-                    <div className={`w-14 h-18 sm:w-16 sm:h-20 rounded-xl bg-gradient-to-br ${gradient} flex-shrink-0 flex items-center justify-center relative overflow-hidden`}>
-                      <MI name="description" className="text-[28px] text-[#006D5B]/20" />
-                      <div className="absolute inset-0 bg-[#006D5B]/5" />
+                    <div className="w-12 h-14 rounded-md bg-slate-100 flex-shrink-0 flex items-center justify-center">
+                      <MI name="description" className="text-[20px] text-slate-400" />
                     </div>
-                    <div className="flex flex-col justify-between py-0.5 min-w-0 flex-1">
+                    <div className="flex flex-col justify-between min-w-0 flex-1">
                       <div>
-                        <h4 className="text-sm font-bold text-[#191c1d] line-clamp-1 group-hover:text-[#006D5B] transition-colors duration-200">
+                        <h4 className="text-sm font-semibold text-brand-ink line-clamp-2 group-hover:text-brand-primary transition-colors">
                           {item.tema}
                         </h4>
-                        <p className="text-[10px] text-[#6e7975] mt-1">{formatRelativeDate(item.created_at)}</p>
+                        <p className="text-xs text-brand-ink-2 mt-1">{formatRelativeDate(item.created_at)}</p>
                       </div>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className={`px-2 py-0.5 rounded-full ${typeConfig.bg} text-[10px] font-bold ${typeConfig.text}`}>
+                        <span className={`px-2 py-0.5 rounded-full ${typeConfig.bg} text-[10px] font-semibold ${typeConfig.text}`}>
                           {typeConfig.label}
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
           ) : (
-            <div className="bg-white rounded-2xl p-8 text-center border border-slate-100">
-              <MI name="auto_awesome" fill className="text-[40px] text-[#006D5B]/20 mb-3" />
-              <p className="text-sm font-semibold text-[#191c1d]">Comece sua jornada!</p>
-              <p className="text-xs text-[#6e7975] mt-1 mb-4">Gere seu primeiro resumo com IA para começar a estudar.</p>
-              <button onClick={() => go('/dashboard')} className="px-5 py-2 bg-[#006D5B] text-white text-xs font-bold rounded-lg hover:bg-[#005344] transition-colors">
-                <span className="flex items-center gap-1.5"><MI name="bolt" fill className="text-[14px]" />Gerar primeiro resumo</span>
+            <div className="bg-white rounded-xl p-8 text-center border border-dashed border-slate-300">
+              <div className="w-12 h-12 mx-auto bg-brand-primary/10 rounded-lg flex items-center justify-center mb-3">
+                <MI name="auto_awesome" fill className="text-[22px] text-brand-primary" />
+              </div>
+              <p className="text-sm font-semibold text-brand-ink">Sua biblioteca está vazia</p>
+              <p className="text-xs text-brand-ink-2 mt-1 mb-4">Gere seu primeiro resumo com IA para começar a estudar.</p>
+              <button onClick={() => go('/dashboard')} className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-primary-dark text-white text-sm font-semibold rounded-lg hover:bg-brand-primary-darker transition-colors">
+                <MI name="bolt" fill className="text-[14px]" />Gerar primeiro resumo
               </button>
             </div>
           )}
@@ -319,17 +290,6 @@ const MainMenu = () => {
         </section>
       </div>
 
-      {/* FAB — only show when scrolled past cards */}
-      <div className="fixed bottom-5 right-5 z-50">
-        <button
-          onClick={() => go('/dashboard')}
-          className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg text-white hover:scale-110 hover:shadow-xl active:scale-95 transition-all duration-200"
-          style={{ background: 'linear-gradient(135deg, #005344, #006d5b)' }}
-          title="Novo estudo"
-        >
-          <Plus className="h-5 w-5" />
-        </button>
-      </div>
     </DashboardLayout>
   );
 };
