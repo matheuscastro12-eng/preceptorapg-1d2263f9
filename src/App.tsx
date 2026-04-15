@@ -53,6 +53,7 @@ const Flashcards = lazy(() => import("./pages/Flashcards"));
 const ScientificStudio = lazy(() => import("./pages/ScientificStudio"));
 const Welcome = lazy(() => import("./pages/Welcome"));
 const ThankYou = lazy(() => import("./pages/ThankYou"));
+const SubscriptionThankYou = lazy(() => import("./pages/SubscriptionThankYou"));
 
 // CRM pages (lazy — admin only)
 const CrmHub = lazy(() => import("./pages/crm/CrmHub"));
@@ -157,6 +158,8 @@ const App = () => (
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/obrigado" element={<ThankYou />} />
                 <Route path="/obrigado/:plano" element={<ThankYou />} />
+                <Route path="/assinaturaobrigado" element={<SubscriptionThankYou />} />
+                <Route path="/assinaturaobrigado/:plano" element={<SubscriptionThankYou />} />
                 {/* Legacy redirects */}
                 <Route path="/topics" element={<Navigate to="/profile" replace />} />
                 <Route path="/evolution" element={<Navigate to="/profile" replace />} />

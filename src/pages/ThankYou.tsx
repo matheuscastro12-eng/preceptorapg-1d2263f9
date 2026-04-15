@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 import logoIcon from '@/assets/logo-icon.png';
-import { CheckCircle, BookOpen, Brain, Zap, ArrowRight, Sparkles, Star } from 'lucide-react';
+import { CheckCircle, BookOpen, Brain, Zap, ArrowRight, Sparkles, Clock } from 'lucide-react';
 
 const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
   <span
@@ -14,28 +14,19 @@ const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boole
   </span>
 );
 
-const PLAN_INFO: Record<string, { label: string; title: string }> = {
-  mensal:  { label: 'Plano Mensal',   title: 'Assinatura Mensal Confirmada' },
-  anual:   { label: 'Plano Anual',    title: 'Assinatura Anual Confirmada' },
-  bianual: { label: 'Plano Bi-anual', title: 'Assinatura Bi-anual Confirmada' },
-};
-
 export default function ThankYou() {
   const navigate = useNavigate();
-  const { plano } = useParams<{ plano?: string }>();
   const { user } = useAuth();
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Estudante';
-  const plan = PLAN_INFO[plano ?? ''] ?? { label: 'Assinatura', title: 'Assinatura Confirmada' };
 
   useEffect(() => {
-    document.title = `Bem-vindo ao PreceptorMED! — ${plan.label}`;
+    document.title = 'Teste de 3 dias iniciado — PreceptorMED';
     return () => { document.title = 'PreceptorMED'; };
-  }, [plan.label]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col" style={{ fontFamily: "'DM Sans', 'Inter', sans-serif" }}>
-
-      {/* Header — minimal */}
+      {/* Header */}
       <header className="bg-white/80 backdrop-blur-xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] sticky top-0 z-50">
         <nav className="flex justify-between items-center w-full px-4 sm:px-6 md:px-12 py-3 sm:py-4 max-w-7xl mx-auto">
           <div className="flex items-center gap-2">
@@ -48,228 +39,153 @@ export default function ThankYou() {
             onClick={() => navigate('/menu')}
             className="px-4 sm:px-6 py-2 sm:py-2.5 bg-[#006D5B] text-white rounded-lg font-bold shadow-lg hover:bg-[#005344] active:scale-95 transition-all text-xs sm:text-sm"
           >
-            Ir para o Painel
+            Comecar agora
           </button>
         </nav>
       </header>
 
-      <main className="flex-1">
-
-        {/* Hero — Thank You */}
-        <section className="relative pt-12 sm:pt-20 pb-16 sm:pb-24 px-4 sm:px-6 overflow-hidden">
-          {/* Background decorations */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute top-20 left-1/4 w-72 h-72 bg-[#006D5B]/5 rounded-full blur-3xl" />
-            <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-[#C9A84C]/5 rounded-full blur-3xl" />
-          </div>
-
-          <div className="max-w-3xl mx-auto text-center relative z-10">
-            {/* Animated checkmark */}
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
-              className="mx-auto mb-8"
-            >
-              <div className="relative inline-flex">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-[#006D5B]/10 flex items-center justify-center">
-                  <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-full bg-[#006D5B]/20 flex items-center justify-center">
-                    <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 text-[#006D5B]" strokeWidth={1.5} />
-                  </div>
-                </div>
-                {/* Sparkle accents */}
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="absolute -top-2 -right-2"
-                >
-                  <Sparkles className="w-6 h-6 text-[#C9A84C]" />
-                </motion.div>
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.8 }}
-                  className="absolute -bottom-1 -left-3"
-                >
-                  <Star className="w-5 h-5 text-[#C9A84C] fill-[#C9A84C]" />
-                </motion.div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <span className="inline-block px-4 py-1.5 mb-5 text-[10px] sm:text-xs font-bold tracking-widest uppercase bg-[#c8eade] text-[#005344] rounded-full">
-                {plan.title}
-              </span>
-              <h1
-                className="text-3xl sm:text-5xl md:text-6xl font-extrabold leading-[1.1] mb-5 tracking-tighter text-[#191c1d]"
-                style={{ fontFamily: "'Manrope', sans-serif" }}
-              >
-                Bem-vindo ao time, <br className="hidden sm:block" />
-                <span className="text-[#006D5B]">Dr. {userName}!</span>
-              </h1>
-              <p className="text-base sm:text-xl text-slate-500 font-light leading-relaxed mb-10 max-w-xl mx-auto">
-                Sua jornada para a residência acaba de ganhar um aliado de elite. Agora você tem acesso completo a todas as ferramentas do PreceptorMED.
-              </p>
-            </motion.div>
-
-            {/* CTA */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-16"
-            >
-              <button
-                onClick={() => navigate('/menu')}
-                className="btn-shimmer relative overflow-hidden inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#005344] text-white text-sm font-bold uppercase tracking-widest rounded-lg shadow-xl hover:shadow-2xl hover:-translate-y-0.5 active:scale-95 transition-all duration-300"
-              >
-                Começar a Estudar
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 border border-slate-200 text-[#191c1d] text-sm font-bold uppercase tracking-widest rounded-lg hover:bg-slate-50 active:scale-95 transition-all duration-300"
-              >
-                Gerar Primeiro Resumo
-              </button>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* What you can do now */}
-        <section className="px-4 sm:px-6 pb-20 sm:pb-28">
-          <div className="max-w-5xl mx-auto">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-              className="text-center text-2xl sm:text-3xl font-extrabold text-[#191c1d] mb-4 tracking-tight"
-              style={{ fontFamily: "'Manrope', sans-serif" }}
-            >
-              O que você pode fazer agora
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.9 }}
-              className="text-center text-sm sm:text-base text-slate-500 mb-12 max-w-lg mx-auto"
-            >
-              Todas as ferramentas estão desbloqueadas. Comece por onde preferir.
-            </motion.p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {[
-                {
-                  icon: 'auto_awesome',
-                  title: 'Resumos com IA',
-                  desc: 'Gere resumos estruturados sobre qualquer tema médico em segundos.',
-                  action: () => navigate('/dashboard'),
-                  color: '#006D5B',
-                  bg: '#c8eade',
-                  delay: 1.0,
-                },
-                {
-                  icon: 'chat_bubble',
-                  title: 'Preceptor Chat',
-                  desc: 'Tire dúvidas com IA especializada em medicina baseada em evidências.',
-                  action: () => navigate('/ai-chat'),
-                  color: '#005344',
-                  bg: '#d0ebe4',
-                  delay: 1.1,
-                },
-                {
-                  icon: 'history_edu',
-                  title: 'ENAMED',
-                  desc: 'Pratique com provas anteriores do ENAMED com correção e explicação.',
-                  action: () => navigate('/enamed'),
-                  color: '#4c6a62',
-                  bg: '#dce8e4',
-                  delay: 1.2,
-                },
-                {
-                  icon: 'style',
-                  title: 'Flashcards',
-                  desc: 'Crie flashcards automáticos e revise com repetição espaçada.',
-                  action: () => navigate('/flashcards'),
-                  color: '#006D5B',
-                  bg: '#e0f0eb',
-                  delay: 1.3,
-                },
-              ].map((item) => (
-                <motion.div
-                  key={item.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: item.delay }}
-                  onClick={item.action}
-                  className="bg-white border border-slate-100 hover:border-[#006D5B]/20 hover:shadow-lg transition-all duration-300 p-6 sm:p-7 rounded-2xl cursor-pointer group hover:-translate-y-1 active:scale-[0.98]"
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300"
-                    style={{ backgroundColor: item.bg, color: item.color }}
-                  >
-                    <MI name={item.icon} fill className="text-[24px]" />
-                  </div>
-                  <h3 className="font-bold text-[#191c1d] mb-2 text-sm sm:text-base" style={{ fontFamily: "'Manrope', sans-serif" }}>
-                    {item.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mb-4">
-                    {item.desc}
-                  </p>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#006D5B] uppercase tracking-wider group-hover:gap-2.5 transition-all duration-300">
-                    Acessar
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform duration-200" />
-                  </span>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Motivational quote */}
-        <section className="px-4 sm:px-6 pb-20">
+      <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 md:px-12 py-8 sm:py-12 md:py-16 w-full">
+        {/* Hero */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-10 md:mb-14"
+        >
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.4 }}
-            className="max-w-3xl mx-auto text-center"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 200, delay: 0.15 }}
+            className="inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-[#006D5B] to-[#005344] mb-5 shadow-[0_14px_40px_rgba(0,109,91,0.35)]"
           >
-            <div className="bg-gradient-to-br from-[#005344] to-[#006d5b] rounded-2xl p-8 sm:p-12 shadow-xl relative overflow-hidden">
-              <div className="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
-                <MI name="psychology" className="text-[180px] text-white" />
-              </div>
-              <div className="relative z-10">
-                <p className="text-white/90 text-lg sm:text-xl leading-relaxed font-light italic mb-6">
-                  "Somente aqueles que consideram a cura como o objetivo final de seus esforços podem, portanto, ser designados como médicos."
-                </p>
-                <p className="text-[#C9A84C] font-bold text-sm tracking-wider uppercase">
-                  — Rudolf Virchow
-                </p>
-                <div className="mt-8 pt-6 border-t border-white/10">
-                  <p className="text-white/60 text-xs">
-                    Bons estudos, Dr. {userName}. Estamos juntos nessa jornada.
-                  </p>
-                </div>
-              </div>
-            </div>
+            <CheckCircle className="w-10 h-10 md:w-12 md:h-12 text-white" strokeWidth={2.5} />
           </motion.div>
-        </section>
 
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#C9A84C]/15 border border-[#C9A84C]/30 mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-[#C9A84C]" />
+            <span className="text-xs font-bold text-[#8a6f26] tracking-wide uppercase">Teste gratis de 3 dias ativo</span>
+          </div>
+
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#191C1D] mb-3 tracking-tight" style={{ fontFamily: "'Manrope', sans-serif" }}>
+            Bem-vindo, {userName}!
+          </h1>
+          <p className="text-base md:text-lg text-[#4a5568] max-w-2xl mx-auto leading-relaxed">
+            Voce tem <strong className="text-[#006D5B]">3 dias gratis</strong> pra explorar tudo. Sem cartao, sem compromisso — so voce e a plataforma inteira na palma da mao.
+          </p>
+
+          <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <Clock className="w-4 h-4 text-[#006D5B]" />
+            <span className="text-sm text-[#4a5568]">Seu teste termina em <strong className="text-[#191C1D]">72 horas</strong></span>
+          </div>
+        </motion.section>
+
+        {/* Checklist — o que fazer nos proximos 3 dias */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="max-w-3xl mx-auto mb-12"
+        >
+          <h2 className="text-xl md:text-2xl font-bold text-[#191C1D] text-center mb-5" style={{ fontFamily: "'Manrope', sans-serif" }}>
+            O que fazer nesses 3 dias
+          </h2>
+          <div className="space-y-3">
+            {[
+              {
+                day: 'Hoje',
+                title: 'Gere seu primeiro fechamento de PBL',
+                desc: 'Cole um caso clinico ou tema e veja a IA entregar um resumo denso em minutos. E o carro-chefe do app.',
+                icon: BookOpen,
+                action: () => navigate('/dashboard'),
+                cta: 'Gerar agora',
+              },
+              {
+                day: 'Amanha',
+                title: 'Teste o chat com PubMed e o banco ENAMED',
+                desc: 'Pergunte qualquer duvida clinica com evidencia cientifica. Depois tente 10 questoes do ENAMED pra calibrar onde voce esta.',
+                icon: Brain,
+                action: () => navigate('/ai-chat'),
+                cta: 'Abrir chat',
+              },
+              {
+                day: 'Dia 3',
+                title: 'Configure flashcards e acompanhe seu progresso',
+                desc: 'O sistema SM-2 organiza revisoes pra voce nao esquecer o que estudou. Crie uns cards a partir dos fechamentos.',
+                icon: Zap,
+                action: () => navigate('/flashcards'),
+                cta: 'Ver flashcards',
+              },
+            ].map((step, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 + idx * 0.08 }}
+                className="bg-white rounded-2xl p-4 md:p-5 border border-gray-200 hover:border-[#006D5B]/40 hover:shadow-lg transition-all group"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="shrink-0 w-11 h-11 md:w-12 md:h-12 rounded-xl bg-[#006D5B]/10 flex items-center justify-center">
+                    <step.icon className="w-5 h-5 md:w-6 md:h-6 text-[#006D5B]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-bold text-[#C9A84C] uppercase tracking-wider mb-0.5">{step.day}</p>
+                    <h3 className="text-base md:text-lg font-bold text-[#191C1D] mb-1" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                      {step.title}
+                    </h3>
+                    <p className="text-sm text-[#4a5568] leading-relaxed">{step.desc}</p>
+                  </div>
+                  <button
+                    onClick={step.action}
+                    className="shrink-0 hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-[#006D5B] hover:bg-[#006D5B]/5 transition-colors group-hover:bg-[#006D5B]/10"
+                  >
+                    {step.cta}
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <button
+                  onClick={step.action}
+                  className="sm:hidden w-full mt-3 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-[#006D5B] bg-[#006D5B]/5"
+                >
+                  {step.cta}
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* CTA final */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="max-w-2xl mx-auto text-center bg-gradient-to-br from-[#006D5B] to-[#005344] rounded-2xl p-6 md:p-8 shadow-[0_20px_60px_rgba(0,109,91,0.25)]"
+        >
+          <MI name="rocket_launch" fill className="text-white text-4xl md:text-5xl mb-2" />
+          <h2 className="text-xl md:text-2xl font-extrabold text-white mb-2" style={{ fontFamily: "'Manrope', sans-serif" }}>
+            Pronto pra comecar?
+          </h2>
+          <p className="text-sm md:text-base text-white/85 mb-5 max-w-md mx-auto">
+            Cada dia do teste e uma chance de encurtar sua jornada pra residencia. Nao deixa passar.
+          </p>
+          <button
+            onClick={() => navigate('/menu')}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#006D5B] rounded-xl font-extrabold shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all"
+          >
+            Ir para o painel
+            <ArrowRight className="w-4 h-4" />
+          </button>
+          <p className="text-[11px] text-white/60 mt-4">
+            Apos os 3 dias, voce pode escolher um plano ou seguir com o acesso limitado.
+          </p>
+        </motion.section>
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-100 py-6">
-        <div className="max-w-7xl mx-auto px-6 sm:px-12 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <img src={logoIcon} alt="PreceptorMED" className="h-5 w-5" />
-            <span className="text-sm font-bold text-[#006D5B]" style={{ fontFamily: "'Manrope', sans-serif" }}>PreceptorMED</span>
-          </div>
-          <span className="text-xs text-slate-400">© {new Date().getFullYear()} Preceptor Group. Todos os direitos reservados.</span>
+      <footer className="border-t border-gray-200 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-5 text-center text-xs text-gray-500">
+          <p>Teste gratis &middot; Sem cartao de credito &middot; Cancele quando quiser</p>
+          <p className="mt-1">Preceptor Group &copy; 2026</p>
         </div>
       </footer>
     </div>

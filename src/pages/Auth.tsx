@@ -31,7 +31,6 @@ const Auth = () => {
   const [migrationWarning, setMigrationWarning] = useState(false);
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
-  const [signupPhone, setSignupPhone] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
 
@@ -83,24 +82,26 @@ const Auth = () => {
       toast({ title: 'Erro', description: 'A senha deve ter pelo menos 6 caracteres', variant: 'destructive' });
       return;
     }
-    if (!signupPhone.trim()) {
-      toast({ title: 'Erro', description: 'Informe seu número de telefone', variant: 'destructive' });
-      return;
-    }
     setLoading(true);
     const { error } = await signUp(
       signupEmail,
       signupPassword,
       signupName,
-      signupPhone.trim(),
+      '',
       planType ? 'paid_signup' : 'organic',
     );
     if (error) {
       toast({ title: 'Erro ao criar conta', description: error.message, variant: 'destructive' });
+      setLoading(false);
     } else {
-      toast({ title: 'Conta criada!', description: 'Verifique seu email para confirmar o cadastro.' });
+      toast({ title: 'Conta criada!', description: 'Seu teste de 3 dias comecou agora.' });
+      // Signup organico → pagina de obrigado (teste de 3 dias).
+      // Signup com plan (paid_signup) → checkout Easyflow abre via useEffect.
+      if (!planType) {
+        navigate('/obrigado', { replace: true });
+      }
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -450,10 +451,6 @@ const Auth = () => {
                   <div className="space-y-1.5">
                     <Label htmlFor="signup-email" className="text-[13px] font-medium">Email</Label>
                     <Input id="signup-email" type="email" placeholder="seu@email.com" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} required disabled={loading} className="h-10 bg-background" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="signup-phone" className="text-[13px] font-medium">Telefone (WhatsApp)</Label>
-                    <Input id="signup-phone" type="tel" placeholder="(11) 99999-9999" value={signupPhone} onChange={(e) => setSignupPhone(e.target.value)} required disabled={loading} className="h-10 bg-background" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
