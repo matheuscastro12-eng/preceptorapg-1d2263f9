@@ -130,30 +130,11 @@ export default function CrmAutomations() {
     } finally { setBulkBusy(null); }
   };
 
-  if (isLoading) {
-    return (
-      <div className="p-6 space-y-4 animate-pulse">
-        <div className="h-8 bg-gray-800 rounded w-48" />
-        <div className="grid grid-cols-5 gap-4">
-          {[...Array(5)].map((_, i) => <div key={i} className="h-24 bg-gray-800 rounded-xl" />)}
-        </div>
-        <div className="h-96 bg-gray-800 rounded-xl" />
-      </div>
-    );
-  }
-
   const perf = performance ?? [];
   const automations = automationsData?.automations ?? [];
 
-  const globalStats = perf.reduce(
-    (acc, p) => ({
-      sent: acc.sent + p.total_sent, delivered: acc.delivered + p.delivered,
-      opened: acc.opened + p.opened, clicked: acc.clicked + p.clicked, failed: acc.failed + p.failed,
-    }),
-    { sent: 0, delivered: 0, opened: 0, clicked: 0, failed: 0 }
-  );
-
-  // Agrupa pendentes por trigger_name (pra lista principal)
+  // IMPORTANTE: todos os hooks tem que vir ANTES de qualquer early return
+  // (regra do React — se nao, erro #310 "more hooks than previous render")
   const pendingByTrigger = useMemo(() => {
     const s = search.trim().toLowerCase();
     const filtered = automations.filter((a: any) => {
@@ -170,6 +151,26 @@ export default function CrmAutomations() {
     }
     return groups;
   }, [automations, search]);
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-4 animate-pulse">
+        <div className="h-8 bg-gray-800 rounded w-48" />
+        <div className="grid grid-cols-5 gap-4">
+          {[...Array(5)].map((_, i) => <div key={i} className="h-24 bg-gray-800 rounded-xl" />)}
+        </div>
+        <div className="h-96 bg-gray-800 rounded-xl" />
+      </div>
+    );
+  }
+
+  const globalStats = perf.reduce(
+    (acc, p) => ({
+      sent: acc.sent + p.total_sent, delivered: acc.delivered + p.delivered,
+      opened: acc.opened + p.opened, clicked: acc.clicked + p.clicked, failed: acc.failed + p.failed,
+    }),
+    { sent: 0, delivered: 0, opened: 0, clicked: 0, failed: 0 }
+  );
 
   const triggerNames = Object.keys(pendingByTrigger).sort((a, b) => pendingByTrigger[b].length - pendingByTrigger[a].length);
 
