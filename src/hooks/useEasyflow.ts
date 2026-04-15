@@ -65,6 +65,14 @@ export function useEFFinancials() {
   });
 }
 
+export function useEFDashboard() {
+  return useQuery({
+    queryKey: ["easyflow", "dashboard"],
+    queryFn: () => efApi({ action: "get_dashboard" }),
+    staleTime: 5 * 60 * 1000, // cache por 5 min
+  });
+}
+
 export function useCancelEFSubscription() {
   const qc = useQueryClient();
   return useMutation({
