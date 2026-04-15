@@ -3,6 +3,8 @@ import { AlertTriangle, Shield } from "lucide-react";
 import { useActiveChurnRisks } from "@/hooks/useCrm";
 import ChurnTable from "@/components/crm/ChurnTable";
 import { RISK_LEVEL_COLORS, type RiskLevel } from "@/lib/crm/types";
+import { ErrorState, MetricRowSkeleton } from "@/components/crm/QueryState";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const RISK_LABELS: Record<RiskLevel, string> = { low: "Baixo", medium: "Medio", high: "Alto", critical: "Critico" };
 
@@ -11,7 +13,7 @@ export default function CrmChurn() {
   const risk_level = searchParams.get("risk_level") as RiskLevel | undefined;
   const page = parseInt(searchParams.get("page") ?? "1");
 
-  const { data: allRisksData, isLoading } = useActiveChurnRisks({ page: 1, pageSize: 500 });
+  const { data: allRisksData, isLoading, isError, error, refetch } = useActiveChurnRisks({ page: 1, pageSize: 500 });
   const { data: filteredData } = useActiveChurnRisks({ risk_level: risk_level || undefined, page });
 
   const predictions = filteredData?.predictions ?? [];
@@ -36,14 +38,20 @@ export default function CrmChurn() {
     setSearchParams(params);
   };
 
+  if (isError) {
+    return (
+      <div className="p-6">
+        <ErrorState error={error as Error} onRetry={() => refetch()} />
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
-      <div className="p-6 space-y-4 animate-pulse">
-        <div className="h-8 bg-gray-800 rounded w-48" />
-        <div className="grid grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-28 bg-gray-800 rounded-xl" />)}
-        </div>
-        <div className="h-96 bg-gray-800 rounded-xl" />
+      <div className="p-6 space-y-4">
+        <Skeleton className="h-8 w-48 bg-gray-800" />
+        <MetricRowSkeleton count={4} />
+        <Skeleton className="h-96 bg-gray-800 rounded-xl" />
       </div>
     );
   }

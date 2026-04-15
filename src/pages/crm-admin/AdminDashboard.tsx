@@ -1,4 +1,6 @@
-import { DollarSign, Users, TrendingUp, TrendingDown, ArrowLeftRight, Target, Loader2, Calendar, Crosshair, Star, LineChart as LineChartIcon } from "lucide-react";
+import { DollarSign, Users, TrendingUp, TrendingDown, ArrowLeftRight, Target, Calendar, Crosshair, Star, LineChart as LineChartIcon } from "lucide-react";
+import { ErrorState, MetricRowSkeleton } from "@/components/crm/QueryState";
+import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import MetricCard from "@/components/crm/MetricCard";
 import PageHeader from "@/components/crm-admin/PageHeader";
@@ -28,7 +30,7 @@ const CATEGORIA_COLORS: Record<string, string> = {
 };
 
 export default function AdminDashboard() {
-  const { data: kpis, isLoading } = useAdminDashboardKpis();
+  const { data: kpis, isLoading, isError, error, refetch } = useAdminDashboardKpis();
   const { data: mrrHistory } = useMrrHistory();
   const { data: despesasCat } = useDespesasPorCategoria();
   const { data: ooAlerts } = useOneOnOneAlerts();
@@ -37,12 +39,23 @@ export default function AdminDashboard() {
   const { data: allMembros } = useMembros();
   const { data: bp } = useBPHighlights(2026);
 
+  if (isError) {
+    return (
+      <div className="p-6">
+        <ErrorState error={error as Error} onRetry={() => refetch()} />
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6 animate-pulse">
-        <div className="h-8 bg-gray-800 rounded w-48" />
-        <div className="grid grid-cols-5 gap-4">{[...Array(5)].map((_, i) => <div key={i} className="h-28 bg-gray-800 rounded-xl" />)}</div>
-        <div className="grid grid-cols-2 gap-6"><div className="h-64 bg-gray-800 rounded-xl" /><div className="h-64 bg-gray-800 rounded-xl" /></div>
+      <div className="p-6 space-y-6">
+        <Skeleton className="h-8 w-64 bg-gray-800" />
+        <MetricRowSkeleton count={5} />
+        <div className="grid grid-cols-2 gap-6">
+          <Skeleton className="h-64 bg-gray-800 rounded-xl" />
+          <Skeleton className="h-64 bg-gray-800 rounded-xl" />
+        </div>
       </div>
     );
   }

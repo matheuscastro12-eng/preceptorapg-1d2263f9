@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
-import { DollarSign, Users, TrendingDown, AlertTriangle, Zap, Target, Loader2 } from "lucide-react";
+import { DollarSign, Users, TrendingDown, AlertTriangle, Zap, Target } from "lucide-react";
 import MetricCard from "@/components/crm/MetricCard";
 import FunnelChart from "@/components/crm/FunnelChart";
 import HealthMap from "@/components/crm/HealthMap";
 import ChurnTable from "@/components/crm/ChurnTable";
 import AutomationsLog from "@/components/crm/AutomationsLog";
 import { useDashboardKpis, useFunnelKpis, useHealthDistribution, useActiveChurnRisks, useRecentAutomations } from "@/hooks/useCrm";
+import { ErrorState, MetricRowSkeleton } from "@/components/crm/QueryState";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const emptyFunnel = {
   produto: "preceptormed" as const,
@@ -14,7 +16,7 @@ const emptyFunnel = {
 };
 
 export default function CrmDashboard() {
-  const { data: kpis, isLoading: kpisLoading } = useDashboardKpis();
+  const { data: kpis, isLoading: kpisLoading, isError: kpisError, error: kpisErrObj, refetch: refetchKpis } = useDashboardKpis();
   const { data: funnelData } = useFunnelKpis("preceptormed");
   const { data: healthData } = useHealthDistribution();
   const { data: churnData } = useActiveChurnRisks({});
@@ -22,16 +24,25 @@ export default function CrmDashboard() {
 
   const funnel = funnelData?.[0] ?? emptyFunnel;
 
+  if (kpisError) {
+    return (
+      <div className="p-4 md:p-6">
+        <ErrorState error={kpisErrObj as Error} onRetry={() => refetchKpis()} />
+      </div>
+    );
+  }
+
   if (kpisLoading) {
     return (
-      <div className="p-4 md:p-6 space-y-6 animate-pulse">
-        <div className="h-8 bg-gray-800 rounded w-48" />
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-          {[...Array(6)].map((_, i) => <div key={i} className="h-28 bg-gray-800 rounded-xl" />)}
+      <div className="p-4 md:p-6 space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-48 bg-gray-800" />
+          <Skeleton className="h-3 w-64 bg-gray-800" />
         </div>
+        <MetricRowSkeleton count={6} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="h-64 bg-gray-800 rounded-xl" />
-          <div className="h-64 bg-gray-800 rounded-xl" />
+          <Skeleton className="h-64 bg-gray-800 rounded-xl" />
+          <Skeleton className="h-64 bg-gray-800 rounded-xl" />
         </div>
       </div>
     );
