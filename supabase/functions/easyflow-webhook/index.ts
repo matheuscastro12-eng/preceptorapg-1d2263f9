@@ -45,10 +45,11 @@ serve(async (req) => {
 
     console.log(`[EasyFlow] Event: ${event}`);
 
-    // Save raw event for audit
-    try {
-      await supabase.from("webhook_events").insert({ provider: "easyflow", event_type: event || "unknown", payload: body });
-    } catch {}
+    // Save raw event for audit (tabela agora existe)
+    const { error: auditErr } = await supabase
+      .from("webhook_events")
+      .insert({ provider: "easyflow", event_type: event || "unknown", payload: body });
+    if (auditErr) console.warn("[EasyFlow] webhook_events insert failed:", auditErr.message);
 
     // ── Extract email (different locations for Order vs Subscription) ──
     // Order events: payload.buyer.email
@@ -81,10 +82,24 @@ serve(async (req) => {
       return "monthly";
     };
 
-    // ── Find user by email ──
+    // ── Find user by email (case-insensitive, com fallback via auth.users) ──
     const findUser = async () => {
-      const { data } = await supabase.from("profiles").select("user_id").eq("email", email).maybeSingle();
-      return data;
+      // 1. profiles por email case-insensitive
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .ilike("email", email)
+        .maybeSingle();
+      if (p) return p;
+
+      // 2. fallback: auth.users direto (caso profile esteja com email dessincronizado)
+      const { data: authList } = await supabase.auth.admin.listUsers();
+      const found = authList?.users?.find((u: any) => (u.email || "").toLowerCase().trim() === email);
+      if (found) {
+        console.log(`[EasyFlow] findUser: encontrou via auth.users (profile dessincronizado): ${email}`);
+        return { user_id: found.id };
+      }
+      return null;
     };
 
     // ══════════════════════════════════════════════
@@ -99,41 +114,62 @@ serve(async (req) => {
     ) {
       const profile = await findUser();
       if (!profile) {
-        console.log(`[EasyFlow] User not found: ${email}`);
-        return json({ received: true, action: "user_not_found", email });
+        console.error(`[EasyFlow] User NOT FOUND: ${email} — criar conta antes ou revisar payload`);
+        await supabase.from("webhook_events").update({
+          processed: false,
+          error_message: `user_not_found: ${email}`,
+        }).eq("provider", "easyflow").eq("event_type", event).order("created_at", { ascending: false }).limit(1);
+        return json({ received: true, action: "user_not_found", email }, 200);
       }
 
       const plan = detectPlan();
 
-      // Upsert subscription
+      // Upsert subscription (AGORA com checagem de erro)
       const { data: existing } = await supabase
         .from("subscriptions").select("id").eq("user_id", profile.user_id).maybeSingle();
 
+      const now = new Date().toISOString();
       const subData = {
         status: "active" as const,
         plan_type: plan,
         stripe_customer_id: payload.id || payload.buyer?.id || payload.customer?.id || null,
         stripe_subscription_id: payload.payments?.[0]?.id || payload.id || null,
+        access_expires_at: null as string | null,
+        cancel_at_period_end: false,
+        canceled_at: null as string | null,
+        updated_at: now,
       };
 
+      let subErr: { message: string } | null = null;
       if (existing) {
-        await supabase.from("subscriptions").update(subData).eq("user_id", profile.user_id);
+        const r = await supabase.from("subscriptions").update(subData).eq("user_id", profile.user_id);
+        subErr = r.error;
       } else {
-        await supabase.from("subscriptions").insert({ user_id: profile.user_id, ...subData });
+        const r = await supabase.from("subscriptions").insert({ user_id: profile.user_id, ...subData });
+        subErr = r.error;
+      }
+      if (subErr) {
+        console.error(`[EasyFlow] FAILED to upsert subscription for ${email}:`, subErr.message);
+        await supabase.from("webhook_events").update({
+          processed: false,
+          error_message: `subscription_upsert_failed: ${subErr.message}`,
+        }).eq("provider", "easyflow").eq("event_type", event).order("created_at", { ascending: false }).limit(1);
+        return json({ received: true, action: "error", error: subErr.message }, 500);
       }
 
-      // Update CRM lead
-      await supabase.from("crm_leads")
-        .update({ status: "subscriber", converted_at: new Date().toISOString() })
+      // Update CRM lead (com checagem de erro)
+      const { error: leadErr } = await supabase.from("crm_leads")
+        .update({ status: "subscriber", converted_at: now })
         .eq("user_id", profile.user_id);
+      if (leadErr) console.warn(`[EasyFlow] crm_leads update falhou (nao bloqueante): ${leadErr.message}`);
 
       // Resolve any open inadimplencia
       await supabase.from("admin_inadimplencias")
-        .update({ status: "resolvido", updated_at: new Date().toISOString() })
+        .update({ status: "resolvido", updated_at: now })
         .eq("user_id", profile.user_id)
         .eq("status", "em_cobranca");
 
-      console.log(`[EasyFlow] Activated: ${email} -> ${plan}`);
+      console.log(`[EasyFlow] ✅ Activated: ${email} -> ${plan}`);
       return json({ received: true, action: "activated", email, plan });
     }
 
