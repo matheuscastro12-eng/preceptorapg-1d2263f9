@@ -180,7 +180,7 @@ const Enamed = () => {
               </button>
 
               {/* ─── Stats + AI Insight Sidebar ─── */}
-              <div className="col-span-1 lg:col-span-4 flex flex-row lg:flex-col gap-4 sm:gap-6 lg:gap-8">
+              <div className="col-span-1 lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-4 sm:gap-6 lg:gap-8">
                 {/* Performance card */}
                 <div className="flex-1 bg-white rounded-xl p-4 sm:p-6 shadow-[0_12px_40px_rgba(25,28,29,0.06)] border border-[#bec9c4]/10 animate-fade-up" style={{ animationDelay: '0.1s' }}>
                   <div className="flex items-center justify-between mb-3 sm:mb-4">
@@ -229,7 +229,7 @@ const Enamed = () => {
               {/* ─── Simulado Completo ─── */}
               <button
                 onClick={() => startBankMode('completo')}
-                className="col-span-1 md:col-span-1 lg:col-span-6 text-left group animate-fade-up"
+                className="col-span-1 md:col-span-6 lg:col-span-6 text-left group animate-fade-up"
                 style={{ animationDelay: '0.12s' }}
               >
                 <div className="bg-white rounded-xl p-5 sm:p-8 shadow-[0_12px_40px_rgba(25,28,29,0.06)] border border-[#bec9c4]/10 group-hover:bg-[#006D5B]/[0.03] transition-all duration-300 h-full">
@@ -253,7 +253,7 @@ const Enamed = () => {
               {/* ─── Revisão Rápida ─── */}
               <button
                 onClick={() => startBankMode('revisao')}
-                className="col-span-1 md:col-span-1 lg:col-span-6 text-left group animate-fade-up"
+                className="col-span-1 md:col-span-6 lg:col-span-6 text-left group animate-fade-up"
                 style={{ animationDelay: '0.16s' }}
               >
                 <div className="bg-white rounded-xl p-5 sm:p-8 shadow-[0_12px_40px_rgba(25,28,29,0.06)] border border-[#bec9c4]/10 group-hover:bg-[#006D5B]/[0.03] transition-all duration-300 h-full">
@@ -276,7 +276,7 @@ const Enamed = () => {
               </button>
 
               {/* ─── Simulado IA 50q (Dark Card) ─── */}
-              <div className="col-span-1 lg:col-span-5 animate-fade-up" style={{ animationDelay: '0.2s' }}>
+              <div className="col-span-1 md:col-span-12 lg:col-span-5 animate-fade-up" style={{ animationDelay: '0.2s' }}>
                 <button onClick={() => startIaMode('ia_completo')} className="w-full text-left group">
                   <div className="h-full bg-[#191c1d] p-6 sm:p-10 rounded-xl shadow-[0_12px_40px_rgba(25,28,29,0.15)] relative overflow-hidden flex flex-col justify-between min-h-[260px] sm:min-h-[320px] group-hover:shadow-[0_16px_48px_rgba(25,28,29,0.25)] transition-all duration-300 group-active:scale-[0.99]">
                     <div className="absolute inset-0 bg-gradient-to-br from-[#006D5B]/30 to-transparent pointer-events-none" />
@@ -296,7 +296,7 @@ const Enamed = () => {
               </div>
 
               {/* ─── Estudo por Área (List View) ─── */}
-              <div className="col-span-1 lg:col-span-7 animate-fade-up" style={{ animationDelay: '0.24s' }}>
+              <div className="col-span-1 md:col-span-12 lg:col-span-7 animate-fade-up" style={{ animationDelay: '0.24s' }}>
                 <div className="bg-[#f3f4f5] rounded-xl p-5 sm:p-8 h-full">
                   <div className="flex items-center justify-between mb-5 sm:mb-8">
                     <h3 className="font-['Manrope'] text-base sm:text-xl font-extrabold text-[#191c1d]">Estudo por Área</h3>

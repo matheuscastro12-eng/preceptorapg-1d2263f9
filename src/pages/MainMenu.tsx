@@ -7,7 +7,6 @@ import PageSkeleton from '@/components/PageSkeleton';
 import { useToast } from '@/hooks/use-toast';
 import OnboardingTour, { type TourStep } from '@/components/OnboardingTour';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import GamificationWidget from '@/components/GamificationWidget';
 import TrialBanner from '@/components/TrialBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { Lock } from 'lucide-react';
@@ -39,11 +38,16 @@ interface RecentItem {
 }
 
 const practiceItems = [
-  { icon: 'history_edu',    label: 'ENAMED',          desc: 'Provas anteriores',     path: '/enamed' },
-  { icon: 'stethoscope',    label: 'Simulados',       desc: 'Casos práticos',        path: '/exam?mode=prova' },
-  { icon: 'clinical_notes', label: 'Casos Clínicos',  desc: 'Revisão aprofundada',   path: '/exam?mode=caso_clinico' },
-  { icon: 'style',          label: 'Flashcards',      desc: 'Repetição espaçada',    path: '/flashcards' },
+  { icon: 'history_edu',    label: 'ENAMED',          desc: 'Provas anteriores',     path: '/enamed',                  accent: 'primary' as const },
+  { icon: 'stethoscope',    label: 'Simulados',       desc: 'Casos práticos',        path: '/exam?mode=prova',         accent: 'gold' as const },
+  { icon: 'clinical_notes', label: 'Casos Clínicos',  desc: 'Revisão aprofundada',   path: '/exam?mode=caso_clinico',  accent: 'primary' as const },
+  { icon: 'style',          label: 'Flashcards',      desc: 'Repetição espaçada',    path: '/flashcards',              accent: 'gold' as const },
 ];
+
+const accentStyles = {
+  primary: 'bg-brand-primary/10 text-brand-primary',
+  gold: 'bg-brand-gold/15 text-brand-gold',
+};
 
 const getTypeConfig = (tipo: string) => {
   switch (tipo) {
@@ -140,11 +144,6 @@ const MainMenu = () => {
         {/* Trial banner */}
         <section><TrialBanner /></section>
 
-        {/* Gamification widget */}
-        {!isFreeUser && (
-          <section><GamificationWidget variant="card" /></section>
-        )}
-
         {/* Primary Feature Cards */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
           {/* Study with AI — primary CTA */}
@@ -152,19 +151,25 @@ const MainMenu = () => {
             data-tour="estudo"
             type="button"
             onClick={() => go('/dashboard')}
-            className="text-left rounded-xl p-6 sm:p-8 text-white bg-brand-primary-dark hover:bg-brand-primary-darker transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
+            className="relative overflow-hidden text-left rounded-2xl p-6 sm:p-8 text-white transition-shadow shadow-[0_8px_24px_-6px_rgba(0,83,68,0.25)] hover:shadow-[0_12px_32px_-6px_rgba(0,83,68,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
+            style={{ background: 'linear-gradient(135deg, #003D32 0%, #005344 50%, #006D5B 100%)' }}
           >
-            <div className="bg-white/15 w-12 h-12 rounded-lg flex items-center justify-center mb-5">
-              <MI name="auto_awesome" fill className="text-white text-[22px]" />
+            {/* decoração sutil — círculo verde claro desfocado */}
+            <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-brand-gold/10 blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-32 h-32 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+            <div className="relative">
+              <div className="bg-white/15 backdrop-blur-sm border border-white/10 w-12 h-12 rounded-xl flex items-center justify-center mb-5">
+                <MI name="auto_awesome" fill className="text-white text-[22px]" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight">Estudo com IA</h3>
+              <p className="text-white/80 text-sm leading-relaxed mb-6 max-w-sm">
+                Gere resumos estruturados e roteiros de seminário sobre qualquer tema médico.
+              </p>
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-gold">
+                Começar
+                <MI name="arrow_forward" className="text-[16px]" />
+              </span>
             </div>
-            <h3 className="text-xl sm:text-2xl font-bold mb-2">Estudo com IA</h3>
-            <p className="text-white/80 text-sm leading-relaxed mb-6 max-w-sm">
-              Gere resumos estruturados e roteiros de seminário sobre qualquer tema médico.
-            </p>
-            <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
-              Começar
-              <MI name="arrow_forward" className="text-[16px]" />
-            </span>
           </button>
 
           {/* Preceptor Chat — secondary */}
@@ -172,19 +177,23 @@ const MainMenu = () => {
             type="button"
             data-tour="preceptoria"
             onClick={() => navigate('/ai-chat')}
-            className="text-left bg-white border border-slate-200 rounded-xl p-6 sm:p-8 hover:border-brand-primary/40 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
+            className="relative overflow-hidden text-left bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 hover:border-brand-primary/40 hover:shadow-[0_8px_24px_-8px_rgba(0,109,91,0.15)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
           >
-            <div className="bg-brand-primary/10 w-12 h-12 rounded-lg flex items-center justify-center mb-5">
-              <MI name="chat_bubble" fill className="text-brand-primary text-[22px]" />
+            {/* Decoração sutil */}
+            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-brand-primary/5 blur-2xl pointer-events-none" />
+            <div className="relative">
+              <div className="bg-gradient-to-br from-brand-primary/15 to-brand-primary/5 w-12 h-12 rounded-xl flex items-center justify-center mb-5">
+                <MI name="chat_bubble" fill className="text-brand-primary text-[22px]" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold text-brand-ink mb-2 tracking-tight">Preceptor Chat</h3>
+              <p className="text-brand-ink-2 text-sm leading-relaxed mb-6 max-w-sm">
+                Tire dúvidas com IA em tempo real. Respostas com referências do PubMed.
+              </p>
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-primary">
+                Abrir chat
+                <MI name="arrow_forward" className="text-[16px]" />
+              </span>
             </div>
-            <h3 className="text-xl sm:text-2xl font-bold text-brand-ink mb-2">Preceptor Chat</h3>
-            <p className="text-brand-ink-2 text-sm leading-relaxed mb-6 max-w-sm">
-              Tire dúvidas com IA em tempo real. Respostas com referências do PubMed.
-            </p>
-            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-primary">
-              Abrir chat
-              <MI name="arrow_forward" className="text-[16px]" />
-            </span>
           </button>
         </section>
 
@@ -203,8 +212,8 @@ const MainMenu = () => {
                   className="group bg-white border border-slate-200 rounded-xl p-4 sm:p-5 flex flex-col items-start text-left hover:border-brand-primary/40 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
                   {...(item.label === 'Flashcards' ? { 'data-tour': 'flashcards' } : {})}
                 >
-                  <div className="bg-brand-primary/10 text-brand-primary w-10 h-10 rounded-lg flex items-center justify-center mb-3 relative">
-                    <MI name={item.icon} className="text-[20px]" />
+                  <div className={`${accentStyles[item.accent]} w-10 h-10 rounded-lg flex items-center justify-center mb-3 relative`}>
+                    <MI name={item.icon} fill className="text-[20px]" />
                     {locked && (
                       <div className="absolute -top-1 -right-1 w-4 h-4 bg-slate-700 rounded-full flex items-center justify-center">
                         <Lock className="w-2 h-2 text-white" />
