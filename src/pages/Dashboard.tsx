@@ -382,42 +382,38 @@ const Dashboard = () => {
                 <div className="col-span-12 lg:col-span-4">
                   <div className="lg:sticky lg:top-24 space-y-6">
                     {/* Clinical Pearls Card */}
-                    <div className="bg-[#005344] p-4 sm:p-6 rounded-2xl text-white shadow-xl relative overflow-hidden group hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-500 animate-fade-up" style={{ animationDelay: '0.1s' }}>
-                      <div className="absolute -right-4 -top-4 opacity-10 pointer-events-none group-hover:opacity-20 group-hover:scale-110 transition-all duration-700">
-                        <MI name="diamond" className="text-[80px]" />
-                      </div>
-                      <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-[#9df3dc]/8 rounded-full blur-2xl group-hover:bg-[#9df3dc]/12 transition-all duration-700" />
-                      <div className="flex items-center gap-2 mb-4 relative z-10">
-                        <MI name="diamond" fill className="text-[20px]" />
-                        <h3 className="text-base font-bold font-['Manrope']">Pérolas Clínicas</h3>
-                      </div>
-                      <div className="space-y-4 relative z-10">
+                    <div className="bg-brand-primary-dark p-5 sm:p-6 rounded-xl text-white">
+                      <h3 className="text-base font-bold mb-4 flex items-center gap-2">
+                        <MI name="diamond" fill className="text-[18px]" />
+                        Pérolas Clínicas
+                      </h3>
+                      <div className="space-y-4">
                         <div>
-                          <p className="text-[10px] uppercase font-bold text-[#96ebd5] tracking-widest mb-1">Atenção Médica</p>
-                          <p className="text-sm leading-relaxed text-[#9df3dc]">
-                            Use o chat do Preceptor para extrair pérolas clínicas, dicas de prova e aprofundar nos pontos-chave deste resumo.
+                          <p className="text-xs font-semibold text-white/60 mb-1">Atenção médica</p>
+                          <p className="text-sm leading-relaxed text-white/90">
+                            Use o chat do Preceptor para extrair pérolas clínicas e aprofundar nos pontos-chave deste resumo.
                           </p>
                         </div>
                         <div>
-                          <p className="text-[10px] uppercase font-bold text-[#96ebd5] tracking-widest mb-1">Dica de Prova</p>
-                          <p className="text-sm leading-relaxed text-[#9df3dc]">
-                            Pergunte ao Preceptor AI quais pontos mais caem em provas sobre este tema.
+                          <p className="text-xs font-semibold text-white/60 mb-1">Dica de prova</p>
+                          <p className="text-sm leading-relaxed text-white/90">
+                            Pergunte quais pontos mais caem em provas sobre este tema.
                           </p>
                         </div>
                         <div>
-                          <p className="text-[10px] uppercase font-bold text-[#96ebd5] tracking-widest mb-1">Manejo</p>
-                          <p className="text-sm leading-relaxed text-[#9df3dc]">
-                            Gere simulados a partir deste conteúdo para consolidar o aprendizado com active recall.
+                          <p className="text-xs font-semibold text-white/60 mb-1">Manejo</p>
+                          <p className="text-sm leading-relaxed text-white/90">
+                            Gere simulados a partir deste conteúdo para consolidar com active recall.
                           </p>
                         </div>
                       </div>
                     </div>
 
                     {/* Progress Card */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 animate-fade-up" style={{ animationDelay: '0.2s' }}>
-                      <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-xs font-bold uppercase text-slate-400 tracking-wider">Seu Progresso</h4>
-                        {isComplete && <span className="text-xs font-bold text-[#006D5B]">+15 XP</span>}
+                    <div className="bg-white p-5 rounded-xl border border-slate-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-xs font-semibold text-brand-ink-2">Seu progresso</h4>
+                        {isComplete && <span className="text-xs font-semibold text-brand-primary">+15 XP</span>}
                       </div>
                       {generating ? (
                         <GenerationProgress
@@ -425,23 +421,14 @@ const Dashboard = () => {
                           hasStartedReceiving={hasStartedReceiving}
                           isComplete={isComplete}
                         />
-                      ) : isComplete ? (
-                        <div>
-                          <div className="w-full bg-[#e7e8e9] h-2 rounded-full mb-2 overflow-hidden">
-                            <div className="bg-[#006D5B] h-full w-full transition-all duration-500" />
-                          </div>
-                          <div className="flex justify-between text-[10px] font-bold text-slate-500">
-                            <span>100% CONCLUÍDO</span>
-                            <span className="text-[#006D5B]">Pronto</span>
-                          </div>
-                        </div>
                       ) : (
                         <div>
-                          <div className="w-full bg-[#e7e8e9] h-2 rounded-full mb-2 overflow-hidden">
-                            <div className="bg-[#006D5B] h-full transition-all duration-500" style={{ width: '65%' }} />
+                          <div className="w-full bg-slate-100 h-1.5 rounded-full mb-2 overflow-hidden">
+                            <div className="bg-brand-primary h-full transition-all duration-500" style={{ width: isComplete ? '100%' : '65%' }} />
                           </div>
-                          <div className="flex justify-between text-[10px] font-bold text-slate-500">
-                            <span>65% CONCLUÍDO</span>
+                          <div className="flex justify-between text-xs font-medium text-brand-ink-2">
+                            <span>{isComplete ? '100%' : '65%'} concluído</span>
+                            {isComplete && <span className="text-brand-primary font-semibold">Pronto</span>}
                           </div>
                         </div>
                       )}
@@ -451,18 +438,17 @@ const Dashboard = () => {
                     <button
                       type="button"
                       onClick={() => window.dispatchEvent(new CustomEvent('open-context-chat'))}
-                      className="w-full text-left bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:border-[#006D5B]/20 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group animate-fade-up"
-                      style={{ animationDelay: '0.3s' }}
+                      className="w-full text-left bg-white p-4 rounded-xl border border-slate-200 hover:border-brand-primary/40 hover:shadow-sm transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#006D5B]/10 flex items-center justify-center group-hover:bg-[#006D5B]/15 group-hover:scale-105 transition-all duration-300">
-                          <MI name="chat_bubble" fill className="text-[16px] text-[#006D5B]" />
+                        <div className="w-9 h-9 rounded-lg bg-brand-primary/10 flex items-center justify-center">
+                          <MI name="chat_bubble" fill className="text-[16px] text-brand-primary" />
                         </div>
-                        <div>
-                          <p className="text-[11px] font-bold uppercase text-[#006D5B] tracking-wider">Dúvidas Clínicas?</p>
-                          <p className="text-[10px] text-slate-500">Pergunte ao Preceptor AI agora.</p>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-brand-ink">Dúvidas clínicas?</p>
+                          <p className="text-xs text-brand-ink-2">Pergunte ao Preceptor Chat.</p>
                         </div>
-                        <MI name="arrow_forward" className="text-[16px] text-slate-300 ml-auto group-hover:text-[#006D5B] group-hover:translate-x-0.5 transition-all duration-200" />
+                        <MI name="arrow_forward" className="text-[16px] text-slate-400 group-hover:text-brand-primary transition-colors" />
                       </div>
                     </button>
 

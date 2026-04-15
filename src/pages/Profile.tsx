@@ -547,8 +547,7 @@ const ProfilePage = () => {
                         <p className="text-sm text-[#6e7975] mb-6 max-w-xs mx-auto">Complete simulados ENAMED para visualizar sua evolução aqui.</p>
                         <button
                           onClick={() => navigate('/enamed')}
-                          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-['Manrope'] font-bold text-white text-sm shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
-                          style={{ background: 'linear-gradient(135deg, #005344, #006d5b)' }}
+                          className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white text-sm bg-brand-primary-dark hover:bg-brand-primary-darker transition-colors"
                         >
                           <Brain className="h-4 w-4" /> Fazer Simulado
                         </button>

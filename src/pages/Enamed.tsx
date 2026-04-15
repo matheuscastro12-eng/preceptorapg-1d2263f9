@@ -143,148 +143,193 @@ const Enamed = () => {
         {mode === 'menu' && (
           <div className="w-full">
             {/* Hero Header */}
-            <section className="mb-8 sm:mb-10">
-              <h1 className="text-2xl sm:text-3xl font-bold text-brand-ink mb-2">
+            <section className="mb-8 sm:mb-12 animate-fade-up">
+              <h1 className="font-['Manrope'] text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[#191c1d] mb-2">
                 Prepare-se para o ENAMED
               </h1>
-              <p className="text-brand-ink-2 text-sm sm:text-base max-w-2xl leading-relaxed">
-                Banco de questões oficiais e simulados gerados por IA no padrão INEP.
+              <p className="text-[#3e4945]/70 text-sm sm:text-base max-w-2xl leading-relaxed">
+                Bem-vindo à sua central de excelência clínica. Aqui, a precisão editorial encontra a tecnologia para potencializar sua aprovação no Exame Nacional de Médicos.
               </p>
             </section>
 
-            {/* Stats row */}
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 sm:mb-10">
-              {/* Performance card */}
-              <div className="bg-white rounded-xl p-5 border border-slate-200">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-semibold text-brand-ink-2">Seu desempenho</p>
-                  {userStats.simCount > 0 && (
-                    <span className={`text-xs font-semibold ${userStats.trend >= 0 ? 'text-brand-primary' : 'text-red-500'}`}>
-                      {userStats.trend >= 0 ? '+' : ''}{userStats.trend}% vs anterior
+            {/* Bento Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8">
+
+              {/* ─── Banco de Questões INEP (Hero Card) ─── */}
+              <button
+                onClick={() => startBankMode('completo')}
+                className="col-span-1 lg:col-span-8 text-left group animate-fade-up"
+                style={{ animationDelay: '0.05s' }}
+              >
+                <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#005344] to-[#006d5b] p-6 sm:p-10 text-white h-full flex flex-col justify-between min-h-[220px] sm:min-h-[260px] shadow-[0_12px_40px_rgba(0,83,68,0.15)] group-hover:shadow-[0_16px_48px_rgba(0,83,68,0.25)] transition-all duration-300 group-active:scale-[0.99]">
+                  <div className="absolute top-0 right-0 opacity-[0.06] scale-150 rotate-12 pointer-events-none">
+                    <MI name="history_edu" className="text-[180px] sm:text-[200px]" />
+                  </div>
+                  <div className="relative z-10">
+                    <span className="inline-block px-3 py-1 bg-white/15 backdrop-blur-md rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mb-3 sm:mb-4">Acesso Oficial</span>
+                    <h2 className="font-['Manrope'] text-xl sm:text-2xl lg:text-3xl font-bold mb-2 sm:mb-4">Banco de Questões INEP</h2>
+                    <p className="text-white/70 text-sm sm:text-base max-w-md leading-relaxed">Explore todas as questões das provas oficiais anteriores com comentários editoriais de especialistas.</p>
+                  </div>
+                  <div className="relative z-10 mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
+                    <span className="bg-white text-[#005344] px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-['Manrope'] font-bold text-xs sm:text-sm uppercase tracking-tight group-hover:bg-[#9df3dc] transition-colors">
+                      Acessar Banco Completo
                     </span>
+                    <span className="text-[10px] sm:text-xs font-medium opacity-70">Questões no padrão ENAMED/Revalida</span>
+                  </div>
+                </div>
+              </button>
+
+              {/* ─── Stats + AI Insight Sidebar ─── */}
+              <div className="col-span-1 lg:col-span-4 flex flex-row lg:flex-col gap-4 sm:gap-6 lg:gap-8">
+                {/* Performance card */}
+                <div className="flex-1 bg-white rounded-xl p-4 sm:p-6 shadow-[0_12px_40px_rgba(25,28,29,0.06)] border border-[#bec9c4]/10 animate-fade-up" style={{ animationDelay: '0.1s' }}>
+                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                    <div className="p-2 bg-[#c8eade] rounded-lg">
+                      <MI name="trending_up" fill className="text-[20px] text-[#005344]" />
+                    </div>
+                    {userStats.simCount > 0 && (
+                      <span className={`text-[10px] sm:text-xs font-bold ${userStats.trend >= 0 ? 'text-[#006D5B]' : 'text-red-500'}`}>
+                        {userStats.trend >= 0 ? '+' : ''}{userStats.trend}% vs anterior
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[#6e7975] text-[10px] sm:text-xs uppercase font-bold tracking-widest mb-1">Seu Desempenho</p>
+                  {userStats.simCount > 0 ? (
+                    <>
+                      <h3 className="font-['Manrope'] text-xl sm:text-2xl font-extrabold text-[#191c1d]">
+                        {userStats.avg}% <span className="text-xs sm:text-sm font-medium text-[#6e7975]">acerto médio</span>
+                      </h3>
+                      <div className="mt-3 sm:mt-4 h-2 w-full bg-[#e7e8e9] rounded-full overflow-hidden">
+                        <div className="h-full bg-[#006D5B] rounded-full transition-all duration-700" style={{ width: `${userStats.avg}%` }} />
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-[#6e7975] mt-1">Faça simulados para ver suas estatísticas</p>
                   )}
                 </div>
-                {userStats.simCount > 0 ? (
-                  <>
-                    <div className="flex items-baseline gap-2 mb-3">
-                      <span className="text-3xl font-bold text-brand-ink">{userStats.avg}%</span>
-                      <span className="text-sm text-brand-ink-2">acerto médio · {userStats.simCount} {userStats.simCount === 1 ? 'simulado' : 'simulados'}</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-brand-primary rounded-full" style={{ width: `${userStats.avg}%` }} />
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-sm text-brand-ink-2 mt-1">Faça seu primeiro simulado para ver estatísticas.</p>
-                )}
+
+                {/* AI Insight card */}
+                <div className="flex-1 bg-white/40 backdrop-blur-md rounded-xl p-4 sm:p-6 border border-[#006D5B]/15 relative overflow-hidden animate-fade-up" style={{ animationDelay: '0.15s' }}>
+                  <div className="absolute -right-4 -bottom-4 text-[#006D5B]/5 pointer-events-none">
+                    <MI name="psychology" className="text-[80px]" />
+                  </div>
+                  <h4 className="text-[#006D5B] font-['Manrope'] font-bold text-xs sm:text-sm mb-2 flex items-center relative z-10">
+                    <MI name="auto_awesome" fill className="text-[14px] sm:text-[16px] mr-1.5" />
+                    Insight da IA
+                  </h4>
+                  <p className="text-[#3e4945] text-xs sm:text-sm italic leading-relaxed relative z-10">
+                    {userStats.simCount > 2
+                      ? `"Sua média está em ${userStats.avg}%. ${userStats.trend > 0 ? 'Continue nesse ritmo!' : 'Recomendamos focar nas áreas com mais erros nas próximas sessões.'}`
+                      : `"Comece seus simulados para receber insights personalizados sobre seu desempenho."`
+                    }
+                  </p>
+                </div>
               </div>
 
-              {/* AI Insight card */}
-              <div className="bg-white rounded-xl p-5 border border-slate-200">
-                <p className="text-xs font-semibold text-brand-ink-2 mb-2 inline-flex items-center gap-1.5">
-                  <MI name="auto_awesome" fill className="text-[14px] text-brand-primary" />
-                  Insight
-                </p>
-                <p className="text-sm text-brand-ink leading-relaxed">
-                  {userStats.simCount > 2
-                    ? `Sua média está em ${userStats.avg}%. ${userStats.trend > 0 ? 'Continue nesse ritmo.' : 'Foque nas áreas com mais erros nas próximas sessões.'}`
-                    : 'Comece seus simulados para receber insights personalizados sobre seu desempenho.'
-                  }
-                </p>
-              </div>
-            </section>
-
-            {/* Primary actions — 2 cards */}
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 sm:mb-10">
-              {/* Banco INEP — primary */}
+              {/* ─── Simulado Completo ─── */}
               <button
-                type="button"
                 onClick={() => startBankMode('completo')}
-                className="text-left rounded-xl bg-brand-primary-dark hover:bg-brand-primary-darker text-white p-6 sm:p-7 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
+                className="col-span-1 md:col-span-1 lg:col-span-6 text-left group animate-fade-up"
+                style={{ animationDelay: '0.12s' }}
               >
-                <span className="inline-block px-2.5 py-0.5 bg-white/15 rounded text-[10px] font-semibold mb-4">Banco oficial</span>
-                <h3 className="text-xl sm:text-2xl font-bold mb-2">Simulado completo</h3>
-                <p className="text-white/80 text-sm leading-relaxed mb-6">
-                  Questões oficiais anteriores do ENAMED com comentário editorial, nas 5 grandes áreas.
-                </p>
-                <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
-                  Iniciar simulado
-                  <MI name="arrow_forward" className="text-[16px]" />
-                </span>
-              </button>
-
-              {/* Simulado IA 50q */}
-              <button
-                type="button"
-                onClick={() => startIaMode('ia_completo')}
-                className="text-left rounded-xl bg-white border border-slate-200 hover:border-brand-primary/40 hover:shadow-sm transition-all p-6 sm:p-7 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
-              >
-                <span className="inline-block px-2.5 py-0.5 bg-brand-primary/10 text-brand-primary-dark rounded text-[10px] font-semibold mb-4">Gerado por IA</span>
-                <h3 className="text-xl sm:text-2xl font-bold text-brand-ink mb-2">Simulado IA — 50 questões</h3>
-                <p className="text-brand-ink-2 text-sm leading-relaxed mb-6">
-                  Questões inéditas no padrão INEP, calibradas na distribuição histórica de temas.
-                </p>
-                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-primary">
-                  Gerar agora
-                  <MI name="arrow_forward" className="text-[16px]" />
-                </span>
-              </button>
-            </section>
-
-            {/* Secondary actions */}
-            <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 sm:mb-10">
-              <button
-                type="button"
-                onClick={() => startBankMode('revisao')}
-                className="text-left bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-primary/40 hover:shadow-sm transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
-              >
-                <div className="bg-brand-primary/10 w-10 h-10 rounded-lg flex items-center justify-center mb-3">
-                  <MI name="flash_on" fill className="text-[20px] text-brand-primary" />
-                </div>
-                <h4 className="font-bold text-brand-ink mb-1 group-hover:text-brand-primary transition-colors">Revisão rápida</h4>
-                <p className="text-sm text-brand-ink-2">20 questões aleatórias — ~15 min.</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMode('ia_area')}
-                className="text-left bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-primary/40 hover:shadow-sm transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
-              >
-                <div className="bg-brand-primary/10 w-10 h-10 rounded-lg flex items-center justify-center mb-3">
-                  <MI name="category" fill className="text-[20px] text-brand-primary" />
-                </div>
-                <h4 className="font-bold text-brand-ink mb-1 group-hover:text-brand-primary transition-colors">Estudo por área</h4>
-                <p className="text-sm text-brand-ink-2">20 questões geradas por IA em uma especialidade.</p>
-              </button>
-            </section>
-
-            {/* Área list */}
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-brand-ink">Por especialidade</h3>
-              </div>
-              <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden">
-                {AREA_OPTIONS.map(({ value, label, icon, desc }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => startIaMode('ia_area', value)}
-                    className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-brand-primary/10 flex items-center justify-center shrink-0">
-                        <MI name={icon} fill className="text-[18px] text-brand-primary" />
-                      </div>
-                      <div className="text-left">
-                        <p className="font-semibold text-sm text-brand-ink group-hover:text-brand-primary transition-colors">{label}</p>
-                        <p className="text-xs text-brand-ink-2">{desc}</p>
-                      </div>
+                <div className="bg-white rounded-xl p-5 sm:p-8 shadow-[0_12px_40px_rgba(25,28,29,0.06)] border border-[#bec9c4]/10 group-hover:bg-[#006D5B]/[0.03] transition-all duration-300 h-full">
+                  <div className="flex justify-between items-start mb-4 sm:mb-6">
+                    <div className="p-3 sm:p-4 bg-[#006D5B]/10 rounded-2xl">
+                      <MI name="inventory" fill className="text-[24px] sm:text-[28px] text-[#006D5B]" />
                     </div>
-                    <MI name="chevron_right" className="text-[18px] text-slate-400" />
-                  </button>
-                ))}
+                    <span className="text-[9px] sm:text-[10px] font-bold text-[#006D5B] uppercase bg-[#9df3dc]/30 px-2 py-1 rounded">5 Grandes Áreas</span>
+                  </div>
+                  <h3 className="font-['Manrope'] text-lg sm:text-2xl font-extrabold mb-1.5 sm:mb-2 group-hover:text-[#006D5B] transition-colors">Simulado Completo</h3>
+                  <p className="text-[#3e4945]/70 text-xs sm:text-sm mb-6 sm:mb-8 leading-relaxed">Prova estruturada com tempo controlado, simulando a experiência real do ENAMED em todas as especialidades.</p>
+                  <div className="flex items-center justify-end">
+                    <span className="flex items-center text-[#006D5B] font-bold text-xs sm:text-sm">
+                      Iniciar Agora
+                      <MI name="arrow_forward" className="text-[18px] ml-2 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  </div>
+                </div>
+              </button>
+
+              {/* ─── Revisão Rápida ─── */}
+              <button
+                onClick={() => startBankMode('revisao')}
+                className="col-span-1 md:col-span-1 lg:col-span-6 text-left group animate-fade-up"
+                style={{ animationDelay: '0.16s' }}
+              >
+                <div className="bg-white rounded-xl p-5 sm:p-8 shadow-[0_12px_40px_rgba(25,28,29,0.06)] border border-[#bec9c4]/10 group-hover:bg-[#006D5B]/[0.03] transition-all duration-300 h-full">
+                  <div className="flex justify-between items-start mb-4 sm:mb-6">
+                    <div className="p-3 sm:p-4 bg-[#c8eade]/50 rounded-2xl">
+                      <MI name="flash_on" fill className="text-[24px] sm:text-[28px] text-[#46645c]" />
+                    </div>
+                    <span className="text-[9px] sm:text-[10px] font-bold text-[#46645c] uppercase bg-[#c8eade]/50 px-2 py-1 rounded">20 Questões</span>
+                  </div>
+                  <h3 className="font-['Manrope'] text-lg sm:text-2xl font-extrabold mb-1.5 sm:mb-2 group-hover:text-[#46645c] transition-colors">Revisão Rápida</h3>
+                  <p className="text-[#3e4945]/70 text-xs sm:text-sm mb-6 sm:mb-8 leading-relaxed">Treino diário de alta intensidade. Ideal para manter o ritmo de estudo entre turnos e plantões.</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] sm:text-xs font-semibold text-[#6e7975]">Tempo estimado: 15 min</span>
+                    <span className="flex items-center text-[#46645c] font-bold text-xs sm:text-sm">
+                      Praticar
+                      <MI name="bolt" fill className="text-[18px] ml-2 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  </div>
+                </div>
+              </button>
+
+              {/* ─── Simulado IA 50q (Dark Card) ─── */}
+              <div className="col-span-1 lg:col-span-5 animate-fade-up" style={{ animationDelay: '0.2s' }}>
+                <button onClick={() => startIaMode('ia_completo')} className="w-full text-left group">
+                  <div className="h-full bg-[#191c1d] p-6 sm:p-10 rounded-xl shadow-[0_12px_40px_rgba(25,28,29,0.15)] relative overflow-hidden flex flex-col justify-between min-h-[260px] sm:min-h-[320px] group-hover:shadow-[0_16px_48px_rgba(25,28,29,0.25)] transition-all duration-300 group-active:scale-[0.99]">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#006D5B]/30 to-transparent pointer-events-none" />
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-2 mb-4 sm:mb-6">
+                        <MI name="auto_awesome" fill className="text-[18px] text-[#9df3dc]" />
+                        <span className="text-[#9df3dc] text-[10px] sm:text-xs font-bold uppercase tracking-widest">Inovação Editorial</span>
+                      </div>
+                      <h3 className="font-['Manrope'] text-2xl sm:text-3xl font-extrabold text-white mb-3 sm:mb-4">Simulado IA 50q</h3>
+                      <p className="text-slate-400 text-xs sm:text-sm leading-relaxed mb-6 sm:mb-8">Questões inéditas geradas por nossa inteligência artificial proprietária, treinada nos padrões de cobrança mais recentes do ENAMED.</p>
+                    </div>
+                    <div className="relative z-10 w-full bg-[#9df3dc] text-[#005344] py-3 sm:py-4 rounded-lg font-['Manrope'] font-extrabold text-xs sm:text-sm uppercase tracking-tight text-center group-hover:bg-white transition-colors">
+                      Gerar Questões Inéditas
+                    </div>
+                  </div>
+                </button>
               </div>
-            </section>
+
+              {/* ─── Estudo por Área (List View) ─── */}
+              <div className="col-span-1 lg:col-span-7 animate-fade-up" style={{ animationDelay: '0.24s' }}>
+                <div className="bg-[#f3f4f5] rounded-xl p-5 sm:p-8 h-full">
+                  <div className="flex items-center justify-between mb-5 sm:mb-8">
+                    <h3 className="font-['Manrope'] text-base sm:text-xl font-extrabold text-[#191c1d]">Estudo por Área</h3>
+                    <button
+                      onClick={() => setMode('ia_area')}
+                      className="text-[#006D5B] text-[10px] sm:text-xs font-bold uppercase hover:underline"
+                    >
+                      Ver todas
+                    </button>
+                  </div>
+                  <div className="space-y-2.5 sm:space-y-4">
+                    {AREA_OPTIONS.map(({ value, label, icon, desc, iconBg, iconColor }) => (
+                      <button
+                        key={value}
+                        onClick={() => startIaMode('ia_area', value)}
+                        className="w-full bg-white p-3 sm:p-4 rounded-xl flex items-center justify-between hover:translate-x-1 transition-transform cursor-pointer group/item"
+                      >
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
+                            <MI name={icon} fill className={`text-[18px] sm:text-[20px] ${iconColor}`} />
+                          </div>
+                          <div className="text-left">
+                            <p className="font-['Manrope'] font-bold text-xs sm:text-sm text-[#191c1d] group-hover/item:text-[#006D5B] transition-colors">{label}</p>
+                            <p className="text-[9px] sm:text-[10px] text-[#6e7975] uppercase tracking-tight">{desc}</p>
+                          </div>
+                        </div>
+                        <MI name="chevron_right" className="text-[20px] text-[#6e7975] group-hover/item:text-[#006D5B] transition-colors shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

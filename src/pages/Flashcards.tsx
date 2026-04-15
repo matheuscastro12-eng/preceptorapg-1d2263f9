@@ -269,7 +269,7 @@ function ReviewSession({ dueCards, currentIndex, flipped, reviewedCount, onFlip,
               className="rounded-xl p-8 min-h-[260px] sm:min-h-[300px] flex flex-col justify-center items-center text-center transition-shadow duration-200 hover:shadow-[0_16px_48px_0_rgba(44,52,52,0.10)]"
               style={{ background: flipped ? '#f0faf8' : '#ffffff', border: flipped ? '2px solid rgba(18,107,98,0.3)' : '2px solid #e2eae9', boxShadow: '0 8px 32px 0 rgba(44,52,52,0.06)' }}
             >
-              <p className="text-[11px] uppercase tracking-widest font-semibold mb-6" style={{ color: flipped ? '#126b62' : '#abb4b3' }}>
+              <p className="text-xs font-semibold mb-6" style={{ color: flipped ? '#126b62' : '#abb4b3' }}>
                 {flipped ? 'Resposta' : 'Pergunta'}
               </p>
               <p className="text-base sm:text-lg leading-relaxed font-medium text-emerald-900">{flipped ? currentCard.back : currentCard.front}</p>
