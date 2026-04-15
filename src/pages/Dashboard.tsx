@@ -164,6 +164,22 @@ const Dashboard = () => {
         }
       }
       setIsComplete(true);
+
+      // Auto-save na biblioteca assim que termina de gerar.
+      // Nao bloqueia em caso de erro — user ainda pode salvar manualmente.
+      if (fullText && user) {
+        try {
+          await supabase.from('fechamentos').insert({
+            user_id: user.id,
+            tema: tema.trim(),
+            objetivos: objetivos.trim() || null,
+            resultado: fullText,
+          });
+          toast({ title: 'Salvo na biblioteca', description: 'Voce pode acessar em Biblioteca a qualquer hora.' });
+        } catch (saveErr) {
+          console.warn('auto-save falhou:', saveErr);
+        }
+      }
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Não foi possível gerar.';
       const isFetch = msg.includes('fetch') || msg.includes('network') || msg.includes('Failed');

@@ -102,6 +102,33 @@ export const useExamGenerator = () => {
       }
 
       setIsComplete(true);
+
+      // Auto-save na biblioteca. Gera tema a partir do contexto se user
+      // nao especificou (primeiras 60 chars do conteudo resumidas).
+      if (fullText && session) {
+        try {
+          const autoTema = config.practiceMode === 'prova'
+            ? `Simulado ${config.quantidade}q (${config.nivel})`
+            : `Caso clinico (${config.nivel})`;
+          await supabase.from('fechamentos').insert({
+            user_id: session.user.id,
+            tema: autoTema,
+            resultado: fullText,
+            tipo: config.practiceMode,
+            exam_config: {
+              quantidade: config.quantidade,
+              nivel: config.nivel,
+              simulationMode: config.simulationMode,
+            },
+          });
+          toast({
+            title: 'Salvo na biblioteca',
+            description: `${config.practiceMode === 'prova' ? 'Simulado' : 'Caso clinico'} salvo automaticamente.`,
+          });
+        } catch (saveErr) {
+          console.warn('auto-save falhou:', saveErr);
+        }
+      }
     } catch (error) {
       toast({
         title: 'Erro',

@@ -14,5 +14,5 @@ export function getEasyflowLink(plan: string, email?: string): string | null {
 
 export function openEasyflowCheckout(plan: string, email?: string) {
   const link = getEasyflowLink(plan, email);
-  if (link) window.open(link, '_blank');
+  if (link) window.location.href = link;
 }

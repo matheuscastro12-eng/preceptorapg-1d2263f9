@@ -41,9 +41,8 @@ const Auth = () => {
       const link = getEasyflowLink(planType, user.email ?? undefined);
       if (link) {
         setRedirectingToCheckout(true);
-        window.open(link, '_blank');
-        // Redirect this tab to menu after opening checkout
-        navigate('/menu', { replace: true });
+        // Direct nav em vez de window.open (popup blocker)
+        window.location.href = link;
       }
     }
   }, [user, planType, redirectingToCheckout, navigate]);

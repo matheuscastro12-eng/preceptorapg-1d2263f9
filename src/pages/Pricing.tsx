@@ -42,7 +42,8 @@ const Pricing = () => {
   const handleSubscribe = (planType: 'monthly' | 'annual' | 'biannual') => {
     const link = getEasyflowLink(planType, user?.email ?? undefined);
     if (link) {
-      window.open(link, '_blank');
+      // Redirect direto no mesmo tab — window.open e bloqueado por popup blockers
+      window.location.href = link;
     } else {
       toast({ title: 'Em breve', description: 'Plano bianual estará disponível em breve.' });
     }
