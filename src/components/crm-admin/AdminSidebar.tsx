@@ -8,6 +8,7 @@ import {
 import { useState, useEffect } from "react";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
 import ChangePasswordModal from "@/components/crm/ChangePasswordModal";
+import NotificationBell from "@/components/crm/NotificationBell";
 
 interface NavItem {
   to: string;
@@ -112,9 +113,12 @@ export default function AdminSidebar() {
               <p className="text-[10px] text-gray-500 font-medium">Admin</p>
             </div>
           </div>
-          <button onClick={() => setMobileOpen(false)} className="lg:hidden p-1.5 text-gray-500 hover:text-white rounded-lg hover:bg-white/[0.04] transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <button onClick={() => setMobileOpen(false)} className="lg:hidden p-1.5 text-gray-500 hover:text-white rounded-lg hover:bg-white/[0.04] transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
 
