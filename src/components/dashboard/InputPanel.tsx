@@ -1,6 +1,7 @@
 import GenerationProgress from '@/components/GenerationProgress';
 import type { GenerationMode } from './ModeToggle';
 import { Loader2, Sparkles, Send, BookOpen, Target } from 'lucide-react';
+import logoIcon from '@/assets/logo-icon.png';
 
 interface InputPanelProps {
   tema: string;
@@ -38,26 +39,26 @@ const InputPanel = ({
   return (
     // Wrapper com fundo verde sutil para destacar o form
     <div
-      className="relative rounded-3xl p-1.5 sm:p-2"
+      className="relative rounded-2xl sm:rounded-3xl p-1 sm:p-1.5 md:p-2"
       style={{
         background: 'linear-gradient(135deg, rgba(0, 109, 91, 0.25) 0%, rgba(0, 83, 68, 0.15) 50%, rgba(201, 168, 76, 0.15) 100%)',
       }}
     >
       {/* Form Card principal */}
-      <div className="relative bg-white rounded-[22px] overflow-hidden shadow-[0_12px_40px_-12px_rgba(0,109,91,0.25)]">
+      <div className="relative bg-white rounded-xl sm:rounded-[20px] md:rounded-[22px] overflow-hidden shadow-[0_8px_24px_-12px_rgba(0,109,91,0.2)] sm:shadow-[0_12px_40px_-12px_rgba(0,109,91,0.25)]">
         {/* Decorações sutis no canto */}
-        <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-brand-primary/5 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-brand-gold/5 blur-3xl pointer-events-none" />
+        <div className="absolute -top-12 -right-12 w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-brand-primary/5 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-brand-gold/5 blur-3xl pointer-events-none" />
 
-        <div className="relative p-6 sm:p-10 space-y-8">
+        <div className="relative p-5 sm:p-7 md:p-10 space-y-6 sm:space-y-7 md:space-y-8">
           {/* Cabeçalho interno do form */}
-          <div className="flex items-center gap-2.5 pb-5 border-b border-slate-100">
-            <div className="w-10 h-10 rounded-xl bg-brand-primary/10 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-brand-primary" />
+          <div className="flex items-center gap-3 pb-4 sm:pb-5 border-b border-slate-100">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-brand-primary/10 flex items-center justify-center shrink-0">
+              <img src={logoIcon} alt="PreceptorMED" className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-brand-ink leading-tight">Gerar Resumo com IA</h3>
-              <p className="text-xs text-brand-ink-2 leading-tight">Preencha e deixe a IA estruturar para você.</p>
+            <div className="min-w-0">
+              <h3 className="text-[15px] sm:text-base font-bold text-brand-ink leading-tight">Gerar Resumo com IA</h3>
+              <p className="text-xs text-brand-ink-2 leading-snug mt-0.5">Preencha e deixe a IA estruturar para você.</p>
             </div>
           </div>
 
