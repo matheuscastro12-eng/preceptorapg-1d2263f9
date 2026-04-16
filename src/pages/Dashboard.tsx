@@ -8,6 +8,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useGenerationGuard } from '@/hooks/useGenerationGuard';
 import InputPanel from '@/components/dashboard/InputPanel';
+import AnnotationLayer from '@/components/dashboard/AnnotationLayer';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import ContextChat from '@/components/ContextChat';
 import GenerationProgress from '@/components/GenerationProgress';
@@ -97,6 +98,8 @@ const Dashboard = () => {
     prevencao: true,
   };
   const [secoes, setSecoes] = useState<Record<string, boolean>>(DEFAULT_SECOES);
+  // ID do fechamento salvo (para anotações — marca-texto/comentários)
+  const [fechamentoId, setFechamentoId] = useState<string | null>(null);
   const [resultado, setResultado] = useState('');
   const [generating, setGenerating] = useState(false);
   const [hasStartedReceiving, setHasStartedReceiving] = useState(false);
@@ -141,7 +144,7 @@ const Dashboard = () => {
       return;
     }
     setGenerating(true);
-    setResultado('');
+    setResultado(''); setFechamentoId(null);
     setHasStartedReceiving(false);
     setIsComplete(false);
     try {
@@ -187,12 +190,15 @@ const Dashboard = () => {
       // Nao bloqueia em caso de erro — user ainda pode salvar manualmente.
       if (fullText && user) {
         try {
-          await supabase.from('fechamentos').insert({
+          const { data: saved, error: saveError } = await supabase.from('fechamentos').insert({
             user_id: user.id,
             tema: tema.trim(),
             objetivos: objetivos.trim() || null,
             resultado: fullText,
-          });
+          }).select('id').single();
+          if (!saveError && saved?.id) {
+            setFechamentoId(saved.id);
+          }
           toast({ title: 'Salvo na biblioteca', description: 'Voce pode acessar em Biblioteca a qualquer hora.' });
         } catch (saveErr) {
           console.warn('auto-save falhou:', saveErr);
@@ -383,6 +389,17 @@ const Dashboard = () => {
                     ));
                   })()}
 
+                  {/* Dica de marca-texto */}
+                  {isComplete && resultado && fechamentoId && (
+                    <div className="flex items-start gap-2 px-3 py-2.5 bg-brand-gold/10 border border-brand-gold/30 rounded-lg">
+                      <span className="material-symbols-outlined text-brand-gold text-[18px] mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>ink_highlighter</span>
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-brand-ink">Selecione um trecho para marcar ou comentar</p>
+                        <p className="text-[11px] text-brand-ink-2 leading-snug">Arraste o mouse sobre qualquer texto para destacar em cores ou adicionar uma anotação pessoal.</p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Disclaimer */}
                   {!generating && resultado && (
                     <p className="text-[10px] text-slate-400 leading-relaxed px-2">
@@ -393,6 +410,15 @@ const Dashboard = () => {
                   {/* Seminar actions */}
                   {showActions && isSeminario && (
                     <SeminarActions resultado={resultado} tema={tema} />
+                  )}
+
+                  {/* Annotation layer — marca-texto e comentários */}
+                  {isComplete && resultado && user && (
+                    <AnnotationLayer
+                      fechamentoId={fechamentoId}
+                      containerRef={resultRef}
+                      userId={user.id}
+                    />
                   )}
                 </div>
 
