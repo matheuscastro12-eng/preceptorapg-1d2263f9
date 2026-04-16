@@ -179,40 +179,49 @@ const Landing = () => {
       <main className="flex-1">
 
         {/* ─── Hero ─────────────────────────────────────── */}
-        <section className="relative flex items-center min-h-[calc(100vh-65px)] py-12 sm:py-20 px-4 sm:px-6 overflow-hidden">
-          <div className="max-w-7xl mx-auto w-full flex flex-col lg:flex-row items-center gap-10 sm:gap-16">
+        <section className="relative flex items-center min-h-[calc(100vh-65px)] py-10 sm:py-14 px-4 sm:px-6 lg:px-10 overflow-hidden">
+          <div className="max-w-[1400px] mx-auto w-full flex flex-col lg:flex-row items-center gap-10 lg:gap-14 xl:gap-20">
             <div className="lg:w-1/2 animate-fade-up">
-              <p className="mb-5 sm:mb-7 text-[11px] sm:text-xs font-semibold text-brand-primary-dark uppercase tracking-[0.2em] flex items-center gap-2">
-                <span className="w-8 h-px bg-brand-gold" />
+              <p className="mb-6 sm:mb-8 text-[11px] sm:text-xs font-semibold text-brand-primary-dark uppercase tracking-[0.2em] flex items-center gap-2">
+                <span className="w-10 h-px bg-brand-gold" />
                 Para estudantes de medicina brasileiros
               </p>
               <h1
-                className="text-3xl sm:text-5xl md:text-6xl font-bold leading-[1.1] mb-5 sm:mb-7 tracking-tight text-brand-ink"
+                className="text-4xl sm:text-5xl md:text-6xl lg:text-[5rem] xl:text-[5.5rem] font-bold leading-[1.02] mb-6 sm:mb-8 tracking-[-0.02em] text-brand-ink"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
                 Estudo clínico que acompanha seu <span className="text-brand-primary">raciocínio</span>.
               </h1>
-              <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-8 sm:mb-10 max-w-xl">
+              <p className="text-base sm:text-lg lg:text-xl text-slate-600 leading-[1.6] mb-8 sm:mb-10 max-w-2xl">
                 Resumos de PBL com fisiopatologia integrada, simulados ENAMED no padrão INEP e chat com busca automática no PubMed. Em português, para a formação médica brasileira.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <button
                   onClick={() => navigate('/auth?tab=signup')}
-                  className="px-6 sm:px-8 py-3.5 bg-[#005344] text-white text-sm font-semibold rounded-lg hover:bg-[#003d32] active:scale-[0.98] transition-colors text-center"
+                  className="inline-flex items-center justify-center gap-2 px-7 lg:px-9 py-4 lg:py-5 bg-brand-primary-dark text-white text-sm lg:text-base font-semibold rounded-lg hover:bg-brand-primary-darker active:scale-[0.98] transition-colors"
                 >
                   Começar agora
+                  <span className="text-brand-gold">→</span>
                 </button>
                 <button
                   onClick={() => document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="px-6 sm:px-8 py-3.5 text-[#191c1d] text-sm font-semibold hover:text-[#005344] transition-colors text-center"
+                  className="px-6 lg:px-8 py-4 lg:py-5 text-brand-ink text-sm lg:text-base font-semibold hover:text-brand-primary-dark transition-colors text-center"
                 >
                   Ver como funciona →
                 </button>
               </div>
+
+              {/* Linha de prova */}
+              <div className="mt-10 sm:mt-12 flex items-center gap-4 text-[11px] sm:text-xs text-slate-500">
+                <span className="w-10 h-px bg-slate-300" />
+                <span className="uppercase tracking-[0.15em] font-semibold">
+                  ENAMED · REVALIDA · PubMed · SM-2
+                </span>
+              </div>
             </div>
 
             <div className="lg:w-1/2 relative animate-fade-up w-full" style={{ animationDelay: '0.2s' }}>
-              <div className="relative z-10 rounded-lg overflow-hidden border border-slate-200 shadow-lg">
+              <div className="relative z-10 rounded-xl overflow-hidden border border-slate-200 shadow-[0_20px_60px_-20px_rgba(0,109,91,0.25)]">
                 <video
                   src="/video-lp.mp4"
                   autoPlay
@@ -223,6 +232,9 @@ const Landing = () => {
                   className="block w-full h-auto"
                 />
               </div>
+              {/* Decoração sutil — blur verde atrás do video */}
+              <div className="absolute -bottom-8 -right-8 w-64 h-64 rounded-full bg-brand-primary/10 blur-3xl pointer-events-none -z-0" />
+              <div className="absolute -top-8 -left-8 w-48 h-48 rounded-full bg-brand-gold/10 blur-3xl pointer-events-none -z-0" />
             </div>
           </div>
         </section>
