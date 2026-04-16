@@ -187,7 +187,7 @@ const Landing = () => {
                 Para estudantes de medicina brasileiros
               </p>
               <h1
-                className="text-4xl sm:text-5xl md:text-6xl lg:text-[5rem] xl:text-[5.5rem] font-bold leading-[1.02] mb-6 sm:mb-8 tracking-[-0.02em] text-brand-ink"
+                className="text-3xl sm:text-5xl md:text-6xl lg:text-[3.75rem] xl:text-[4.25rem] font-bold leading-[1.08] mb-6 sm:mb-8 tracking-[-0.02em] text-brand-ink"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
                 Estudo clínico que acompanha seu <span className="text-brand-primary">raciocínio</span>.
