@@ -97,6 +97,29 @@ const defaultComponents: Record<string, React.ComponentType<any>> = {
       {children}
     </blockquote>
   ),
+  a: ({ href, children }: any) => {
+    const isPubMed = typeof href === 'string' && href.includes('pubmed.ncbi.nlm.nih.gov');
+    const text = extractText(children);
+    if (isPubMed) {
+      return (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 rounded bg-primary/10 text-primary text-[0.85em] font-semibold hover:bg-primary hover:text-primary-foreground transition-colors no-underline align-baseline"
+          title={`Abrir no PubMed: ${text}`}
+        >
+          <span className="material-symbols-outlined text-[12px]" style={{ fontSize: '12px' }}>open_in_new</span>
+          {text}
+        </a>
+      );
+    }
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">
+        {children}
+      </a>
+    );
+  },
   code: ({ children }: any) => (
     <code className="rounded-md bg-secondary px-2 py-1 text-sm font-mono text-primary">{children}</code>
   ),
@@ -173,6 +196,29 @@ const richComponents: Record<string, React.ComponentType<any>> = {
       <div className="text-sm text-[#3e4945] [&>p]:mb-0 [&>p]:italic [&>p]:leading-relaxed flex-1">{children}</div>
     </div>
   ),
+  a: ({ href, children }: any) => {
+    const isPubMed = typeof href === 'string' && href.includes('pubmed.ncbi.nlm.nih.gov');
+    const text = extractText(children);
+    if (isPubMed) {
+      return (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 rounded bg-[#006D5B]/10 text-[#005344] text-[0.85em] font-semibold hover:bg-[#006D5B] hover:text-white transition-colors no-underline align-baseline"
+          title={`Abrir no PubMed: ${text}`}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>open_in_new</span>
+          {text}
+        </a>
+      );
+    }
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#006D5B] underline underline-offset-2 hover:text-[#005344]">
+        {children}
+      </a>
+    );
+  },
   code: ({ children }: any) => (
     <code className="rounded-md bg-[#f3f4f5] px-2 py-1 text-sm font-mono text-[#006D5B]">{children}</code>
   ),
@@ -195,6 +241,23 @@ const richComponents: Record<string, React.ComponentType<any>> = {
     <td className="px-4 py-3 border-r border-slate-100 last:border-r-0 align-top text-[#3e4945]">{children}</td>
   ),
 };
+
+// Transforma referencias PMID em links clicaveis pro PubMed.
+// Converte tanto [PMID: 12345] quanto (PMID: 12345) em links markdown.
+function linkifyPubMed(text: string): string {
+  return text
+    // Padrao inline com colchetes: [PMID: 12345] -> [PMID: 12345](https://pubmed.ncbi.nlm.nih.gov/12345/)
+    .replace(
+      /\[PMID:\s*(\d+)\]/g,
+      (_m, pmid) => `[PMID: ${pmid}](https://pubmed.ncbi.nlm.nih.gov/${pmid}/)`
+    )
+    // Padrao na lista de referencias: (PMID: 12345) -> ([PMID: 12345](https://pubmed.ncbi.nlm.nih.gov/12345/))
+    // Evita duplicar se ja estiver dentro de um link
+    .replace(
+      /\(PMID:\s*(\d+)\)(?!\])/g,
+      (_m, pmid) => `([PMID: ${pmid}](https://pubmed.ncbi.nlm.nih.gov/${pmid}/))`
+    );
+}
 
 // Fix malformed markdown tables that remark-gfm can't parse
 function fixMarkdownTables(text: string): string {
@@ -238,8 +301,9 @@ function fixMarkdownTables(text: string): string {
 const MarkdownRenderer = ({ content, className = '', isTyping = false, variant = 'default' }: MarkdownRendererProps) => {
   const components = variant === 'rich' ? richComponents : defaultComponents;
 
-  // Pre-process content to fix table formatting issues
-  const processedContent = isTyping ? content : fixMarkdownTables(content);
+  // Pre-process content: transformar PMIDs em links + fix tabelas
+  const linked = linkifyPubMed(content);
+  const processedContent = isTyping ? linked : fixMarkdownTables(linked);
 
   return (
     <div className={`markdown-content ${className} ${isTyping ? 'typing-cursor' : ''}`}>

@@ -534,40 +534,23 @@ const Dashboard = () => {
           </>
         ) : (
           /* ══════════════════════════════════════════════
-             INPUT FORM STATE — Bento Grid Layout
+             INPUT FORM STATE
              ══════════════════════════════════════════════ */
           <div className="animate-fade-up">
-            {/* Hero banner */}
-            <div
-              className="relative overflow-hidden rounded-2xl mb-6 p-6 sm:p-8 text-white"
-              style={{ background: 'linear-gradient(135deg, #003D32 0%, #005344 50%, #006D5B 100%)' }}
-            >
-              {/* decorações sutis */}
-              <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-brand-gold/10 blur-3xl pointer-events-none" />
-              <div className="absolute -bottom-12 -left-12 w-48 h-48 rounded-full bg-white/5 blur-3xl pointer-events-none" />
-              <div className="absolute top-0 right-0 w-full h-full opacity-[0.04] pointer-events-none"
-                style={{
-                  backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-                  backgroundSize: '24px 24px',
-                }}
-              />
-              <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5 justify-between">
-                <div className="max-w-xl">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/15 backdrop-blur-sm text-[11px] font-semibold text-brand-gold mb-3">
-                    <Sparkles className="h-3 w-3" /> Assistente acadêmico
-                  </span>
-                  <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
-                    Estudo com IA
-                  </h2>
-                  <p className="text-sm sm:text-[15px] text-white/80 leading-relaxed max-w-lg">
-                    Gere resumos de PBL ou roteiros de seminário com correlação clínico-básica, fisiopatologia em cascata e terminologia técnica — em segundos.
-                  </p>
+            {/* Header compacto */}
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-1 h-6 bg-brand-primary rounded-full" />
+                  <h2 className="text-xl sm:text-2xl font-bold text-brand-ink tracking-tight">Estudo com IA</h2>
                 </div>
-                <div className="hidden sm:flex flex-col items-end gap-1 text-right">
-                  <div className="text-4xl sm:text-5xl font-bold text-brand-gold/90" style={{ fontFamily: 'var(--font-display)' }}>~20s</div>
-                  <p className="text-[11px] text-white/60">tempo médio de geração</p>
-                </div>
+                <p className="text-sm text-brand-ink-2 ml-3">
+                  Gere resumos de PBL em segundos com fisiopatologia em cascata e terminologia técnica.
+                </p>
               </div>
+              <span className="hidden sm:inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-primary/10 text-brand-primary-dark text-xs font-semibold">
+                <Sparkles className="h-3 w-3" /> ~20s de geração
+              </span>
             </div>
 
             {/* Grid: Form + Sidebar */}
@@ -588,36 +571,6 @@ const Dashboard = () => {
                   canGenerate={canGenerate}
                   cooldown={cooldown}
                 />
-
-                {/* Preview do que a IA gera */}
-                {!generating && (
-                  <div className="border border-slate-200 rounded-2xl bg-white overflow-hidden">
-                    <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-200">
-                      <span className="text-xs font-semibold text-slate-600">Exemplo · o que você recebe</span>
-                      <span className="text-[10px] px-2 py-0.5 bg-brand-primary-dark text-white font-semibold rounded">Amostra</span>
-                    </div>
-                    <div className="p-5 sm:p-6 space-y-4 relative">
-                      <div>
-                        <h4 className="text-base font-bold text-brand-ink mb-0.5">Insuficiência Cardíaca com Fração de Ejeção Reduzida</h4>
-                        <p className="text-xs text-slate-500">Objetivo · Fisiopatologia, diagnóstico e manejo</p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-brand-primary-dark uppercase tracking-wide mb-1.5">Fisiopatologia em cascata</p>
-                        <p className="text-sm text-slate-700 leading-relaxed">
-                          A disfunção sistólica reduz o <span className="font-semibold">débito cardíaco</span>, ativando barorreceptores aórticos e renais. A queda da perfusão renal libera <span className="font-semibold">renina</span>, convertendo angiotensinogênio em angiotensina I, e a ECA pulmonar gera <span className="font-semibold">angiotensina II</span>…
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-brand-primary-dark uppercase tracking-wide mb-1.5">Correlação clínico-básica</p>
-                        <p className="text-sm text-slate-700 leading-relaxed">
-                          A <span className="font-semibold">dispneia paroxística noturna</span> correlaciona com redistribuição do volume intravascular no decúbito — o retorno venoso aumentado sobrecarrega o VE já disfuncional…
-                        </p>
-                      </div>
-                      {/* Fade out no final */}
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent" />
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Sidebar */}

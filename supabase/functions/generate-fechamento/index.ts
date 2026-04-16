@@ -530,12 +530,46 @@ Gere um fechamento de PBL COMPLETO, EXTENSO e PROFUNDO sobre este tema. Não sej
     }
     
     if (sanitizedObjetivos) {
+      // Parse cada linha como um objetivo separado
+      const objetivosList = sanitizedObjetivos
+        .split("\n")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
+      const objetivosFormatted = objetivosList
+        .map((obj, idx) => `${idx + 1}. ${obj}`)
+        .join("\n");
+
       userPrompt += `
 
-**Objetivos de Aprendizado Especificos:**
-${sanitizedObjetivos}
+**OBJETIVOS ESPECIFICOS DO ESTUDANTE (${objetivosList.length} ${objetivosList.length === 1 ? "objetivo" : "objetivos"}):**
+${objetivosFormatted}
 
-ATENCAO: Alem da estrutura padrao, certifique-se de responder EXAUSTIVAMENTE a cada um dos objetivos listados acima.`;
+# REGRA CRITICA — OBJETIVOS ESPECIFICOS (NAO VIOLAR)
+
+O estudante escreveu ${objetivosList.length} objetivo${objetivosList.length > 1 ? "s" : ""} especifico${objetivosList.length > 1 ? "s" : ""} acima. Voce DEVE:
+
+1. **Criar uma secao DEDICADA para CADA objetivo**, usando o **texto EXATO que o estudante escreveu** como cabecalho de nivel 2 (##). NAO reescreva, NAO traduza, NAO reformule — use EXATAMENTE como esta escrito acima. Isso permite que o estudante localize visualmente onde cada objetivo foi respondido.
+
+2. **Posicao das secoes de objetivos**: apos a secao "## 1. CLASSIFICACAO E TAXONOMIA", insira uma secao mae "## OBJETIVOS ESPECIFICOS" e dentro dela crie subsecoes de nivel 3 (###) — uma para cada objetivo — com o texto exato.
+
+   Exemplo de como deve ficar (se o estudante escreveu "Atividade laboral em IC" e "Criterios de Framingham"):
+
+   ## OBJETIVOS ESPECIFICOS
+
+   ### Atividade laboral em IC
+
+   [Conteudo profundo e detalhado respondendo a este objetivo especifico, com mecanismos, evidencias, dados numericos...]
+
+   ### Criterios de Framingham
+
+   [Conteudo profundo detalhando os criterios completos...]
+
+3. **Profundidade**: cada subsecao de objetivo deve ter pelo menos 2-3 paragrafos densos com mecanismos, evidencia e correlacao clinica — NAO responda em 1 linha.
+
+4. **Depois das secoes de objetivos**, continue a estrutura padrao normalmente (## 2. BASES MORFOFUNCIONAIS, ## 3. FISIOPATOLOGIA DETALHADA, etc.).
+
+5. Se um objetivo nao for estritamente medico/cientifico, responda academicamente o mais proximo possivel do que foi pedido — nao ignore.`;
     }
 
     // Chain-of-thought preamble

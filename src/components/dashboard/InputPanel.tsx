@@ -1,6 +1,6 @@
 import GenerationProgress from '@/components/GenerationProgress';
 import type { GenerationMode } from './ModeToggle';
-import { Loader2, FileText, Presentation, Sparkles, Send } from 'lucide-react';
+import { Loader2, Sparkles, Send, BookOpen, Target } from 'lucide-react';
 
 interface InputPanelProps {
   tema: string;
@@ -32,84 +32,62 @@ const InputPanel = ({
   modo, setModo, generating, hasStartedReceiving,
   isComplete, onGenerate, canGenerate = true, cooldown = false,
 }: InputPanelProps) => {
-  const isSeminário = modo === 'seminario';
+  // Força modo sempre 'fechamento' (seminário removido)
+  if (modo !== 'fechamento') {
+    setModo('fechamento');
+  }
+
+  const objetivosCount = objetivos
+    .split('\n')
+    .map(s => s.trim())
+    .filter(Boolean).length;
 
   return (
-    <div className="space-y-5">
-      {/* Mode Cards */}
-      <div className="grid grid-cols-2 gap-3" data-tour="mode-toggle">
-        <button
-          onClick={() => setModo('fechamento')}
-          disabled={generating}
-          className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left group disabled:opacity-50 ${
-            modo === 'fechamento'
-              ? 'border-[#006D5B] bg-[#006D5B]/5 shadow-sm'
-              : 'border-slate-200 bg-white hover:border-[#006D5B]/30 hover:shadow-sm'
-          }`}
-        >
-          <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-2.5 transition-colors ${
-            modo === 'fechamento' ? 'bg-[#006D5B] text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-[#006D5B]/10 group-hover:text-[#006D5B]'
-          }`}>
-            <FileText className="w-4.5 h-4.5" />
-          </div>
-          <p className={`text-sm font-bold ${modo === 'fechamento' ? 'text-[#005344]' : 'text-[#191c1d]'}`}>Resumo</p>
-          <p className="text-[11px] text-[#6e7975] mt-0.5">Conteúdo estruturado e completo</p>
-          {modo === 'fechamento' && (
-            <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#006D5B]" />
-          )}
-        </button>
+    <div className="relative">
+      {/* Borda decorativa superior — barra verde gradiente */}
+      <div className="absolute left-0 top-0 right-0 h-1 bg-gradient-to-r from-brand-primary via-brand-primary-dark to-brand-primary rounded-t-2xl" />
 
-        <button
-          onClick={() => setModo('seminario')}
-          disabled={generating}
-          className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left group disabled:opacity-50 ${
-            modo === 'seminario'
-              ? 'border-[#006D5B] bg-[#006D5B]/5 shadow-sm'
-              : 'border-slate-200 bg-white hover:border-[#006D5B]/30 hover:shadow-sm'
-          }`}
-        >
-          <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-2.5 transition-colors ${
-            modo === 'seminario' ? 'bg-[#006D5B] text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-[#006D5B]/10 group-hover:text-[#006D5B]'
-          }`}>
-            <Presentation className="w-4.5 h-4.5" />
-          </div>
-          <p className={`text-sm font-bold ${modo === 'seminario' ? 'text-[#005344]' : 'text-[#191c1d]'}`}>Seminário</p>
-          <p className="text-[11px] text-[#6e7975] mt-0.5">Roteiro de slides pronto</p>
-          {modo === 'seminario' && (
-            <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#006D5B]" />
-          )}
-        </button>
-      </div>
+      {/* Form Card principal */}
+      <div className="relative bg-white rounded-2xl border-2 border-brand-primary/15 overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,109,91,0.12)]">
+        {/* Decoração — canto superior direito sutil */}
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-brand-primary/5 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-brand-gold/5 blur-3xl pointer-events-none" />
 
-      {/* Form Card */}
-      <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-[0_2px_12px_rgba(25,28,29,0.04)] border border-slate-100">
-        <div className="space-y-4">
-          {/* Tema */}
+        <div className="relative p-5 sm:p-7 space-y-6">
+          {/* Step 1: Tema */}
           <div data-tour="tema-input">
-            <label className="text-xs font-semibold text-[#191c1d] mb-1.5 block">
-              Sobre o que você quer estudar?
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder={isSeminário ? "Ex: Farmacologia dos Analgésicos" : "Ex: Insuficiência Cardíaca Congestiva"}
-                value={tema}
-                onChange={(e) => setTema(e.target.value.slice(0, MAX_TEMA_LENGTH))}
-                disabled={generating}
-                className="w-full px-4 py-3 bg-[#f8f9fa] border border-slate-200 rounded-xl text-[#191c1d] placeholder:text-slate-400 focus:outline-none focus:border-[#006D5B] focus:ring-2 focus:ring-[#006D5B]/10 focus:bg-white transition-all duration-200 text-sm font-medium disabled:opacity-50"
-              />
+            <div className="flex items-start gap-3 mb-2.5">
+              <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-brand-primary text-white flex items-center justify-center text-xs font-bold">
+                1
+              </div>
+              <div className="flex-1 min-w-0">
+                <label className="flex items-center gap-2 text-sm font-bold text-brand-ink mb-0.5">
+                  <BookOpen className="w-3.5 h-3.5 text-brand-primary" />
+                  Qual tema você quer estudar?
+                </label>
+                <p className="text-xs text-brand-ink-2">Nome do assunto principal — seja específico.</p>
+              </div>
             </div>
+            <input
+              type="text"
+              placeholder="Ex: Insuficiência Cardíaca Congestiva"
+              value={tema}
+              onChange={(e) => setTema(e.target.value.slice(0, MAX_TEMA_LENGTH))}
+              disabled={generating}
+              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-brand-ink placeholder:text-slate-400 focus:outline-none focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10 focus:bg-white transition-all text-[15px] font-medium disabled:opacity-50"
+            />
 
             {/* Suggestions */}
             {!tema && (
               <div className="mt-3 flex flex-wrap gap-2">
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide self-center mr-1">Sugestões:</span>
                 {suggestions.map((s) => (
                   <button
                     key={s.label}
                     onClick={() => setTema(s.label)}
                     disabled={generating}
                     type="button"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-[#3e4945] hover:border-[#006D5B]/40 hover:text-[#005344] hover:shadow-sm transition-all duration-150 disabled:opacity-40"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-brand-ink-2 hover:border-brand-primary/40 hover:text-brand-primary-dark hover:bg-brand-primary/5 transition-all disabled:opacity-40"
                   >
                     <span>{s.icon}</span>
                     {s.label}
@@ -119,53 +97,87 @@ const InputPanel = ({
             )}
 
             {tema.length > MAX_TEMA_LENGTH * 0.8 && (
-              <p className="text-[10px] text-[#6e7975] text-right mt-1">{tema.length}/{MAX_TEMA_LENGTH}</p>
+              <p className="text-[10px] text-brand-ink-2 text-right mt-1">{tema.length}/{MAX_TEMA_LENGTH}</p>
             )}
           </div>
 
-          {/* Objetivos */}
+          {/* Divisória sutil */}
+          <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+
+          {/* Step 2: Objetivos */}
           <div data-tour="objetivos-input">
-            <label className="text-xs font-semibold text-[#191c1d] mb-1.5 flex items-center gap-1.5 block">
-              Focos específicos
-              <span className="text-[10px] text-slate-400 font-normal">(opcional)</span>
-            </label>
+            <div className="flex items-start gap-3 mb-2.5">
+              <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-brand-primary text-white flex items-center justify-center text-xs font-bold">
+                2
+              </div>
+              <div className="flex-1 min-w-0">
+                <label className="flex items-center gap-2 text-sm font-bold text-brand-ink mb-0.5">
+                  <Target className="w-3.5 h-3.5 text-brand-primary" />
+                  Objetivos específicos
+                  <span className="text-[10px] text-slate-400 font-medium">opcional</span>
+                </label>
+                <p className="text-xs text-brand-ink-2">
+                  Cada linha vira uma seção própria — o resumo usa o <span className="font-semibold text-brand-primary-dark">texto exato que você escrever</span> como título.
+                </p>
+              </div>
+            </div>
             <textarea
-              placeholder={isSeminário
-                ? "Ex: Mecanismo de ação, efeitos adversos, interações medicamentosas..."
-                : "Ex: Critérios de Framingham, Manejo na Emergência, Fármacos de 1ª linha..."
-              }
+              placeholder={"Um objetivo por linha. Ex:\nAtividade laboral em IC\nCritérios de Framingham\nFármacos de 1ª linha"}
               value={objetivos}
               onChange={(e) => setObjetivos(e.target.value.slice(0, MAX_OBJETIVOS_LENGTH))}
               disabled={generating}
-              rows={3}
-              className="w-full px-4 py-3 bg-[#f8f9fa] border border-slate-200 rounded-xl text-[#191c1d] placeholder:text-slate-400 focus:outline-none focus:border-[#006D5B] focus:ring-2 focus:ring-[#006D5B]/10 focus:bg-white transition-all duration-200 text-sm font-medium resize-none disabled:opacity-50"
+              rows={4}
+              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-brand-ink placeholder:text-slate-400 focus:outline-none focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10 focus:bg-white transition-all text-sm font-medium resize-none disabled:opacity-50"
             />
+            {objetivosCount > 0 && (
+              <p className="text-[11px] text-brand-primary-dark font-semibold mt-1.5">
+                {objetivosCount} {objetivosCount === 1 ? 'objetivo' : 'objetivos'} {objetivosCount === 1 ? 'identificado' : 'identificados'}
+              </p>
+            )}
           </div>
 
-          {/* Generate Button */}
-          <div data-tour="generate-btn" className="pt-1">
+          {/* Divisória sutil */}
+          <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+
+          {/* Step 3: Generate Button */}
+          <div data-tour="generate-btn">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-brand-primary text-white flex items-center justify-center text-xs font-bold">
+                3
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-brand-ink mb-0.5">Pronto para gerar</p>
+                <p className="text-xs text-brand-ink-2">A IA leva ~20s para criar seu resumo completo.</p>
+              </div>
+            </div>
             <button
               onClick={onGenerate}
               disabled={!canGenerate}
-              className="w-full py-3.5 rounded-xl font-['Manrope'] font-bold text-sm text-white flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg hover:-translate-y-0.5 group"
-              style={{ background: canGenerate ? 'linear-gradient(135deg, #005344 0%, #007a63 100%)' : '#94a3b8' }}
+              className="w-full py-4 rounded-xl font-display font-bold text-sm text-white flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg group relative overflow-hidden"
+              style={{ background: canGenerate ? 'linear-gradient(135deg, #003D32 0%, #005344 50%, #006D5B 100%)' : '#94a3b8' }}
             >
-              {generating ? (
-                <><Loader2 className="h-4 w-4 animate-spin" />{isSeminário ? 'Gerando roteiro...' : 'Gerando conteúdo...'}</>
-              ) : cooldown ? (
-                <>Aguarde...</>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                  {isSeminário ? 'Gerar Roteiro de Slides' : 'Gerar Resumo com IA'}
-                  <Send className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                </>
+              {/* Brilho decorativo no hover */}
+              {canGenerate && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-brand-gold/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
               )}
+              <div className="relative flex items-center gap-2.5">
+                {generating ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" />Gerando conteúdo...</>
+                ) : cooldown ? (
+                  <>Aguarde...</>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 text-brand-gold" />
+                    Gerar Resumo com IA
+                    <Send className="w-3.5 h-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
+                  </>
+                )}
+              </div>
             </button>
 
             {generating && (
               <div className="mt-3">
-                <p className="text-[10px] text-[#6e7975] text-center mb-1.5">
+                <p className="text-[10px] text-brand-ink-2 text-center mb-1.5">
                   Não feche a página durante a geração.
                 </p>
                 <GenerationProgress
