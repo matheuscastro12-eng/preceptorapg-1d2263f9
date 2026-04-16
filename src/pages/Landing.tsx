@@ -185,12 +185,14 @@ const Landing = () => {
 
         {/* ─── Hero ─────────────────────────────────────── */}
         <section className="relative flex items-center min-h-[calc(100vh-65px)] py-10 sm:py-14 px-4 sm:px-6 lg:px-10 overflow-hidden">
-          {/* Dot grid sutil no canto direito (decorativo) */}
-          <div className="absolute top-20 right-0 w-80 h-80 pointer-events-none opacity-50 texture-dots-subtle" style={{ maskImage: 'radial-gradient(ellipse at top right, black 30%, transparent 70%)', WebkitMaskImage: 'radial-gradient(ellipse at top right, black 30%, transparent 70%)' }} />
-          {/* Glow gold sutil no canto inferior esquerdo */}
-          <div className="absolute -bottom-20 -left-20 w-96 h-96 rounded-full bg-brand-gold/[0.04] blur-3xl pointer-events-none" />
+          {/* Dot grid decorativo no canto superior direito */}
+          <div className="absolute -top-10 right-0 w-[28rem] h-[28rem] pointer-events-none texture-dots-subtle" style={{ maskImage: 'radial-gradient(ellipse at top right, black 20%, transparent 75%)', WebkitMaskImage: 'radial-gradient(ellipse at top right, black 20%, transparent 75%)' }} />
+          {/* Glow gold no canto inferior esquerdo */}
+          <div className="absolute -bottom-32 -left-32 w-[32rem] h-[32rem] rounded-full bg-brand-gold/[0.08] blur-3xl pointer-events-none" />
+          {/* Glow primary no topo direito */}
+          <div className="absolute -top-20 -right-20 w-[28rem] h-[28rem] rounded-full bg-brand-primary/[0.05] blur-3xl pointer-events-none" />
           {/* Gold divider no final da seção (separa de 'Recursos' verde) */}
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-gold/30 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-gold/50 to-transparent" />
 
           <div className="relative max-w-[1400px] mx-auto w-full flex flex-col lg:flex-row items-center gap-10 lg:gap-14 xl:gap-20">
             <div className="lg:w-1/2 animate-fade-up">
@@ -349,14 +351,15 @@ const Landing = () => {
 
         {/* ─── Como funciona — Exemplo real ──────────────── */}
         <section id="como-funciona" className="relative py-16 sm:py-28 bg-white overflow-hidden">
-          {/* Gold accent — assinatura sutil no topo */}
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-gold/30 to-transparent" />
+          {/* Gold accent no topo */}
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-gold/50 to-transparent" />
           {/* Green wash decorativo canto */}
-          <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-brand-primary/5 blur-3xl pointer-events-none" />
-          {/* ECG sutil — personalidade medica sem clipart */}
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-20 texture-ecg pointer-events-none" />
-          {/* Blur dourado sutil canto inferior */}
-          <div className="absolute -bottom-16 -left-16 w-80 h-80 rounded-full bg-brand-gold/[0.04] blur-3xl pointer-events-none" />
+          <div className="absolute -top-24 -right-24 w-[32rem] h-[32rem] rounded-full bg-brand-primary/[0.07] blur-3xl pointer-events-none" />
+          {/* ECG — personalidade medica */}
+          <div className="absolute inset-x-0 top-8 h-24 texture-ecg pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-8 h-24 texture-ecg pointer-events-none" />
+          {/* Blur dourado canto inferior */}
+          <div className="absolute -bottom-20 -left-20 w-[28rem] h-[28rem] rounded-full bg-brand-gold/[0.06] blur-3xl pointer-events-none" />
 
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
             <Reveal as="div" className="mb-12 sm:mb-16 max-w-2xl">
