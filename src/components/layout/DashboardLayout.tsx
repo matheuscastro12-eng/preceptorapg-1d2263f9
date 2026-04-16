@@ -31,22 +31,45 @@ interface NavItem {
   children?: { icon: string; label: string; path: string; matchPaths?: string[] }[];
 }
 
-const sidebarNavItems: NavItem[] = [
-  { icon: 'dashboard', label: 'Início', path: '/menu' },
-  { icon: 'auto_awesome', label: 'Estudo com IA', path: '/dashboard' },
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const sidebarNavGroups: NavGroup[] = [
   {
-    icon: 'shutter_speed', label: 'Simulações', path: '/exam',
-    matchPaths: ['/exam', '/enamed', '/flashcards'],
-    children: [
-      { icon: 'assignment', label: 'Simulação Normal', path: '/exam' },
-      { icon: 'history_edu', label: 'ENAMED', path: '/enamed' },
-      { icon: 'target', label: 'Simulado por Área', path: '/enamed?area=true', matchPaths: ['/enamed?area'] },
-      { icon: 'style', label: 'Flashcards', path: '/flashcards' },
+    label: 'Estudo',
+    items: [
+      { icon: 'dashboard', label: 'Início', path: '/menu' },
+      { icon: 'auto_awesome', label: 'Estudo com IA', path: '/dashboard' },
     ],
   },
-  { icon: 'library_books', label: 'Biblioteca', path: '/library' },
-  { icon: 'science', label: 'Curadoria Científica', path: '/scientific-studio' },
+  {
+    label: 'Prática',
+    items: [
+      {
+        icon: 'shutter_speed', label: 'Simulações', path: '/exam',
+        matchPaths: ['/exam', '/enamed', '/flashcards'],
+        children: [
+          { icon: 'assignment', label: 'Simulação Normal', path: '/exam' },
+          { icon: 'history_edu', label: 'ENAMED', path: '/enamed' },
+          { icon: 'target', label: 'Simulado por Área', path: '/enamed?area=true', matchPaths: ['/enamed?area'] },
+          { icon: 'style', label: 'Flashcards', path: '/flashcards' },
+        ],
+      },
+    ],
+  },
+  {
+    label: 'Seus dados',
+    items: [
+      { icon: 'library_books', label: 'Biblioteca', path: '/library' },
+      { icon: 'science', label: 'Curadoria Científica', path: '/scientific-studio' },
+    ],
+  },
 ];
+
+// Flat list for auto-expand submenu logic
+const sidebarNavItems: NavItem[] = sidebarNavGroups.flatMap(g => g.items);
 
 const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayoutProps) => {
   const { user, signOut } = useAuth();
@@ -151,75 +174,102 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-1 px-4">
-        {sidebarNavItems.map((item) => {
-          const active = checkActive(item);
-          const hasChildren = !!item.children;
-          const isExpanded = expandedMenu === item.path;
-
-          return (
-            <div key={item.path}>
-              <button
-                onClick={() => {
-                  if (hasChildren) {
-                    setExpandedMenu(isExpanded ? null : item.path);
-                  } else {
-                    navigate(item.path);
-                  }
-                }}
-                className={`relative w-full flex items-center gap-3 py-3 px-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  active
-                    ? 'text-white bg-white/15'
-                    : 'text-white/70 hover:text-white hover:bg-white/10 hover:translate-x-0.5'
-                }`}
-              >
-                {active && !hasChildren && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full" />
-                )}
-                <MI name={item.icon} fill={active} className="text-[22px]" />
-                <span className="flex-1 text-left">{item.label}</span>
-                {hasChildren && (
-                  <MI
-                    name="expand_more"
-                    className={`text-[20px] text-white/50 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                  />
-                )}
-              </button>
-
-              {/* Submenu */}
-              {hasChildren && (
-                <div
-                  className="overflow-hidden transition-all duration-250 ease-in-out"
-                  style={{
-                    maxHeight: isExpanded ? `${(item.children!.length) * 42}px` : '0px',
-                    opacity: isExpanded ? 1 : 0,
-                  }}
-                >
-                  <div className="ml-4 pl-4 border-l border-white/10 py-1 space-y-0.5">
-                    {item.children!.map((child) => {
-                      const childActive = checkChildActive(child);
-                      return (
-                        <button
-                          key={child.path}
-                          onClick={() => navigate(child.path)}
-                          className={`w-full flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
-                            childActive
-                              ? 'text-white bg-white/12'
-                              : 'text-white/55 hover:text-white hover:bg-white/8'
-                          }`}
-                        >
-                          <MI name={child.icon} fill={childActive} className="text-[18px]" />
-                          <span>{child.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+      <nav className="flex-1 px-4 overflow-y-auto sidebar-scroll space-y-6">
+        {sidebarNavGroups.map((group, groupIdx) => (
+          <div key={group.label} className="space-y-1">
+            {/* Section label — editorial */}
+            <div className="flex items-center gap-2 px-3 mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-gold/70">
+                {group.label}
+              </span>
+              <span className="flex-1 h-px bg-gradient-to-r from-brand-gold/20 to-transparent" />
             </div>
-          );
-        })}
 
+            {group.items.map((item) => {
+              const active = checkActive(item);
+              const hasChildren = !!item.children;
+              const isExpanded = expandedMenu === item.path;
+
+              return (
+                <div key={item.path}>
+                  <button
+                    onClick={() => {
+                      if (hasChildren) {
+                        setExpandedMenu(isExpanded ? null : item.path);
+                      } else {
+                        navigate(item.path);
+                      }
+                    }}
+                    className={`group/navitem relative w-full flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      active
+                        ? 'text-white bg-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]'
+                        : 'text-white/70 hover:text-white hover:bg-white/[0.06]'
+                    }`}
+                  >
+                    {/* Indicador ativo — barra dourada à esquerda */}
+                    {active && !hasChildren && (
+                      <span
+                        className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full"
+                        style={{ background: 'linear-gradient(180deg, #E0C068 0%, #C9A84C 100%)' }}
+                      />
+                    )}
+                    <MI
+                      name={item.icon}
+                      fill={active}
+                      className={`text-[22px] transition-colors ${
+                        active ? 'text-brand-gold' : 'text-white/80 group-hover/navitem:text-white'
+                      }`}
+                    />
+                    <span className="flex-1 text-left">{item.label}</span>
+                    {hasChildren && (
+                      <MI
+                        name="expand_more"
+                        className={`text-[20px] text-white/40 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
+                      />
+                    )}
+                  </button>
+
+                  {/* Submenu */}
+                  {hasChildren && (
+                    <div
+                      className="overflow-hidden transition-all duration-300 ease-out"
+                      style={{
+                        maxHeight: isExpanded ? `${(item.children!.length) * 42}px` : '0px',
+                        opacity: isExpanded ? 1 : 0,
+                      }}
+                    >
+                      <div className="ml-4 pl-4 border-l border-brand-gold/20 py-1 space-y-0.5 mt-1">
+                        {item.children!.map((child) => {
+                          const childActive = checkChildActive(child);
+                          return (
+                            <button
+                              key={child.path}
+                              onClick={() => navigate(child.path)}
+                              className={`group/child w-full flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
+                                childActive
+                                  ? 'text-white bg-white/10'
+                                  : 'text-white/55 hover:text-white hover:bg-white/[0.05]'
+                              }`}
+                            >
+                              <MI
+                                name={child.icon}
+                                fill={childActive}
+                                className={`text-[18px] transition-colors ${
+                                  childActive ? 'text-brand-gold' : 'text-white/70 group-hover/child:text-white'
+                                }`}
+                              />
+                              <span>{child.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* Bottom section */}
@@ -273,6 +323,17 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
             <span>Sair</span>
           </button>
         </div>
+
+        {/* Signature footer — quiet, detailed */}
+        <div className="mt-4 pt-4 border-t border-white/5 px-2 flex items-center justify-between">
+          <span className="text-[10px] text-white/25 tracking-wide">
+            v1.0
+          </span>
+          <span className="text-[10px] text-white/25 tracking-wide flex items-center gap-1">
+            <span className="w-1 h-1 rounded-full bg-brand-gold/60" />
+            feito para PBL
+          </span>
+        </div>
       </div>
     </>
   );
@@ -281,7 +342,7 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
     <div className="min-h-screen bg-[#f8f9fa] text-[#191c1d] antialiased">
 
       {/* Sidebar — Desktop */}
-      <aside className="hidden lg:flex flex-col h-screen w-64 fixed left-0 top-0 z-40 py-8 font-display" style={{ background: 'linear-gradient(180deg, #003d32 0%, #005344 40%, #004a3c 100%)' }}>
+      <aside className="hidden lg:flex flex-col h-screen w-64 fixed left-0 top-0 z-40 py-8 font-display" style={{ background: 'linear-gradient(160deg, #003D32 0%, #005344 50%, #006D5B 100%)' }}>
         {sidebarContent}
       </aside>
 
@@ -289,7 +350,7 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-[60]">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-          <aside className="absolute left-0 top-0 h-full w-64 shadow-2xl flex flex-col py-8 animate-slide-in-left font-display" style={{ background: 'linear-gradient(180deg, #003d32 0%, #005344 40%, #004a3c 100%)' }}>
+          <aside className="absolute left-0 top-0 h-full w-64 shadow-2xl flex flex-col py-8 animate-slide-in-left font-display" style={{ background: 'linear-gradient(160deg, #003D32 0%, #005344 50%, #006D5B 100%)' }}>
             {sidebarContent}
           </aside>
         </div>
