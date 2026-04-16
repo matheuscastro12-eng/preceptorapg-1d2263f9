@@ -179,8 +179,8 @@ const Landing = () => {
       <main className="flex-1">
 
         {/* ─── Hero ─────────────────────────────────────── */}
-        <section className="relative pt-12 sm:pt-20 pb-16 sm:pb-32 px-4 sm:px-6 overflow-hidden">
-          <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-10 sm:gap-16">
+        <section className="relative flex items-center min-h-[calc(100vh-65px)] py-12 sm:py-20 px-4 sm:px-6 overflow-hidden">
+          <div className="max-w-7xl mx-auto w-full flex flex-col lg:flex-row items-center gap-10 sm:gap-16">
             <div className="lg:w-1/2 animate-fade-up">
               <p className="mb-5 sm:mb-7 text-[11px] sm:text-xs font-semibold text-brand-primary-dark uppercase tracking-[0.2em] flex items-center gap-2">
                 <span className="w-8 h-px bg-brand-gold" />
