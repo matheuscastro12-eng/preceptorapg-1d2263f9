@@ -182,14 +182,15 @@ const Landing = () => {
         <section className="relative pt-12 sm:pt-20 pb-16 sm:pb-32 px-4 sm:px-6 overflow-hidden">
           <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-10 sm:gap-16">
             <div className="lg:w-1/2 animate-fade-up">
-              <p className="mb-5 sm:mb-7 text-sm text-[#006D5B] font-semibold">
+              <p className="mb-5 sm:mb-7 text-[11px] sm:text-xs font-semibold text-brand-primary-dark uppercase tracking-[0.2em] flex items-center gap-2">
+                <span className="w-8 h-px bg-brand-gold" />
                 Para estudantes de medicina brasileiros
               </p>
               <h1
-                className="text-3xl sm:text-5xl md:text-6xl font-bold leading-[1.1] mb-5 sm:mb-7 tracking-tight text-[#191c1d]"
+                className="text-3xl sm:text-5xl md:text-6xl font-bold leading-[1.1] mb-5 sm:mb-7 tracking-tight text-brand-ink"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
-                Estudo clínico que acompanha seu raciocínio.
+                Estudo clínico que acompanha seu <span className="text-brand-primary">raciocínio</span>.
               </h1>
               <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-8 sm:mb-10 max-w-xl">
                 Resumos de PBL com fisiopatologia integrada, simulados ENAMED no padrão INEP e chat com busca automática no PubMed. Em português, para a formação médica brasileira.
@@ -226,20 +227,39 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* ─── Recursos ──────────────────────────────────── */}
-        <section id="recursos" className="py-16 sm:py-28 bg-[#fafbfa] border-t border-slate-100">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        {/* ─── Recursos — dark block verde ──────────────────── */}
+        <section
+          id="recursos"
+          className="relative py-16 sm:py-28 overflow-hidden"
+          style={{ background: 'linear-gradient(160deg, #003326 0%, #00473c 45%, #005344 100%)' }}
+        >
+          {/* Decorações sutis — gold glow + noise */}
+          <div className="absolute -top-32 -right-32 w-[420px] h-[420px] rounded-full bg-brand-gold/10 blur-[120px] pointer-events-none" />
+          <div className="absolute -bottom-32 -left-16 w-[360px] h-[360px] rounded-full bg-brand-primary/30 blur-[100px] pointer-events-none" />
+          <div
+            className="absolute inset-0 opacity-[0.04] pointer-events-none"
+            style={{
+              backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+              backgroundSize: '28px 28px',
+            }}
+          />
+
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
             <div className="mb-12 sm:mb-16 max-w-2xl">
-              <p className="text-sm text-[#006D5B] font-semibold mb-3">O que você recebe</p>
+              <p className="text-[11px] font-semibold text-brand-gold uppercase tracking-[0.2em] mb-4">
+                O que você recebe
+              </p>
               <h2
-                className="text-2xl sm:text-4xl font-bold leading-tight text-[#191c1d]"
+                className="text-2xl sm:text-4xl font-bold leading-tight text-white"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
-                Ferramentas construídas para a prática médica brasileira.
+                Ferramentas construídas para a<br className="hidden sm:block" />
+                {' '}prática médica <span className="text-brand-gold/90">brasileira</span>.
               </h2>
+              <div className="mt-5 h-px w-16 bg-gradient-to-r from-brand-gold to-transparent" />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-white/10 border border-white/10 rounded-lg overflow-hidden">
               {[
                 {
                   title: 'Fechamentos de PBL',
@@ -253,12 +273,12 @@ const Landing = () => {
                 },
                 {
                   title: 'Chat com PubMed integrado',
-                  desc: 'IA busca artigos na PubMed, resume em português e cita fontes inline. Não é busca cega — é síntese com evidência.',
+                  desc: 'IA busca artigos na PubMed, resume em português e cita fontes inline. Não é busca cega. É síntese com evidência.',
                   meta: 'Gemini 2.5 + E-utilities',
                 },
                 {
                   title: 'Flashcards com SM-2',
-                  desc: 'Repetição espaçada real (SuperMemo 2). Intervalos ajustam pela sua performance — não fake streaks.',
+                  desc: 'Repetição espaçada real (SuperMemo 2). Intervalos ajustam pela sua performance, sem fake streaks.',
                   meta: 'Algoritmo real, não gamificado',
                 },
                 {
@@ -272,15 +292,25 @@ const Landing = () => {
                   meta: 'Exportação PDF nativa',
                 },
               ].map((feature, i) => (
-                <div key={i} className="bg-white p-6 sm:p-8">
+                <div
+                  key={i}
+                  className="relative bg-brand-primary-darker/80 hover:bg-brand-primary-dark/80 transition-colors p-6 sm:p-8 group"
+                >
+                  {/* Numbering sutil */}
+                  <span className="absolute top-5 right-6 text-[11px] font-bold text-white/20 tabular-nums">
+                    0{i + 1}
+                  </span>
                   <h3
-                    className="text-lg font-bold mb-2 text-[#191c1d]"
+                    className="text-lg font-bold mb-2 text-white tracking-tight"
                     style={{ fontFamily: "'Manrope', sans-serif" }}
                   >
                     {feature.title}
                   </h3>
-                  <p className="text-sm text-slate-600 leading-relaxed mb-4">{feature.desc}</p>
-                  <p className="text-xs text-[#006D5B] font-semibold">{feature.meta}</p>
+                  <p className="text-sm text-white/70 leading-relaxed mb-4">{feature.desc}</p>
+                  <p className="text-xs text-brand-gold font-semibold flex items-center gap-1.5">
+                    <span className="w-1 h-1 rounded-full bg-brand-gold/60" />
+                    {feature.meta}
+                  </p>
                 </div>
               ))}
             </div>
@@ -288,15 +318,23 @@ const Landing = () => {
         </section>
 
         {/* ─── Como funciona — Exemplo real ──────────────── */}
-        <section id="como-funciona" className="py-16 sm:py-28 bg-white border-t border-slate-100">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <section id="como-funciona" className="relative py-16 sm:py-28 bg-white overflow-hidden">
+          {/* Gold accent — assinatura sutil no topo */}
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-gold/30 to-transparent" />
+          {/* Green wash decorativo canto */}
+          <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-brand-primary/5 blur-3xl pointer-events-none" />
+
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
             <div className="mb-12 sm:mb-16 max-w-2xl">
-              <p className="text-sm text-[#006D5B] font-semibold mb-3">Exemplo real da plataforma</p>
+              <p className="text-[11px] font-semibold text-brand-primary-dark uppercase tracking-[0.2em] mb-4">
+                Exemplo real da plataforma
+              </p>
               <h2
-                className="text-2xl sm:text-4xl font-bold leading-tight text-[#191c1d]"
+                className="text-2xl sm:text-4xl font-bold leading-tight text-brand-ink"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
-                Questões ENAMED no padrão INEP, geradas sob demanda.
+                Questões ENAMED no padrão INEP,<br className="hidden sm:block" />
+                {' '}geradas <span className="text-brand-primary">sob demanda</span>.
               </h2>
               <p className="text-base text-slate-600 leading-relaxed mt-4">
                 Vinhetas clínicas extensas, laboratórios com valores numéricos e distratores plausíveis — calibrados na distribuição histórica INEP 2011–2025.
@@ -531,15 +569,22 @@ const Landing = () => {
         </section>
 
         {/* ─── Depoimentos ──────────────────────────────── */}
-        <section id="depoimentos" className="py-16 sm:py-28 bg-[#fafbfa] border-t border-slate-100">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <section id="depoimentos" className="relative py-16 sm:py-28 bg-white overflow-hidden">
+          {/* Green wash sutil */}
+          <div className="absolute inset-0 bg-gradient-to-b from-brand-primary/[0.03] via-transparent to-transparent pointer-events-none" />
+
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
             <div className="mb-12 sm:mb-16 max-w-2xl">
-              <p className="text-sm text-[#006D5B] font-semibold mb-3">Depoimentos</p>
+              <p className="text-[11px] font-semibold text-brand-primary-dark uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                <span className="w-8 h-px bg-brand-gold" />
+                Depoimentos
+              </p>
               <h2
-                className="text-2xl sm:text-4xl font-bold leading-tight text-[#191c1d]"
+                className="text-2xl sm:text-4xl font-bold leading-tight text-brand-ink"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
-                Estudantes que já usam no dia a dia.
+                Estudantes que já usam<br className="hidden sm:block" />
+                {' '}<span className="text-brand-primary">no dia a dia</span>.
               </h2>
             </div>
 
