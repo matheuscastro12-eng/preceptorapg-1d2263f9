@@ -10,6 +10,9 @@ import ProfileDropdown from '@/components/ProfileDropdown';
 import PixPaymentModal from '@/components/PixPaymentModal';
 import logoIcon from '@/assets/logo-icon.png';
 import { Loader2 } from 'lucide-react';
+import Reveal from '@/components/landing/Reveal';
+import ScrollProgress from '@/components/landing/ScrollProgress';
+import Parallax from '@/components/landing/Parallax';
 
 const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
   <span
@@ -176,6 +179,8 @@ const Landing = () => {
         )}
       </header>
 
+      <ScrollProgress />
+
       <main className="flex-1">
 
         {/* ─── Hero ─────────────────────────────────────── */}
@@ -220,22 +225,24 @@ const Landing = () => {
               </div>
             </div>
 
-            <div className="lg:w-1/2 relative animate-fade-up w-full" style={{ animationDelay: '0.2s' }}>
-              <div className="relative z-10 rounded-xl overflow-hidden border border-slate-200 shadow-[0_20px_60px_-20px_rgba(0,109,91,0.25)]">
-                <video
-                  src="/video-lp.mp4"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                  className="block w-full h-auto"
-                />
-              </div>
+            <Reveal as="div" direction="left" distance={32} delay={120} className="lg:w-1/2 relative w-full">
+              <Parallax speed={0.06}>
+                <div className="relative z-10 rounded-xl overflow-hidden border border-slate-200 shadow-[0_20px_60px_-20px_rgba(0,109,91,0.25)]">
+                  <video
+                    src="/video-lp.mp4"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                    className="block w-full h-auto"
+                  />
+                </div>
+              </Parallax>
               {/* Decoração sutil — blur verde atrás do video */}
               <div className="absolute -bottom-8 -right-8 w-64 h-64 rounded-full bg-brand-primary/10 blur-3xl pointer-events-none -z-0" />
               <div className="absolute -top-8 -left-8 w-48 h-48 rounded-full bg-brand-gold/10 blur-3xl pointer-events-none -z-0" />
-            </div>
+            </Reveal>
           </div>
         </section>
 
@@ -257,7 +264,7 @@ const Landing = () => {
           />
 
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="mb-12 sm:mb-16 max-w-2xl">
+            <Reveal as="div" className="mb-12 sm:mb-16 max-w-2xl">
               <p className="text-[11px] font-semibold text-brand-gold uppercase tracking-[0.2em] mb-4">
                 O que você recebe
               </p>
@@ -269,7 +276,7 @@ const Landing = () => {
                 {' '}prática médica <span className="text-brand-gold/90">brasileira</span>.
               </h2>
               <div className="mt-5 h-px w-16 bg-gradient-to-r from-brand-gold to-transparent" />
-            </div>
+            </Reveal>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-white/10 border border-white/10 rounded-lg overflow-hidden">
               {[
@@ -304,8 +311,12 @@ const Landing = () => {
                   meta: 'Exportação PDF nativa',
                 },
               ].map((feature, i) => (
-                <div
+                <Reveal
                   key={i}
+                  delay={i * 80}
+                  direction="up"
+                  distance={20}
+                  as="div"
                   className="relative bg-brand-primary-darker/80 hover:bg-brand-primary-dark/80 transition-colors p-6 sm:p-8 group"
                 >
                   {/* Numbering sutil */}
@@ -323,7 +334,7 @@ const Landing = () => {
                     <span className="w-1 h-1 rounded-full bg-brand-gold/60" />
                     {feature.meta}
                   </p>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -337,7 +348,7 @@ const Landing = () => {
           <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-brand-primary/5 blur-3xl pointer-events-none" />
 
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="mb-12 sm:mb-16 max-w-2xl">
+            <Reveal as="div" className="mb-12 sm:mb-16 max-w-2xl">
               <p className="text-[11px] font-semibold text-brand-primary-dark uppercase tracking-[0.2em] mb-4">
                 Exemplo real da plataforma
               </p>
@@ -351,11 +362,11 @@ const Landing = () => {
               <p className="text-base text-slate-600 leading-relaxed mt-4">
                 Vinhetas clínicas extensas, laboratórios com valores numéricos e distratores plausíveis — calibrados na distribuição histórica INEP 2011–2025.
               </p>
-            </div>
+            </Reveal>
 
             <div className="grid grid-cols-12 gap-6 lg:gap-10">
               {/* Questão real */}
-              <div className="col-span-12 lg:col-span-7">
+              <Reveal as="div" direction="up" delay={100} className="col-span-12 lg:col-span-7">
                 <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
                   <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-200">
                     <span className="text-xs font-semibold text-slate-600">Clínica Médica · Nefrologia</span>
@@ -393,10 +404,10 @@ const Landing = () => {
                 <p className="text-xs text-slate-400 mt-3 italic">
                   Uma de milhares de questões no padrão ENAMED/REVALIDA disponíveis na plataforma.
                 </p>
-              </div>
+              </Reveal>
 
               {/* Pilares */}
-              <div className="col-span-12 lg:col-span-5 space-y-7">
+              <Reveal as="div" direction="up" delay={200} className="col-span-12 lg:col-span-5 space-y-7">
                 <div className="border-l-2 border-[#006D5B] pl-5">
                   <h4
                     className="text-base font-bold mb-1.5 text-[#191c1d]"
@@ -444,7 +455,7 @@ const Landing = () => {
                     Revisão estruturada de TCC e artigos: valida metodologia, ABNT e coerência de cada seção independentemente.
                   </p>
                 </div>
-              </div>
+              </Reveal>
             </div>
           </div>
         </section>
@@ -598,7 +609,7 @@ const Landing = () => {
           />
 
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="mb-12 sm:mb-16 max-w-2xl">
+            <Reveal as="div" className="mb-12 sm:mb-16 max-w-2xl">
               <p className="text-[11px] font-semibold text-brand-gold uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                 <span className="w-8 h-px bg-brand-gold" />
                 Depoimentos
@@ -611,11 +622,11 @@ const Landing = () => {
                 {' '}<span className="text-brand-gold/90">no dia a dia</span>.
               </h2>
               <div className="mt-5 h-px w-16 bg-gradient-to-r from-brand-gold to-transparent" />
-            </div>
+            </Reveal>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-10 divide-y divide-white/10 md:divide-y-0 [&>article]:pt-10 md:[&>article]:pt-0 first:[&>article]:pt-0">
               {/* Depoimento 1 — Alicia */}
-              <article className="flex flex-col">
+              <Reveal as="article" delay={0} className="flex flex-col">
                 <p className="text-[15px] text-white/85 leading-relaxed mb-6">
                   A plataforma PreceptorMED é uma ferramenta fantástica para o auxílio nos estudos. Os resumos são bem estruturados e direcionados para os objetivos de aprendizagem do tema, além de que as fontes utilizadas são sempre relevantes. Particularmente, minha função preferida é a de geração de questões com base nos conteúdos, o que ajuda a reforçar os conhecimentos.
                 </p>
@@ -644,10 +655,10 @@ const Landing = () => {
                     <p className="text-xs text-white/55">Estudante de Medicina</p>
                   </div>
                 </div>
-              </article>
+              </Reveal>
 
               {/* Depoimento 2 — João */}
-              <article className="flex flex-col">
+              <Reveal as="article" delay={120} className="flex flex-col">
                 <p className="text-[15px] text-white/85 leading-relaxed mb-6">
                   Eu não tenho dúvidas que o PreceptorMED é o futuro da medicina. As respostas oferecidas pela IA são de longe as mais detalhadas. Não somente isso, a plataforma sempre utiliza referências nas quais eu confio. Me surpreende também a constante expansão das ferramentas, que além de me ajudar nos estudos, também me auxilia na realização de trabalhos científicos.
                   <br /><br />
@@ -664,10 +675,10 @@ const Landing = () => {
                     <p className="text-xs text-white/55">Estudante de Medicina</p>
                   </div>
                 </div>
-              </article>
+              </Reveal>
 
               {/* Depoimento 3 — Matheus Milani */}
-              <article className="flex flex-col">
+              <Reveal as="article" delay={240} className="flex flex-col">
                 <p className="text-[15px] text-white/85 leading-relaxed mb-6">
                   Minha experiência com a plataforma tem sido extremamente positiva. Os conteúdos são organizados, objetivos e atualizados, com linguagem acessível e foco prático — ajudam tanto na revisão teórica quanto na preparação para provas e atendimentos clínicos.
                   <br /><br />
@@ -698,7 +709,7 @@ const Landing = () => {
                     <p className="text-xs text-white/55">Estudante de Medicina</p>
                   </div>
                 </div>
-              </article>
+              </Reveal>
             </div>
           </div>
         </section>
@@ -870,7 +881,7 @@ const Landing = () => {
             }}
           />
 
-          <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
+          <Reveal as="div" className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
             <p className="text-[11px] font-semibold text-brand-gold uppercase tracking-[0.2em] mb-5 inline-flex items-center gap-2">
               <span className="w-8 h-px bg-brand-gold" />
               Pronto para começar
@@ -893,7 +904,7 @@ const Landing = () => {
               Criar conta gratuita
               <span className="text-brand-gold">→</span>
             </button>
-          </div>
+          </Reveal>
         </section>
       </main>
 
