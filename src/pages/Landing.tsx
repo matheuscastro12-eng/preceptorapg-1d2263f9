@@ -748,8 +748,8 @@ const Landing = () => {
               </div>
 
               {/* Anual — highlighted */}
-              <div className="flex-1 bg-white p-6 sm:p-10 rounded-2xl shadow-xl border-2 border-[#006D5B] relative overflow-hidden hover:shadow-2xl transition-all duration-300">
-                <div className="absolute top-0 right-0 bg-[#005344] text-white px-3 sm:px-4 py-1 text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
+              <div className="flex-1 bg-white p-6 sm:p-10 rounded-2xl shadow-xl border-2 border-brand-primary relative overflow-hidden hover:shadow-2xl transition-all duration-300">
+                <div className="absolute top-0 right-0 bg-brand-primary-dark text-white px-3 sm:px-4 py-1 text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
                   Mais Popular
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold mb-3 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Anual</h3>
@@ -794,8 +794,8 @@ const Landing = () => {
               </div>
 
               {/* Bianual */}
-              <div className="flex-1 bg-white p-6 sm:p-10 rounded-2xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] border border-slate-200/30 hover:shadow-xl transition-all duration-300">
-                <div className="absolute top-0 right-0 bg-[#C9A84C] text-white px-3 sm:px-4 py-1 text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
+              <div className="flex-1 bg-white p-6 sm:p-10 rounded-2xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] border border-slate-200/30 hover:shadow-xl transition-all duration-300 relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-brand-gold text-white px-3 sm:px-4 py-1 text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
                   Maior Economia
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold mb-3 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Bianual</h3>
@@ -843,22 +843,43 @@ const Landing = () => {
         </section>
 
         {/* ─── Final CTA ────────────────────────────────── */}
-        <section className="py-16 sm:py-24 bg-[#005344]">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+        <section
+          className="relative py-16 sm:py-24 overflow-hidden"
+          style={{ background: 'linear-gradient(160deg, #003326 0%, #00473c 45%, #005344 100%)' }}
+        >
+          {/* Decorações sutis — mesma linguagem de Recursos e Depoimentos */}
+          <div className="absolute -top-32 -right-32 w-[420px] h-[420px] rounded-full bg-brand-gold/10 blur-[120px] pointer-events-none" />
+          <div className="absolute -bottom-32 -left-16 w-[360px] h-[360px] rounded-full bg-brand-primary/30 blur-[100px] pointer-events-none" />
+          <div
+            className="absolute inset-0 opacity-[0.04] pointer-events-none"
+            style={{
+              backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+              backgroundSize: '28px 28px',
+            }}
+          />
+
+          <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
+            <p className="text-[11px] font-semibold text-brand-gold uppercase tracking-[0.2em] mb-5 inline-flex items-center gap-2">
+              <span className="w-8 h-px bg-brand-gold" />
+              Pronto para começar
+              <span className="w-8 h-px bg-brand-gold" />
+            </p>
             <h2
               className="text-2xl sm:text-4xl font-bold mb-5 tracking-tight text-white"
               style={{ fontFamily: "'Manrope', sans-serif" }}
             >
-              Comece seu próximo ciclo de PBL com o PreceptorMED.
+              Comece seu próximo ciclo de PBL<br className="hidden sm:block" />
+              {' '}com o <span className="text-brand-gold/90">PreceptorMED</span>.
             </h2>
-            <p className="text-base sm:text-lg text-white/70 mb-8 sm:mb-10 leading-relaxed">
+            <p className="text-base sm:text-lg text-white/70 mb-8 sm:mb-10 leading-relaxed max-w-xl mx-auto">
               Criar conta é gratuito. Assine quando perceber que economiza horas por semana.
             </p>
             <button
               onClick={() => navigate('/auth?tab=signup')}
-              className="px-8 py-4 bg-white text-[#005344] rounded-lg text-sm font-semibold hover:bg-slate-100 active:scale-[0.98] transition-colors"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-white text-brand-primary-dark rounded-lg text-sm font-semibold hover:bg-slate-50 active:scale-[0.98] transition-colors shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3)]"
             >
               Criar conta gratuita
+              <span className="text-brand-gold">→</span>
             </button>
           </div>
         </section>
