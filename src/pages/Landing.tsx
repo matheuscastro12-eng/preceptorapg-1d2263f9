@@ -55,7 +55,7 @@ const Landing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] flex flex-col" style={{ fontFamily: 'var(--font-body)' }}>
+    <div className="min-h-screen bg-[#f8f9fa] flex flex-col texture-grain" style={{ fontFamily: 'var(--font-body)' }}>
 
       {/* ─── Header ───────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200/60">
@@ -185,7 +185,14 @@ const Landing = () => {
 
         {/* ─── Hero ─────────────────────────────────────── */}
         <section className="relative flex items-center min-h-[calc(100vh-65px)] py-10 sm:py-14 px-4 sm:px-6 lg:px-10 overflow-hidden">
-          <div className="max-w-[1400px] mx-auto w-full flex flex-col lg:flex-row items-center gap-10 lg:gap-14 xl:gap-20">
+          {/* Dot grid sutil no canto direito (decorativo) */}
+          <div className="absolute top-20 right-0 w-80 h-80 pointer-events-none opacity-50 texture-dots-subtle" style={{ maskImage: 'radial-gradient(ellipse at top right, black 30%, transparent 70%)', WebkitMaskImage: 'radial-gradient(ellipse at top right, black 30%, transparent 70%)' }} />
+          {/* Glow gold sutil no canto inferior esquerdo */}
+          <div className="absolute -bottom-20 -left-20 w-96 h-96 rounded-full bg-brand-gold/[0.04] blur-3xl pointer-events-none" />
+          {/* Gold divider no final da seção (separa de 'Recursos' verde) */}
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-gold/30 to-transparent" />
+
+          <div className="relative max-w-[1400px] mx-auto w-full flex flex-col lg:flex-row items-center gap-10 lg:gap-14 xl:gap-20">
             <div className="lg:w-1/2 animate-fade-up">
               <p className="mb-6 sm:mb-8 text-[11px] sm:text-xs font-semibold text-brand-primary-dark uppercase tracking-[0.2em] flex items-center gap-2">
                 <span className="w-10 h-px bg-brand-gold" />
@@ -346,6 +353,10 @@ const Landing = () => {
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-gold/30 to-transparent" />
           {/* Green wash decorativo canto */}
           <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-brand-primary/5 blur-3xl pointer-events-none" />
+          {/* ECG sutil — personalidade medica sem clipart */}
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-20 texture-ecg pointer-events-none" />
+          {/* Blur dourado sutil canto inferior */}
+          <div className="absolute -bottom-16 -left-16 w-80 h-80 rounded-full bg-brand-gold/[0.04] blur-3xl pointer-events-none" />
 
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
             <Reveal as="div" className="mb-12 sm:mb-16 max-w-2xl">
@@ -408,7 +419,11 @@ const Landing = () => {
 
               {/* Pilares */}
               <Reveal as="div" direction="up" delay={200} className="col-span-12 lg:col-span-5 space-y-7">
-                <div className="border-l-2 border-[#006D5B] pl-5">
+                <div className="relative pl-5">
+                  <span
+                    className="absolute left-0 top-0 bottom-0 w-[2px] rounded-full"
+                    style={{ background: 'linear-gradient(180deg, rgb(var(--brand-gold)) 0%, rgb(var(--brand-primary)) 100%)' }}
+                  />
                   <h4
                     className="text-base font-bold mb-1.5 text-[#191c1d]"
                     style={{ fontFamily: "'Manrope', sans-serif" }}

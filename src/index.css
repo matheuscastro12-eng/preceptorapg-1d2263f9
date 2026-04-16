@@ -113,6 +113,36 @@
 .stagger-5 { animation-delay: 0.25s; }
 .stagger-6 { animation-delay: 0.30s; }
 
+/* ── Grain / noise texture subtle — papel editorial ─────── */
+.texture-grain {
+  position: relative;
+}
+.texture-grain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' seed='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  mix-blend-mode: multiply;
+  z-index: 0;
+}
+
+/* ── Dot grid decorativo (opcional, muito sutil) ────────── */
+.texture-dots-subtle {
+  background-image: radial-gradient(circle at 1.5px 1.5px, rgb(var(--brand-ink) / 0.08) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* ── ECG (eletrocardiograma) decorativo, muito sutil ────── */
+.texture-ecg {
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 80' preserveAspectRatio='none'%3E%3Cpath d='M0 40 L60 40 L70 40 L75 20 L85 60 L95 10 L105 55 L115 40 L180 40 L190 40 L195 25 L205 55 L215 40 L280 40 L290 40 L295 18 L305 62 L315 40 L400 40' stroke='%23006D5B' stroke-width='1.5' fill='none' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-size: 400px 80px;
+  background-position: center;
+  opacity: 0.04;
+}
+
 /* ── Premium button shimmer on hover ────────────────────── */
 .btn-shimmer {
   position: relative;
