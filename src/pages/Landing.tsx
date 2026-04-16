@@ -125,7 +125,7 @@ const Landing = () => {
               </button>
               <button
                 onClick={() => navigate('/auth?tab=signup')}
-                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-brand-primary-dark text-white text-[13px] font-semibold rounded-md hover:bg-brand-primary-darker transition-colors"
+                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-brand-primary-dark text-white text-[13px] font-semibold rounded-md hover:bg-brand-primary-darker transition-all shadow-[0_4px_12px_-2px_rgba(0,109,91,0.35)] hover:shadow-[0_6px_16px_-2px_rgba(0,109,91,0.45)]"
               >
                 Começar
                 <span className="text-brand-gold">→</span>
@@ -203,7 +203,7 @@ const Landing = () => {
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <button
                   onClick={() => navigate('/auth?tab=signup')}
-                  className="inline-flex items-center justify-center gap-2 px-7 lg:px-9 py-4 lg:py-5 bg-brand-primary-dark text-white text-sm lg:text-base font-semibold rounded-lg hover:bg-brand-primary-darker active:scale-[0.98] transition-colors"
+                  className="inline-flex items-center justify-center gap-2 px-7 lg:px-9 py-4 lg:py-5 bg-brand-primary-dark text-white text-sm lg:text-base font-semibold rounded-lg hover:bg-brand-primary-darker active:scale-[0.98] transition-all shadow-[0_8px_24px_-8px_rgba(0,109,91,0.45),0_2px_4px_-1px_rgba(0,109,91,0.20)] hover:shadow-[0_12px_32px_-8px_rgba(0,109,91,0.55),0_4px_8px_-2px_rgba(0,109,91,0.25)]"
                 >
                   Começar agora
                   <span className="text-brand-gold">→</span>
@@ -227,7 +227,7 @@ const Landing = () => {
 
             <Reveal as="div" direction="left" distance={32} delay={120} className="lg:w-1/2 relative w-full">
               <Parallax speed={0.06}>
-                <div className="relative z-10 rounded-xl overflow-hidden border border-slate-200 shadow-[0_20px_60px_-20px_rgba(0,109,91,0.25)]">
+                <div className="relative z-10 rounded-xl overflow-hidden border border-slate-200 shadow-[0_24px_60px_-20px_rgba(0,109,91,0.35),0_8px_20px_-8px_rgba(0,109,91,0.20),0_1px_3px_0_rgba(25,28,29,0.08)]">
                   <video
                     src="/video-lp.mp4"
                     autoPlay
@@ -317,7 +317,7 @@ const Landing = () => {
                   direction="up"
                   distance={20}
                   as="div"
-                  className="relative bg-brand-primary-darker/80 hover:bg-brand-primary-dark/80 transition-colors p-6 sm:p-8 group"
+                  className="relative bg-brand-primary-darker/80 hover:bg-brand-primary-dark/80 transition-colors p-6 sm:p-8 group shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
                 >
                   {/* Numbering sutil */}
                   <span className="absolute top-5 right-6 text-[11px] font-bold text-white/20 tabular-nums">
@@ -367,7 +367,7 @@ const Landing = () => {
             <div className="grid grid-cols-12 gap-6 lg:gap-10">
               {/* Questão real */}
               <Reveal as="div" direction="up" delay={100} className="col-span-12 lg:col-span-7">
-                <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+                <div className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-[0_8px_32px_-12px_rgba(0,109,91,0.15),0_1px_3px_0_rgba(25,28,29,0.04)]">
                   <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-200">
                     <span className="text-xs font-semibold text-slate-600">Clínica Médica · Nefrologia</span>
                     <span className="text-[10px] px-2 py-0.5 bg-[#005344] text-white font-semibold rounded">Alta dificuldade</span>
@@ -479,7 +479,7 @@ const Landing = () => {
             <div className="grid grid-cols-12 gap-6 lg:gap-10">
               {/* Resumo real */}
               <div className="col-span-12 lg:col-span-8">
-                <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+                <div className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-[0_8px_32px_-12px_rgba(0,109,91,0.15),0_1px_3px_0_rgba(25,28,29,0.04)]">
                   <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-200">
                     <span className="text-xs font-semibold text-slate-600">Endocrinologia · Emergência</span>
                     <span className="text-[10px] px-2 py-0.5 bg-[#005344] text-white font-semibold rounded">Gerado em 18s</span>
@@ -740,7 +740,7 @@ const Landing = () => {
 
             <div className="flex flex-col md:flex-row justify-center gap-4 sm:gap-8 max-w-5xl mx-auto">
               {/* Mensal */}
-              <div className="flex-1 bg-white p-6 sm:p-10 rounded-2xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] border border-slate-200/30 hover:shadow-xl transition-all duration-300">
+              <div className="flex-1 bg-white p-6 sm:p-10 rounded-2xl shadow-[0_4px_24px_-8px_rgba(0,109,91,0.08),0_1px_2px_0_rgba(25,28,29,0.04)] border border-slate-200/40 hover:shadow-[0_12px_40px_-12px_rgba(0,109,91,0.15),0_2px_4px_0_rgba(25,28,29,0.04)] transition-shadow duration-300">
                 <h3 className="text-lg sm:text-xl font-bold mb-2 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Mensal</h3>
                 <div className="mb-4 sm:mb-6">
                   <span className="text-3xl sm:text-4xl font-extrabold text-[#005344]">R$ 49,90</span>
@@ -771,7 +771,7 @@ const Landing = () => {
               </div>
 
               {/* Anual — highlighted */}
-              <div className="flex-1 bg-white p-6 sm:p-10 rounded-2xl shadow-xl border-2 border-brand-primary relative overflow-hidden hover:shadow-2xl transition-all duration-300">
+              <div className="flex-1 bg-white p-6 sm:p-10 rounded-2xl shadow-[0_16px_48px_-12px_rgba(0,109,91,0.25),0_4px_12px_-4px_rgba(0,109,91,0.10)] border-2 border-brand-primary relative overflow-hidden hover:shadow-[0_24px_56px_-12px_rgba(0,109,91,0.35),0_6px_16px_-4px_rgba(0,109,91,0.15)] transition-shadow duration-300">
                 <div className="absolute top-0 right-0 bg-brand-primary-dark text-white px-3 sm:px-4 py-1 text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
                   Mais Popular
                 </div>
@@ -817,7 +817,7 @@ const Landing = () => {
               </div>
 
               {/* Bianual */}
-              <div className="flex-1 bg-white p-6 sm:p-10 rounded-2xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] border border-slate-200/30 hover:shadow-xl transition-all duration-300 relative overflow-hidden">
+              <div className="flex-1 bg-white p-6 sm:p-10 rounded-2xl shadow-[0_4px_24px_-8px_rgba(201,168,76,0.12),0_1px_2px_0_rgba(25,28,29,0.04)] border border-slate-200/40 hover:shadow-[0_12px_40px_-12px_rgba(201,168,76,0.22),0_2px_4px_0_rgba(25,28,29,0.04)] transition-shadow duration-300 relative overflow-hidden">
                 <div className="absolute top-0 right-0 bg-brand-gold text-white px-3 sm:px-4 py-1 text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
                   Maior Economia
                 </div>
