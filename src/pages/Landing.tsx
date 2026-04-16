@@ -568,33 +568,46 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* ─── Depoimentos ──────────────────────────────── */}
-        <section id="depoimentos" className="relative py-16 sm:py-28 bg-white overflow-hidden">
-          {/* Green wash sutil */}
-          <div className="absolute inset-0 bg-gradient-to-b from-brand-primary/[0.03] via-transparent to-transparent pointer-events-none" />
+        {/* ─── Depoimentos — dark green ─────────────────── */}
+        <section
+          id="depoimentos"
+          className="relative py-16 sm:py-28 overflow-hidden"
+          style={{ background: 'linear-gradient(160deg, #003326 0%, #00473c 45%, #005344 100%)' }}
+        >
+          {/* Decorações sutis */}
+          <div className="absolute -top-32 -right-32 w-[420px] h-[420px] rounded-full bg-brand-gold/10 blur-[120px] pointer-events-none" />
+          <div className="absolute -bottom-32 -left-16 w-[360px] h-[360px] rounded-full bg-brand-primary/30 blur-[100px] pointer-events-none" />
+          <div
+            className="absolute inset-0 opacity-[0.04] pointer-events-none"
+            style={{
+              backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+              backgroundSize: '28px 28px',
+            }}
+          />
 
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
             <div className="mb-12 sm:mb-16 max-w-2xl">
-              <p className="text-[11px] font-semibold text-brand-primary-dark uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+              <p className="text-[11px] font-semibold text-brand-gold uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                 <span className="w-8 h-px bg-brand-gold" />
                 Depoimentos
               </p>
               <h2
-                className="text-2xl sm:text-4xl font-bold leading-tight text-brand-ink"
+                className="text-2xl sm:text-4xl font-bold leading-tight text-white"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
                 Estudantes que já usam<br className="hidden sm:block" />
-                {' '}<span className="text-brand-primary">no dia a dia</span>.
+                {' '}<span className="text-brand-gold/90">no dia a dia</span>.
               </h2>
+              <div className="mt-5 h-px w-16 bg-gradient-to-r from-brand-gold to-transparent" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-10 divide-y divide-slate-200 md:divide-y-0 [&>article]:pt-10 md:[&>article]:pt-0 first:[&>article]:pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-10 divide-y divide-white/10 md:divide-y-0 [&>article]:pt-10 md:[&>article]:pt-0 first:[&>article]:pt-0">
               {/* Depoimento 1 — Alicia */}
               <article className="flex flex-col">
-                <p className="text-[15px] text-slate-700 leading-relaxed mb-6">
+                <p className="text-[15px] text-white/85 leading-relaxed mb-6">
                   A plataforma PreceptorMED é uma ferramenta fantástica para o auxílio nos estudos. Os resumos são bem estruturados e direcionados para os objetivos de aprendizagem do tema, além de que as fontes utilizadas são sempre relevantes. Particularmente, minha função preferida é a de geração de questões com base nos conteúdos, o que ajuda a reforçar os conhecimentos.
                 </p>
-                <div className="flex items-center gap-3 mt-auto pt-6">
+                <div className="flex items-center gap-3 mt-auto pt-6 border-t border-white/10">
                   <img
                     src="/alicia-cosendey.jpg"
                     alt="Alicia Cosendey"
@@ -607,48 +620,48 @@ const Landing = () => {
                     }}
                   />
                   <div
-                    className="w-10 h-10 rounded-full bg-[#005344] items-center justify-center text-white font-semibold text-xs"
+                    className="w-10 h-10 rounded-full bg-brand-gold/20 border border-brand-gold/30 items-center justify-center text-brand-gold font-semibold text-xs"
                     style={{ display: 'none' }}
                   >
                     AC
                   </div>
                   <div>
-                    <p className="font-semibold text-[#191c1d] text-sm" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                    <p className="font-semibold text-white text-sm" style={{ fontFamily: "'Manrope', sans-serif" }}>
                       Alicia Cosendey
                     </p>
-                    <p className="text-xs text-slate-500">Estudante de Medicina</p>
+                    <p className="text-xs text-white/55">Estudante de Medicina</p>
                   </div>
                 </div>
               </article>
 
               {/* Depoimento 2 — João */}
               <article className="flex flex-col">
-                <p className="text-[15px] text-slate-700 leading-relaxed mb-6">
+                <p className="text-[15px] text-white/85 leading-relaxed mb-6">
                   Eu não tenho dúvidas que o PreceptorMED é o futuro da medicina. As respostas oferecidas pela IA são de longe as mais detalhadas. Não somente isso, a plataforma sempre utiliza referências nas quais eu confio. Me surpreende também a constante expansão das ferramentas, que além de me ajudar nos estudos, também me auxilia na realização de trabalhos científicos.
                   <br /><br />
-                  <span className="font-semibold text-[#005344]">Se você tiver a oportunidade de assinar, assine.</span>
+                  <span className="font-semibold text-brand-gold">Se você tiver a oportunidade de assinar, assine.</span>
                 </p>
-                <div className="flex items-center gap-3 mt-auto pt-6">
-                  <div className="w-10 h-10 rounded-full bg-[#005344] flex items-center justify-center text-white font-semibold text-xs">
+                <div className="flex items-center gap-3 mt-auto pt-6 border-t border-white/10">
+                  <div className="w-10 h-10 rounded-full bg-brand-gold/20 border border-brand-gold/30 flex items-center justify-center text-brand-gold font-semibold text-xs">
                     JM
                   </div>
                   <div>
-                    <p className="font-semibold text-[#191c1d] text-sm" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                    <p className="font-semibold text-white text-sm" style={{ fontFamily: "'Manrope', sans-serif" }}>
                       João Miyake
                     </p>
-                    <p className="text-xs text-slate-500">Estudante de Medicina</p>
+                    <p className="text-xs text-white/55">Estudante de Medicina</p>
                   </div>
                 </div>
               </article>
 
               {/* Depoimento 3 — Matheus Milani */}
               <article className="flex flex-col">
-                <p className="text-[15px] text-slate-700 leading-relaxed mb-6">
+                <p className="text-[15px] text-white/85 leading-relaxed mb-6">
                   Minha experiência com a plataforma tem sido extremamente positiva. Os conteúdos são organizados, objetivos e atualizados, com linguagem acessível e foco prático — ajudam tanto na revisão teórica quanto na preparação para provas e atendimentos clínicos.
                   <br /><br />
-                  <span className="font-semibold text-[#005344]">O PreceptorMED se tornou uma ferramenta valiosa para minha formação médica.</span>
+                  <span className="font-semibold text-brand-gold">O PreceptorMED se tornou uma ferramenta valiosa para minha formação médica.</span>
                 </p>
-                <div className="flex items-center gap-3 mt-auto pt-6">
+                <div className="flex items-center gap-3 mt-auto pt-6 border-t border-white/10">
                   <img
                     src="/matheus-milani.jpg"
                     alt="Matheus Milani"
@@ -661,16 +674,16 @@ const Landing = () => {
                     }}
                   />
                   <div
-                    className="w-10 h-10 rounded-full bg-[#005344] items-center justify-center text-white font-semibold text-xs"
+                    className="w-10 h-10 rounded-full bg-brand-gold/20 border border-brand-gold/30 items-center justify-center text-brand-gold font-semibold text-xs"
                     style={{ display: 'none' }}
                   >
                     MM
                   </div>
                   <div>
-                    <p className="font-semibold text-[#191c1d] text-sm" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                    <p className="font-semibold text-white text-sm" style={{ fontFamily: "'Manrope', sans-serif" }}>
                       Matheus Milani
                     </p>
-                    <p className="text-xs text-slate-500">Estudante de Medicina</p>
+                    <p className="text-xs text-white/55">Estudante de Medicina</p>
                   </div>
                 </div>
               </article>
@@ -679,15 +692,23 @@ const Landing = () => {
         </section>
 
         {/* ─── Pricing ──────────────────────────────────── */}
-        <section id="precos" className="py-14 sm:py-24 bg-[#f3f4f5]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <section id="precos" className="relative py-14 sm:py-24 bg-white overflow-hidden">
+          {/* Gold line no topo da seção (assinatura) */}
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-gold/30 to-transparent" />
+          {/* Green wash decorativo */}
+          <div className="absolute -bottom-20 -left-20 w-96 h-96 rounded-full bg-brand-primary/[0.04] blur-3xl pointer-events-none" />
+
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
             <div className="mb-12 sm:mb-16 max-w-2xl">
-              <p className="text-sm text-[#006D5B] font-semibold mb-3">Planos</p>
+              <p className="text-[11px] font-semibold text-brand-primary-dark uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                <span className="w-8 h-px bg-brand-gold" />
+                Planos
+              </p>
               <h2
-                className="text-2xl sm:text-4xl font-bold leading-tight text-[#191c1d]"
+                className="text-2xl sm:text-4xl font-bold leading-tight text-brand-ink"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
-                Preço único, sem trava de aulas extras.
+                Preço único, sem trava <span className="text-brand-primary">de aulas extras</span>.
               </h2>
               <p className="text-base text-slate-600 leading-relaxed mt-4">
                 Acesso completo à plataforma desde o primeiro dia. Cancele quando quiser.
