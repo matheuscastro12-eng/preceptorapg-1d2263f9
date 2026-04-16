@@ -462,7 +462,7 @@ serve(async (req) => {
 
     // Parse and validate input
     const body = await req.json();
-    const { tema, objetivos, modo = "fechamento" } = body;
+    const { tema, objetivos, modo = "fechamento", secoes = {} } = body;
     
     // Validate tema
     if (!tema || typeof tema !== "string" || !tema.trim()) {
@@ -570,6 +570,54 @@ O estudante escreveu ${objetivosList.length} objetivo${objetivosList.length > 1 
 4. **Depois das secoes de objetivos**, continue a estrutura padrao normalmente (## 2. BASES MORFOFUNCIONAIS, ## 3. FISIOPATOLOGIA DETALHADA, etc.).
 
 5. Se um objetivo nao for estritamente medico/cientifico, responda academicamente o mais proximo possivel do que foi pedido — nao ignore.`;
+    }
+
+    // Secoes do resumo — o usuario pode optar por omitir algumas
+    if (secoes && typeof secoes === "object" && !Array.isArray(secoes) && sanitizedModo === "fechamento") {
+      const secaoLabels: Record<string, string> = {
+        anatomia: "Anatomia clinica",
+        histologia: "Histologia",
+        fisiologia: "Fisiologia normal (molecular e sistemica)",
+        embriologia: "Embriologia",
+        revisao_geral: "Revisao geral / introducao sintetica",
+        nosologia: "Classificacao / Nosologia",
+        epidemiologia: "Epidemiologia",
+        etiologia: "Etiologia",
+        fisiopatologia: "Fisiopatologia / Patogenia",
+        manifestacoes: "Manifestacoes clinicas / Semiologia",
+        diagnostico_exames: "Diagnostico e exames complementares",
+        tratamento: "Tratamento",
+        prognostico: "Prognostico e complicacoes",
+        prevencao: "Prevencao",
+      };
+
+      const ativas: string[] = [];
+      const desativadas: string[] = [];
+      for (const [key, label] of Object.entries(secaoLabels)) {
+        if (secoes[key] === true) ativas.push(label);
+        else if (secoes[key] === false) desativadas.push(label);
+      }
+
+      if (ativas.length > 0 || desativadas.length > 0) {
+        userPrompt += `
+
+# REGRA CRITICA — SECOES SELECIONADAS PELO ESTUDANTE (NAO VIOLAR)
+
+O estudante escolheu explicitamente quais secoes incluir e quais omitir neste resumo. Voce DEVE respeitar essa escolha.
+
+**SECOES A INCLUIR (${ativas.length}):**
+${ativas.length > 0 ? ativas.map(s => `- ${s}`).join("\n") : "Nenhuma"}
+
+**SECOES A OMITIR COMPLETAMENTE (${desativadas.length}):**
+${desativadas.length > 0 ? desativadas.map(s => `- ${s}`).join("\n") : "Nenhuma"}
+
+Regras:
+1. NAO inclua nenhuma secao marcada como "a omitir completamente" — nem mesmo como subsecao curta, nem como mencao, nem como resumo breve.
+2. Se o estudante desmarcou "Anatomia", por exemplo, NAO descreva anatomia em lugar nenhum do resumo (nem mesmo dentro de outras secoes como "Fisiopatologia").
+3. Se TODAS as secoes de bases morfofuncionais (anatomia/histologia/fisiologia/embriologia) estiverem desmarcadas, pule completamente a secao "## 2. BASES MORFOFUNCIONAIS".
+4. Mantenha a profundidade tecnica nas secoes que permanecerem — nao adicione conteudo redundante para compensar o que foi omitido.
+5. Os objetivos especificos do estudante (se houver) SEMPRE aparecem, mesmo que toquem em assuntos desmarcados.`;
+      }
     }
 
     // Chain-of-thought preamble

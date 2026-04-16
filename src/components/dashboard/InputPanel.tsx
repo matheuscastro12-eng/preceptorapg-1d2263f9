@@ -1,6 +1,6 @@
 import GenerationProgress from '@/components/GenerationProgress';
 import type { GenerationMode } from './ModeToggle';
-import { Loader2, Sparkles, Send, BookOpen, Target } from 'lucide-react';
+import { Loader2, Sparkles, Send, BookOpen, Target, Layers } from 'lucide-react';
 import logoIcon from '@/assets/logo-icon.png';
 
 interface InputPanelProps {
@@ -10,6 +10,8 @@ interface InputPanelProps {
   setObjetivos: (value: string) => void;
   modo: GenerationMode;
   setModo: (value: GenerationMode) => void;
+  secoes: Record<string, boolean>;
+  setSecoes: (value: Record<string, boolean>) => void;
   generating: boolean;
   hasStartedReceiving: boolean;
   isComplete: boolean;
@@ -21,9 +23,41 @@ interface InputPanelProps {
 const MAX_TEMA_LENGTH = 500;
 const MAX_OBJETIVOS_LENGTH = 2000;
 
+// Estrutura das seções — agrupadas
+const SECTION_GROUPS: {
+  title: string;
+  items: { key: string; label: string }[];
+}[] = [
+  {
+    title: 'Bases morfofuncionais',
+    items: [
+      { key: 'anatomia', label: 'Anatomia' },
+      { key: 'histologia', label: 'Histologia' },
+      { key: 'fisiologia', label: 'Fisiologia' },
+      { key: 'embriologia', label: 'Embriologia' },
+      { key: 'revisao_geral', label: 'Revisão geral' },
+    ],
+  },
+  {
+    title: 'Conteúdo clínico',
+    items: [
+      { key: 'nosologia', label: 'Classificação / Nosologia' },
+      { key: 'epidemiologia', label: 'Epidemiologia' },
+      { key: 'etiologia', label: 'Etiologia' },
+      { key: 'fisiopatologia', label: 'Fisiopatologia' },
+      { key: 'manifestacoes', label: 'Manifestações clínicas' },
+      { key: 'diagnostico_exames', label: 'Diagnóstico e exames' },
+      { key: 'tratamento', label: 'Tratamento' },
+      { key: 'prognostico', label: 'Prognóstico / Complicações' },
+      { key: 'prevencao', label: 'Prevenção' },
+    ],
+  },
+];
+
 const InputPanel = ({
   tema, setTema, objetivos, setObjetivos,
-  modo, setModo, generating, hasStartedReceiving,
+  modo, setModo, secoes, setSecoes,
+  generating, hasStartedReceiving,
   isComplete, onGenerate, canGenerate = true, cooldown = false,
 }: InputPanelProps) => {
   // Força modo sempre 'fechamento' (seminário removido)
@@ -35,6 +69,21 @@ const InputPanel = ({
     .split('\n')
     .map(s => s.trim())
     .filter(Boolean).length;
+
+  const totalSecoes = SECTION_GROUPS.reduce((acc, g) => acc + g.items.length, 0);
+  const secoesAtivas = SECTION_GROUPS.reduce((acc, g) => {
+    return acc + g.items.filter(i => secoes[i.key]).length;
+  }, 0);
+
+  const toggleSecao = (key: string) => {
+    setSecoes({ ...secoes, [key]: !secoes[key] });
+  };
+
+  const toggleGrupo = (groupItems: { key: string }[], ativar: boolean) => {
+    const patch: Record<string, boolean> = {};
+    groupItems.forEach(i => { patch[i.key] = ativar; });
+    setSecoes({ ...secoes, ...patch });
+  };
 
   return (
     // Wrapper com fundo verde sutil para destacar o form
@@ -129,11 +178,76 @@ const InputPanel = ({
           {/* Divisória sutil */}
           <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
-          {/* Step 3: Generate Button */}
+          {/* Step 3: Seções do resumo */}
+          <div>
+            <div className="flex items-start gap-3 mb-3">
+              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-brand-primary text-white flex items-center justify-center text-sm font-bold shadow-sm">
+                3
+              </div>
+              <div className="flex-1 min-w-0">
+                <label className="flex items-center gap-2 text-[15px] font-bold text-brand-ink mb-0.5">
+                  <Layers className="w-4 h-4 text-brand-primary" />
+                  Seções do resumo
+                  <span className="text-[10px] text-slate-400 font-medium">ative/desative</span>
+                </label>
+                <p className="text-xs text-brand-ink-2 leading-relaxed">
+                  Escolha o que vai aparecer. Seções desmarcadas são omitidas.{' '}
+                  <span className="font-semibold text-brand-primary-dark">{secoesAtivas}/{totalSecoes} ativas</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-5">
+              {SECTION_GROUPS.map((grupo) => {
+                const todasAtivas = grupo.items.every(i => secoes[i.key]);
+                const nenhumaAtiva = grupo.items.every(i => !secoes[i.key]);
+                return (
+                  <div key={grupo.title} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-xs font-bold text-brand-ink-2 uppercase tracking-wide">{grupo.title}</h4>
+                      <button
+                        type="button"
+                        onClick={() => toggleGrupo(grupo.items, !todasAtivas)}
+                        disabled={generating}
+                        className="text-[11px] font-semibold text-brand-primary hover:text-brand-primary-dark transition-colors disabled:opacity-40"
+                      >
+                        {todasAtivas ? 'Desmarcar todas' : nenhumaAtiva ? 'Marcar todas' : 'Marcar todas'}
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {grupo.items.map((item) => {
+                        const ativa = secoes[item.key];
+                        return (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => toggleSecao(item.key)}
+                            disabled={generating}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all disabled:opacity-40 ${
+                              ativa
+                                ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
+                                : 'bg-white text-brand-ink-2 border-slate-200 hover:border-brand-primary/40 hover:text-brand-primary-dark'
+                            }`}
+                          >
+                            {ativa ? '✓ ' : ''}{item.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Divisória sutil */}
+          <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+
+          {/* Step 4: Generate Button */}
           <div data-tour="generate-btn">
             <div className="flex items-start gap-3 mb-4">
               <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-brand-primary text-white flex items-center justify-center text-sm font-bold shadow-sm">
-                3
+                4
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[15px] font-bold text-brand-ink mb-0.5">Pronto para gerar</p>
@@ -142,12 +256,12 @@ const InputPanel = ({
             </div>
             <button
               onClick={onGenerate}
-              disabled={!canGenerate}
+              disabled={!canGenerate || secoesAtivas === 0}
               className="w-full py-4 sm:py-5 rounded-xl font-display font-bold text-[15px] text-white flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-xl group relative overflow-hidden"
-              style={{ background: canGenerate ? 'linear-gradient(135deg, #003D32 0%, #005344 50%, #006D5B 100%)' : '#94a3b8' }}
+              style={{ background: (canGenerate && secoesAtivas > 0) ? 'linear-gradient(135deg, #003D32 0%, #005344 50%, #006D5B 100%)' : '#94a3b8' }}
             >
               {/* Brilho decorativo no hover */}
-              {canGenerate && (
+              {canGenerate && secoesAtivas > 0 && (
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-brand-gold/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
               )}
               <div className="relative flex items-center gap-2.5">
@@ -155,6 +269,8 @@ const InputPanel = ({
                   <><Loader2 className="h-5 w-5 animate-spin" />Gerando conteúdo...</>
                 ) : cooldown ? (
                   <>Aguarde...</>
+                ) : secoesAtivas === 0 ? (
+                  <>Selecione ao menos 1 seção</>
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5 text-brand-gold" />

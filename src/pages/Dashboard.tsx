@@ -79,6 +79,24 @@ const Dashboard = () => {
   const [tema, setTema] = useState('');
   const [objetivos, setObjetivos] = useState('');
   const [modo, setModo] = useState<GenerationMode>('fechamento');
+  // Seções do resumo — todas marcadas por padrão
+  const DEFAULT_SECOES = {
+    nosologia: true,
+    epidemiologia: true,
+    anatomia: true,
+    histologia: true,
+    fisiologia: true,
+    embriologia: true,
+    revisao_geral: true,
+    etiologia: true,
+    fisiopatologia: true,
+    manifestacoes: true,
+    diagnostico_exames: true,
+    tratamento: true,
+    prognostico: true,
+    prevencao: true,
+  };
+  const [secoes, setSecoes] = useState<Record<string, boolean>>(DEFAULT_SECOES);
   const [resultado, setResultado] = useState('');
   const [generating, setGenerating] = useState(false);
   const [hasStartedReceiving, setHasStartedReceiving] = useState(false);
@@ -140,7 +158,7 @@ const Dashboard = () => {
       }
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-fechamento`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ tema, objetivos, modo }) }
+        { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ tema, objetivos, modo, secoes }) }
       );
       if (!response.ok) { const e = await response.json().catch(() => ({})); throw new Error(e.error || 'Erro ao gerar fechamento'); }
       const reader = response.body?.getReader();
@@ -564,6 +582,8 @@ const Dashboard = () => {
                   setObjetivos={setObjetivos}
                   modo={modo}
                   setModo={setModo}
+                  secoes={secoes}
+                  setSecoes={setSecoes}
                   generating={generating}
                   hasStartedReceiving={hasStartedReceiving}
                   isComplete={isComplete}
