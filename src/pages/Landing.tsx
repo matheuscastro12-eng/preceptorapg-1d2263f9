@@ -55,42 +55,84 @@ const Landing = () => {
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col" style={{ fontFamily: 'var(--font-body)' }}>
 
       {/* ─── Header ───────────────────────────────────── */}
-      <header className="bg-white/80 backdrop-blur-xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] sticky top-0 z-50">
-        <nav className="flex justify-between items-center w-full px-4 sm:px-6 md:px-12 py-3 sm:py-4 max-w-7xl mx-auto">
-          <div className="flex items-center gap-2">
-            <img src={logoIcon} alt="PreceptorMED" className="h-6 w-6 sm:h-7 sm:w-7" />
-            <span className="text-lg sm:text-2xl font-extrabold text-[#006D5B] tracking-tighter" style={{ fontFamily: "'Manrope', sans-serif" }}>
-              PreceptorMED
-            </span>
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200/60">
+        {/* Accent line — gold assinatura (mesma linguagem do sidebar + auth) */}
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-brand-gold/30 to-transparent" />
+
+        <nav className="flex justify-between items-center w-full px-4 sm:px-6 md:px-10 py-3 sm:py-4 max-w-7xl mx-auto">
+          {/* Logo + eyebrow */}
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-3 group"
+          >
+            <img
+              src={logoIcon}
+              alt="PreceptorMED"
+              className="h-8 w-8 sm:h-9 sm:w-9 transition-transform group-hover:scale-105"
+            />
+            <div className="flex flex-col leading-none">
+              <span
+                className="text-base sm:text-lg font-bold text-brand-ink tracking-tight"
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                PreceptorMED
+              </span>
+              <span className="hidden sm:inline-block text-[9px] font-semibold text-brand-gold/80 uppercase tracking-[0.16em] mt-1">
+                Curadoria acadêmica
+              </span>
+            </div>
+          </button>
+
+          {/* Nav links — compact, gap separators */}
+          <div className="hidden md:flex items-center divide-x divide-slate-200/60">
+            {[
+              { href: '#como-funciona', label: 'Como funciona' },
+              { href: '#recursos',      label: 'Recursos' },
+              { href: '#depoimentos',   label: 'Depoimentos' },
+              { href: '#precos',        label: 'Planos' },
+            ].map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                className="px-5 text-[13px] font-medium text-brand-ink-2 hover:text-brand-primary-dark transition-colors"
+              >
+                {l.label}
+              </a>
+            ))}
           </div>
 
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#como-funciona" className="text-slate-600 font-medium hover:text-[#006D5B] transition-colors duration-300 text-sm">Como funciona</a>
-            <a href="#recursos" className="text-slate-600 font-medium hover:text-[#006D5B] transition-colors duration-300 text-sm">Recursos</a>
-            <a href="#depoimentos" className="text-slate-600 font-medium hover:text-[#006D5B] transition-colors duration-300 text-sm">Depoimentos</a>
-            <a href="#precos" className="text-slate-600 font-medium hover:text-[#006D5B] transition-colors duration-300 text-sm">Planos</a>
-          </div>
-
+          {/* Right cluster */}
           {!loading && user ? (
             <div className="flex items-center gap-1 sm:gap-2">
-              <button onClick={() => navigate('/menu')}
-                className="px-3 sm:px-5 py-2 text-slate-600 font-semibold hover:text-[#006D5B] transition-colors text-xs sm:text-sm">
-                Meu Painel
+              <button
+                onClick={() => navigate('/menu')}
+                className="px-3 sm:px-4 py-2 text-sm font-semibold text-brand-ink-2 hover:text-brand-primary-dark transition-colors"
+              >
+                Meu painel
               </button>
               <ProfileDropdown userEmail={user.email || ''} onLogout={signOut} />
             </div>
           ) : (
-            <div className="flex items-center gap-2 sm:gap-4">
-              <button onClick={() => navigate('/auth')}
-                className="hidden sm:block px-5 py-2 text-slate-600 font-semibold hover:text-[#006D5B] transition-colors text-sm">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={() => navigate('/auth')}
+                className="hidden sm:block px-3 py-2 text-[13px] font-semibold text-brand-ink-2 hover:text-brand-primary-dark transition-colors"
+              >
                 Entrar
               </button>
-              <button onClick={() => navigate('/auth?tab=signup')}
-                className="hidden sm:block px-4 sm:px-6 py-2 sm:py-2.5 bg-[#006D5B] text-white rounded-lg font-bold shadow-lg hover:bg-[#005344] active:scale-95 transition-all text-xs sm:text-sm">
-                Começar agora
+              <button
+                onClick={() => navigate('/auth?tab=signup')}
+                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-brand-primary-dark text-white text-[13px] font-semibold rounded-md hover:bg-brand-primary-darker transition-colors"
+              >
+                Começar
+                <span className="text-brand-gold">→</span>
               </button>
               {/* Mobile hamburger */}
-              <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden p-2 text-slate-600 hover:text-[#006D5B]">
+              <button
+                onClick={() => setMobileMenu(!mobileMenu)}
+                className="md:hidden p-2 text-brand-ink-2 hover:text-brand-primary-dark transition-colors -mr-2"
+                aria-label="Menu"
+              >
                 {mobileMenu ? <XIcon className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
             </div>
@@ -99,14 +141,36 @@ const Landing = () => {
 
         {/* Mobile menu dropdown */}
         {mobileMenu && !user && (
-          <div className="md:hidden border-t border-slate-100 bg-white/95 backdrop-blur-xl px-4 py-4 space-y-3 animate-fade-in">
-            <a href="#como-funciona" onClick={() => setMobileMenu(false)} className="block py-2 text-sm font-medium text-slate-600 hover:text-[#006D5B]">Como funciona</a>
-            <a href="#recursos" onClick={() => setMobileMenu(false)} className="block py-2 text-sm font-medium text-slate-600 hover:text-[#006D5B]">Recursos</a>
-            <a href="#depoimentos" onClick={() => setMobileMenu(false)} className="block py-2 text-sm font-medium text-slate-600 hover:text-[#006D5B]">Depoimentos</a>
-            <a href="#precos" onClick={() => setMobileMenu(false)} className="block py-2 text-sm font-medium text-slate-600 hover:text-[#006D5B]">Planos</a>
-            <div className="pt-2 border-t border-slate-100 flex gap-3">
-              <button onClick={() => navigate('/auth')} className="flex-1 py-2.5 text-sm font-semibold text-[#006D5B] border border-[#006D5B]/20 rounded-lg hover:bg-[#006D5B]/5">Entrar</button>
-              <button onClick={() => navigate('/auth?tab=signup')} className="flex-1 py-2.5 text-sm font-bold text-white bg-[#006D5B] rounded-lg hover:bg-[#005344]">Criar conta</button>
+          <div className="md:hidden border-t border-slate-200/60 bg-white px-4 py-4 space-y-1 animate-fade-in">
+            {[
+              { href: '#como-funciona', label: 'Como funciona' },
+              { href: '#recursos',      label: 'Recursos' },
+              { href: '#depoimentos',   label: 'Depoimentos' },
+              { href: '#precos',        label: 'Planos' },
+            ].map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                onClick={() => setMobileMenu(false)}
+                className="block py-2.5 text-sm font-medium text-brand-ink-2 hover:text-brand-primary-dark"
+              >
+                {l.label}
+              </a>
+            ))}
+            <div className="pt-3 mt-2 border-t border-slate-200/60 flex gap-2">
+              <button
+                onClick={() => navigate('/auth')}
+                className="flex-1 py-2.5 text-sm font-semibold text-brand-primary-dark hover:bg-brand-primary/5 rounded-md transition-colors"
+              >
+                Entrar
+              </button>
+              <button
+                onClick={() => navigate('/auth?tab=signup')}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-white bg-brand-primary-dark hover:bg-brand-primary-darker rounded-md transition-colors"
+              >
+                Começar
+                <span className="text-brand-gold">→</span>
+              </button>
             </div>
           </div>
         )}
