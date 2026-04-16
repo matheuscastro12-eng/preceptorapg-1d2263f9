@@ -368,7 +368,7 @@ const Dashboard = () => {
                   {/* Disclaimer */}
                   {!generating && resultado && (
                     <p className="text-[10px] text-slate-400 leading-relaxed px-2">
-                      Conteúdo gerado por IA para fins educacionais. Pode conter imprecisões — valide com fontes primárias. Não substitui orientação médica. (CFM 2.338/2023)
+                      Conteúdo gerado por IA para fins educacionais. Pode conter imprecisões. Valide com fontes primárias. Não substitui orientação médica. (CFM 2.338/2023)
                     </p>
                   )}
 
@@ -505,7 +505,7 @@ const Dashboard = () => {
                 {/* Disclaimer */}
                 {!generating && resultado && (
                   <p className="text-[10px] text-slate-400 leading-relaxed px-2 mt-4">
-                    Conteúdo gerado por IA para fins educacionais. Pode conter imprecisões — valide com fontes primárias. Não substitui orientação médica. (CFM 2.338/2023)
+                    Conteúdo gerado por IA para fins educacionais. Pode conter imprecisões. Valide com fontes primárias. Não substitui orientação médica. (CFM 2.338/2023)
                   </p>
                 )}
 

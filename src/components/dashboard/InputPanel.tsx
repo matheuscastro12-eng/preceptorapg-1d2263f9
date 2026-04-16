@@ -20,13 +20,6 @@ interface InputPanelProps {
 const MAX_TEMA_LENGTH = 500;
 const MAX_OBJETIVOS_LENGTH = 2000;
 
-const suggestions = [
-  { label: 'Insuficiência Cardíaca', icon: '🫀' },
-  { label: 'Diabetes Mellitus Tipo 2', icon: '🩸' },
-  { label: 'Hipertensão Arterial', icon: '💊' },
-  { label: 'TDAH', icon: '🧠' },
-];
-
 const InputPanel = ({
   tema, setTema, objetivos, setObjetivos,
   modo, setModo, generating, hasStartedReceiving,
@@ -43,29 +36,43 @@ const InputPanel = ({
     .filter(Boolean).length;
 
   return (
-    <div className="relative">
-      {/* Borda decorativa superior — barra verde gradiente */}
-      <div className="absolute left-0 top-0 right-0 h-1 bg-gradient-to-r from-brand-primary via-brand-primary-dark to-brand-primary rounded-t-2xl" />
-
+    // Wrapper com fundo verde sutil para destacar o form
+    <div
+      className="relative rounded-3xl p-1.5 sm:p-2"
+      style={{
+        background: 'linear-gradient(135deg, rgba(0, 109, 91, 0.25) 0%, rgba(0, 83, 68, 0.15) 50%, rgba(201, 168, 76, 0.15) 100%)',
+      }}
+    >
       {/* Form Card principal */}
-      <div className="relative bg-white rounded-2xl border-2 border-brand-primary/15 overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,109,91,0.12)]">
-        {/* Decoração — canto superior direito sutil */}
-        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-brand-primary/5 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-brand-gold/5 blur-3xl pointer-events-none" />
+      <div className="relative bg-white rounded-[22px] overflow-hidden shadow-[0_12px_40px_-12px_rgba(0,109,91,0.25)]">
+        {/* Decorações sutis no canto */}
+        <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-brand-primary/5 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-brand-gold/5 blur-3xl pointer-events-none" />
 
-        <div className="relative p-5 sm:p-7 space-y-6">
+        <div className="relative p-6 sm:p-10 space-y-8">
+          {/* Cabeçalho interno do form */}
+          <div className="flex items-center gap-2.5 pb-5 border-b border-slate-100">
+            <div className="w-10 h-10 rounded-xl bg-brand-primary/10 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-brand-primary" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-brand-ink leading-tight">Gerar Resumo com IA</h3>
+              <p className="text-xs text-brand-ink-2 leading-tight">Preencha e deixe a IA estruturar para você.</p>
+            </div>
+          </div>
+
           {/* Step 1: Tema */}
           <div data-tour="tema-input">
-            <div className="flex items-start gap-3 mb-2.5">
-              <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-brand-primary text-white flex items-center justify-center text-xs font-bold">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-brand-primary text-white flex items-center justify-center text-sm font-bold shadow-sm">
                 1
               </div>
               <div className="flex-1 min-w-0">
-                <label className="flex items-center gap-2 text-sm font-bold text-brand-ink mb-0.5">
-                  <BookOpen className="w-3.5 h-3.5 text-brand-primary" />
+                <label className="flex items-center gap-2 text-[15px] font-bold text-brand-ink mb-0.5">
+                  <BookOpen className="w-4 h-4 text-brand-primary" />
                   Qual tema você quer estudar?
                 </label>
-                <p className="text-xs text-brand-ink-2">Nome do assunto principal — seja específico.</p>
+                <p className="text-xs text-brand-ink-2">Nome do assunto principal. Seja específico.</p>
               </div>
             </div>
             <input
@@ -74,27 +81,8 @@ const InputPanel = ({
               value={tema}
               onChange={(e) => setTema(e.target.value.slice(0, MAX_TEMA_LENGTH))}
               disabled={generating}
-              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-brand-ink placeholder:text-slate-400 focus:outline-none focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10 focus:bg-white transition-all text-[15px] font-medium disabled:opacity-50"
+              className="w-full px-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-brand-ink placeholder:text-slate-400 focus:outline-none focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10 focus:bg-white transition-all text-[15px] font-medium disabled:opacity-50"
             />
-
-            {/* Suggestions */}
-            {!tema && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide self-center mr-1">Sugestões:</span>
-                {suggestions.map((s) => (
-                  <button
-                    key={s.label}
-                    onClick={() => setTema(s.label)}
-                    disabled={generating}
-                    type="button"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-brand-ink-2 hover:border-brand-primary/40 hover:text-brand-primary-dark hover:bg-brand-primary/5 transition-all disabled:opacity-40"
-                  >
-                    <span>{s.icon}</span>
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            )}
 
             {tema.length > MAX_TEMA_LENGTH * 0.8 && (
               <p className="text-[10px] text-brand-ink-2 text-right mt-1">{tema.length}/{MAX_TEMA_LENGTH}</p>
@@ -106,18 +94,18 @@ const InputPanel = ({
 
           {/* Step 2: Objetivos */}
           <div data-tour="objetivos-input">
-            <div className="flex items-start gap-3 mb-2.5">
-              <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-brand-primary text-white flex items-center justify-center text-xs font-bold">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-brand-primary text-white flex items-center justify-center text-sm font-bold shadow-sm">
                 2
               </div>
               <div className="flex-1 min-w-0">
-                <label className="flex items-center gap-2 text-sm font-bold text-brand-ink mb-0.5">
-                  <Target className="w-3.5 h-3.5 text-brand-primary" />
+                <label className="flex items-center gap-2 text-[15px] font-bold text-brand-ink mb-0.5">
+                  <Target className="w-4 h-4 text-brand-primary" />
                   Objetivos específicos
                   <span className="text-[10px] text-slate-400 font-medium">opcional</span>
                 </label>
-                <p className="text-xs text-brand-ink-2">
-                  Cada linha vira uma seção própria — o resumo usa o <span className="font-semibold text-brand-primary-dark">texto exato que você escrever</span> como título.
+                <p className="text-xs text-brand-ink-2 leading-relaxed">
+                  Cada linha vira uma seção própria no resumo. A IA usa o <span className="font-semibold text-brand-primary-dark">texto exato que você escrever</span> como título da seção.
                 </p>
               </div>
             </div>
@@ -127,11 +115,12 @@ const InputPanel = ({
               onChange={(e) => setObjetivos(e.target.value.slice(0, MAX_OBJETIVOS_LENGTH))}
               disabled={generating}
               rows={4}
-              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-brand-ink placeholder:text-slate-400 focus:outline-none focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10 focus:bg-white transition-all text-sm font-medium resize-none disabled:opacity-50"
+              className="w-full px-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-brand-ink placeholder:text-slate-400 focus:outline-none focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10 focus:bg-white transition-all text-sm font-medium resize-none disabled:opacity-50"
             />
             {objetivosCount > 0 && (
-              <p className="text-[11px] text-brand-primary-dark font-semibold mt-1.5">
-                {objetivosCount} {objetivosCount === 1 ? 'objetivo' : 'objetivos'} {objetivosCount === 1 ? 'identificado' : 'identificados'}
+              <p className="text-xs text-brand-primary-dark font-semibold mt-2 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-primary" />
+                {objetivosCount} {objetivosCount === 1 ? 'objetivo identificado' : 'objetivos identificados'}
               </p>
             )}
           </div>
@@ -141,19 +130,19 @@ const InputPanel = ({
 
           {/* Step 3: Generate Button */}
           <div data-tour="generate-btn">
-            <div className="flex items-start gap-3 mb-3">
-              <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-brand-primary text-white flex items-center justify-center text-xs font-bold">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-brand-primary text-white flex items-center justify-center text-sm font-bold shadow-sm">
                 3
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-brand-ink mb-0.5">Pronto para gerar</p>
-                <p className="text-xs text-brand-ink-2">A IA leva ~20s para criar seu resumo completo.</p>
+                <p className="text-[15px] font-bold text-brand-ink mb-0.5">Pronto para gerar</p>
+                <p className="text-xs text-brand-ink-2">A IA leva cerca de 20 segundos para criar o resumo completo.</p>
               </div>
             </div>
             <button
               onClick={onGenerate}
               disabled={!canGenerate}
-              className="w-full py-4 rounded-xl font-display font-bold text-sm text-white flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg group relative overflow-hidden"
+              className="w-full py-4 sm:py-5 rounded-xl font-display font-bold text-[15px] text-white flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-xl group relative overflow-hidden"
               style={{ background: canGenerate ? 'linear-gradient(135deg, #003D32 0%, #005344 50%, #006D5B 100%)' : '#94a3b8' }}
             >
               {/* Brilho decorativo no hover */}
@@ -162,22 +151,22 @@ const InputPanel = ({
               )}
               <div className="relative flex items-center gap-2.5">
                 {generating ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" />Gerando conteúdo...</>
+                  <><Loader2 className="h-5 w-5 animate-spin" />Gerando conteúdo...</>
                 ) : cooldown ? (
                   <>Aguarde...</>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4 text-brand-gold" />
+                    <Sparkles className="w-5 h-5 text-brand-gold" />
                     Gerar Resumo com IA
-                    <Send className="w-3.5 h-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
+                    <Send className="w-4 h-4 opacity-70 group-hover:translate-x-0.5 transition-transform" />
                   </>
                 )}
               </div>
             </button>
 
             {generating && (
-              <div className="mt-3">
-                <p className="text-[10px] text-brand-ink-2 text-center mb-1.5">
+              <div className="mt-4">
+                <p className="text-[11px] text-brand-ink-2 text-center mb-2">
                   Não feche a página durante a geração.
                 </p>
                 <GenerationProgress
