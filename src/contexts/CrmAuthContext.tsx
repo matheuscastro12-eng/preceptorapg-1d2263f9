@@ -18,6 +18,8 @@ interface CrmAuthContextType {
   logout: () => void;
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ error?: string }>;
   updateUsername: (newUsername: string) => Promise<{ error?: string }>;
+  /** Garante que a sessão Supabase CRM está válida. Re-autentica silenciosamente se expirada. */
+  ensureSupabaseSession: () => Promise<boolean>;
   isSuperAdmin: boolean;
   isAdmin: boolean;
   isEditor: boolean;
@@ -52,9 +54,52 @@ export function useCrmAuth() {
   return ctx;
 }
 
+/** Verifica se a sessão Supabase CRM está válida com margem de 60s. */
+async function isCrmSupabaseSessionFresh(): Promise<boolean> {
+  try {
+    const { data } = await supabaseCrm.auth.getSession();
+    const session = data?.session;
+    if (!session) return false;
+    const nowSec = Math.floor(Date.now() / 1000);
+    return !!(session.expires_at && session.expires_at > nowSec + 60);
+  } catch {
+    return false;
+  }
+}
+
+/** Pega credenciais do service account via crm-auth e re-autentica supabaseCrm. */
+async function reAuthSupabaseCrm(): Promise<boolean> {
+  try {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) return false;
+    const data = await crmApi({ action: "verify", token });
+    if (data?.svc?.e && data?.svc?.p) {
+      const { error } = await supabaseCrm.auth.signInWithPassword({
+        email: data.svc.e,
+        password: data.svc.p,
+      });
+      if (error) {
+        console.warn("CRM service re-auth failed:", error.message);
+        return false;
+      }
+      return true;
+    }
+    return false;
+  } catch (e) {
+    console.warn("CRM re-auth request failed:", e);
+    return false;
+  }
+}
+
 export function CrmAuthProvider({ children }: { children: React.ReactNode }) {
   const [crmUser, setCrmUser] = useState<CrmUser | null>(null);
   const [loading, setLoading] = useState(true);
+
+  /** Exportada via context. Verifica e re-autentica se necessário. Retorna true se session está válida. */
+  const ensureSupabaseSession = React.useCallback(async (): Promise<boolean> => {
+    if (await isCrmSupabaseSessionFresh()) return true;
+    return await reAuthSupabaseCrm();
+  }, []);
 
   // Restore + verify session from server
   useEffect(() => {
@@ -73,17 +118,9 @@ export function CrmAuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem(SESSION_KEY, JSON.stringify(user));
 
           // Ensure supabaseCrm is authenticated BEFORE setting user (which triggers children to render)
-          // Importante: checar tambem se a sessao esta expirada — Supabase JWT
-          // padrao tem 1h de vida. Depois de um refresh com sessao expirada,
-          // getSession() retorna o token velho mas queries batem em RLS quebrada.
           try {
-            const { data: crmSession } = await supabaseCrm.auth.getSession();
-            const session = crmSession?.session;
-            const nowSec = Math.floor(Date.now() / 1000);
-            // Considera expirado se falta < 60s para expirar (margem de seguranca)
-            const isExpired = !session || (session.expires_at ? session.expires_at < nowSec + 60 : true);
-
-            if (isExpired && data.svc?.e && data.svc?.p) {
+            const fresh = await isCrmSupabaseSessionFresh();
+            if (!fresh && data.svc?.e && data.svc?.p) {
               const { error } = await supabaseCrm.auth.signInWithPassword({
                 email: data.svc.e,
                 password: data.svc.p,
@@ -117,6 +154,28 @@ export function CrmAuthProvider({ children }: { children: React.ReactNode }) {
     };
     restore();
   }, []);
+
+  // Auto-refresh periódico da session Supabase CRM (Supabase JWT dura 1h).
+  // Roda a cada 25min para sempre ter margem antes do vencimento.
+  useEffect(() => {
+    if (!crmUser) return;
+    const interval = setInterval(() => {
+      ensureSupabaseSession().catch(() => {});
+    }, 25 * 60 * 1000); // 25 min
+    return () => clearInterval(interval);
+  }, [crmUser, ensureSupabaseSession]);
+
+  // Revalida session quando a aba volta a ficar visível (user veio de outra aba ou despertou PC)
+  useEffect(() => {
+    if (!crmUser) return;
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        ensureSupabaseSession().catch(() => {});
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [crmUser, ensureSupabaseSession]);
 
   const login = async (username: string, password: string) => {
     try {
@@ -187,6 +246,7 @@ export function CrmAuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <CrmAuthContext.Provider value={{
       crmUser, loading, login, logout, changePassword, updateUsername,
+      ensureSupabaseSession,
       isSuperAdmin: role === "super_admin",
       isAdmin: role === "super_admin" || role === "admin",
       isEditor: role === "super_admin" || role === "admin" || role === "editor",

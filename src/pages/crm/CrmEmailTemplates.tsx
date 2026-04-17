@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/crm/supabase";
+import { useCrmAuth } from "@/contexts/CrmAuthContext";
 import { Mail, Save, Eye, Loader2, FileText, Check, Settings, X, Image as ImageIcon, RefreshCw, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import RichTextEditor from "@/components/crm/RichTextEditor";
@@ -50,6 +51,7 @@ const wrapWithBrand = (body: string, b: BrandSettings) => {
 };
 
 export default function CrmEmailTemplates() {
+  const { ensureSupabaseSession } = useCrmAuth();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
@@ -68,6 +70,7 @@ export default function CrmEmailTemplates() {
 
   const load = async () => {
     setLoading(true);
+    await ensureSupabaseSession();
     const [tplRes, brandRes] = await Promise.all([
       supabase.from("crm_email_templates").select("*").order("label"),
       supabase.from("crm_email_settings").select("*").limit(1).maybeSingle(),
@@ -150,6 +153,7 @@ export default function CrmEmailTemplates() {
       return;
     }
     setCreating(true);
+    await ensureSupabaseSession();
     const { error, data } = await supabase.from("crm_email_templates").insert({
       trigger_name: key,
       label: createDraft.label.trim(),
@@ -175,6 +179,7 @@ export default function CrmEmailTemplates() {
 
   const deleteTemplate = async (triggerName: string, label: string) => {
     if (!confirm(`Apagar o template "${label}"? Essa acao nao pode ser desfeita.`)) return;
+    await ensureSupabaseSession();
     const { error, data } = await supabase.from("crm_email_templates").delete().eq("trigger_name", triggerName).select();
     if (error) {
       toast.error("Erro: " + error.message);
@@ -190,6 +195,7 @@ export default function CrmEmailTemplates() {
   const handleSave = async () => {
     if (!selected) return;
     setSaving(true);
+    await ensureSupabaseSession();
     // IMPORTANTE: usar .select() depois do .update() — sem isso, supabase-js
     // retorna sucesso mesmo quando RLS bloqueia e 0 rows foram afetadas.
     const { data, error } = await supabase
