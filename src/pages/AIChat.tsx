@@ -277,11 +277,10 @@ const AIChat = () => {
                       <img src={logoIcon} alt="PreceptorMED" className="h-8 w-8" />
                     </div>
                   )}
-                  <div className={`max-w-[85%] sm:max-w-[75%] group/msg ${
-                    m.role === 'user'
-                      ? 'px-4 py-3 rounded-2xl rounded-br-md text-white text-sm'
-                      : 'bg-white border border-slate-100 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm'
-                  }`} style={m.role === 'user' ? { background: 'linear-gradient(135deg, #126b62, #005e56)' } : {}}>
+                  <div
+                    className={`group/msg pmed-bubble ${m.role === 'user' ? 'pmed-bubble--user' : 'pmed-bubble--ai'}`}
+                    style={{ maxWidth: m.role === 'user' ? '75%' : '85%' }}
+                  >
                     {m.role === 'assistant' ? (
                       <>
                         {!m.content && isStreaming && m.id === messages[messages.length - 1]?.id && (

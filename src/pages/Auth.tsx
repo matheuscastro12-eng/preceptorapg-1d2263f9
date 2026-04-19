@@ -321,18 +321,21 @@ const Auth = () => {
                   className="space-y-5"
                 >
                   {migrationWarning && (
-                    <div className="rounded-lg bg-red-50 border border-red-200 p-4 space-y-2">
-                      <p className="text-sm font-semibold text-red-700">Senha não reconhecida</p>
-                      <p className="text-xs text-red-600 leading-relaxed">
-                        Recentemente migramos a plataforma para uma nova infraestrutura. Se você já tinha conta, sua senha anterior não foi transferida. Clique em <strong>"Esqueci minha senha"</strong> para criar uma nova.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => { setShowForgotPassword(true); setForgotEmail(loginEmail); }}
-                        className="text-xs font-semibold text-red-700 underline underline-offset-2 hover:text-red-900 transition-colors"
-                      >
-                        Redefinir minha senha agora
-                      </button>
+                    <div className="pmed-alert pmed-alert--danger">
+                      <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>error</span>
+                      <div>
+                        <strong>Senha não reconhecida</strong>
+                        <span className="block text-xs leading-relaxed mb-2">
+                          Recentemente migramos a plataforma para uma nova infraestrutura. Se você já tinha conta, sua senha anterior não foi transferida. Clique em <strong>"Esqueci minha senha"</strong> para criar uma nova.
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => { setShowForgotPassword(true); setForgotEmail(loginEmail); }}
+                          className="text-xs font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity"
+                        >
+                          Redefinir minha senha agora
+                        </button>
+                      </div>
                     </div>
                   )}
 

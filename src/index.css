@@ -329,6 +329,156 @@
   margin: 12px 0 8px;
 }
 
+/* ──────────────────────────────────────────────────────────
+   Chat bubbles (09-data-content.html spec)
+   ────────────────────────────────────────────────────────── */
+.pmed-chat {
+  background: linear-gradient(180deg, var(--pmed-surface-2), #fff);
+  border: 1px solid var(--pmed-hairline);
+  border-radius: 14px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.pmed-bubble {
+  padding: 12px 16px;
+  border-radius: 14px;
+  max-width: 85%;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.pmed-bubble--user {
+  align-self: flex-end;
+  background: rgb(var(--brand-primary-dark));
+  color: #fff;
+  border-radius: 14px 14px 4px 14px;
+}
+.pmed-bubble--ai {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid var(--pmed-hairline);
+  color: rgb(var(--brand-ink-2));
+  border-radius: 14px 14px 14px 4px;
+  box-shadow: var(--pmed-shadow-xs);
+}
+.pmed-bubble__srcs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--pmed-hairline);
+}
+.pmed-bubble__time {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  opacity: 0.55;
+  margin-top: 6px;
+}
+
+/* ──────────────────────────────────────────────────────────
+   KPI strip (09-data-content.html spec)
+   ────────────────────────────────────────────────────────── */
+.pmed-kpi {
+  display: grid;
+  grid-template-columns: repeat(var(--kpi-cols, 4), 1fr);
+  gap: 1px;
+  background: var(--pmed-hairline);
+  border: 1px solid var(--pmed-hairline);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.pmed-kpi__item {
+  background: #fff;
+  padding: 16px 18px;
+}
+.pmed-kpi__lbl {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--pmed-ink-3);
+}
+.pmed-kpi__val {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  color: rgb(var(--brand-ink));
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+.pmed-kpi__val small {
+  font-size: 12px;
+  color: var(--pmed-ink-3);
+  font-weight: 500;
+  margin-left: 4px;
+}
+.pmed-kpi__delta {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.pmed-kpi__delta--up   { color: rgb(var(--brand-primary)); }
+.pmed-kpi__delta--down { color: #b5574e; }
+.pmed-kpi__delta--flat { color: var(--pmed-ink-3); }
+
+/* ──────────────────────────────────────────────────────────
+   Alerts (09-data-content.html spec)
+   border-left 3px + fundo tintado suave
+   ────────────────────────────────────────────────────────── */
+.pmed-alert {
+  padding: 14px 18px;
+  border-radius: 10px;
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  border-left: 3px solid;
+}
+.pmed-alert strong {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: 600;
+  color: rgb(var(--brand-ink));
+  font-size: 13px;
+}
+.pmed-alert .material-symbols-outlined {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.pmed-alert--success {
+  background: #f1faf5;
+  border-color: rgb(var(--brand-primary));
+  color: #2b4b43;
+}
+.pmed-alert--success .material-symbols-outlined { color: rgb(var(--brand-primary)); }
+
+.pmed-alert--warning {
+  background: #fdf7e8;
+  border-color: rgb(var(--brand-gold));
+  color: #6e5a21;
+}
+.pmed-alert--warning .material-symbols-outlined { color: var(--pmed-gold-deep); }
+
+.pmed-alert--danger {
+  background: #fdf1ef;
+  border-color: #b5574e;
+  color: #7a3a32;
+}
+.pmed-alert--danger .material-symbols-outlined { color: #b5574e; }
+
+.pmed-alert--info {
+  background: #f1f6fd;
+  border-color: #3e6aad;
+  color: #2b4078;
+}
+.pmed-alert--info .material-symbols-outlined { color: #3e6aad; }
+
 /* ── Design System patterns — .pmed-* utility classes ───── */
 .pmed-eyebrow {
   font-size: 11px;
