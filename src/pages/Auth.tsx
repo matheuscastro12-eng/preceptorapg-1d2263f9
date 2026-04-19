@@ -140,7 +140,7 @@ const Auth = () => {
           ═══════════════════════════════════════════════ */}
       <aside
         className="hidden lg:flex lg:w-[48%] xl:w-[52%] relative flex-col justify-between overflow-hidden text-white"
-        style={{ background: 'linear-gradient(168deg, #003326 0%, #00473c 45%, #005344 100%)' }}
+        style={{ background: 'var(--pmed-gradient-primary)' }}
       >
         {/* Grain texture overlay */}
         <div

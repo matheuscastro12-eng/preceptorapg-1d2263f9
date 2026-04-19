@@ -342,7 +342,7 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
     <div className="min-h-screen bg-[#f8f9fa] text-[#191c1d] antialiased">
 
       {/* Sidebar — Desktop */}
-      <aside className="hidden lg:flex flex-col h-screen w-64 fixed left-0 top-0 z-40 py-8 font-display" style={{ background: 'linear-gradient(160deg, #003D32 0%, #005344 50%, #006D5B 100%)' }}>
+      <aside className="hidden lg:flex flex-col h-screen w-64 fixed left-0 top-0 z-40 py-8 font-display" style={{ background: 'var(--pmed-gradient-sidebar)' }}>
         {sidebarContent}
       </aside>
 
@@ -350,7 +350,7 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-[60]">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-          <aside className="absolute left-0 top-0 h-full w-64 shadow-2xl flex flex-col py-8 animate-slide-in-left font-display" style={{ background: 'linear-gradient(160deg, #003D32 0%, #005344 50%, #006D5B 100%)' }}>
+          <aside className="absolute left-0 top-0 h-full w-64 shadow-2xl flex flex-col py-8 animate-slide-in-left font-display" style={{ background: 'var(--pmed-gradient-sidebar)' }}>
             {sidebarContent}
           </aside>
         </div>

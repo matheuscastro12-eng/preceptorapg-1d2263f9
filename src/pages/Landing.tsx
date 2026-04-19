@@ -259,7 +259,7 @@ const Landing = () => {
         <section
           id="recursos"
           className="relative py-16 sm:py-28 overflow-hidden"
-          style={{ background: 'linear-gradient(160deg, #003326 0%, #00473c 45%, #005344 100%)' }}
+          style={{ background: 'var(--pmed-gradient-primary)' }}
         >
           {/* Decorações sutis — gold glow + noise */}
           <div className="absolute -top-32 -right-32 w-[420px] h-[420px] rounded-full bg-brand-gold/10 blur-[120px] pointer-events-none" />
@@ -613,7 +613,7 @@ const Landing = () => {
         <section
           id="depoimentos"
           className="relative py-16 sm:py-28 overflow-hidden"
-          style={{ background: 'linear-gradient(160deg, #003326 0%, #00473c 45%, #005344 100%)' }}
+          style={{ background: 'var(--pmed-gradient-primary)' }}
         >
           {/* Decorações sutis */}
           <div className="absolute -top-32 -right-32 w-[420px] h-[420px] rounded-full bg-brand-gold/10 blur-[120px] pointer-events-none" />
@@ -886,7 +886,7 @@ const Landing = () => {
         {/* ─── Final CTA ────────────────────────────────── */}
         <section
           className="relative py-16 sm:py-24 overflow-hidden"
-          style={{ background: 'linear-gradient(160deg, #003326 0%, #00473c 45%, #005344 100%)' }}
+          style={{ background: 'var(--pmed-gradient-primary)' }}
         >
           {/* Decorações sutis — mesma linguagem de Recursos e Depoimentos */}
           <div className="absolute -top-32 -right-32 w-[420px] h-[420px] rounded-full bg-brand-gold/10 blur-[120px] pointer-events-none" />

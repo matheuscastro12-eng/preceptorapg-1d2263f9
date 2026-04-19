@@ -20,9 +20,46 @@
     --brand-ink-2: 62 73 69;            /* #3E4945 — texto secundário */
     --brand-gold: 201 168 76;           /* #C9A84C — acento dourado */
 
+    /* ─── Design System extended tokens (match design system) ─── */
+    --pmed-primary-darkest: #003326;
+    --pmed-primary-mist:    #00473c;
+    --pmed-primary-soft:    rgba(0, 109, 91, 0.08);
+    --pmed-gold-deep:       #A8862E;
+    --pmed-gold-light:      #E0C068;
+    --pmed-gold-mist:       rgba(201, 168, 76, 0.15);
+    --pmed-mint-50:         #c8eade;
+    --pmed-mint-100:        #9df3dc;
+    --pmed-mint-ink:        #005143;
+    --pmed-mint-text:       #4c6a62;
+    --pmed-ink-3:           #6e7975;
+    --pmed-ink-4:           #9aa2a1;
+    --pmed-canvas:          #f8f9fa;
+    --pmed-surface-2:       #fafbfa;
+    --pmed-surface-3:       #f3f4f5;
+    --pmed-hairline:        #e7e8e9;
+    --pmed-border:          #e2e6e5;
+
+    /* Gradients */
+    --pmed-gradient-primary: linear-gradient(160deg, #003326 0%, #00473c 45%, #005344 100%);
+    --pmed-gradient-sidebar: linear-gradient(160deg, #003D32 0%, #005344 50%, #006D5B 100%);
+
+    /* Elevation — brand-tinted shadows */
+    --pmed-shadow-xs: 0 1px 2px 0 rgba(25,28,29,0.04);
+    --pmed-shadow-sm: 0 2px 8px rgba(0,0,0,0.03);
+    --pmed-shadow:    0 4px 24px -8px rgba(0,109,91,0.08), 0 1px 2px 0 rgba(25,28,29,0.04);
+    --pmed-shadow-md: 0 8px 32px -12px rgba(0,109,91,0.15), 0 1px 3px 0 rgba(25,28,29,0.04);
+    --pmed-shadow-lg: 0 16px 48px -12px rgba(0,109,91,0.25), 0 4px 12px -4px rgba(0,109,91,0.10);
+    --pmed-shadow-cta: 0 8px 24px -8px rgba(0,109,91,0.45), 0 2px 4px -1px rgba(0,109,91,0.20);
+    --pmed-shadow-gold: 0 4px 24px -8px rgba(201,168,76,0.22);
+
+    /* Tracking — editorial */
+    --pmed-track-eyebrow: 0.2em;
+    --pmed-track-tight: -0.02em;
+
     /* Font stacks — single source of truth */
     --font-display: 'Manrope', system-ui, -apple-system, sans-serif;
     --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
     /* Light — pure white canvas */
     --background: 0 0% 100%;
@@ -112,6 +149,41 @@
 .stagger-4 { animation-delay: 0.20s; }
 .stagger-5 { animation-delay: 0.25s; }
 .stagger-6 { animation-delay: 0.30s; }
+
+/* ── Design System patterns — .pmed-* utility classes ───── */
+.pmed-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--pmed-track-eyebrow);
+  color: rgb(var(--brand-primary-dark));
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.pmed-eyebrow::before {
+  content: "";
+  width: 28px;
+  height: 1px;
+  background: rgb(var(--brand-gold));
+}
+.pmed-eyebrow--gold {
+  color: rgb(var(--brand-gold));
+}
+.pmed-eyebrow--gold::before {
+  background: rgb(var(--brand-gold));
+}
+
+.pmed-gold-rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(var(--brand-gold)) 50%, transparent);
+}
+
+::selection {
+  background: rgba(201, 168, 76, 0.35);
+  color: rgb(var(--brand-ink));
+}
 
 /* ── Grain / noise texture — papel editorial ─────────────── */
 .texture-grain {
