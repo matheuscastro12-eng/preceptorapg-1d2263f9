@@ -358,36 +358,79 @@ const Dashboard = () => {
 
             {/* ── Content ── */}
             {viewMode === 'interactive' ? (
-              /* ═══ INTERACTIVE VIEW — Section Cards ═══ */
+              /* ═══ INTERACTIVE VIEW — pmed-summary com seções ═══ */
               <div className="grid grid-cols-12 gap-4 sm:gap-6 lg:gap-8">
                 {/* Main Article Column */}
                 <div className="col-span-12 lg:col-span-8 space-y-4 sm:space-y-6" ref={resultRef}>
-                  {/* Split into section cards */}
-                  {(() => {
-                    const sections = splitIntoSections(resultado);
-                    if (sections.length <= 1) {
-                      return (
-                        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-sm border-l-4 border-[#006D5B] animate-fade-up">
-                          <MarkdownRenderer content={resultado} isTyping={generating && resultado.length > 0} variant="rich" />
-                        </div>
-                      );
-                    }
-                    return sections.map((section, i) => (
-                      <div
-                        key={i}
-                        className={`bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 animate-fade-up ${
-                          i === 0 ? 'border-l-4 border-[#006D5B]' : 'border border-slate-100/60'
-                        }`}
-                        style={{ animationDelay: `${i * 0.08}s` }}
-                      >
-                        <MarkdownRenderer
-                          content={section.content}
-                          isTyping={generating && i === sections.length - 1 && resultado.length > 0}
-                          variant="rich"
-                        />
+                  {/* Summary wrapper editorial — ribbon + header + body unificados */}
+                  <article className="pmed-summary animate-fade-up">
+                    <header className="pmed-summary__head">
+                      <p className="pmed-eyebrow">
+                        {isSeminario ? 'Roteiro de seminário' : 'Fechamento gerado'}
+                      </p>
+                      <h2 className="pmed-editorial-title" style={{ fontSize: 'clamp(20px, 2.5vw, 26px)' }}>
+                        {tema}
+                      </h2>
+                      <div className="pmed-summary__meta">
+                        {isComplete && (
+                          <span>
+                            <span className="material-symbols-outlined">schedule</span>
+                            {readingTime} min de leitura
+                          </span>
+                        )}
+                        <span>
+                          <span className="material-symbols-outlined">category</span>
+                          {isSeminario ? 'Seminário acadêmico' : 'Fechamento de PBL'}
+                        </span>
+                        <span>
+                          <span className="material-symbols-outlined">auto_awesome</span>
+                          Gerado por IA
+                        </span>
                       </div>
-                    ));
-                  })()}
+                    </header>
+
+                    {/* Body — markdown herda estilos .pmed-summary__body (ver index.css) */}
+                    <div className="pmed-summary__body">
+                      {(() => {
+                        const sections = splitIntoSections(resultado);
+                        if (sections.length <= 1) {
+                          return (
+                            <MarkdownRenderer content={resultado} isTyping={generating && resultado.length > 0} />
+                          );
+                        }
+                        return sections.map((section, i) => (
+                          <MarkdownRenderer
+                            key={i}
+                            content={section.content}
+                            isTyping={generating && i === sections.length - 1 && resultado.length > 0}
+                          />
+                        ));
+                      })()}
+                    </div>
+
+                    {/* Footer com refs */}
+                    {isComplete && (
+                      <footer className="pmed-summary__foot">
+                        <div className="flex gap-2 flex-wrap">
+                          <span className="pmed-ref-chip">
+                            <span className="material-symbols-outlined">menu_book</span>
+                            Harrison
+                          </span>
+                          <span className="pmed-ref-chip">
+                            <span className="material-symbols-outlined">menu_book</span>
+                            Guyton
+                          </span>
+                          <span className="pmed-ref-chip">
+                            <span className="material-symbols-outlined">menu_book</span>
+                            UpToDate
+                          </span>
+                        </div>
+                        <span style={{ color: 'rgb(var(--brand-primary-dark))', fontWeight: 600 }}>
+                          Exporte em PDF acima ↑
+                        </span>
+                      </footer>
+                    )}
+                  </article>
 
                   {/* Dica de marca-texto */}
                   {isComplete && resultado && fechamentoId && (
