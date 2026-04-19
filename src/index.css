@@ -150,6 +150,185 @@
 .stagger-5 { animation-delay: 0.25s; }
 .stagger-6 { animation-delay: 0.30s; }
 
+/* ──────────────────────────────────────────────────────────
+   Generated Content Pattern (09-data-content.html spec)
+   Aplicado em fechamentos/resumos gerados pela IA
+   ────────────────────────────────────────────────────────── */
+
+/* Ribbon gold->primary no topo do container do resumo */
+.pmed-summary {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--pmed-hairline);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--pmed-shadow);
+}
+.pmed-summary::before {
+  content: "";
+  display: block;
+  height: 3px;
+  background: linear-gradient(90deg, var(--pmed-primary-darkest), rgb(var(--brand-primary)), rgb(var(--brand-gold)));
+}
+
+.pmed-summary__head {
+  padding: 24px 28px 22px;
+  border-bottom: 1px solid var(--pmed-hairline);
+}
+
+.pmed-summary__meta {
+  display: flex;
+  gap: 14px;
+  font-size: 11.5px;
+  color: var(--pmed-ink-3);
+  flex-wrap: wrap;
+}
+.pmed-summary__meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.pmed-summary__meta .material-symbols-outlined { font-size: 14px; }
+
+.pmed-summary__foot {
+  padding: 16px 28px;
+  background: var(--pmed-surface-2);
+  border-top: 1px solid var(--pmed-hairline);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  color: var(--pmed-ink-3);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pmed-ref-chip {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  background: #fff;
+  border: 1px solid var(--pmed-border);
+  padding: 3px 8px;
+  border-radius: 4px;
+  color: var(--pmed-ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.pmed-ref-chip .material-symbols-outlined {
+  font-size: 12px;
+  color: rgb(var(--brand-primary));
+}
+
+/* Rich markdown body — dentro de .pmed-summary__body ou .markdown-content */
+.pmed-summary__body {
+  padding: 24px 28px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgb(var(--brand-ink));
+}
+.pmed-summary__body p {
+  margin: 0 0 12px;
+  color: rgb(var(--brand-ink-2));
+}
+.pmed-summary__body h2,
+.pmed-summary__body h3,
+.pmed-summary__body h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: rgb(var(--brand-ink));
+  margin: 22px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--pmed-hairline);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pmed-summary__body h2 { font-size: 18px; margin-top: 26px; }
+.pmed-summary__body h3 { font-size: 16px; }
+.pmed-summary__body h4 { font-size: 15px; }
+.pmed-summary__body h2::before,
+.pmed-summary__body h3::before,
+.pmed-summary__body h4::before {
+  content: "";
+  width: 4px;
+  height: 14px;
+  background: rgb(var(--brand-gold));
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.pmed-summary__body strong {
+  color: rgb(var(--brand-ink));
+  font-weight: 600;
+}
+/* Destaque dourado em termos técnicos */
+.pmed-summary__body em,
+.pmed-summary__body .term {
+  font-style: normal;
+  background: rgba(201, 168, 76, 0.18);
+  padding: 0 3px;
+  border-radius: 2px;
+  color: rgb(var(--brand-ink));
+}
+.pmed-summary__body code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background: var(--pmed-primary-soft);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: rgb(var(--brand-primary-dark));
+}
+.pmed-summary__body ul,
+.pmed-summary__body ol {
+  margin: 0 0 14px;
+  padding-left: 22px;
+  color: rgb(var(--brand-ink-2));
+}
+.pmed-summary__body li {
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+
+/* Blockquote = Pérola clínica aside */
+.pmed-summary__body blockquote {
+  background: var(--pmed-surface-2);
+  border-left: 3px solid rgb(var(--brand-primary));
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-size: 13px;
+  border-radius: 0 6px 6px 0;
+  position: relative;
+}
+.pmed-summary__body blockquote::before {
+  content: "Pérola clínica";
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgb(var(--brand-primary-dark));
+  margin-bottom: 6px;
+}
+.pmed-summary__body blockquote p {
+  margin: 0;
+  font-size: 12.5px;
+  color: rgb(var(--brand-ink-2));
+  line-height: 1.55;
+}
+
+/* Editorial header (eyebrow + title + meta) para Dashboard etc */
+.pmed-editorial-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: rgb(var(--brand-ink));
+  margin: 12px 0 8px;
+}
+
 /* ── Design System patterns — .pmed-* utility classes ───── */
 .pmed-eyebrow {
   font-size: 11px;

@@ -521,30 +521,63 @@ const Dashboard = () => {
                 </div>
               </div>
             ) : (
-              /* ═══ DOCUMENT VIEW ═══ */
+              /* ═══ DOCUMENT VIEW — pmed-summary (design system spec) ═══ */
               <div className="max-w-4xl mx-auto">
-                <div
-                  ref={docRef}
-                  className="bg-white rounded-xl shadow-sm border border-slate-200/30 p-8 sm:p-12"
-                >
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-[#191c1d] mb-2 font-['Manrope']">
-                    {tema}
-                  </h1>
-                  <div className="flex flex-wrap gap-2 mb-8 pb-6 border-b border-slate-200/60">
-                    <span className="px-3 py-1 bg-[#c8eade] text-[#4c6a62] text-[11px] font-bold rounded-full uppercase">
-                      {isSeminario ? 'Seminário' : 'Resumo'}
-                    </span>
-                    {isComplete && (
-                      <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[11px] font-bold rounded-full uppercase">
-                        {readingTime} min de leitura
+                <article ref={docRef} className="pmed-summary">
+                  {/* Header editorial */}
+                  <header className="pmed-summary__head">
+                    <p className="pmed-eyebrow">
+                      {isSeminario ? 'Roteiro de seminário' : 'Fechamento gerado'}
+                    </p>
+                    <h1 className="pmed-editorial-title" style={{ fontSize: 'clamp(22px, 3vw, 30px)' }}>
+                      {tema}
+                    </h1>
+                    <div className="pmed-summary__meta">
+                      {isComplete && (
+                        <span>
+                          <span className="material-symbols-outlined">schedule</span>
+                          {readingTime} min de leitura
+                        </span>
+                      )}
+                      <span>
+                        <span className="material-symbols-outlined">category</span>
+                        {isSeminario ? 'Seminário acadêmico' : 'Fechamento de PBL'}
                       </span>
-                    )}
-                  </div>
+                      <span>
+                        <span className="material-symbols-outlined">auto_awesome</span>
+                        Gerado por IA
+                      </span>
+                    </div>
+                  </header>
 
-                  <div className="prose prose-sm max-w-none prose-headings:text-[#191c1d]">
+                  {/* Body */}
+                  <div className="pmed-summary__body">
                     <MarkdownRenderer content={resultado} isTyping={generating && resultado.length > 0} />
                   </div>
-                </div>
+
+                  {/* Footer com refs */}
+                  {isComplete && (
+                    <footer className="pmed-summary__foot">
+                      <div className="flex gap-2 flex-wrap">
+                        <span className="pmed-ref-chip">
+                          <span className="material-symbols-outlined">menu_book</span>
+                          Harrison
+                        </span>
+                        <span className="pmed-ref-chip">
+                          <span className="material-symbols-outlined">menu_book</span>
+                          Guyton
+                        </span>
+                        <span className="pmed-ref-chip">
+                          <span className="material-symbols-outlined">menu_book</span>
+                          UpToDate
+                        </span>
+                      </div>
+                      <span style={{ color: 'rgb(var(--brand-primary-dark))', fontWeight: 600 }}>
+                        Exporte em PDF acima ↑
+                      </span>
+                    </footer>
+                  )}
+                </article>
 
                 {/* Disclaimer */}
                 {!generating && resultado && (

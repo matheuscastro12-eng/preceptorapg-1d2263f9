@@ -183,153 +183,60 @@ const Landing = () => {
 
       <main className="flex-1">
 
-        {/* ─── Hero — editorial dark (design system spec) ───── */}
-        <section
-          className="relative overflow-hidden text-white"
-          style={{ background: 'var(--pmed-gradient-primary)' }}
-        >
-          {/* Gold glow top right */}
-          <div
-            className="absolute -top-40 -right-40 w-[520px] h-[520px] rounded-full pointer-events-none"
-            style={{
-              background: 'radial-gradient(closest-side, rgba(201,168,76,0.22), transparent 70%)',
-              filter: 'blur(20px)',
-            }}
-          />
-          {/* Primary glow bottom left */}
-          <div
-            className="absolute -left-16 -bottom-20 w-[260px] h-[260px] rounded-full pointer-events-none"
-            style={{ background: 'rgba(0,109,91,0.3)', filter: 'blur(80px)' }}
-          />
+        {/* ─── Hero ─────────────────────────────────────── */}
+        <section className="relative flex items-center min-h-[calc(100vh-65px)] py-10 sm:py-14 px-4 sm:px-6 lg:px-10 overflow-hidden">
+          {/* Dot grid decorativo no canto superior direito */}
+          <div className="absolute -top-10 right-0 w-[28rem] h-[28rem] pointer-events-none texture-dots-subtle" style={{ maskImage: 'radial-gradient(ellipse at top right, black 20%, transparent 75%)', WebkitMaskImage: 'radial-gradient(ellipse at top right, black 20%, transparent 75%)' }} />
+          {/* Glow gold no canto inferior esquerdo */}
+          <div className="absolute -bottom-32 -left-32 w-[32rem] h-[32rem] rounded-full bg-brand-gold/[0.08] blur-3xl pointer-events-none" />
+          {/* Glow primary no topo direito */}
+          <div className="absolute -top-20 -right-20 w-[28rem] h-[28rem] rounded-full bg-brand-primary/[0.05] blur-3xl pointer-events-none" />
+          {/* Gold divider no final da seção (separa de 'Recursos' verde) */}
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-gold/50 to-transparent" />
 
-          <div className="relative max-w-[1280px] mx-auto px-6 sm:px-10 pt-12 sm:pt-14 pb-16 sm:pb-20">
-            {/* Hero top bar — brand left + version right */}
-            <div className="flex items-start justify-between pb-10 sm:pb-12 mb-8 sm:mb-10 border-b border-white/10">
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-xl border border-white/15 bg-white/[0.08] flex items-center justify-center shrink-0">
-                  <img src={logoIcon} alt="" className="h-7 w-7 brightness-0 invert" />
-                </div>
-                <div>
-                  <div className="text-[17px] font-extrabold leading-none tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
-                    PreceptorMED
-                  </div>
-                  <div className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-brand-gold/90">
-                    Curadoria acadêmica
-                  </div>
-                </div>
-              </div>
-              <div
-                className="hidden sm:block text-right text-[11px] leading-[1.6] text-white/50 tabular-nums"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              >
-                <span className="text-white/90 font-medium">Para residência</span> · ENAMED · REVALIDA<br />
-                Chat com PubMed · Flashcards SM-2<br />
-                Biblioteca pessoal exportável
-              </div>
-            </div>
-
-            {/* Eyebrow */}
-            <p className="mb-5 sm:mb-6 text-[11px] font-bold uppercase tracking-[0.24em] inline-flex items-center gap-3.5" style={{ color: 'var(--pmed-gold-light)' }}>
-              <span className="w-8 h-px" style={{ background: 'rgb(var(--brand-gold))' }} />
-              Ritmo editorial · precisão acadêmica
-            </p>
-
-            {/* Title — design system 64px com <em> dourado */}
-            <h1
-              className="font-bold tracking-[-0.03em] leading-[1.02] mb-5 sm:mb-6 max-w-[18ch]"
-              style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2.25rem, 5vw + 0.5rem, 4rem)' }}
-            >
-              Estudo clínico que acompanha seu{' '}
-              <em
-                className="not-italic font-medium"
-                style={{ color: 'var(--pmed-gold-light)' }}
-              >
-                raciocínio
-              </em>
-              .
-            </h1>
-
-            {/* Lede */}
-            <p className="text-[16px] sm:text-[17px] leading-[1.6] text-white/75 max-w-[62ch] mb-8 sm:mb-10">
-              Resumos de PBL com fisiopatologia integrada, simulados ENAMED no padrão INEP e chat com busca automática no PubMed. Em português, no padrão do fechamento acadêmico brasileiro.
-            </p>
-
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-12 sm:mb-14">
-              <button
-                onClick={() => navigate('/auth?tab=signup')}
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg text-sm font-semibold text-brand-primary-darker transition-all active:scale-[0.98]"
-                style={{
-                  background: 'linear-gradient(145deg, #f7ecc8, #E0C068)',
-                  boxShadow: '0 8px 24px -8px rgba(201,168,76,0.45), 0 1px 2px 0 rgba(25,28,29,0.2)',
-                }}
-              >
-                Começar agora
-                <span>→</span>
-              </button>
-              <button
-                onClick={() => document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' })}
-                className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-lg text-sm font-semibold text-white/80 hover:text-white border border-white/15 hover:border-white/30 transition-colors"
-              >
-                Ver como funciona
-                <span className="text-brand-gold">→</span>
-              </button>
-            </div>
-
-            {/* Stats row — 4 colunas divididas */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 pt-8 border-t border-white/10">
-              {[
-                { n: '~20s', l: 'Resumo completo' },
-                { n: '5', l: 'Áreas ENAMED' },
-                { n: 'SM-2', l: 'Repetição espaçada' },
-                { n: 'PubMed', l: 'Busca com evidência' },
-              ].map((s, i) => (
-                <div
-                  key={s.l}
-                  className={`px-0 sm:pr-8 ${i < 3 ? 'sm:border-r border-white/10' : ''} ${i === 0 ? '' : 'sm:pl-8'} py-3 sm:py-0`}
-                >
-                  <div
-                    className="text-[30px] sm:text-[36px] font-bold leading-none tabular-nums tracking-[-0.02em]"
-                    style={{ fontFamily: 'var(--font-display)' }}
-                  >
-                    {s.n}
-                  </div>
-                  <div className="mt-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-white/50">
-                    {s.l}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ─── Video showcase — white section abaixo do hero ───── */}
-        <section className="relative py-16 sm:py-24 bg-white overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-gold/30 to-transparent" />
-          <div className="absolute -top-20 -right-20 w-[420px] h-[420px] rounded-full bg-brand-primary/[0.04] blur-3xl pointer-events-none" />
-
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
-            <Reveal as="div" className="max-w-2xl mb-10 sm:mb-12">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand-primary-dark mb-4 flex items-center gap-2.5">
-                <span className="w-7 h-px bg-brand-gold" />
-                Veja o produto em ação
+          <div className="relative max-w-[1400px] mx-auto w-full flex flex-col lg:flex-row items-center gap-10 lg:gap-14 xl:gap-20">
+            <div className="lg:w-1/2 animate-fade-up">
+              <p className="mb-6 sm:mb-8 text-[11px] sm:text-xs font-semibold text-brand-primary-dark uppercase tracking-[0.2em] flex items-center gap-2">
+                <span className="w-10 h-px bg-brand-gold" />
+                Para estudantes de medicina brasileiros
               </p>
-              <h2
-                className="text-2xl sm:text-4xl font-bold tracking-[-0.02em] leading-tight text-brand-ink"
-                style={{ fontFamily: 'var(--font-display)' }}
+              <h1
+                className="text-3xl sm:text-5xl md:text-6xl lg:text-[3.75rem] xl:text-[4.25rem] font-bold leading-[1.08] mb-6 sm:mb-8 tracking-[-0.02em] text-brand-ink"
+                style={{ fontFamily: "'Manrope', sans-serif" }}
               >
-                Um tema.{' '}
-                <span className="text-brand-primary">Um resumo completo.</span>{' '}
-                Vinte segundos.
-              </h2>
-            </Reveal>
-
-            <Reveal as="div" delay={100}>
-              <Parallax speed={0.04}>
-                <div
-                  className="relative rounded-xl overflow-hidden border border-slate-200"
-                  style={{ boxShadow: 'var(--pmed-shadow-lg)' }}
+                Estudo clínico que acompanha seu <span className="text-brand-primary">raciocínio</span>.
+              </h1>
+              <p className="text-base sm:text-lg lg:text-xl text-slate-600 leading-[1.6] mb-8 sm:mb-10 max-w-2xl">
+                Resumos de PBL com fisiopatologia integrada, simulados ENAMED no padrão INEP e chat com busca automática no PubMed. Em português, para a formação médica brasileira.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <button
+                  onClick={() => navigate('/auth?tab=signup')}
+                  className="inline-flex items-center justify-center gap-2 px-7 lg:px-9 py-4 lg:py-5 bg-brand-primary-dark text-white text-sm lg:text-base font-semibold rounded-lg hover:bg-brand-primary-darker active:scale-[0.98] transition-all shadow-[0_8px_24px_-8px_rgba(0,109,91,0.45),0_2px_4px_-1px_rgba(0,109,91,0.20)] hover:shadow-[0_12px_32px_-8px_rgba(0,109,91,0.55),0_4px_8px_-2px_rgba(0,109,91,0.25)]"
                 >
+                  Começar agora
+                  <span className="text-brand-gold">→</span>
+                </button>
+                <button
+                  onClick={() => document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="px-6 lg:px-8 py-4 lg:py-5 text-brand-ink text-sm lg:text-base font-semibold hover:text-brand-primary-dark transition-colors text-center"
+                >
+                  Ver como funciona →
+                </button>
+              </div>
+
+              {/* Linha de prova */}
+              <div className="mt-10 sm:mt-12 flex items-center gap-4 text-[11px] sm:text-xs text-slate-500">
+                <span className="w-10 h-px bg-slate-300" />
+                <span className="uppercase tracking-[0.15em] font-semibold">
+                  ENAMED · REVALIDA · PubMed · SM-2
+                </span>
+              </div>
+            </div>
+
+            <Reveal as="div" direction="left" distance={32} delay={120} className="lg:w-1/2 relative w-full">
+              <Parallax speed={0.06}>
+                <div className="relative z-10 rounded-xl overflow-hidden border border-slate-200 shadow-[0_24px_60px_-20px_rgba(0,109,91,0.35),0_8px_20px_-8px_rgba(0,109,91,0.20),0_1px_3px_0_rgba(25,28,29,0.08)]">
                   <video
                     src="/video-lp.mp4"
                     autoPlay
@@ -341,6 +248,9 @@ const Landing = () => {
                   />
                 </div>
               </Parallax>
+              {/* Decoração sutil — blur verde atrás do video */}
+              <div className="absolute -bottom-8 -right-8 w-64 h-64 rounded-full bg-brand-primary/10 blur-3xl pointer-events-none -z-0" />
+              <div className="absolute -top-8 -left-8 w-48 h-48 rounded-full bg-brand-gold/10 blur-3xl pointer-events-none -z-0" />
             </Reveal>
           </div>
         </section>
