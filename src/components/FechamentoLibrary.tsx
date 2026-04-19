@@ -182,21 +182,21 @@ const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
         </div>
       </div>
 
-      {/* Content */}
+      {/* Content — grid responsivo */}
       {loading ? (
-        <div className="rounded-xl border border-slate-100 overflow-hidden divide-y divide-slate-50 bg-white shadow-sm">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center gap-4 px-4 py-3.5 animate-pulse">
-              <div className="h-8 w-8 rounded-lg bg-surface-container-high shrink-0" />
-              <div className="flex-1 space-y-2">
-                <div className="h-3 w-1/3 rounded bg-surface-container-high" />
-                <div className="h-2.5 w-1/2 rounded bg-surface-container" />
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="animate-pulse bg-white border border-slate-100 rounded-xl p-5 h-[180px]">
+              <div className="h-8 w-8 rounded-lg bg-slate-100 mb-3" />
+              <div className="h-3 w-3/4 rounded bg-slate-100 mb-2" />
+              <div className="h-2.5 w-1/2 rounded bg-slate-100 mb-4" />
+              <div className="h-2 w-full rounded bg-slate-50" />
+              <div className="h-2 w-5/6 rounded bg-slate-50 mt-1" />
             </div>
           ))}
         </div>
       ) : filteredFechamentos.length === 0 ? (
-        <div className="py-20 text-center text-muted-foreground">
+        <div className="py-20 text-center text-brand-ink-2">
           <Library className="h-10 w-10 mx-auto mb-4 opacity-20" strokeWidth={1} />
           <p className="text-sm font-medium">
             {searchTerm || showFavoritesOnly || selectedType !== 'all'
@@ -204,70 +204,81 @@ const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
               : 'Nenhum conteúdo salvo ainda.'}
           </p>
           {!searchTerm && !showFavoritesOnly && selectedType === 'all' && (
-            <p className="text-xs text-muted-foreground/60 mt-1">Gere resumos ou simulados para começar.</p>
+            <p className="text-xs text-slate-400 mt-1">Gere resumos ou simulados para começar.</p>
           )}
         </div>
       ) : (
-        <div className="rounded-xl border border-slate-100 overflow-hidden divide-y divide-slate-50 bg-white shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredFechamentos.map((fechamento, index) => {
             const typeConfig = getTypeConfig(fechamento.tipo);
             return (
-              <motion.div
+              <motion.article
                 key={fechamento.id}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: Math.min(index * 0.04, 0.4), duration: 0.3, ease: 'easeOut' }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(index * 0.03, 0.3), duration: 0.3, ease: 'easeOut' }}
+                onClick={() => onSelect(fechamento)}
+                className="group relative flex flex-col bg-white border border-slate-200 rounded-xl p-5 cursor-pointer transition-all hover:border-brand-primary/30 hover:shadow-[0_8px_24px_-8px_rgba(0,109,91,0.15)] hover:-translate-y-0.5 min-h-[180px]"
               >
-                <div
-                  className={`group relative flex items-center gap-4 px-4 py-3.5 hover:bg-emerald-50/40 transition-all duration-200 cursor-pointer border-l-2 ${typeConfig.border}`}
-                  onClick={() => onSelect(fechamento)}
-                >
-                  {/* Icon */}
-                  <div className={`h-8 w-8 rounded-lg ${typeConfig.bg} flex items-center justify-center shrink-0 ${typeConfig.color} transition-transform duration-200 group-hover:scale-110`}>
+                {/* Ribbon gold no topo (assinatura editorial do design system) */}
+                <span
+                  className="absolute top-0 left-5 right-5 h-[2px] rounded-b-sm"
+                  style={{ background: 'linear-gradient(90deg, rgb(var(--brand-primary-darker)), rgb(var(--brand-primary)), rgb(var(--brand-gold)))' }}
+                />
+
+                {/* Header: ícone do tipo + ações */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className={`h-9 w-9 rounded-lg ${typeConfig.bg} flex items-center justify-center ${typeConfig.color} transition-transform duration-200 group-hover:scale-110`}>
                     {typeConfig.icon}
                   </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-[13px] font-semibold truncate group-hover:text-emerald-700 transition-colors duration-200">
-                        {fechamento.tema}
-                      </p>
-                      {fechamento.favorito && (
-                        <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className={`text-[11px] font-medium ${typeConfig.color}`}>{typeConfig.label}</span>
-                      <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {format(new Date(fechamento.created_at), "dd MMM yyyy", { locale: ptBR })}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground/60 mt-1 line-clamp-1 hidden sm:block">
-                      {fechamento.resultado.replace(/[#*`>-]/g, '').slice(0, 120)}
-                    </p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-200 shrink-0">
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                      className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-amber-400 hover:bg-amber-50 transition-all duration-200 active:scale-95"
+                      className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-amber-400 hover:bg-amber-50 transition-all active:scale-95"
                       onClick={(e) => toggleFavorite(e, fechamento.id, fechamento.favorito)}
+                      title={fechamento.favorito ? 'Desfavoritar' : 'Favoritar'}
                     >
-                      <Star className={`h-3.5 w-3.5 transition-transform duration-200 hover:scale-110 ${fechamento.favorito ? 'fill-amber-400 text-amber-400' : ''}`} />
+                      <Star className={`h-3.5 w-3.5 ${fechamento.favorito ? 'fill-amber-400 text-amber-400' : ''}`} />
                     </button>
                     <button
-                      className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 transition-all duration-200 active:scale-95"
+                      className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 transition-all active:scale-95"
                       onClick={(e) => { e.stopPropagation(); setDeleteTarget(fechamento); }}
+                      title="Remover"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
-
-                  <ChevronRight className="h-4 w-4 text-slate-200 group-hover:text-slate-400 group-hover:translate-x-0.5 shrink-0 transition-all duration-200" />
+                  {fechamento.favorito && (
+                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 absolute top-3.5 right-3.5 group-hover:opacity-0 transition-opacity" />
+                  )}
                 </div>
-              </motion.div>
+
+                {/* Eyebrow tipo */}
+                <span className={`text-[10px] font-bold uppercase tracking-[0.12em] ${typeConfig.color} mb-1.5`}>
+                  {typeConfig.label}
+                </span>
+
+                {/* Título */}
+                <h3
+                  className="text-[15px] font-bold text-brand-ink leading-tight tracking-tight group-hover:text-brand-primary-dark transition-colors line-clamp-2 mb-2"
+                  style={{ fontFamily: 'var(--font-display)' }}
+                >
+                  {fechamento.tema}
+                </h3>
+
+                {/* Preview (só mostra se espaço suficiente) */}
+                <p className="text-[11.5px] text-brand-ink-2/80 leading-[1.5] line-clamp-2 flex-1">
+                  {fechamento.resultado.replace(/[#*`>-]/g, '').slice(0, 140).trim()}…
+                </p>
+
+                {/* Footer com data */}
+                <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[11px] text-brand-ink-2 flex items-center gap-1.5">
+                    <Calendar className="h-3 w-3" />
+                    {format(new Date(fechamento.created_at), "dd 'de' MMM", { locale: ptBR })}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-brand-primary group-hover:translate-x-0.5 transition-all" />
+                </div>
+              </motion.article>
             );
           })}
         </div>

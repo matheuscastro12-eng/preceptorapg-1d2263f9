@@ -224,15 +224,35 @@ const Exam = () => {
       <div className="max-w-5xl mx-auto">
         {examStarted ? (
           <div className="flex flex-col gap-4">
-            {/* Back button */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleBackToMenu}
-                className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-[#006D5B] transition-colors active:scale-95"
-              >
-                <ArrowLeft className="h-4 w-4" /> Nova Configuração
-              </button>
-              <span className="text-xs text-slate-400">{isProva ? 'Simulado' : 'Caso Clínico'}</span>
+            {/* Back button + Save */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleBackToMenu}
+                  className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-[#006D5B] transition-colors active:scale-95"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Nova Configuração
+                </button>
+                <span className="text-xs text-slate-400">{isProva ? 'Simulado' : 'Caso Clínico'}</span>
+              </div>
+              {hasStartedReceiving && resultado && (
+                <button
+                  onClick={async () => {
+                    const tema = window.prompt(
+                      `Nome para salvar ${isProva ? 'este simulado' : 'este caso clínico'}:`,
+                      `${isProva ? 'Simulado' : 'Caso clínico'} ${new Date().toLocaleDateString('pt-BR')}`
+                    );
+                    if (tema?.trim()) {
+                      await saveToLibrary(tema.trim());
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-primary-dark bg-brand-primary/5 hover:bg-brand-primary/10 border border-brand-primary/20 rounded-lg transition-colors"
+                  title="Salvar na biblioteca"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>bookmark_add</span>
+                  Salvar na biblioteca
+                </button>
+              )}
             </div>
 
             {/* Exam content area */}
