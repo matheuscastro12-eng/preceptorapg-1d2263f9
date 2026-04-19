@@ -60,6 +60,7 @@ const CrmLayout = lazy(() => import("./pages/crm/CrmLayout"));
 const CrmDashboard = lazy(() => import("./pages/crm/CrmDashboard"));
 const CrmLeads = lazy(() => import("./pages/crm/CrmLeads"));
 const CrmFunnel = lazy(() => import("./pages/crm/CrmFunnel"));
+const CrmLandingFunnel = lazy(() => import("./pages/crm/CrmLandingFunnel"));
 const CrmHealth = lazy(() => import("./pages/crm/CrmHealth"));
 const CrmChurn = lazy(() => import("./pages/crm/CrmChurn"));
 const CrmAutomations = lazy(() => import("./pages/crm/CrmAutomations"));
@@ -125,6 +126,7 @@ const App = () => (
                   <Route index element={<CrmDashboard />} />
                   <Route path="leads" element={<CrmLeads />} />
                   <Route path="funnel" element={<CrmFunnel />} />
+                  <Route path="landing-funnel" element={<CrmLandingFunnel />} />
                   <Route path="health" element={<CrmHealth />} />
                   <Route path="churn" element={<CrmChurn />} />
                   <Route path="automations" element={<CrmAutomations />} />

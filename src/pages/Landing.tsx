@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useVisitorTracking } from '@/hooks/useVisitorTracking';
+import { useLandingFunnel } from '@/hooks/useLandingFunnel';
 import { Menu, X as XIcon } from 'lucide-react';
 import { getEasyflowLink } from '@/utils/easyflow';
 import ProfileDropdown from '@/components/ProfileDropdown';
@@ -34,6 +35,9 @@ const Landing = () => {
   // CRM: Track visitor + capture UTM params
   useVisitorTracking();
 
+  // Funnel analytics: onde o visitante para, onde converte
+  const { trackConversion } = useLandingFunnel();
+
   // Redirect logged-in users to menu
   if (!loading && user) {
     navigate('/menu', { replace: true });
@@ -41,6 +45,7 @@ const Landing = () => {
   }
 
   const handleSubscribe = (planType: 'monthly' | 'annual' | 'biannual') => {
+    trackConversion(`subscribe-${planType}`);
     if (!user) {
       // Not logged in — send to signup first, then checkout opens after
       navigate(`/auth?tab=signup&plan=${planType}`);
@@ -118,13 +123,15 @@ const Landing = () => {
           ) : (
             <div className="flex items-center gap-2 sm:gap-3">
               <button
+                data-cta="header-login"
                 onClick={() => navigate('/auth')}
                 className="hidden sm:block px-3 py-2 text-[13px] font-semibold text-brand-ink-2 hover:text-brand-primary-dark transition-colors"
               >
                 Entrar
               </button>
               <button
-                onClick={() => navigate('/auth?tab=signup')}
+                data-cta="header-signup"
+                onClick={() => { trackConversion('header-signup'); navigate('/auth?tab=signup'); }}
                 className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-brand-primary-dark text-white text-[13px] font-semibold rounded-md hover:bg-brand-primary-darker transition-all shadow-[0_4px_12px_-2px_rgba(0,109,91,0.35)] hover:shadow-[0_6px_16px_-2px_rgba(0,109,91,0.45)]"
               >
                 Começar
@@ -162,13 +169,15 @@ const Landing = () => {
             ))}
             <div className="pt-3 mt-2 border-t border-slate-200/60 flex gap-2">
               <button
+                data-cta="mobile-menu-login"
                 onClick={() => navigate('/auth')}
                 className="flex-1 py-2.5 text-sm font-semibold text-brand-primary-dark hover:bg-brand-primary/5 rounded-md transition-colors"
               >
                 Entrar
               </button>
               <button
-                onClick={() => navigate('/auth?tab=signup')}
+                data-cta="mobile-menu-signup"
+                onClick={() => { trackConversion('mobile-menu-signup'); navigate('/auth?tab=signup'); }}
                 className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-white bg-brand-primary-dark hover:bg-brand-primary-darker rounded-md transition-colors"
               >
                 Começar
@@ -184,7 +193,7 @@ const Landing = () => {
       <main className="flex-1">
 
         {/* ─── Hero ─────────────────────────────────────── */}
-        <section className="relative flex items-center min-h-[calc(100vh-65px)] py-10 sm:py-14 px-4 sm:px-6 lg:px-10 overflow-hidden">
+        <section data-section="hero" className="relative flex items-center min-h-[calc(100vh-65px)] py-10 sm:py-14 px-4 sm:px-6 lg:px-10 overflow-hidden">
           {/* Dot grid decorativo no canto superior direito */}
           <div className="absolute -top-10 right-0 w-[28rem] h-[28rem] pointer-events-none texture-dots-subtle" style={{ maskImage: 'radial-gradient(ellipse at top right, black 20%, transparent 75%)', WebkitMaskImage: 'radial-gradient(ellipse at top right, black 20%, transparent 75%)' }} />
           {/* Glow gold no canto inferior esquerdo */}
@@ -211,13 +220,15 @@ const Landing = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <button
-                  onClick={() => navigate('/auth?tab=signup')}
+                  data-cta="hero-signup"
+                  onClick={() => { trackConversion('hero-signup'); navigate('/auth?tab=signup'); }}
                   className="inline-flex items-center justify-center gap-2 px-7 lg:px-9 py-4 lg:py-5 bg-brand-primary-dark text-white text-sm lg:text-base font-semibold rounded-lg hover:bg-brand-primary-darker active:scale-[0.98] transition-all shadow-[0_8px_24px_-8px_rgba(0,109,91,0.45),0_2px_4px_-1px_rgba(0,109,91,0.20)] hover:shadow-[0_12px_32px_-8px_rgba(0,109,91,0.55),0_4px_8px_-2px_rgba(0,109,91,0.25)]"
                 >
                   Começar agora
                   <span className="text-brand-gold">→</span>
                 </button>
                 <button
+                  data-cta="hero-see-how"
                   onClick={() => document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' })}
                   className="px-6 lg:px-8 py-4 lg:py-5 text-brand-ink text-sm lg:text-base font-semibold hover:text-brand-primary-dark transition-colors text-center"
                 >
@@ -258,6 +269,7 @@ const Landing = () => {
         {/* ─── Recursos — dark block verde ──────────────────── */}
         <section
           id="recursos"
+          data-section="recursos"
           className="relative py-16 sm:py-28 overflow-hidden"
           style={{ background: 'var(--pmed-gradient-primary)' }}
         >
@@ -350,7 +362,7 @@ const Landing = () => {
         </section>
 
         {/* ─── Como funciona — Exemplo real ──────────────── */}
-        <section id="como-funciona" className="relative py-16 sm:py-28 bg-white overflow-hidden">
+        <section id="como-funciona" data-section="como-funciona" className="relative py-16 sm:py-28 bg-white overflow-hidden">
           {/* Gold accent no topo */}
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-gold/50 to-transparent" />
           {/* Green wash decorativo canto */}
@@ -479,7 +491,7 @@ const Landing = () => {
         </section>
 
         {/* ─── Exemplo real — Resumo de PBL ──────────────── */}
-        <section className="py-16 sm:py-28 bg-[#fafbfa] border-t border-slate-100">
+        <section data-section="exemplo-pbl" className="py-16 sm:py-28 bg-[#fafbfa] border-t border-slate-100">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <div className="mb-12 sm:mb-16 max-w-2xl">
               <p className="text-sm text-[#006D5B] font-semibold mb-3">Exemplo real da plataforma</p>
@@ -612,6 +624,7 @@ const Landing = () => {
         {/* ─── Depoimentos — dark green ─────────────────── */}
         <section
           id="depoimentos"
+          data-section="depoimentos"
           className="relative py-16 sm:py-28 overflow-hidden"
           style={{ background: 'var(--pmed-gradient-primary)' }}
         >
@@ -733,7 +746,7 @@ const Landing = () => {
         </section>
 
         {/* ─── Pricing ──────────────────────────────────── */}
-        <section id="precos" className="relative py-14 sm:py-24 bg-white overflow-hidden">
+        <section id="precos" data-section="precos" className="relative py-14 sm:py-24 bg-white overflow-hidden">
           {/* Gold line no topo da seção (assinatura) */}
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-gold/30 to-transparent" />
           {/* Green wash decorativo */}
@@ -779,6 +792,7 @@ const Landing = () => {
                   </li>
                 </ul>
                 <button
+                  data-cta="plan-monthly"
                   onClick={() => handleSubscribe('monthly')}
                   disabled={loadingPlan !== null}
                   className="w-full py-3 sm:py-4 border border-slate-300 text-[#191c1d] text-sm font-semibold rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
@@ -825,6 +839,7 @@ const Landing = () => {
                   </li>
                 </ul>
                 <button
+                  data-cta="plan-annual"
                   onClick={() => handleSubscribe('annual')}
                   disabled={loadingPlan !== null}
                   className="btn-shimmer relative overflow-hidden w-full py-3 sm:py-4 bg-[#005344] text-white text-sm font-semibold rounded-lg shadow-lg hover:bg-[#003d32] transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
@@ -871,6 +886,7 @@ const Landing = () => {
                   </li>
                 </ul>
                 <button
+                  data-cta="plan-biannual"
                   onClick={() => handleSubscribe('biannual')}
                   disabled={loadingPlan !== null}
                   className="w-full py-3 sm:py-4 border-2 border-[#005344] text-[#005344] text-sm font-semibold rounded-lg hover:bg-[#005344] hover:text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
@@ -885,6 +901,7 @@ const Landing = () => {
 
         {/* ─── Final CTA ────────────────────────────────── */}
         <section
+          data-section="cta-final"
           className="relative py-16 sm:py-24 overflow-hidden"
           style={{ background: 'var(--pmed-gradient-primary)' }}
         >
@@ -916,7 +933,8 @@ const Landing = () => {
               Criar conta é gratuito. Assine quando perceber que economiza horas por semana.
             </p>
             <button
-              onClick={() => navigate('/auth?tab=signup')}
+              data-cta="final-cta-signup"
+              onClick={() => { trackConversion('final-cta-signup'); navigate('/auth?tab=signup'); }}
               className="inline-flex items-center gap-2 px-8 py-4 bg-white text-brand-primary-dark rounded-lg text-sm font-semibold hover:bg-slate-50 active:scale-[0.98] transition-colors shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3)]"
             >
               Criar conta gratuita
