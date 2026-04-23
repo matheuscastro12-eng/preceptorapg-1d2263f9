@@ -39,3 +39,4 @@ setup-people-dev.mjs
 create_report.py
 *.xlsx
 .~lock.*
+.claude/worktrees/
