@@ -647,6 +647,11 @@ Agora gere o resumo completo.`;
         generationConfig: {
           temperature: 0.7,
           maxOutputTokens: 65536,
+          // gemini-2.5-flash conta tokens de "thinking" dentro do maxOutputTokens.
+          // Com prompt grande, o modelo consome quase todo o budget pensando e
+          // a saida real fica em poucas linhas. Desligamos para dedicar todo o
+          // budget ao conteudo academico.
+          thinkingConfig: { thinkingBudget: 0 },
         },
       }),
     });
@@ -673,37 +678,46 @@ Agora gere o resumo completo.`;
       );
     }
 
-    // Transform Google Gemini SSE format to OpenAI-compatible format
-    // so the frontend doesn't need any changes
+    // Transform Google Gemini SSE format to OpenAI-compatible format.
+    // Gemini chunks nao sao alinhados a fronteira de linha — buferizamos
+    // ate ver "\n" para nao descartar JSONs partidos no meio.
+    const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+    let buffer = "";
+    let lastFinishReason: string | undefined;
+
+    const processLine = (line: string, controller: TransformStreamDefaultController) => {
+      if (!line.startsWith("data: ")) return;
+      const jsonStr = line.slice(6).trim();
+      if (!jsonStr) return;
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const candidate = parsed.candidates?.[0];
+        const content = candidate?.content?.parts?.[0]?.text;
+        if (candidate?.finishReason) lastFinishReason = candidate.finishReason;
+        if (content) {
+          const openAiChunk = { choices: [{ delta: { content } }] };
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(openAiChunk)}\n\n`));
+        }
+      } catch {
+        // partial JSON — ja foi tratado pelo buffer; chega aqui so se
+        // realmente vier malformado, o que e seguro ignorar
+      }
+    };
+
     const transformStream = new TransformStream({
       transform(chunk, controller) {
-        const text = new TextDecoder().decode(chunk);
-        const lines = text.split("\n");
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const jsonStr = line.slice(6).trim();
-          if (!jsonStr) continue;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (content) {
-              // Re-emit in OpenAI-compatible format
-              const openAiChunk = {
-                choices: [{ delta: { content } }],
-              };
-              controller.enqueue(
-                new TextEncoder().encode(`data: ${JSON.stringify(openAiChunk)}\n\n`)
-              );
-            }
-          } catch {
-            // Ignore parse errors for partial chunks
-          }
-        }
+        buffer += decoder.decode(chunk, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) processLine(line, controller);
       },
       flush(controller) {
-        controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"));
+        if (buffer.length > 0) processLine(buffer, controller);
+        if (lastFinishReason && lastFinishReason !== "STOP") {
+          console.warn("Gemini finishReason:", lastFinishReason);
+        }
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       },
     });
 
