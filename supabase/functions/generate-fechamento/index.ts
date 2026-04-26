@@ -23,11 +23,87 @@ Voce e um Monitor Senior e Preceptor Academico de Medicina de excelencia. Sua ta
 4. **Profundidade Científica:** NÃO SEJA SUPERFICIAL. Cada tópico deve ser explorado em detalhes, com mecanismos moleculares, cascatas fisiopatológicas e correlações clínicas.
 
 # TASK LOGIC (Cadeia de Pensamento Obrigatória)
-1. **Análise de Escopo:** Identifique se o tema é predominantemente MORFOFUNCIONAL (Fisiologia/Anatomia/Embrio/Histo) ou CLÍNICO (Patologia/Semiologia/Terapêutica). MUITOS TEMAS SÃO HÍBRIDOS - cubra ambos os aspectos.
-2. **Priorização:** Se objetivos forem fornecidos, estruture TODO o conteúdo para responder a esses pontos EXAUSTIVAMENTE. Se não, siga a estrutura padrão abaixo com máxima profundidade.
-3. **Extensão:** O resumo deve ser COMPLETO e EXTENSO. Não economize palavras. Um bom resumo acadêmico tem várias páginas de conteúdo denso.
+1. **Análise de Escopo (CRÍTICO — leia 2x):** Antes de qualquer coisa, classifique o tema em UMA destas categorias:
+   - **TEMA FOCADO (uma única subárea):** o título já delimita escopo a uma única dimensão. Ex: "Embriologia pulmonar", "Anatomia do mediastino", "Histologia do fígado", "Fisiologia da filtração glomerular", "Farmacologia dos beta-bloqueadores", "Mecanismo de ação dos IECA", "Semiologia do abdome agudo", "Interpretação de gasometria arterial", "Critérios de Framingham". Aqui você DEVE responder APENAS sobre a subárea nomeada, com a maior profundidade possível, ignorando completamente as outras seções da estrutura padrão. NÃO escreva fisiopatologia, tratamento, diagnóstico ou prognóstico se o tema for "Embriologia pulmonar" — isso confunde e dilui o conteúdo.
+   - **TEMA AMPLO/CLÍNICO (doença ou síndrome):** o título nomeia uma entidade clínica que abrange múltiplas dimensões. Ex: "Insuficiência cardíaca", "Pneumonia adquirida na comunidade", "Diabetes mellitus tipo 2", "Lúpus eritematoso sistêmico". Aqui use a ESTRUTURA PADRÃO completa abaixo.
+   - **TEMA HÍBRIDO:** misturas explícitas ("Embriologia e malformações pulmonares", "Anatomia e patologia do colo do útero"). Cubra somente os aspectos nomeados.
+2. **Regra de Ouro do Escopo:** Se o tema é FOCADO, NÃO use a estrutura padrão de 9 seções. Use uma estrutura específica para a subárea (ver "ESTRUTURAS PARA TEMAS FOCADOS" abaixo). NÃO escreva "[Não aplicável]" para todas as outras seções — simplesmente não as escreva. Quem pediu "Embriologia pulmonar" não quer ler "Tratamento: [Não aplicável]" 7 vezes.
+3. **Priorização:** Se objetivos forem fornecidos, estruture TODO o conteúdo para responder a esses pontos EXAUSTIVAMENTE — eles têm precedência sobre a análise de escopo automática.
+4. **Extensão:** O resumo deve ser COMPLETO e EXTENSO dentro do escopo identificado. Profundidade técnica > volume de seções genéricas.
 
-# ESTRUTURA DE RESPOSTA (Obrigatória e Detalhada)
+# ESTRUTURAS PARA TEMAS FOCADOS
+
+Quando o tema for FOCADO em uma única subárea, use a estrutura correspondente abaixo (com profundidade máxima em cada item):
+
+## Embriologia (ex: "Embriologia pulmonar")
+1. **Origem Embrionária:** Folheto germinativo de origem (ecto/meso/endoderma), estruturas precursoras, sinalização molecular indutora
+2. **Cronologia do Desenvolvimento:** Semanas gestacionais críticas, fases sucessivas (ex: pseudoglandular, canalicular, sacular, alveolar para pulmão), eventos chave em cada fase
+3. **Mecanismos Morfogenéticos:** Vias de sinalização (FGF, SHH, BMP, Wnt, Notch), fatores de transcrição (Nkx2.1, Sox2, Sox9, Foxa2 etc.), interações epitélio-mesênquima
+4. **Diferenciação Celular:** Tipos celulares formados, marcadores moleculares, momento da diferenciação
+5. **Maturação Funcional:** Surfactante, vascularização, inervação — quando e como surgem
+6. **Malformações Congênitas Associadas:** Hipoplasia, agenesia, sequestros, malformações adenomatoides císticas, fístulas — mecanismo embriológico de cada uma
+7. **Correlações com Patologias do Adulto:** Resquícios embrionários, sítios de vulnerabilidade, doenças com base no desenvolvimento
+
+## Anatomia (ex: "Anatomia do mediastino")
+1. **Anatomia Topográfica:** Limites, divisões, sintopia com estruturas adjacentes
+2. **Estruturas Contidas:** Listagem completa com descrição de cada uma
+3. **Vascularização:** Artérias, veias, drenagem linfática (com nomes específicos e território)
+4. **Inervação:** Nervos motores, sensitivos, autonômicos; dermátomos, reflexos
+5. **Anatomia Cirúrgica/Acessos:** Vias de abordagem, marcos anatômicos, variações relevantes
+6. **Correlação Clínica/Imaginológica:** Como cada estrutura aparece em TC/RM/RX, manifestações de lesões locais
+
+## Histologia (ex: "Histologia do fígado")
+1. **Arquitetura Tecidual:** Organização microscópica, unidade funcional, estroma vs parênquima
+2. **Tipos Celulares:** Células presentes, função de cada uma, marcadores moleculares/imuno-histoquímicos
+3. **Ultraestrutura:** Organelas relevantes, especializações de membrana, junções intercelulares
+4. **Matriz Extracelular:** Componentes, organização, função
+5. **Vascularização Microscópica:** Capilares (contínuos/fenestrados/sinusoides), drenagem
+6. **Renovação e Reparo:** Células-tronco, capacidade regenerativa
+7. **Correlação Histopatológica:** Alterações em principais doenças do órgão
+
+## Fisiologia (ex: "Fisiologia da filtração glomerular")
+1. **Princípios Físico-Químicos Subjacentes:** Forças, gradientes, equações
+2. **Estruturas Envolvidas:** Anatomia funcional resumida (apenas o necessário)
+3. **Mecanismos Moleculares:** Canais, transportadores, receptores, vias de sinalização
+4. **Regulação:** Hormonal, neural, autorregulação local; feedbacks
+5. **Integração Sistêmica:** Como o processo se comunica com outros sistemas
+6. **Métodos de Avaliação:** Como se mede clinicamente (ex: TFG, clearance)
+7. **Alterações em Estados Patológicos:** O que muda em doenças relevantes (apenas pincelada — não desenvolva fisiopatologia completa)
+
+## Farmacologia (ex: "Farmacologia dos beta-bloqueadores")
+1. **Classificação:** Subclasses, geração, seletividade
+2. **Mecanismo de Ação:** Receptores-alvo, vias de sinalização, efeitos celulares
+3. **Farmacocinética:** Absorção, metabolismo, eliminação, meia-vida — para os principais representantes
+4. **Farmacodinâmica:** Efeitos sistêmicos (cardiovasculares, respiratórios, metabólicos, SNC)
+5. **Indicações Clínicas:** Por sistema/doença
+6. **Posologia:** Doses iniciais, titulação, posologia usual dos principais representantes
+7. **Efeitos Adversos:** Comuns e graves
+8. **Contraindicações:** Absolutas e relativas
+9. **Interações Medicamentosas:** Principais
+10. **Princípios de Escolha:** Quando preferir um representante sobre outro
+
+## Semiologia (ex: "Semiologia do abdome agudo")
+1. **Anamnese Direcionada:** Sintomas-chave, cronologia, fatores associados
+2. **Exame Físico:** Inspeção, palpação, percussão, ausculta — achados normais vs patológicos
+3. **Manobras Especiais:** Epônimos, técnica, sensibilidade/especificidade, mecanismo
+4. **Padrões Sindromicos:** Como agrupar achados em diagnósticos prováveis
+5. **Sinais de Alarme:** O que indica gravidade/emergência
+
+## Exame Complementar (ex: "Interpretação de gasometria arterial")
+1. **Princípios do Exame:** O que mede, como funciona, limitações
+2. **Valores de Referência:** Normais e desvios significativos
+3. **Algoritmo de Interpretação:** Passo a passo
+4. **Achados em Doenças Específicas:** Padrões clássicos
+5. **Pegadinhas e Erros Comuns:** O que confunde a interpretação
+
+## Critérios/Escores (ex: "Critérios de Framingham para IC")
+1. **Origem e Validação:** Estudo, ano, população
+2. **Componentes:** Lista completa com pontuação/peso
+3. **Aplicação Prática:** Como se usa, ponto de corte, interpretação
+4. **Sensibilidade/Especificidade:** Quando disponível
+5. **Limitações:** Em quais populações falha
+
+# ESTRUTURA DE RESPOSTA — TEMAS AMPLOS/CLÍNICOS (Use APENAS quando o tema for uma doença/síndrome ampla)
 
 ## 1. CLASSIFICAÇÃO E TAXONOMIA
 - **Definição Técnica Completa:** Defina o termo/condição de forma precisa usando terminologia médica adequada
@@ -624,12 +700,13 @@ Regras:
     userPrompt += `
 
 Antes de escrever, analise internamente:
-1. O tema e predominantemente morfofuncional, clinico, ou hibrido?
-2. Quais secoes da estrutura sao mais relevantes para este tema especifico?
-3. Quais secoes podem receber "[Nao aplicavel ao tema]"?
-${sanitizedObjetivos ? "4. Como cada objetivo mapeia para as secoes?" : ""}
+1. O tema e FOCADO (ja nomeia uma unica subarea — ex: "Embriologia X", "Anatomia Y", "Farmacologia Z", um exame, um escore) ou AMPLO/CLINICO (uma doenca ou sindrome que abrange varias dimensoes)?
+2. Se FOCADO: use APENAS a estrutura especifica daquela subarea (ver "ESTRUTURAS PARA TEMAS FOCADOS" no system prompt). NAO escreva fisiopatologia, tratamento, prognostico, prevencao etc. NAO escreva "[Nao aplicavel]" para secoes inteiras — simplesmente nao as escreva. Quem pediu "${sanitizedTema}" quer profundidade dentro do escopo, nao um esqueleto vazio das outras secoes.
+3. Se AMPLO/CLINICO: use a ESTRUTURA DE RESPOSTA completa (9 secoes).
+4. Se HIBRIDO (tema mistura subareas explicitas): cubra somente as nomeadas.
+${sanitizedObjetivos ? "5. Como cada objetivo do estudante mapeia para a estrutura escolhida? Os objetivos tem precedencia." : ""}
 
-Agora gere o resumo completo.`;
+Agora gere o resumo completo dentro do escopo identificado.`;
 
     // Call Google Gemini API directly with SSE streaming
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GOOGLE_AI_API_KEY}`;
@@ -685,6 +762,8 @@ Agora gere o resumo completo.`;
     const encoder = new TextEncoder();
     let buffer = "";
     let lastFinishReason: string | undefined;
+    let totalChars = 0;
+    let usageMetadata: unknown;
 
     const processLine = (line: string, controller: TransformStreamDefaultController) => {
       if (!line.startsWith("data: ")) return;
@@ -695,7 +774,9 @@ Agora gere o resumo completo.`;
         const candidate = parsed.candidates?.[0];
         const content = candidate?.content?.parts?.[0]?.text;
         if (candidate?.finishReason) lastFinishReason = candidate.finishReason;
+        if (parsed.usageMetadata) usageMetadata = parsed.usageMetadata;
         if (content) {
+          totalChars += content.length;
           const openAiChunk = { choices: [{ delta: { content } }] };
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(openAiChunk)}\n\n`));
         }
@@ -714,8 +795,27 @@ Agora gere o resumo completo.`;
       },
       flush(controller) {
         if (buffer.length > 0) processLine(buffer, controller);
+
+        // Log diagnostico — aparece em supabase functions logs.
+        // Permite identificar quem teve geracao truncada e por que (SAFETY,
+        // MAX_TOKENS, RECITATION, OTHER) sem precisar acessar a sessao do user.
+        if (lastFinishReason !== "STOP" || totalChars < 500) {
+          console.warn("generate-fechamento finished suspiciously:", JSON.stringify({
+            user_id: userId,
+            tema: sanitizedTema,
+            modo: sanitizedModo,
+            chars_generated: totalChars,
+            finish_reason: lastFinishReason ?? "UNKNOWN",
+            usage: usageMetadata,
+          }));
+        }
+
+        // Sinaliza ao cliente o motivo da parada antes do [DONE].
+        // Frontend pode mostrar aviso "geracao interrompida (SAFETY)" quando
+        // finish_reason != STOP — ajuda usuario a saber que precisa retentar.
         if (lastFinishReason && lastFinishReason !== "STOP") {
-          console.warn("Gemini finishReason:", lastFinishReason);
+          const meta = { meta: { finish_reason: lastFinishReason, chars: totalChars } };
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(meta)}\n\n`));
         }
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       },

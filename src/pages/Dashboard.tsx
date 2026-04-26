@@ -168,12 +168,17 @@ const Dashboard = () => {
       const decoder = new TextDecoder();
       let fullText = '';
       let buffer = '';
+      let finishMeta: { finish_reason?: string; chars?: number } | null = null;
       const consumeLine = (line: string) => {
         if (!line.startsWith('data: ')) return;
         const jsonStr = line.slice(6).trim();
         if (!jsonStr || jsonStr === '[DONE]') return;
         try {
           const parsed = JSON.parse(jsonStr);
+          if (parsed.meta?.finish_reason) {
+            finishMeta = parsed.meta;
+            return;
+          }
           const content = parsed.choices?.[0]?.delta?.content;
           if (content) {
             if (!hasStartedReceiving) setHasStartedReceiving(true);
@@ -195,9 +200,23 @@ const Dashboard = () => {
       }
       setIsComplete(true);
 
-      // Auto-save na biblioteca assim que termina de gerar.
-      // Nao bloqueia em caso de erro — user ainda pode salvar manualmente.
-      if (fullText && user) {
+      // Se o backend sinalizou parada anormal (SAFETY/MAX_TOKENS/RECITATION),
+      // avisa o usuario e NAO auto-salva — evita salvar resumo truncado na
+      // biblioteca como se estivesse completo.
+      if (finishMeta?.finish_reason && finishMeta.finish_reason !== 'STOP') {
+        const reasonMsg: Record<string, string> = {
+          MAX_TOKENS: 'O modelo atingiu o limite de tokens antes de terminar. Tente um tema mais especifico ou reduza os objetivos.',
+          SAFETY: 'O conteudo gerado foi bloqueado por filtros de seguranca. Tente reformular o tema.',
+          RECITATION: 'O conteudo foi bloqueado por similaridade com fontes protegidas. Tente reformular.',
+          OTHER: 'A geracao foi interrompida por um motivo desconhecido. Tente novamente.',
+        };
+        toast({
+          title: 'Geracao interrompida',
+          description: reasonMsg[finishMeta.finish_reason] ?? `Motivo: ${finishMeta.finish_reason}. Tente novamente.`,
+          variant: 'destructive',
+        });
+      } else if (fullText && user) {
+        // Auto-save apenas em geracao bem-sucedida.
         try {
           const { data: saved, error: saveError } = await supabase.from('fechamentos').insert({
             user_id: user.id,
