@@ -167,22 +167,31 @@ const Dashboard = () => {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let fullText = '';
+      let buffer = '';
+      const consumeLine = (line: string) => {
+        if (!line.startsWith('data: ')) return;
+        const jsonStr = line.slice(6).trim();
+        if (!jsonStr || jsonStr === '[DONE]') return;
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) {
+            if (!hasStartedReceiving) setHasStartedReceiving(true);
+            fullText += content;
+            setResultado(fullText);
+          }
+        } catch { /* partial JSON ja tratado pelo buffer */ }
+      };
       if (reader) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const lines = decoder.decode(value, { stream: true }).split('\n');
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            const jsonStr = line.slice(6).trim();
-            if (jsonStr === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(jsonStr);
-              const content = parsed.choices?.[0]?.delta?.content;
-              if (content) { if (!hasStartedReceiving) setHasStartedReceiving(true); fullText += content; setResultado(fullText); }
-            } catch { /* partial */ }
-          }
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
+          for (const line of lines) consumeLine(line);
         }
+        if (buffer.length > 0) consumeLine(buffer);
       }
       setIsComplete(true);
 
