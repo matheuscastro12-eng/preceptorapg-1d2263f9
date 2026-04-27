@@ -51,6 +51,9 @@ const Enamed = lazy(() => import("./pages/Enamed"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Flashcards = lazy(() => import("./pages/Flashcards"));
 const ScientificStudio = lazy(() => import("./pages/ScientificStudio"));
+const Provas = lazy(() => import("./pages/Provas"));
+const ProvaReview = lazy(() => import("./pages/ProvaReview"));
+const ProvaSimulado = lazy(() => import("./pages/ProvaSimulado"));
 const ThankYou = lazy(() => import("./pages/ThankYou"));
 const SubscriptionThankYou = lazy(() => import("./pages/SubscriptionThankYou"));
 
@@ -160,6 +163,9 @@ const App = () => (
                 <Route path="/enamed" element={<Enamed />} />
                 <Route path="/flashcards" element={<Flashcards />} />
                 <Route path="/scientific-studio" element={<ScientificStudio />} />
+                <Route path="/provas" element={<Provas />} />
+                <Route path="/provas/:id/review" element={<ProvaReview />} />
+                <Route path="/provas/:id/simulado" element={<ProvaSimulado />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/obrigado" element={<SubscriptionThankYou />} />
                 <Route path="/obrigado/:plano" element={<SubscriptionThankYou />} />

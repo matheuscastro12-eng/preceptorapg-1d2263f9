@@ -49,11 +49,12 @@ const sidebarNavGroups: NavGroup[] = [
     items: [
       {
         icon: 'shutter_speed', label: 'Simulações', path: '/exam',
-        matchPaths: ['/exam', '/enamed', '/flashcards'],
+        matchPaths: ['/exam', '/enamed', '/flashcards', '/provas'],
         children: [
           { icon: 'assignment', label: 'Simulação Normal', path: '/exam' },
           { icon: 'history_edu', label: 'ENAMED', path: '/enamed' },
           { icon: 'target', label: 'Simulado por Área', path: '/enamed?area=true', matchPaths: ['/enamed?area'] },
+          { icon: 'upload_file', label: 'Provas Importadas', path: '/provas', matchPaths: ['/provas'] },
           { icon: 'style', label: 'Flashcards', path: '/flashcards' },
         ],
       },
