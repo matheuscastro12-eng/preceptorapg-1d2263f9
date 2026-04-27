@@ -47,20 +47,69 @@ serve(async (req) => {
       user_id = bodyUserId;
     }
 
-    // Deletar dados publicos primeiro (cascade)
-    await supabase.from("crm_funnel_events").delete().eq("user_id", user_id);
-    await supabase.from("crm_health_scores").delete().eq("user_id", user_id);
-    await supabase.from("crm_churn_predictions").delete().eq("user_id", user_id);
-    await supabase.from("crm_automations_log").delete().eq("user_id", user_id);
+    // Deletar dados publicos primeiro. A maioria tem ON DELETE CASCADE pro
+    // auth.users, mas algumas tabelas tem FK SET NULL ou triggers que podem
+    // travar auth.admin.deleteUser. Preferimos limpar explicitamente — se
+    // alguma tabela nao existir nesse projeto, o supabase-js retorna erro
+    // PGRST205/42P01 e seguimos em frente em vez de abortar a exclusao.
+    const tablesByUserId = [
+      "crm_funnel_events",
+      "crm_health_scores",
+      "crm_churn_predictions",
+      "crm_automations_log",
+      "crm_leads",
+      "fechamentos",
+      "fechamento_annotations",
+      "flashcards",
+      "flashcard_reviews",
+      "enamed_attempts",
+      "exam_attempts",
+      "ai_chat_messages",
+      "ai_chat_sessions",
+      "generation_logs",
+      "daily_activity",
+      "achievement_progress",
+      "user_achievements",
+      "follows",
+      "posts",
+      "post_likes",
+      "comments",
+      "support_tickets",
+      "support_messages",
+      "admin_inadimplencias",
+      "subscriptions",
+      "user_roles",
+      "profiles",
+    ];
+
+    const tableErrors: string[] = [];
+    for (const table of tablesByUserId) {
+      const { error } = await supabase.from(table).delete().eq("user_id", user_id);
+      if (error && !/does not exist|relation .* does not exist|PGRST205|42P01/i.test(error.message)) {
+        // Erro real (FK violation, RLS, etc) — registra mas nao aborta;
+        // a falha real aparece no auth.admin.deleteUser logo abaixo.
+        console.warn(`delete from ${table} failed:`, error.message);
+        tableErrors.push(`${table}: ${error.message}`);
+      }
+    }
+
+    // Tabelas com colunas alternativas (nao "user_id")
     await supabase.from("crm_referrals").delete().eq("referrer_id", user_id);
-    await supabase.from("crm_leads").delete().eq("user_id", user_id);
-    await supabase.from("subscriptions").delete().eq("user_id", user_id);
-    await supabase.from("user_roles").delete().eq("user_id", user_id);
-    await supabase.from("profiles").delete().eq("user_id", user_id);
+    await supabase.from("crm_referrals").delete().eq("referred_id", user_id);
+    await supabase.from("follows").delete().eq("follower_id", user_id);
+    await supabase.from("follows").delete().eq("following_id", user_id);
+    await supabase.from("messages").delete().eq("sender_id", user_id);
+    await supabase.from("messages").delete().eq("receiver_id", user_id);
 
     // Deletar auth user
     const { error: deleteError } = await supabase.auth.admin.deleteUser(user_id);
-    if (deleteError) throw deleteError;
+    if (deleteError) {
+      console.error("auth.admin.deleteUser failed for", user_id, deleteError, "table errors:", tableErrors);
+      throw new Error(
+        `Falha ao excluir conta: ${deleteError.message}` +
+          (tableErrors.length ? ` (${tableErrors.join("; ")})` : "")
+      );
+    }
 
     return new Response(
       JSON.stringify({ success: true, deleted: user_id }),

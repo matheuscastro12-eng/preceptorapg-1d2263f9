@@ -167,20 +167,40 @@ const Dashboard = () => {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let fullText = '';
+      // Buffer de linha parcial — chunks de rede podem cortar uma linha SSE
+      // no meio. Sem isso, JSON.parse falha em fragmentos e o conteudo eh
+      // descartado silenciosamente (bug do "resumo truncado em 2 linhas").
+      let leftover = '';
       if (reader) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const lines = decoder.decode(value, { stream: true }).split('\n');
+          const text = leftover + decoder.decode(value, { stream: true });
+          const lines = text.split('\n');
+          // Ultima entrada pode ser linha incompleta — guarda pro proximo chunk.
+          leftover = lines.pop() ?? '';
           for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            const jsonStr = line.slice(6).trim();
-            if (jsonStr === '[DONE]') continue;
+            const trimmed = line.trim();
+            if (!trimmed.startsWith('data: ')) continue;
+            const jsonStr = trimmed.slice(6).trim();
+            if (!jsonStr || jsonStr === '[DONE]') continue;
             try {
               const parsed = JSON.parse(jsonStr);
               const content = parsed.choices?.[0]?.delta?.content;
               if (content) { if (!hasStartedReceiving) setHasStartedReceiving(true); fullText += content; setResultado(fullText); }
             } catch { /* partial */ }
+          }
+        }
+        // Drena ultima linha que pode ter ficado sem \n no final do stream.
+        const tail = leftover.trim();
+        if (tail.startsWith('data: ')) {
+          const jsonStr = tail.slice(6).trim();
+          if (jsonStr && jsonStr !== '[DONE]') {
+            try {
+              const parsed = JSON.parse(jsonStr);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) { fullText += content; setResultado(fullText); }
+            } catch { /* ignore */ }
           }
         }
       }
