@@ -168,14 +168,22 @@ const Provas = () => {
       {showUpload && (
         <UploadModal
           onClose={() => setShowUpload(false)}
-          onSuccess={(provaId) => {
+          onSuccess={(provaId, live) => {
             setShowUpload(false);
             void refresh();
-            toast({
-              title: "Extração iniciada",
-              description: "A IA está processando o PDF…",
-            });
-            navigate(`/provas/${provaId}/review`);
+            if (live) {
+              toast({
+                title: "Modo expresso ativo",
+                description: "Vai começando — a IA continua extraindo no fundo.",
+              });
+              navigate(`/provas/${provaId}/simulado?live=1`);
+            } else {
+              toast({
+                title: "Prova processada",
+                description: "Revise as questões antes de simular.",
+              });
+              navigate(`/provas/${provaId}/review`);
+            }
           }}
         />
       )}
@@ -419,7 +427,7 @@ function UploadModal({
   onSuccess,
 }: {
   onClose: () => void;
-  onSuccess: (provaId: string) => void;
+  onSuccess: (provaId: string, live?: boolean) => void;
 }) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -427,6 +435,12 @@ function UploadModal({
   const [titulo, setTitulo] = useState("");
   const [numAlt, setNumAlt] = useState<4 | 5>(4);
   const [gerarIa, setGerarIa] = useState(true);
+  const [modoExpresso, setModoExpresso] = useState(false);
+  const [chunkProgress, setChunkProgress] = useState<{
+    done: number;
+    total: number;
+    questoes: number;
+  } | null>(null);
   const [pdfMeta, setPdfMeta] = useState<{
     numPages: number;
     fileSizeBytes: number;
@@ -493,22 +507,46 @@ function UploadModal({
     setStage("uploading");
     setProgress(0);
     setError(null);
+    setChunkProgress(null);
+    let didEarlyNavigate = false;
     try {
-      const { provaId } = await uploadAndIngestProva(user.id, {
+      await uploadAndIngestProva(user.id, {
         titulo: titulo.trim(),
         numAlternativas: numAlt,
         gerarJustificativaIa: gerarIa,
+        modoExpresso,
         pdfFile: file,
         numPaginas: pdfMeta.numPages,
-        onProgress: (s, pct) => {
+        onProgress: (s, info) => {
           if (s === "extracting_text") setStage("extracting_text");
           else if (s === "uploading") {
             setStage("uploading");
-            if (typeof pct === "number") setProgress(pct);
-          } else if (s === "ingesting") setStage("ingesting");
+            if (typeof info?.pct === "number") setProgress(info.pct);
+          } else if (s === "ingesting") {
+            setStage("ingesting");
+            if (info) {
+              setChunkProgress({
+                done: info.chunksDone ?? 0,
+                total: info.chunksTotal ?? 1,
+                questoes: info.questoesAteAgora ?? 0,
+              });
+            }
+          }
         },
+        onFirstChunkReady: (provaId) => {
+          // Modo expresso: redireciona pro simulado live assim que o
+          // primeiro chunk volta com questoes
+          if (modoExpresso && !didEarlyNavigate) {
+            didEarlyNavigate = true;
+            onSuccess(provaId, /* live */ true);
+          }
+        },
+      }).then(({ provaId }) => {
+        // Modo padrao: aguarda todos os chunks e vai pra revisao
+        if (!modoExpresso && !didEarlyNavigate) {
+          onSuccess(provaId, false);
+        }
       });
-      onSuccess(provaId);
     } catch (e) {
       setError((e as Error).message);
       setStage("select");
@@ -666,6 +704,33 @@ function UploadModal({
             </label>
           </div>
 
+          {/* Step 5: modo expresso */}
+          <div>
+            <label className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-200 cursor-pointer hover:border-slate-300 has-[:checked]:border-[#C9A84C] has-[:checked]:bg-[#C9A84C]/5 transition-colors">
+              <input
+                type="checkbox"
+                checked={modoExpresso}
+                onChange={(e) => setModoExpresso(e.target.checked)}
+                disabled={isProcessing}
+                className="mt-0.5 w-4 h-4 accent-[#C9A84C]"
+              />
+              <div>
+                <p className="text-sm font-bold text-[#191C1D] flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-[#8a6f26]" />
+                  Modo expresso
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#C9A84C]/15 text-[#8a6f26] font-mono uppercase tracking-wider">
+                    novo
+                  </span>
+                </p>
+                <p className="text-xs text-[#4a5568] leading-relaxed mt-0.5">
+                  Comece a fazer a prova assim que as primeiras questões forem
+                  extraídas. As demais aparecem ao vivo enquanto você responde.
+                  Pula a etapa de revisão.
+                </p>
+              </div>
+            </label>
+          </div>
+
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
               {error}
@@ -683,14 +748,18 @@ function UploadModal({
                       ? "Lendo texto do PDF…"
                       : stage === "uploading"
                         ? "Enviando arquivo…"
-                        : "IA estruturando questões…"}
+                        : chunkProgress
+                          ? `IA processando lote ${chunkProgress.done}/${chunkProgress.total}…`
+                          : "IA estruturando questões…"}
                   </p>
                   <p className="text-xs text-[#4a5568] mt-0.5">
                     {stage === "extracting_text"
                       ? "Extraindo texto página-a-página no seu navegador"
                       : stage === "uploading"
                         ? "Não feche essa janela"
-                        : "Geralmente 10–30s — pode levar mais em provas longas"}
+                        : chunkProgress && chunkProgress.questoes > 0
+                          ? `${chunkProgress.questoes} questões já extraídas${modoExpresso && chunkProgress.done > 0 ? " — abrindo simulado…" : ""}`
+                          : "Cada lote leva ~10–20s"}
                   </p>
                 </div>
               </div>
@@ -700,12 +769,12 @@ function UploadModal({
                   style={{
                     width:
                       stage === "extracting_text"
-                        ? "33%"
+                        ? "20%"
                         : stage === "uploading"
-                          ? `${33 + progress * 0.33}%`
-                          : "100%",
-                    animation:
-                      stage === "ingesting" ? "pulse 1.6s infinite" : undefined,
+                          ? `${20 + progress * 0.15}%`
+                          : chunkProgress
+                            ? `${35 + (chunkProgress.done / Math.max(1, chunkProgress.total)) * 65}%`
+                            : "40%",
                   }}
                 />
               </div>

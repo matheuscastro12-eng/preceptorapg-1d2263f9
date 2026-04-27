@@ -107,13 +107,26 @@ export interface UploadProvaParams {
   titulo: string;
   numAlternativas: 4 | 5;
   gerarJustificativaIa: boolean;
+  /** Modo expresso: questoes ja sao auto-aprovadas e o user pode iniciar
+   * o simulado live enquanto a IA termina os chunks restantes. */
+  modoExpresso?: boolean;
   pdfFile: File;
   numPaginas: number;
   onProgress?: (
     stage: "extracting_text" | "uploading" | "ingesting",
-    pct?: number,
+    info?: {
+      pct?: number;
+      chunksDone?: number;
+      chunksTotal?: number;
+      questoesAteAgora?: number;
+    },
   ) => void;
+  /** Notifica quando o primeiro chunk de questoes foi inserido — em modo
+   * expresso, eh quando ja da pra navegar pra simulado live. */
+  onFirstChunkReady?: (provaId: string, count: number) => void;
 }
+
+const PAGES_PER_CHUNK = 20;
 
 export async function uploadAndIngestProva(
   userId: string,
@@ -123,9 +136,11 @@ export async function uploadAndIngestProva(
     titulo,
     numAlternativas,
     gerarJustificativaIa,
+    modoExpresso,
     pdfFile,
     numPaginas,
     onProgress,
+    onFirstChunkReady,
   } = params;
 
   // 1) Cria registro em provas_importadas (status='uploading')
@@ -179,34 +194,83 @@ export async function uploadAndIngestProva(
     .update({ pdf_storage_path: path })
     .eq("id", provaId);
 
-  onProgress?.("uploading", 100);
-  onProgress?.("ingesting");
+  onProgress?.("uploading", { pct: 100 });
 
-  // 4) Chama edge function ingest-prova passando texto ja extraido
+  // 4) Chunked extraction — divide as paginas em lotes de PAGES_PER_CHUNK
+  //    e chama ingest-prova sequencialmente. Cada chunk volta com novas
+  //    questoes; o user em modo expresso ja pode iniciar o simulado apos
+  //    o primeiro chunk responder.
   const {
     data: { session },
   } = await supabase.auth.getSession();
   const token = session?.access_token;
   if (!token) throw new Error("Sessao expirada");
 
-  const res = await fetch(`${API_URL}/ingest-prova`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      prova_id: provaId,
-      mode: "text",
-      pages,
-    }),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(json.error ?? `Erro ${res.status} ao processar prova`);
+  // Filtra paginas vazias pra nao gastar tokens a toa
+  const nonEmptyPages = pages.filter((p) => p.text && p.text.trim().length > 30);
+  const chunks: typeof nonEmptyPages[] = [];
+  for (let i = 0; i < nonEmptyPages.length; i += PAGES_PER_CHUNK) {
+    chunks.push(nonEmptyPages.slice(i, i + PAGES_PER_CHUNK));
+  }
+  if (chunks.length === 0) {
+    await supabase.from("provas_importadas").delete().eq("id", provaId);
+    throw new Error("Nenhuma pagina com texto extraivel.");
   }
 
-  return { provaId, questoesExtraidas: json.questoes_extraidas ?? 0 };
+  onProgress?.("ingesting", {
+    chunksDone: 0,
+    chunksTotal: chunks.length,
+    questoesAteAgora: 0,
+  });
+
+  let totalQuestoes = 0;
+  for (let i = 0; i < chunks.length; i++) {
+    const isFirst = i === 0;
+    const isLast = i === chunks.length - 1;
+    const res = await fetch(`${API_URL}/ingest-prova`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        prova_id: provaId,
+        mode: "text",
+        pages: chunks[i],
+        chunk_index: i,
+        total_chunks: chunks.length,
+        is_first: isFirst,
+        is_last: isLast,
+        auto_approve: modoExpresso,
+      }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      // Marca prova como failed e propaga erro
+      await supabase
+        .from("provas_importadas")
+        .update({
+          status: "failed",
+          status_message:
+            (json.error as string)?.slice(0, 500) ??
+            `Erro ${res.status} no chunk ${i + 1}/${chunks.length}`,
+        })
+        .eq("id", provaId);
+      throw new Error(json.error ?? `Erro ${res.status} ao processar prova`);
+    }
+    const extraidas = (json.questoes_extraidas as number) ?? 0;
+    totalQuestoes += extraidas;
+    onProgress?.("ingesting", {
+      chunksDone: i + 1,
+      chunksTotal: chunks.length,
+      questoesAteAgora: totalQuestoes,
+    });
+    if (isFirst && onFirstChunkReady) {
+      onFirstChunkReady(provaId, extraidas);
+    }
+  }
+
+  return { provaId, questoesExtraidas: totalQuestoes };
 }
 
 export async function fetchProvaQuestoes(provaId: string): Promise<ProvaQuestao[]> {

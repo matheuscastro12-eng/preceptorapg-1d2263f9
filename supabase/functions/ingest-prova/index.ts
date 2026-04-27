@@ -298,10 +298,19 @@ serve(async (req) => {
   //   processando OCR/Vision.
   // mode "pdf" (fallback automatico, nao implementado por agora): processaria
   //   o PDF original via Gemini Vision quando o texto for insuficiente (scan).
+  // Modo chunk: client pode chamar varias vezes com porcoes diferentes do
+  // texto. Nao limpamos questoes existentes nem mexemos no status — quem
+  // orquestra eh o client. Cada chamada eh idempotente: re-inserir uma
+  // questao com mesmo numero faz upsert.
   let body: {
     prova_id?: string;
     mode?: "text" | "pdf";
     pages?: Array<{ page_num: number; text: string }>;
+    chunk_index?: number;     // 0-based; usado so pra logging
+    total_chunks?: number;
+    auto_approve?: boolean;   // se true, status='approved' direto (modo expresso)
+    is_first?: boolean;       // se true, edge function marca extracting + apaga questoes antigas
+    is_last?: boolean;        // se true, edge function marca reviewing/ready no fim
   };
   try {
     body = await req.json();
@@ -363,14 +372,18 @@ serve(async (req) => {
       },
     );
   }
-  if (
-    prova.status !== "uploading" &&
-    prova.status !== "failed" // permite reingestao apos falha
-  ) {
+  // Bloqueia chamada concorrente em status terminal (ready/archived) salvo
+  // se for re-ingestao a partir de failed.
+  const allowedStarts = new Set([
+    "uploading",
+    "extracting",
+    "reviewing", // permite adicionar mais chunks no fim
+    "failed",
+  ]);
+  if (!allowedStarts.has(prova.status)) {
     return new Response(
       JSON.stringify({
-        error:
-          `Prova ja esta no status '${prova.status}'. Apenas 'uploading' ou 'failed' podem ser ingeridas.`,
+        error: `Prova esta no status '${prova.status}', nao pode ingerir.`,
       }),
       {
         status: 409,
@@ -379,20 +392,21 @@ serve(async (req) => {
     );
   }
 
-  // ── Marca extracting + apaga questoes anteriores se reingestao ──
-  await adminClient
-    .from("provas_importadas")
-    .update({
-      status: "extracting",
-      extraction_started_at: new Date().toISOString(),
-      status_message: null,
-    })
-    .eq("id", provaId);
-
-  await adminClient
-    .from("prova_questoes_importadas")
-    .delete()
-    .eq("prova_id", provaId);
+  // ── Setup do primeiro chunk: limpa estado antigo + marca extracting ──
+  if (body.is_first) {
+    await adminClient
+      .from("prova_questoes_importadas")
+      .delete()
+      .eq("prova_id", provaId);
+    await adminClient
+      .from("provas_importadas")
+      .update({
+        status: "extracting",
+        extraction_started_at: new Date().toISOString(),
+        status_message: null,
+      })
+      .eq("id", provaId);
+  }
 
   try {
     const apiKey = Deno.env.get("GOOGLE_AI_API_KEY");
@@ -505,15 +519,17 @@ serve(async (req) => {
         needIaJustification++;
       }
 
+      // Modo expresso: aprova direto pra entrar no simulado live
+      const defaultStatus = body.auto_approve ? "approved" : "pending";
+
       if (!enunciado || !validGabarito) {
-        // Questao incompleta — marca rejected pra revisao
         rows.push({
           prova_id: provaId,
           user_id: userId,
           numero,
           enunciado: enunciado || "[ENUNCIADO NAO EXTRAIDO]",
           alternativas,
-          gabarito: validGabarito ? gabarito : "A", // placeholder, user decide
+          gabarito: validGabarito ? gabarito : "A",
           justificativa: justificativa || null,
           justificativa_origem: justOrigem,
           status: "rejected",
@@ -532,7 +548,7 @@ serve(async (req) => {
         gabarito,
         justificativa: justificativa || null,
         justificativa_origem: justOrigem,
-        status: q.confianca_baixa || q.anomalia ? "pending" : "pending",
+        status: defaultStatus,
         pagina_origem: q.pagina_origem ?? null,
         raw_extraction: q,
       });
@@ -545,9 +561,11 @@ serve(async (req) => {
       (a, b) => (a.numero as number) - (b.numero as number),
     );
 
+    // Upsert por (prova_id, numero) — chunk pode trazer questao que outro
+    // chunk ja inseriu se houver overlap; mantem a versao mais nova.
     const { error: insError } = await adminClient
       .from("prova_questoes_importadas")
-      .insert(dedupedRows);
+      .upsert(dedupedRows, { onConflict: "prova_id,numero" });
     if (insError) throw new Error(`Falha ao inserir questoes: ${insError.message}`);
 
     // ── Gera justificativas IA pra quem precisa (assincrono em paralelo, max 5 simultaneos) ──
@@ -584,20 +602,25 @@ serve(async (req) => {
       }
     }
 
-    // ── Finaliza ──
-    await adminClient
-      .from("provas_importadas")
-      .update({
-        status: "reviewing",
-        extraction_completed_at: new Date().toISOString(),
-        num_paginas: prova.num_paginas, // mantem se ja tinha
-      })
-      .eq("id", provaId);
+    // ── Finaliza chunk ──
+    if (body.is_last) {
+      // Se modo expresso, todas ja sao approved -> ready.
+      // Se nao, vai pra reviewing (user decide).
+      const finalStatus = body.auto_approve ? "ready" : "reviewing";
+      await adminClient
+        .from("provas_importadas")
+        .update({
+          status: finalStatus,
+          extraction_completed_at: new Date().toISOString(),
+        })
+        .eq("id", provaId);
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         prova_id: provaId,
+        chunk_index: body.chunk_index ?? 0,
         questoes_extraidas: dedupedRows.length,
         questoes_com_justificativa_pdf: dedupedRows.filter((r) =>
           r.justificativa_origem === "pdf"
@@ -605,6 +628,7 @@ serve(async (req) => {
         questoes_pendentes_ia: needIaJustification,
         tem_gabarito_no_pdf: result.tem_gabarito_no_pdf,
         tem_justificativas_no_pdf: result.tem_justificativas_no_pdf,
+        is_last: !!body.is_last,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

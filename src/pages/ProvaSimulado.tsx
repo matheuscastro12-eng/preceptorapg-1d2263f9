@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,8 @@ type Phase = "intro" | "running" | "result";
 
 const ProvaSimulado = () => {
   const { id: provaId } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const isLive = searchParams.get("live") === "1";
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -36,7 +38,7 @@ const ProvaSimulado = () => {
   const [prova, setProva] = useState<Prova | null>(null);
   const [questoes, setQuestoes] = useState<ProvaQuestao[]>([]);
   const [loading, setLoading] = useState(true);
-  const [phase, setPhase] = useState<Phase>("intro");
+  const [phase, setPhase] = useState<Phase>(isLive ? "running" : "intro");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [currentIdx, setCurrentIdx] = useState(0);
   const [elapsed, setElapsed] = useState(0);
@@ -44,7 +46,7 @@ const ProvaSimulado = () => {
   const intervalRef = useRef<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Carrega dados
+  // Carrega dados (com Realtime em modo live pra incrementar questoes)
   useEffect(() => {
     if (!provaId || !user) return;
     let alive = true;
@@ -63,18 +65,62 @@ const ProvaSimulado = () => {
       setProva(p as Prova);
       const qs = await fetchProvaQuestoes(provaId);
       if (alive) {
-        // So questoes aprovadas/editadas viram simulado
         const aprovadas = qs.filter(
           (q) => q.status === "approved" || q.status === "edited",
         );
         setQuestoes(aprovadas);
         setLoading(false);
+        if (isLive && aprovadas.length > 0) {
+          startedAt.current = Date.now();
+        }
       }
     })();
     return () => {
       alive = false;
     };
-  }, [provaId, user, navigate, toast]);
+  }, [provaId, user, navigate, toast, isLive]);
+
+  // Realtime: em modo live, sub a inserts/updates pra ir adicionando
+  // questoes e detectando fim da extracao.
+  useEffect(() => {
+    if (!provaId || !isLive) return;
+    const channel = supabase
+      .channel(`prova-${provaId}-live`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "prova_questoes_importadas",
+          filter: `prova_id=eq.${provaId}`,
+        },
+        () => {
+          // Refetch — barato (~50 questoes max) e mantem ordenacao consistente
+          void fetchProvaQuestoes(provaId).then((qs) => {
+            const aprovadas = qs
+              .filter((q) => q.status === "approved" || q.status === "edited")
+              .sort((a, b) => a.numero - b.numero);
+            setQuestoes(aprovadas);
+          });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "provas_importadas",
+          filter: `id=eq.${provaId}`,
+        },
+        (payload) => {
+          setProva(payload.new as Prova);
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [provaId, isLive]);
 
   // Timer
   useEffect(() => {
@@ -90,6 +136,30 @@ const ProvaSimulado = () => {
   if (authLoading || loading) return <PageSkeleton variant="dashboard" />;
   if (!user) return <Navigate to="/auth" replace />;
   if (!prova) return null;
+
+  // Em live mode com 0 questoes ainda, mostra um waiting screen — Realtime
+  // vai trazer as primeiras em segundos.
+  if (questoes.length === 0 && isLive && prova.status === "extracting") {
+    return (
+      <DashboardLayout>
+        <div className="max-w-md mx-auto py-20 px-6 text-center">
+          <div className="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-br from-[#005344]/15 to-[#C9A84C]/15 items-center justify-center mb-4">
+            <Sparkles className="w-7 h-7 text-[#005344] animate-pulse" />
+          </div>
+          <h1 className="font-['Manrope'] font-bold text-xl text-[#191C1D] mb-2">
+            IA extraindo as primeiras questões…
+          </h1>
+          <p className="text-sm text-[#4a5568] leading-relaxed">
+            Em alguns segundos elas vão aparecer aqui pra você começar.
+            Não feche a página.
+          </p>
+          <div className="mt-6 h-1 w-48 mx-auto rounded-full bg-slate-100 overflow-hidden">
+            <div className="h-full w-1/3 bg-gradient-to-r from-[#005344] to-[#C9A84C] animate-pulse" />
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   if (questoes.length === 0) {
     return (
@@ -379,12 +449,21 @@ const ProvaSimulado = () => {
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="font-['Manrope'] font-bold text-base text-[#191C1D] truncate">
+            <h1 className="font-['Manrope'] font-bold text-base text-[#191C1D] truncate flex items-center gap-2">
               {prova.titulo}
+              {isLive && prova.status === "extracting" && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#C9A84C]/15 text-[#8a6f26] text-[10px] font-bold uppercase tracking-wider">
+                  <Sparkles className="w-3 h-3 animate-pulse" />
+                  ao vivo
+                </span>
+              )}
             </h1>
             <div className="flex items-center gap-3 text-xs text-[#4a5568]">
               <span className="font-mono">
                 {currentIdx + 1}/{total}
+                {isLive && prova.status === "extracting" && (
+                  <span className="text-[#8a6f26]"> · IA carregando mais…</span>
+                )}
               </span>
               <span className="inline-flex items-center gap-1">
                 <Clock className="w-3 h-3" />
