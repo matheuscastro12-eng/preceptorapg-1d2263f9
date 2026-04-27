@@ -148,21 +148,50 @@ serve(async (req) => {
       await supabase.from("crm_health_scores").delete().neq("user_id", "00000000-0000-0000-0000-000000000000");
     }
 
-    // Buscar TODOS os perfis (inclusive quem nao tem lead ainda).
-    // O health score deve refletir toda a base cadastrada.
-    // created_at necessario pra detectar usuarios novos (zona "attention"
-    // em vez de "critical" enquanto eles nao tiveram tempo de usar).
-    let profilesQuery = supabase
-      .from("profiles")
-      .select("user_id, email, full_name, created_at");
-
+    // Buscar perfis a serem processados.
+    // Estrategia: ordena por crm_health_scores.calculado_em ASC com
+    // NULLS FIRST (perfis sem health score vem primeiro), entao cada
+    // chamada do cron pega os usuarios MAIS DESATUALIZADOS — assim a
+    // base inteira eh atualizada gradualmente em multiplas execucoes.
+    // Sem isso, .limit(N) pegava sempre os mesmos primeiros N profiles.
+    let profiles: Array<{ user_id: string; email: string | null; full_name: string | null; created_at: string | null }>;
+    let profilesError: unknown = null;
     if (user_id) {
-      profilesQuery = profilesQuery.eq("user_id", user_id);
+      const r = await supabase
+        .from("profiles")
+        .select("user_id, email, full_name, created_at")
+        .eq("user_id", user_id);
+      profiles = (r.data ?? []) as typeof profiles;
+      profilesError = r.error;
     } else {
-      profilesQuery = profilesQuery.limit(batch_size);
-    }
+      // Faz uma RPC-like via duas queries: primeiro pega user_ids ja
+      // processados ordenados por idade do calculo; depois fetcha
+      // profiles correspondentes + os que nunca foram processados.
+      const { data: existing } = await supabase
+        .from("crm_health_scores")
+        .select("user_id, calculado_em")
+        .order("calculado_em", { ascending: true });
+      const orderedIds: string[] = (existing ?? []).map((r: any) => r.user_id);
 
-    const { data: profiles, error: profilesError } = await profilesQuery;
+      // Pega TODOS os profiles, depois ordena local: nunca-processados
+      // primeiro (ausentes em orderedIds), depois pelos mais antigos.
+      const { data: allProfiles, error } = await supabase
+        .from("profiles")
+        .select("user_id, email, full_name, created_at");
+      profilesError = error;
+      const idxMap = new Map(orderedIds.map((id, i) => [id, i]));
+      const sorted = (allProfiles ?? [])
+        .filter((p: any) => p.user_id)
+        .sort((a: any, b: any) => {
+          const ai = idxMap.has(a.user_id) ? idxMap.get(a.user_id)! : -1;
+          const bi = idxMap.has(b.user_id) ? idxMap.get(b.user_id)! : -1;
+          // -1 (nunca processado) vem primeiro
+          if (ai === -1 && bi !== -1) return -1;
+          if (bi === -1 && ai !== -1) return 1;
+          return ai - bi; // mais antigo primeiro
+        });
+      profiles = sorted.slice(0, batch_size) as typeof profiles;
+    }
     if (profilesError) throw profilesError;
 
     // Buscar leads existentes pra mapear user_id -> lead (id, produto_interesse)
