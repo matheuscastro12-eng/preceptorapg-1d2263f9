@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Menu, X, Loader2 } from 'lucide-react';
 import SupportWidget from '@/components/support/SupportWidget';
 import NpsModal from '@/components/support/NpsModal';
+import { usePresenceTracking } from '@/hooks/usePresenceTracking';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -73,6 +74,8 @@ const sidebarNavGroups: NavGroup[] = [
 const sidebarNavItems: NavItem[] = sidebarNavGroups.flatMap(g => g.items);
 
 const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayoutProps) => {
+  // Liga rastreio de presenca pra contar usuarios online no CRM em tempo real.
+  usePresenceTracking();
   const { user, signOut } = useAuth();
   const { hasAccess, loading: subLoading } = useSubscription();
   const { isAdmin } = useAdmin();

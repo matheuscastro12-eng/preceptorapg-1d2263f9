@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { DollarSign, Users, TrendingDown, AlertTriangle, Zap, Target } from "lucide-react";
 import MetricCard from "@/components/crm/MetricCard";
 import FunnelChart from "@/components/crm/FunnelChart";
+import OnlineUsersWidget from "@/components/crm/OnlineUsersWidget";
 import HealthMap from "@/components/crm/HealthMap";
 import ChurnTable from "@/components/crm/ChurnTable";
 import AutomationsLog from "@/components/crm/AutomationsLog";
@@ -121,6 +122,9 @@ export default function CrmDashboard() {
           tooltip="Valor total medio que cada assinante gerou desde que se inscreveu. Calculado como (receita total / total de assinantes)."
         />
       </div>
+
+      {/* Online ao vivo */}
+      <OnlineUsersWidget />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6">
         <div className="bg-gray-900/80 rounded-xl border border-gray-800 p-4 md:p-5">
