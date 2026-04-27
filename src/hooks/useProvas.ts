@@ -350,3 +350,31 @@ export async function getProvaPdfUrl(
     .createSignedUrl(storagePath, 3600);
   return data?.signedUrl ?? "";
 }
+
+export async function explainQuestionWithAi(
+  questaoId: string,
+  forceRegenerate = false,
+): Promise<{ justificativa: string; cached: boolean }> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) throw new Error("Sessao expirada");
+  const res = await fetch(`${API_URL}/explain-question`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      questao_id: questaoId,
+      force_regenerate: forceRegenerate,
+    }),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error ?? `Erro ${res.status}`);
+  return {
+    justificativa: json.justificativa ?? "",
+    cached: !!json.cached,
+  };
+}
