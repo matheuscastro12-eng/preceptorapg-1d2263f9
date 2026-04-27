@@ -724,11 +724,6 @@ Agora gere o resumo completo dentro do escopo identificado.`;
         generationConfig: {
           temperature: 0.7,
           maxOutputTokens: 65536,
-          // gemini-2.5-flash conta tokens de "thinking" dentro do maxOutputTokens.
-          // Com prompt grande, o modelo consome quase todo o budget pensando e
-          // a saida real fica em poucas linhas. Desligamos para dedicar todo o
-          // budget ao conteudo academico.
-          thinkingConfig: { thinkingBudget: 0 },
         },
       }),
     });
@@ -821,7 +816,40 @@ Agora gere o resumo completo dentro do escopo identificado.`;
       },
     });
 
-    return new Response(response.body!.pipeThrough(transformStream), {
+    // Wrappa o stream com keepalive: emite ": keepalive\n\n" (comentario SSE,
+    // ignorado pelo cliente) a cada ~10s de silencio. Evita que proxies/carriers
+    // hostis fechem a conexao por idle quando Gemini pausa entre chunks.
+    const upstream = response.body!.pipeThrough(transformStream);
+    const encoderKA = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = upstream.getReader();
+        let lastEmit = Date.now();
+        const ticker = setInterval(() => {
+          if (Date.now() - lastEmit > 10_000) {
+            try {
+              controller.enqueue(encoderKA.encode(": keepalive\n\n"));
+              lastEmit = Date.now();
+            } catch { /* controller fechado, ignore */ }
+          }
+        }, 5_000);
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(value);
+            lastEmit = Date.now();
+          }
+        } catch (err) {
+          console.error("upstream read failed:", err);
+        } finally {
+          clearInterval(ticker);
+          try { controller.close(); } catch { /* ja fechado */ }
+        }
+      },
+    });
+
+    return new Response(stream, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
