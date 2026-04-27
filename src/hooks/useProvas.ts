@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { extractTextByPage } from "@/lib/pdfMeta";
 
 export type ProvaStatus =
   | "uploading"
@@ -108,7 +109,10 @@ export interface UploadProvaParams {
   gerarJustificativaIa: boolean;
   pdfFile: File;
   numPaginas: number;
-  onProgress?: (stage: "uploading" | "ingesting", pct?: number) => void;
+  onProgress?: (
+    stage: "extracting_text" | "uploading" | "ingesting",
+    pct?: number,
+  ) => void;
 }
 
 export async function uploadAndIngestProva(
@@ -143,7 +147,21 @@ export async function uploadAndIngestProva(
   }
   const provaId = prova.id as string;
 
-  // 2) Upload PDF pra storage no path {user_id}/{prova_id}/original.pdf
+  // 2) Extrai texto do PDF pagina-a-pagina no proprio browser.
+  //    Pra PDFs digitais (>99% das provas modernas) isso eh muito mais
+  //    rapido que mandar o PDF pra Gemini Vision e processar 100+
+  //    paginas no servidor — risco de timeout (HTTP 546 WORKER_LIMIT).
+  onProgress?.("extracting_text");
+  const pages = await extractTextByPage(pdfFile);
+  const totalChars = pages.reduce((s, p) => s + p.text.length, 0);
+  if (totalChars < 200) {
+    await supabase.from("provas_importadas").delete().eq("id", provaId);
+    throw new Error(
+      "Este PDF parece ser escaneado/sem texto reconhecivel. Use um OCR online (Adobe Acrobat, ilovepdf, smallpdf) e tente novamente com o PDF processado.",
+    );
+  }
+
+  // 3) Upload PDF original (pra referencia/visualizacao na revisao)
   const path = `${userId}/${provaId}/original.pdf`;
   onProgress?.("uploading", 0);
   const { error: upError } = await supabase.storage
@@ -153,12 +171,9 @@ export async function uploadAndIngestProva(
       upsert: true,
     });
   if (upError) {
-    // Limpa registro se upload falhou
     await supabase.from("provas_importadas").delete().eq("id", provaId);
     throw new Error(`Upload do PDF falhou: ${upError.message}`);
   }
-
-  // 3) Atualiza prova com path do PDF
   await supabase
     .from("provas_importadas")
     .update({ pdf_storage_path: path })
@@ -167,7 +182,7 @@ export async function uploadAndIngestProva(
   onProgress?.("uploading", 100);
   onProgress?.("ingesting");
 
-  // 4) Chama edge function ingest-prova
+  // 4) Chama edge function ingest-prova passando texto ja extraido
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -180,7 +195,11 @@ export async function uploadAndIngestProva(
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ prova_id: provaId }),
+    body: JSON.stringify({
+      prova_id: provaId,
+      mode: "text",
+      pages,
+    }),
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {

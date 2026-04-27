@@ -433,7 +433,11 @@ function UploadModal({
     snippet: string;
   } | null>(null);
   const [stage, setStage] = useState<
-    "select" | "reading" | "uploading" | "ingesting"
+    | "select"
+    | "reading"
+    | "extracting_text"
+    | "uploading"
+    | "ingesting"
   >("select");
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -497,10 +501,11 @@ function UploadModal({
         pdfFile: file,
         numPaginas: pdfMeta.numPages,
         onProgress: (s, pct) => {
-          if (s === "uploading" && typeof pct === "number") setProgress(pct);
-          if (s === "ingesting") {
-            setStage("ingesting");
-          }
+          if (s === "extracting_text") setStage("extracting_text");
+          else if (s === "uploading") {
+            setStage("uploading");
+            if (typeof pct === "number") setProgress(pct);
+          } else if (s === "ingesting") setStage("ingesting");
         },
       });
       onSuccess(provaId);
@@ -510,7 +515,10 @@ function UploadModal({
     }
   };
 
-  const isProcessing = stage === "uploading" || stage === "ingesting";
+  const isProcessing =
+    stage === "extracting_text" ||
+    stage === "uploading" ||
+    stage === "ingesting";
   const canSubmit = file && pdfMeta && titulo.trim().length > 2 && !isProcessing;
 
   return (
@@ -671,14 +679,18 @@ function UploadModal({
                 <Loader2 className="w-5 h-5 text-[#005344] animate-spin shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm font-bold text-[#191C1D]">
-                    {stage === "uploading"
-                      ? "Enviando PDF…"
-                      : "IA processando questões…"}
+                    {stage === "extracting_text"
+                      ? "Lendo texto do PDF…"
+                      : stage === "uploading"
+                        ? "Enviando arquivo…"
+                        : "IA estruturando questões…"}
                   </p>
                   <p className="text-xs text-[#4a5568] mt-0.5">
-                    {stage === "uploading"
-                      ? "Não feche essa janela"
-                      : "Pode demorar 30–90s para uma prova grande"}
+                    {stage === "extracting_text"
+                      ? "Extraindo texto página-a-página no seu navegador"
+                      : stage === "uploading"
+                        ? "Não feche essa janela"
+                        : "Geralmente 10–30s — pode levar mais em provas longas"}
                   </p>
                 </div>
               </div>
@@ -686,7 +698,12 @@ function UploadModal({
                 <div
                   className="h-full bg-gradient-to-r from-[#005344] to-[#C9A84C] transition-all"
                   style={{
-                    width: stage === "uploading" ? `${progress}%` : "100%",
+                    width:
+                      stage === "extracting_text"
+                        ? "33%"
+                        : stage === "uploading"
+                          ? `${33 + progress * 0.33}%`
+                          : "100%",
                     animation:
                       stage === "ingesting" ? "pulse 1.6s infinite" : undefined,
                   }}

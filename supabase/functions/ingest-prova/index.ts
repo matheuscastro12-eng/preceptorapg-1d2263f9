@@ -37,10 +37,13 @@ interface ExtractionResult {
   tem_justificativas_no_pdf: boolean;
 }
 
-function buildExtractionPrompt(numAlternativas: number): string {
+function buildExtractionPrompt(numAlternativas: number, isText: boolean): string {
   const letraMax = String.fromCharCode(64 + numAlternativas); // 4=>D, 5=>E
-  return `Voce recebe um PDF de prova de medicina (residencia, ENAMED, prova de faculdade, ou similar).
-Sua tarefa: extrair TODAS as questoes de multipla escolha presentes no PDF.
+  const sourceLabel = isText
+    ? "o texto extraido pagina-a-pagina de uma prova"
+    : "um PDF de prova";
+  return `Voce recebe ${sourceLabel} de medicina (residencia, ENAMED, prova de faculdade, ou similar).
+Sua tarefa: extrair TODAS as questoes de multipla escolha presentes.
 
 REGRAS CRITICAS:
 
@@ -98,35 +101,43 @@ Exemplo CORRETO: "alternativas": ["Hipertensao essencial", "Hiperaldosteronismo 
 Exemplo ERRADO:  "alternativas": ["A) Hipertensao essencial", "B) Hiperaldosteronismo primario", ...]`;
 }
 
-async function callGeminiVision(
+async function callGeminiExtraction(
   apiKey: string,
   systemPrompt: string,
-  pdfBase64: string,
+  source: { type: "text"; pagesText: string } | { type: "pdf"; base64: string },
 ): Promise<ExtractionResult> {
   const url =
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+  const userParts: Array<Record<string, unknown>> =
+    source.type === "text"
+      ? [
+          { text: source.pagesText },
+          {
+            text:
+              "Extraia todas as questoes presentes no texto acima seguindo as regras do sistema.",
+          },
+        ]
+      : [
+          {
+            inlineData: {
+              mimeType: "application/pdf",
+              data: source.base64,
+            },
+          },
+          {
+            text: "Extraia todas as questoes desta prova seguindo as regras.",
+          },
+        ];
 
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: systemPrompt }] },
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              inlineData: {
-                mimeType: "application/pdf",
-                data: pdfBase64,
-              },
-            },
-            { text: "Extraia todas as questoes desta prova seguindo as regras." },
-          ],
-        },
-      ],
+      contents: [{ role: "user", parts: userParts }],
       generationConfig: {
-        temperature: 0.1, // baixo pra extracao literal
+        temperature: 0.1,
         maxOutputTokens: 65536,
         responseMimeType: "application/json",
       },
@@ -282,7 +293,16 @@ serve(async (req) => {
   }
 
   // ── Parse body ──
-  let body: { prova_id?: string };
+  // mode "text" (preferido pra PDFs digitais): client manda texto extraido
+  //   pagina-a-pagina. Roda em segundos e nao gasta CPU/memoria do worker
+  //   processando OCR/Vision.
+  // mode "pdf" (fallback automatico, nao implementado por agora): processaria
+  //   o PDF original via Gemini Vision quando o texto for insuficiente (scan).
+  let body: {
+    prova_id?: string;
+    mode?: "text" | "pdf";
+    pages?: Array<{ page_num: number; text: string }>;
+  };
   try {
     body = await req.json();
   } catch {
@@ -292,11 +312,30 @@ serve(async (req) => {
     });
   }
   const provaId = body.prova_id;
+  const mode = body.mode ?? "pdf";
   if (!provaId || typeof provaId !== "string") {
     return new Response(JSON.stringify({ error: "prova_id obrigatorio" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  }
+  if (mode === "text") {
+    if (
+      !Array.isArray(body.pages) ||
+      body.pages.length === 0 ||
+      body.pages.every((p) => !p.text || p.text.trim().length === 0)
+    ) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "mode=text requer array 'pages' com texto. PDF parece sem texto extraivel — provavelmente scan.",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
   }
 
   // ── Carrega prova e valida ownership ──
@@ -356,38 +395,67 @@ serve(async (req) => {
     .eq("prova_id", provaId);
 
   try {
-    // ── Baixa PDF do storage ──
-    const { data: pdfBlob, error: dlError } = await adminClient
-      .storage
-      .from("provas-pdfs")
-      .download(prova.pdf_storage_path);
-
-    if (dlError || !pdfBlob) {
-      throw new Error(
-        `Falha ao baixar PDF do storage: ${dlError?.message ?? "blob vazio"}`,
-      );
-    }
-    const pdfArrayBuffer = await pdfBlob.arrayBuffer();
-    if (pdfArrayBuffer.byteLength > MAX_PDF_SIZE_BYTES) {
-      throw new Error(
-        `PDF muito grande (${(pdfArrayBuffer.byteLength / 1024 / 1024).toFixed(1)} MB). Limite: ${MAX_PDF_SIZE_BYTES / 1024 / 1024} MB.`,
-      );
-    }
-    // ArrayBuffer -> base64 sem alocar gigantesco
-    const u8 = new Uint8Array(pdfArrayBuffer);
-    let binary = "";
-    const CHUNK = 0x8000;
-    for (let i = 0; i < u8.length; i += CHUNK) {
-      binary += String.fromCharCode.apply(null, Array.from(u8.subarray(i, i + CHUNK)));
-    }
-    const pdfBase64 = btoa(binary);
-
-    // ── Gemini Vision ──
     const apiKey = Deno.env.get("GOOGLE_AI_API_KEY");
     if (!apiKey) throw new Error("GOOGLE_AI_API_KEY nao configurada");
-    const systemPrompt = buildExtractionPrompt(prova.num_alternativas);
 
-    const result = await callGeminiVision(apiKey, systemPrompt, pdfBase64);
+    let result: ExtractionResult;
+
+    if (mode === "text") {
+      // Caminho rapido — texto ja extraido no browser via pdfjs.
+      // Concatena com marcadores de pagina e manda pra Gemini text mode.
+      const pagesArr = body.pages ?? [];
+      const pagesText = pagesArr
+        .map((p) =>
+          `=== PAGINA ${p.page_num} ===\n${(p.text ?? "").trim()}`
+        )
+        .join("\n\n");
+      // Sanity check de tamanho — Gemini text aceita ~1M tokens input,
+      // mas vamos cortar em ~500k chars pra evitar surpresa.
+      if (pagesText.length > 500_000) {
+        throw new Error(
+          `Texto da prova muito grande (${pagesText.length} chars). Divida em provas menores.`,
+        );
+      }
+      const systemPrompt = buildExtractionPrompt(prova.num_alternativas, true);
+      result = await callGeminiExtraction(apiKey, systemPrompt, {
+        type: "text",
+        pagesText,
+      });
+    } else {
+      // Caminho lento — PDF Vision (usado quando o caller marca explicitamente
+      // mode=pdf, ex: scan sem OCR). Limitado a 20MB e poucas paginas pra
+      // nao estourar o wall-clock de 150s do worker.
+      const { data: pdfBlob, error: dlError } = await adminClient
+        .storage
+        .from("provas-pdfs")
+        .download(prova.pdf_storage_path);
+      if (dlError || !pdfBlob) {
+        throw new Error(
+          `Falha ao baixar PDF do storage: ${dlError?.message ?? "blob vazio"}`,
+        );
+      }
+      const pdfArrayBuffer = await pdfBlob.arrayBuffer();
+      if (pdfArrayBuffer.byteLength > MAX_PDF_SIZE_BYTES) {
+        throw new Error(
+          `PDF muito grande (${(pdfArrayBuffer.byteLength / 1024 / 1024).toFixed(1)} MB). Limite Vision: ${MAX_PDF_SIZE_BYTES / 1024 / 1024} MB.`,
+        );
+      }
+      const u8 = new Uint8Array(pdfArrayBuffer);
+      let binary = "";
+      const CHUNK = 0x8000;
+      for (let i = 0; i < u8.length; i += CHUNK) {
+        binary += String.fromCharCode.apply(
+          null,
+          Array.from(u8.subarray(i, i + CHUNK)),
+        );
+      }
+      const pdfBase64 = btoa(binary);
+      const systemPrompt = buildExtractionPrompt(prova.num_alternativas, false);
+      result = await callGeminiExtraction(apiKey, systemPrompt, {
+        type: "pdf",
+        base64: pdfBase64,
+      });
+    }
 
     if (!Array.isArray(result.questoes) || result.questoes.length === 0) {
       throw new Error("Gemini nao extraiu nenhuma questao do PDF");

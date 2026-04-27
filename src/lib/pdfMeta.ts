@@ -50,3 +50,46 @@ export async function readPdfMeta(file: File): Promise<PdfMeta> {
     firstPageTextSnippet,
   };
 }
+
+export interface PageText {
+  page_num: number;
+  text: string;
+}
+
+/**
+ * Extrai texto pagina-a-pagina do PDF. Funciona pra PDFs digitais.
+ * Pra scans, retorna paginas vazias (caller deve detectar).
+ */
+export async function extractTextByPage(file: File): Promise<PageText[]> {
+  const pdfjs = await loadPdfjs();
+  const buffer = await file.arrayBuffer();
+  const doc = await pdfjs.getDocument({ data: buffer }).promise;
+  const pages: PageText[] = [];
+
+  for (let i = 1; i <= doc.numPages; i++) {
+    let text = "";
+    try {
+      const page = await doc.getPage(i);
+      const content = await page.getTextContent();
+      // Reconstroi texto preservando ordem; quebra de linha quando o item
+      // tem `hasEOL` ou estamos fim de bloco.
+      const items = content.items as Array<{
+        str: string;
+        hasEOL?: boolean;
+      }>;
+      let buf = "";
+      for (const it of items) {
+        if (typeof it.str === "string") buf += it.str;
+        if (it.hasEOL) buf += "\n";
+        else buf += " ";
+      }
+      // Compacta espacos multiplos mas mantem linhas
+      text = buf.replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+    } catch {
+      /* pagina ilegivel */
+    }
+    pages.push({ page_num: i, text });
+  }
+  return pages;
+}
+
