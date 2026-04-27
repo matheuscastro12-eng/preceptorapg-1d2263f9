@@ -203,10 +203,13 @@ const ProvaReview = () => {
     prova.status === "uploading" || prova.status === "extracting";
 
   return (
-    <DashboardLayout hideFooter>
-      <div className="flex flex-col h-[calc(100vh-64px)]">
+    <DashboardLayout
+      hideFooter
+      mainClassName="p-0 max-w-none w-full flex flex-col"
+    >
+      <div className="flex flex-col flex-1 min-h-0">
         {/* Top bar */}
-        <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center gap-3 shrink-0">
+        <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center gap-3 shrink-0 sticky top-0 z-10">
           <button
             onClick={() => navigate("/provas")}
             className="w-9 h-9 rounded-lg text-[#4a5568] hover:bg-slate-100 flex items-center justify-center"

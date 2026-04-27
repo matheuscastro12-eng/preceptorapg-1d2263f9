@@ -434,10 +434,13 @@ const ProvaSimulado = () => {
   const s = elapsed % 60;
 
   return (
-    <DashboardLayout hideFooter>
-      <div className="flex flex-col h-[calc(100vh-64px)]">
+    <DashboardLayout
+      hideFooter
+      mainClassName="p-0 max-w-none w-full flex flex-col"
+    >
+      <div className="flex flex-col flex-1 min-h-0">
         {/* Header */}
-        <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center gap-3 shrink-0">
+        <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center gap-3 shrink-0 sticky top-0 z-10">
           <button
             onClick={() => {
               if (confirm("Encerrar simulado? Suas respostas serão perdidas.")) {
@@ -543,7 +546,7 @@ const ProvaSimulado = () => {
         </div>
 
         {/* Bottom nav */}
-        <div className="border-t border-slate-200 bg-white px-4 sm:px-6 py-3 shrink-0">
+        <div className="border-t border-slate-200 bg-white px-4 sm:px-6 py-3 shrink-0 sticky bottom-0 z-10">
           <div className="max-w-3xl mx-auto flex items-center gap-2">
             <button
               onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))}

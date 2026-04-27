@@ -158,6 +158,7 @@ const Provas = () => {
                 prova={p}
                 onReview={() => navigate(`/provas/${p.id}/review`)}
                 onSimulate={() => navigate(`/provas/${p.id}/simulado`)}
+                onSimulateLive={() => navigate(`/provas/${p.id}/simulado?live=1`)}
                 onDelete={() => setConfirmDeleteId(p.id)}
               />
             ))}
@@ -236,16 +237,22 @@ function ProvaCard({
   prova,
   onReview,
   onSimulate,
+  onSimulateLive,
   onDelete,
 }: {
   prova: Prova;
   onReview: () => void;
   onSimulate: () => void;
+  onSimulateLive: () => void;
   onDelete: () => void;
 }) {
   const cfg = STATUS_CONFIG[prova.status];
   const Icon = cfg.icon;
   const isWorking = prova.status === "uploading" || prova.status === "extracting";
+  // Heuristica: se a prova esta extraindo MAS ja tem questoes aprovadas,
+  // o user usou modo expresso e pode ir direto pro simulado live.
+  const hasLiveQuestions =
+    prova.status === "extracting" && prova.num_questoes_aprovadas > 0;
   const created = new Date(prova.created_at).toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "short",
@@ -254,6 +261,9 @@ function ProvaCard({
     prova.num_questoes > 0
       ? Math.round((prova.num_questoes_aprovadas / prova.num_questoes) * 100)
       : 0;
+  // Em modo expresso (auto-aprovado), label "Disponíveis" faz mais
+  // sentido que "Revisão"
+  const progressLabel = hasLiveQuestions ? "Disponíveis ao vivo" : "Revisão";
 
   return (
     <div className="group bg-white rounded-2xl border border-slate-200 p-5 shadow-[0_1px_2px_rgba(25,28,29,0.04)] hover:shadow-[0_8px_28px_-12px_rgba(0,109,91,0.18)] hover:border-[#006D5B]/30 transition-all">
@@ -302,7 +312,7 @@ function ProvaCard({
         <div className="mb-3">
           <div className="flex justify-between items-baseline mb-1.5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#4a5568]">
-              Revisão
+              {progressLabel}
             </span>
             <span className="font-mono text-[11px] text-[#191C1D]">
               {prova.num_questoes_aprovadas}/{prova.num_questoes}
@@ -318,7 +328,22 @@ function ProvaCard({
       )}
 
       <div className="flex gap-2 mt-4">
-        {prova.status === "reviewing" && (
+        {hasLiveQuestions && (
+          <>
+            <button
+              onClick={onSimulateLive}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 h-10 rounded-lg bg-gradient-to-br from-[#003D32] via-[#005344] to-[#006D5B] text-white text-sm font-bold hover:brightness-110 transition-all shadow-[0_4px_12px_-4px_rgba(0,109,91,0.4)]"
+            >
+              <Play className="w-4 h-4" />
+              Continuar ao vivo
+              <span className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/15 text-[9.5px] font-mono uppercase tracking-wider">
+                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                {prova.num_questoes_aprovadas}
+              </span>
+            </button>
+          </>
+        )}
+        {!hasLiveQuestions && prova.status === "reviewing" && (
           <button
             onClick={onReview}
             className="flex-1 inline-flex items-center justify-center gap-1.5 h-10 rounded-lg bg-[#191C1D] text-white text-sm font-bold hover:bg-[#000] transition-colors"
@@ -345,12 +370,14 @@ function ProvaCard({
             </button>
           </>
         )}
-        {(prova.status === "uploading" || prova.status === "extracting") && (
-          <div className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-lg bg-slate-50 border border-slate-200 text-sm text-[#4a5568]">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            {prova.status === "uploading" ? "Enviando…" : "Extraindo questões…"}
-          </div>
-        )}
+        {/* Sem questoes aprovadas ainda E em uploading/extracting: spinner */}
+        {!hasLiveQuestions &&
+          (prova.status === "uploading" || prova.status === "extracting") && (
+            <div className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-lg bg-slate-50 border border-slate-200 text-sm text-[#4a5568]">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {prova.status === "uploading" ? "Enviando…" : "Extraindo questões…"}
+            </div>
+          )}
         {prova.status === "failed" && (
           <button
             onClick={onReview}
