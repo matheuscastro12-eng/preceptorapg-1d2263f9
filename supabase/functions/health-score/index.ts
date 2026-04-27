@@ -30,6 +30,12 @@ interface UserMetrics {
   score_anterior: number;
   fechamentos_7d: number;
   outras_geracoes_7d: number;
+  /** flashcards revisados nos ultimos 7d (nao gera log mas conta como uso) */
+  flashcard_reviews_7d: number;
+  /** simulados de provas importadas nos ultimos 7d */
+  prova_attempts_7d: number;
+  /** dias desde signup — < 7 deixa o user em "attention" mesmo sem dados */
+  days_since_signup: number;
 }
 
 /**
@@ -67,12 +73,20 @@ function calculateHealthScore(metrics: UserMetrics): HealthScoreResult {
   else pts_desempenho = 0;
 
   // ── ENGAJAMENTO (25 pts) — outras features + diversidade ───
-  // Outras geracoes 7d (chat, questoes, flashcards, mentor, exam) max 15
-  const outras = metrics.outras_geracoes_7d;
-  if (outras >= 20) pts_engajamento += 15;
-  else if (outras >= 10) pts_engajamento += 12;
-  else if (outras >= 5) pts_engajamento += 8;
-  else if (outras >= 2) pts_engajamento += 5;
+  // Soma de TODOS os sinais de uso ativo nos ultimos 7d:
+  //  - chamadas de IA (chat, questoes, mentor, exam)
+  //  - flashcard_reviews (SM-2 — nao loga em generation_logs, conta direto)
+  //  - prova_attempts (provas importadas — nao loga em generation_logs)
+  // Antes a formula so contava generation_logs e por isso estudante que
+  // so usava flashcards/simulados aparecia como "Critico" mesmo ativo.
+  const outras =
+    metrics.outras_geracoes_7d +
+    metrics.flashcard_reviews_7d +
+    metrics.prova_attempts_7d;
+  if (outras >= 30) pts_engajamento += 15;
+  else if (outras >= 15) pts_engajamento += 12;
+  else if (outras >= 7) pts_engajamento += 8;
+  else if (outras >= 3) pts_engajamento += 5;
   else if (outras >= 1) pts_engajamento += 2;
 
   // Diversidade (features distintas 30d) max 10 — recompensa uso amplo
@@ -136,9 +150,11 @@ serve(async (req) => {
 
     // Buscar TODOS os perfis (inclusive quem nao tem lead ainda).
     // O health score deve refletir toda a base cadastrada.
+    // created_at necessario pra detectar usuarios novos (zona "attention"
+    // em vez de "critical" enquanto eles nao tiveram tempo de usar).
     let profilesQuery = supabase
       .from("profiles")
-      .select("user_id, email, full_name");
+      .select("user_id, email, full_name, created_at");
 
     if (user_id) {
       profilesQuery = profilesQuery.eq("user_id", user_id);
@@ -180,6 +196,7 @@ serve(async (req) => {
           user_id: p.user_id,
           lead_id: lead?.id ?? null,
           produto_interesse: lead?.produto_interesse ?? "preceptormed",
+          created_at: p.created_at,
         };
       });
 
@@ -230,17 +247,47 @@ serve(async (req) => {
           .eq("user_id", lead.user_id)
           .gte("created_at", new Date(Date.now() - 14 * 86400000).toISOString());
 
-        const uniqueDays14 = new Set(
+        // dias_ativos_14d sera recalculado mais abaixo combinando varias fontes
+        const _uniqueDays14_logsOnly = new Set(
           (activityLogs ?? []).map((l) => l.created_at.split("T")[0])
         ).size;
+        void _uniqueDays14_logsOnly;
 
         // Geracoes 7d separadas: fechamentos vs outras
         const sevenDaysAgoMs = Date.now() - 7 * 86400000;
+        const sevenDaysAgoIso = new Date(sevenDaysAgoMs).toISOString();
         const logs7d = (activityLogs ?? []).filter(
           (l: any) => new Date(l.created_at).getTime() >= sevenDaysAgoMs
         );
         const fechamentos_7d = logs7d.filter((l: any) => l.function_name === "generate-fechamento").length;
         const outras_geracoes_7d = logs7d.filter((l: any) => l.function_name !== "generate-fechamento").length;
+
+        // Sinais de uso que NAO geram log na generation_logs:
+        // flashcard_reviews + prova_attempts. Fetch UMA VEZ pra 14d e
+        // calcula 7d em memoria — evita queries duplicadas que estouram
+        // o CPU limit do edge worker em batches grandes.
+        const fourteenDaysAgoIso = new Date(
+          Date.now() - 14 * 86400000,
+        ).toISOString();
+        const [{ data: flashReviews14d }, { data: provaAttempts14d }] =
+          await Promise.all([
+            supabase
+              .from("flashcard_reviews")
+              .select("created_at")
+              .eq("user_id", lead.user_id)
+              .gte("created_at", fourteenDaysAgoIso),
+            supabase
+              .from("prova_attempts")
+              .select("created_at")
+              .eq("user_id", lead.user_id)
+              .gte("created_at", fourteenDaysAgoIso),
+          ]);
+        const flashReviews7d = (flashReviews14d ?? []).filter(
+          (r: any) => new Date(r.created_at).getTime() >= sevenDaysAgoMs,
+        ).length;
+        const provaAttempts7d = (provaAttempts14d ?? []).filter(
+          (r: any) => new Date(r.created_at).getTime() >= sevenDaysAgoMs,
+        ).length;
 
         // Features distintas nos ultimos 30d
         const { data: featureLogs } = await supabase
@@ -289,16 +336,35 @@ serve(async (req) => {
 
         const hasHistory = prevScore?.score != null;
 
+        // Tempo desde signup. Usado pra suavizar "critical" em users novos
+        // que ainda nao tiveram chance de gerar dados.
+        const daysSinceSignup = lead.created_at
+          ? Math.max(
+              0,
+              Math.floor((Date.now() - new Date(lead.created_at).getTime()) / 86400000),
+            )
+          : 365;
+
+        // Reusa os fetches de 14d ja feitos acima
+        const allActivityDays = new Set<string>();
+        for (const l of activityLogs ?? []) allActivityDays.add(l.created_at.split("T")[0]);
+        for (const e of flashReviews14d ?? []) allActivityDays.add(e.created_at.split("T")[0]);
+        for (const e of provaAttempts14d ?? []) allActivityDays.add(e.created_at.split("T")[0]);
+        const uniqueDays14Combined = allActivityDays.size;
+
         const metrics: UserMetrics = {
           questoes_7d: q7d,
           questoes_30d: q30d,
           acertos_pct,
-          dias_ativos_14d: uniqueDays14,
+          dias_ativos_14d: uniqueDays14Combined,
           features_usadas: featuresUsadas,
           streak_atual: streak,
           score_anterior: hasHistory ? prevScore!.score : 0,
           fechamentos_7d,
           outras_geracoes_7d,
+          flashcard_reviews_7d: flashReviews7d ?? 0,
+          prova_attempts_7d: provaAttempts7d ?? 0,
+          days_since_signup: daysSinceSignup,
         };
 
         const result = calculateHealthScore(metrics);
@@ -311,11 +377,19 @@ serve(async (req) => {
           const neutral = baseScore > 0 ? 12 : 0;
           result.pts_tendencia = neutral;
           result.score = Math.min(100, baseScore + neutral);
-          if (result.score >= 80) result.zone = "healthy";
-          else if (result.score >= 60) result.zone = "attention";
-          else if (result.score >= 40) result.zone = "risk";
-          else result.zone = "critical";
         }
+
+        // Suavizacao pra usuarios NOVOS (signup ha < 7 dias):
+        // - Sem dados ainda? Zona "attention" em vez de "critical" — eles
+        //   estao no onboarding, nao "perderam" o cliente.
+        // - Score minimo de 40 pra cair em risk (nao critical).
+        if (metrics.days_since_signup < 7 && result.score < 40) {
+          result.score = Math.max(result.score, 40);
+          result.zone = "risk"; // mostra como "Risco" — diferente de "Crítico"
+        } else if (result.score >= 80) result.zone = "healthy";
+        else if (result.score >= 60) result.zone = "attention";
+        else if (result.score >= 40) result.zone = "risk";
+        else result.zone = "critical";
 
         // Um score por user: apaga o anterior e insere novo.
         // O unique index e composto (user_id, dia de calculado_em), entao

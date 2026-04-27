@@ -30,10 +30,12 @@ export function useOnlineUsers() {
       >;
       const all: OnlineUser[] = [];
       for (const key of Object.keys(state)) {
-        // Ignora outros observadores admin
+        // Ignora observadores admin
         if (key === "crm-observer" || key.startsWith("crm-")) continue;
         const pres = state[key]?.[0];
         if (!pres) continue;
+        // Tambem filtra payloads que se identificaram como observer
+        if (pres.kind === "observer") continue;
         all.push({
           user_id: (pres.user_id as string) ?? key,
           email: (pres.email as string) ?? null,
@@ -42,28 +44,35 @@ export function useOnlineUsers() {
           online_at: (pres.online_at as string) ?? new Date().toISOString(),
         });
       }
-      // Ordenado: mais recente primeiro
       all.sort(
         (a, b) =>
           new Date(b.online_at).getTime() - new Date(a.online_at).getTime(),
       );
       setUsers(all);
+      // Recebeu sync → consideramos conectado
+      setConnected(true);
     };
 
     channel
       .on("presence", { event: "sync" }, flatten)
       .on("presence", { event: "join" }, flatten)
       .on("presence", { event: "leave" }, flatten)
-      .subscribe(async (status) => {
+      .subscribe((status, err) => {
         if (status === "SUBSCRIBED") {
           setConnected(true);
-          // Trackamos com chave admin/observer pra gente nao "sumir" do
-          // canal sem precisar contar como user real (filtramos no flatten)
-          await channel.track({ kind: "observer", at: Date.now() });
+        }
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          // eslint-disable-next-line no-console
+          console.warn("[OnlineUsers] realtime status", status, err);
         }
       });
 
+    // Fallback: mesmo que SUBSCRIBED nao venha, depois de 4s assumimos
+    // conectado (vazio) pra UI nao ficar travada em "Conectando..."
+    const timeout = window.setTimeout(() => setConnected(true), 4000);
+
     return () => {
+      window.clearTimeout(timeout);
       try {
         void supabase.removeChannel(channel);
       } catch {

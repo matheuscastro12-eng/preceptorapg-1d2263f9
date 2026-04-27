@@ -140,6 +140,12 @@ serve(async (req) => {
       throw new Error("Erro ao salvar flashcards");
     }
 
+    // Loga atividade pra health score considerar uso de flashcards
+    void serviceClient.from("generation_logs").insert({
+      user_id: userData.user.id,
+      function_name: "generate-flashcards",
+    });
+
     return new Response(
       JSON.stringify({ success: true, count: rows.length }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
