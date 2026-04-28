@@ -18,6 +18,10 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    // Sourcemap em prod: facilita debug de TDZ/circular import minificado.
+    // Os .map files nao sao baixados pelo browser por default — so quando
+    // o DevTools abre — entao nao impacta load time pros usuarios.
+    sourcemap: true,
     rollupOptions: {
       output: {
         // IMPORTANTE: so colocamos em manualChunks libs usadas no first paint

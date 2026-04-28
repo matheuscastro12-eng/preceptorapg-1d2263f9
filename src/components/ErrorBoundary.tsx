@@ -8,21 +8,23 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  componentStack: string | null;
 }
 
 export default class ErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, componentStack: null };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, error, componentStack: null };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error("[ErrorBoundary]", error.message, info.componentStack);
-    // Future: send to Sentry/monitoring here
+    // eslint-disable-next-line no-console
+    console.error("[ErrorBoundary]", error.message, "\n", error.stack, "\n", info.componentStack);
+    this.setState({ componentStack: info.componentStack ?? null });
   }
 
   render() {
@@ -54,9 +56,22 @@ export default class ErrorBoundary extends React.Component<Props, State> {
             {this.state.error && (
               <details className="mt-6 text-left">
                 <summary className="text-xs text-slate-400 cursor-pointer">Detalhes do erro</summary>
-                <pre className="mt-2 p-3 bg-slate-100 rounded-lg text-xs text-slate-500 overflow-auto max-h-40">
-                  {this.state.error.message}
+                <pre className="mt-2 p-3 bg-slate-100 rounded-lg text-[10.5px] text-slate-600 overflow-auto max-h-72 leading-relaxed font-mono whitespace-pre-wrap break-all">
+{`> ${this.state.error.message}
+
+— STACK —
+${this.state.error.stack ?? "(sem stack)"}${this.state.componentStack ? "\n\n— COMPONENT TREE —\n" + this.state.componentStack : ""}`}
                 </pre>
+                <button
+                  onClick={() => {
+                    const txt =
+                      `${this.state.error?.message}\n\n${this.state.error?.stack ?? ""}\n\n${this.state.componentStack ?? ""}`;
+                    void navigator.clipboard?.writeText(txt);
+                  }}
+                  className="mt-2 text-[11px] text-[#005344] hover:underline font-semibold"
+                >
+                  Copiar tudo
+                </button>
               </details>
             )}
           </div>
