@@ -99,3 +99,129 @@ export function useCalculator(slug: string | undefined) {
 
   return { calc, loading };
 }
+
+// ────────────────────────────────────────────────────────────
+// Drogas + Protocolos + CID-10 — busca lista
+// ────────────────────────────────────────────────────────────
+export interface DrugListItem {
+  id: string;
+  slug: string;
+  nome_principio: string;
+  classe_terapeutica: string | null;
+  nome_comercial: string[] | null;
+}
+
+export function useWhitebookDrugs(query: string) {
+  const [items, setItems] = useState<DrugListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    void (async () => {
+      const trimmed = query.trim();
+      let q = supabase
+        .from("wb_drugs")
+        .select("id, slug, nome_principio, classe_terapeutica, nome_comercial")
+        .eq("published", true);
+      if (trimmed) {
+        const ilike = `%${trimmed}%`;
+        q = q.or(`nome_principio.ilike.${ilike},classe_terapeutica.ilike.${ilike}`);
+      }
+      const { data } = await q.order("nome_principio").limit(100);
+      if (alive) {
+        setItems((data ?? []) as DrugListItem[]);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [query]);
+
+  return { items, loading };
+}
+
+export interface ProtocolListItem {
+  id: string;
+  slug: string;
+  titulo: string;
+  categoria: string;
+  resumo: string | null;
+}
+
+export function useWhitebookProtocols(query: string) {
+  const [items, setItems] = useState<ProtocolListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    void (async () => {
+      const trimmed = query.trim();
+      let q = supabase
+        .from("wb_protocols")
+        .select("id, slug, titulo, categoria, resumo")
+        .eq("published", true);
+      if (trimmed) {
+        const ilike = `%${trimmed}%`;
+        q = q.or(`titulo.ilike.${ilike},categoria.ilike.${ilike},resumo.ilike.${ilike}`);
+      }
+      const { data } = await q.order("titulo").limit(100);
+      if (alive) {
+        setItems((data ?? []) as ProtocolListItem[]);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [query]);
+
+  return { items, loading };
+}
+
+export interface IcdItem {
+  code: string;
+  descricao_pt: string;
+  capitulo: string | null;
+  capitulo_titulo: string | null;
+}
+
+export function useWhitebookIcd(query: string) {
+  const [items, setItems] = useState<IcdItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    void (async () => {
+      const trimmed = query.trim();
+      if (!trimmed) {
+        // Sem query: lista vazia (CID-10 tem ~14k itens, faz pouco sentido listar)
+        if (alive) {
+          setItems([]);
+          setLoading(false);
+        }
+        return;
+      }
+      const ilike = `%${trimmed}%`;
+      const upper = trimmed.toUpperCase();
+      const { data } = await supabase
+        .from("wb_icd10")
+        .select("code, descricao_pt, capitulo, capitulo_titulo")
+        .or(`code.ilike.${upper}%,descricao_pt.ilike.${ilike}`)
+        .order("code")
+        .limit(50);
+      if (alive) {
+        setItems((data ?? []) as IcdItem[]);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [query]);
+
+  return { items, loading };
+}
