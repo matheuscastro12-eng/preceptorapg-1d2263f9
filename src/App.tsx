@@ -55,6 +55,7 @@ const Provas = lazy(() => import("./pages/Provas"));
 const ProvaReview = lazy(() => import("./pages/ProvaReview"));
 const ProvaSimulado = lazy(() => import("./pages/ProvaSimulado"));
 const Whitebook = lazy(() => import("./pages/Whitebook"));
+const WhitebookCalculator = lazy(() => import("./pages/WhitebookCalculator"));
 const Scribe = lazy(() => import("./pages/Scribe"));
 const ThankYou = lazy(() => import("./pages/ThankYou"));
 const SubscriptionThankYou = lazy(() => import("./pages/SubscriptionThankYou"));
@@ -169,6 +170,7 @@ const App = () => (
                 <Route path="/provas/:id/review" element={<ProvaReview />} />
                 <Route path="/provas/:id/simulado" element={<ProvaSimulado />} />
                 <Route path="/whitebook" element={<Whitebook />} />
+                <Route path="/whitebook/calculator/:slug" element={<WhitebookCalculator />} />
                 <Route path="/scribe" element={<Scribe />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/obrigado" element={<SubscriptionThankYou />} />
