@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageSkeleton from "@/components/PageSkeleton";
 import UpgradePaywall from "@/components/UpgradePaywall";
+import ScribeTosModal from "@/components/scribe/ScribeTosModal";
 import {
   Mic, Plus, FileText, Loader2, AlertTriangle, Trash2,
   CheckCircle2, Edit3, Hourglass, Sparkles, Clock,
@@ -155,6 +156,8 @@ const Scribe = () => {
           onConfirm={() => handleDelete(confirmDeleteId)}
         />
       )}
+
+      <ScribeTosModal />
     </DashboardLayout>
   );
 };

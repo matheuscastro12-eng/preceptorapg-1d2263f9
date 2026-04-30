@@ -48,6 +48,18 @@ export interface ConsultaSoap {
     }>;
     comentario?: string;
   };
+  P?: {
+    conduta?: string;
+    exames_solicitados?: string[];
+    prescricao_rascunho?: Array<{
+      medicamento?: string;
+      posologia?: string;
+      duracao?: string;
+      observacoes?: string;
+    }>;
+    orientacoes?: string;
+    retorno?: string;
+  };
 }
 
 export interface Consulta {

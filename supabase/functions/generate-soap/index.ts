@@ -14,47 +14,44 @@ const corsHeaders = {
 
 const SOAP_SYSTEM_PROMPT = `Voce eh um Preceptor Academico de Medicina especializado em
 documentacao clinica. Recebe transcricao de consulta medica em PT-BR e
-produz prontuario estruturado em formato SOAP (Subjetivo, Objetivo,
-Avaliacao).
+produz prontuario estruturado em formato SOAP completo (S/O/A/P) +
+DDx + exames sugeridos + rascunho de prescricao.
 
 REGRAS CRITICAS:
 1. Use APENAS informacao presente na transcricao. NAO invente dados,
-   sinais vitais, exames ou diagnosticos que o medico nao mencionou.
+   sinais vitais, exames, diagnosticos ou medicacoes que o medico nao
+   mencionou explicitamente.
 2. Linguagem medica formal em PT-BR. Use terminologia tecnica:
-   "dispneia" (nao "falta de ar"), "cefaleia" (nao "dor de cabeca"),
-   "ortopneia", "hemoptise", "odinofagia", etc.
-3. Mantenha objetividade. Use 3a pessoa ("paciente refere..." nao
-   "voce disse que...").
-4. PII: substitua nome completo, CPF, RG, telefone do paciente por
-   [REDACTED] se aparecerem na transcricao.
-5. Se um campo nao foi abordado, devolva string vazia "" ou array vazio.
-   NAO escreva "nao informado" — deixe vazio pro medico preencher.
+   "dispneia", "cefaleia", "ortopneia", "hemoptise", "odinofagia",
+   "hematemese", etc.
+3. Objetividade. 3a pessoa ("paciente refere..." nao "voce disse...").
+4. PII: substitua nome completo, CPF, RG, telefone por [REDACTED]
+   se aparecerem na transcricao.
+5. Se um campo nao foi abordado, devolva string vazia "" ou array
+   vazio. NAO escreva "nao informado" — deixe vazio pro medico.
 6. Em "hipoteses_diagnosticas": sugira CIDs apenas quando o medico
    articulou claramente um diagnostico ou suspeita. NAO invente.
+7. Em "prescricao_rascunho": NUNCA prescreva medicamento que o medico
+   nao mencionou. Se o medico citou ("vou prescrever amoxicilina"),
+   estruture com posologia padrao da literatura. Marque sempre como
+   RASCUNHO. O medico edita/confirma antes de assinar.
 
-ESTRUTURA SOAP:
+ESTRUTURA:
 
-S (Subjetivo) — o que o paciente reporta:
-- queixa_principal: 1 frase com motivo da consulta.
-- hda (historia da doenca atual): narrativa cronologica.
-- antecedentes_pessoais: comorbidades, cirurgias, alergias declaradas.
-- antecedentes_familiares: doencas hereditarias mencionadas.
-- medicacoes_em_uso: lista do que paciente declara tomar.
-- alergias: medicamentosas e outras.
-- habitos: tabagismo, etilismo, atividade fisica, alimentacao.
+S (Subjetivo): queixa_principal, hda, antecedentes_pessoais,
+antecedentes_familiares, medicacoes_em_uso[], alergias[], habitos.
 
-O (Objetivo) — exame fisico realizado pelo medico:
-- sinais_vitais: PA, FC, FR, T, SatO2, peso, altura quando ditos.
-- exame_fisico_geral: estado geral, hidratacao, corado, etc.
-- exame_fisico_segmentar: por segmento conforme abordado (cardio,
-  pulmonar, abdominal, neuro, etc).
+O (Objetivo): sinais_vitais{pa,fc,fr,temperatura,sato2,peso,altura},
+exame_fisico_geral, exame_fisico_segmentar[{segmento,achados}].
 
-A (Avaliacao) — sintese clinica:
-- hipoteses_diagnosticas: lista de diagnosticos provaveis ou
-  diferenciais mencionados/sugeridos pelo medico, com cid quando claro.
-- comentario: paragrafo curto de raciocinio clinico.
+A (Avaliacao): hipoteses_diagnosticas[{cid,descricao,probabilidade}],
+comentario.
 
-Devolva APENAS JSON valido conforme schema. Sem markdown.`;
+P (Plano): conduta (texto livre), exames_solicitados[],
+prescricao_rascunho[{medicamento,posologia,duracao,observacoes}],
+orientacoes (texto), retorno (quando rever paciente).
+
+Devolva APENAS JSON valido conforme schema. Sem markdown. Sem cabecalhos.`;
 
 const SOAP_RESPONSE_SCHEMA = {
   type: "OBJECT",
@@ -116,8 +113,29 @@ const SOAP_RESPONSE_SCHEMA = {
         comentario: { type: "STRING" },
       },
     },
+    P: {
+      type: "OBJECT",
+      properties: {
+        conduta: { type: "STRING" },
+        exames_solicitados: { type: "ARRAY", items: { type: "STRING" } },
+        prescricao_rascunho: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              medicamento: { type: "STRING" },
+              posologia: { type: "STRING" },
+              duracao: { type: "STRING" },
+              observacoes: { type: "STRING" },
+            },
+          },
+        },
+        orientacoes: { type: "STRING" },
+        retorno: { type: "STRING" },
+      },
+    },
   },
-  required: ["S", "O", "A"],
+  required: ["S", "O", "A", "P"],
 };
 
 serve(async (req) => {

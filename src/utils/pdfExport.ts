@@ -1311,3 +1311,392 @@ function extractMarkdownFromHTML(el: HTMLElement): string {
   el.childNodes.forEach(walk);
   return out.join('\n');
 }
+
+// ─── Export de Consulta (Scribe) ─────────────────────────────────
+// Gera PDF do prontuario com cabecalho do medico + SOAP completo +
+// assinatura ou marca d'agua "RASCUNHO" se nao aprovada.
+
+interface ConsultaPdfInput {
+  consulta: {
+    id: string;
+    paciente_alias: string;
+    data_consulta: string;
+    transcript?: string | null;
+    soap_jsonb?: {
+      S?: {
+        queixa_principal?: string;
+        hda?: string;
+        antecedentes_pessoais?: string;
+        antecedentes_familiares?: string;
+        medicacoes_em_uso?: string[];
+        alergias?: string[];
+        habitos?: string;
+      };
+      O?: {
+        sinais_vitais?: Record<string, string | undefined>;
+        exame_fisico_geral?: string;
+        exame_fisico_segmentar?: Array<{ segmento?: string; achados?: string }>;
+      };
+      A?: {
+        hipoteses_diagnosticas?: Array<{ cid?: string; descricao?: string; probabilidade?: string }>;
+        comentario?: string;
+      };
+      P?: {
+        conduta?: string;
+        exames_solicitados?: string[];
+        prescricao_rascunho?: Array<{ medicamento?: string; posologia?: string; duracao?: string; observacoes?: string }>;
+        orientacoes?: string;
+        retorno?: string;
+      };
+    };
+    validated_at?: string | null;
+    validation_signature?: string | null;
+    audio_duration_s?: number | null;
+  };
+  medicoNome: string;
+  medicoCrm: string;
+}
+
+export const exportConsultaPDF = async (input: ConsultaPdfInput): Promise<void> => {
+  const { jsPDF } = await import('jspdf');
+  const { consulta, medicoNome, medicoCrm } = input;
+  const doc: JsPDF = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+  const isApproved = !!consulta.validated_at;
+  const dataConsulta = new Date(consulta.data_consulta);
+  const dataStr = dataConsulta.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const horaStr = dataConsulta.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  let y = MT;
+
+  // Cabecalho verde
+  doc.setFillColor(...C.greenInk);
+  doc.rect(0, 0, PAGE_W, 28, 'F');
+  doc.setFillColor(...C.gold);
+  doc.rect(0, 27.6, PAGE_W, 0.4, 'F');
+
+  doc.setTextColor(...C.gold);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PRECEPTORMED · SCRIBE CLINICO', ML, 12);
+  doc.setTextColor(...C.white);
+  doc.setFontSize(15);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PRONTUARIO MEDICO', ML, 21);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.gold);
+  doc.text(dataStr.toUpperCase(), PAGE_W - MR, 12, { align: 'right' });
+  doc.setTextColor(...C.white);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(horaStr, PAGE_W - MR, 18, { align: 'right' });
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'bold');
+  if (isApproved) {
+    doc.setTextColor(180, 230, 200);
+    doc.text('ASSINADO ELETRONICAMENTE', PAGE_W - MR, 23, { align: 'right' });
+  } else {
+    doc.setTextColor(255, 200, 100);
+    doc.text('RASCUNHO - NAO ASSINADO', PAGE_W - MR, 23, { align: 'right' });
+  }
+
+  y = 36;
+
+  // Identificacao
+  doc.setFillColor(...C.paper);
+  doc.rect(ML, y, CW, 22, 'F');
+  drawHairline(doc, ML, y, CW, C.hairline);
+  drawHairline(doc, ML, y + 22, CW, C.hairline);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.muted);
+  doc.text('PACIENTE', ML + 4, y + 5.5);
+  doc.text('MEDICO RESPONSAVEL', ML + CW / 2 + 2, y + 5.5);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.ink);
+  const aliasLines = doc.splitTextToSize(replaceSpecials(consulta.paciente_alias), CW / 2 - 8);
+  doc.text(aliasLines.slice(0, 1), ML + 4, y + 11);
+  doc.text(replaceSpecials(medicoNome), ML + CW / 2 + 2, y + 11);
+  if (medicoCrm) {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...C.muted);
+    doc.text(`CRM: ${medicoCrm}`, ML + CW / 2 + 2, y + 16);
+  }
+  if (consulta.audio_duration_s) {
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...C.muted);
+    const durMin = Math.floor(consulta.audio_duration_s / 60);
+    const durSec = consulta.audio_duration_s % 60;
+    doc.text(
+      `Duracao: ${durMin}min ${durSec}s | ID: ${consulta.id.slice(0, 8)}`,
+      ML + 4,
+      y + 18,
+    );
+  }
+
+  y += 30;
+
+  const checkPage = (needed: number) => {
+    if (y + needed > PAGE_H - MB - 18) { doc.addPage(); y = MT; }
+  };
+
+  const sectionHeader = (title: string) => {
+    checkPage(16);
+    y += 2;
+    doc.setFillColor(...C.greenInk);
+    doc.rect(ML, y, 2.5, 8, 'F');
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...C.greenInk);
+    doc.text(title, ML + 6, y + 5.8);
+    y += 11;
+    drawHairline(doc, ML, y - 1.5, CW, C.hairline);
+  };
+
+  const labeledText = (label: string, value: string | undefined | null) => {
+    if (!value || !value.trim()) return;
+    checkPage(LH.body * 3);
+    doc.setFontSize(F.caption);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...C.muted);
+    doc.text(label.toUpperCase(), ML, y);
+    y += 4.5;
+    doc.setFontSize(F.bodySerif);
+    doc.setFont('times', 'normal');
+    doc.setTextColor(...C.text);
+    const lines = doc.splitTextToSize(replaceSpecials(value), CW);
+    for (const line of lines) {
+      checkPage(LH.body);
+      doc.text(line, ML, y);
+      y += LH.body;
+    }
+    y += 2.5;
+  };
+
+  const bulletList = (label: string, items: string[] | undefined) => {
+    if (!items || items.length === 0) return;
+    checkPage(8 + items.length * LH.bullet);
+    doc.setFontSize(F.caption);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...C.muted);
+    doc.text(label.toUpperCase(), ML, y);
+    y += 4.5;
+    doc.setFontSize(F.bullet);
+    doc.setFont('times', 'normal');
+    doc.setTextColor(...C.text);
+    for (const it of items) {
+      if (!it || !it.trim()) continue;
+      checkPage(LH.bullet);
+      drawSquareBullet(doc, ML + 1, y, C.gold);
+      const lines = doc.splitTextToSize(replaceSpecials(it), CW - 8);
+      doc.text(lines, ML + 6, y);
+      y += lines.length * LH.bullet;
+    }
+    y += 2.5;
+  };
+
+  const soap = consulta.soap_jsonb ?? {};
+
+  // S
+  sectionHeader('S - SUBJETIVO');
+  labeledText('Queixa principal', soap.S?.queixa_principal);
+  labeledText('Historia da doenca atual', soap.S?.hda);
+  labeledText('Antecedentes pessoais', soap.S?.antecedentes_pessoais);
+  labeledText('Antecedentes familiares', soap.S?.antecedentes_familiares);
+  bulletList('Medicacoes em uso', soap.S?.medicacoes_em_uso);
+  bulletList('Alergias', soap.S?.alergias);
+  labeledText('Habitos', soap.S?.habitos);
+
+  // O
+  sectionHeader('O - OBJETIVO');
+  const sv = soap.O?.sinais_vitais ?? {};
+  const svPairs = [
+    ['PA', sv.pa], ['FC', sv.fc], ['FR', sv.fr],
+    ['T', sv.temperatura], ['SatO2', sv.sato2], ['Peso', sv.peso], ['Altura', sv.altura],
+  ].filter(([, v]) => v && String(v).trim().length > 0) as [string, string][];
+  if (svPairs.length > 0) {
+    checkPage(14);
+    doc.setFontSize(F.caption);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...C.muted);
+    doc.text('SINAIS VITAIS', ML, y);
+    y += 4.5;
+    doc.setFontSize(F.bodySerif);
+    doc.setFont('times', 'normal');
+    doc.setTextColor(...C.text);
+    const svText = svPairs.map(([k, v]) => `${k}: ${v}`).join('  |  ');
+    const lines = doc.splitTextToSize(replaceSpecials(svText), CW);
+    for (const line of lines) { doc.text(line, ML, y); y += LH.body; }
+    y += 2.5;
+  }
+  labeledText('Exame fisico geral', soap.O?.exame_fisico_geral);
+  const segs = (soap.O?.exame_fisico_segmentar ?? []).filter(s => s.segmento || s.achados);
+  if (segs.length > 0) {
+    checkPage(8);
+    doc.setFontSize(F.caption);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...C.muted);
+    doc.text('EXAME FISICO SEGMENTAR', ML, y);
+    y += 4.5;
+    for (const s of segs) {
+      checkPage(LH.body * 2);
+      doc.setFontSize(F.bodySerif);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...C.greenInk);
+      doc.text(replaceSpecials(s.segmento ?? ''), ML, y);
+      y += LH.body;
+      doc.setFont('times', 'normal');
+      doc.setTextColor(...C.text);
+      const lines = doc.splitTextToSize(replaceSpecials(s.achados ?? ''), CW - 4);
+      for (const l of lines) { checkPage(LH.body); doc.text(l, ML + 4, y); y += LH.body; }
+      y += 1.5;
+    }
+    y += 1;
+  }
+
+  // A
+  sectionHeader('A - AVALIACAO');
+  const ddxs = (soap.A?.hipoteses_diagnosticas ?? []).filter(d => d.descricao || d.cid);
+  if (ddxs.length > 0) {
+    doc.setFontSize(F.caption);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...C.muted);
+    doc.text('HIPOTESES DIAGNOSTICAS', ML, y);
+    y += 4.5;
+    for (const d of ddxs) {
+      checkPage(LH.body + 2);
+      doc.setFontSize(F.bullet);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...C.greenInk);
+      const cid = d.cid ? `[${d.cid}] ` : '';
+      const txt = `${cid}${replaceSpecials(d.descricao ?? '')}`;
+      const prob = d.probabilidade ? ` (${d.probabilidade})` : '';
+      const lines = doc.splitTextToSize(`${txt}${prob}`, CW);
+      doc.text(lines, ML, y);
+      y += lines.length * LH.bullet;
+    }
+    y += 2.5;
+  }
+  labeledText('Comentario clinico', soap.A?.comentario);
+
+  // P
+  sectionHeader('P - PLANO');
+  labeledText('Conduta', soap.P?.conduta);
+  bulletList('Exames solicitados', soap.P?.exames_solicitados);
+  const rxs = (soap.P?.prescricao_rascunho ?? []).filter(r => r.medicamento);
+  if (rxs.length > 0) {
+    checkPage(12);
+    doc.setFontSize(F.caption);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...C.muted);
+    doc.text(isApproved ? 'PRESCRICAO' : 'PRESCRICAO (RASCUNHO)', ML, y);
+    y += 4.5;
+    for (const r of rxs) {
+      checkPage(LH.body * 3 + 4);
+      const boxStart = y - 2;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(F.bullet);
+      doc.setTextColor(...C.ink);
+      const med = `${replaceSpecials(r.medicamento ?? '')}${r.duracao ? ` | ${replaceSpecials(r.duracao)}` : ''}`;
+      doc.text(med, ML + 4, y + 2);
+      y += LH.body;
+      if (r.posologia) {
+        doc.setFont('times', 'normal');
+        doc.setTextColor(...C.text);
+        doc.setFontSize(F.bodySerif);
+        const lines = doc.splitTextToSize(replaceSpecials(r.posologia), CW - 6);
+        for (const l of lines) { doc.text(l, ML + 4, y + 1); y += LH.body; }
+      }
+      if (r.observacoes) {
+        doc.setFont('times', 'italic');
+        doc.setTextColor(...C.textSoft);
+        doc.setFontSize(F.bodySmall);
+        const lines = doc.splitTextToSize(`Obs: ${replaceSpecials(r.observacoes)}`, CW - 6);
+        for (const l of lines) { doc.text(l, ML + 4, y + 1); y += LH.body; }
+      }
+      doc.setDrawColor(...C.greenInk);
+      doc.setLineWidth(0.6);
+      doc.line(ML, boxStart, ML, y - 1);
+      y += 2;
+    }
+    y += 1;
+  }
+  labeledText('Orientacoes ao paciente', soap.P?.orientacoes);
+  labeledText('Retorno', soap.P?.retorno);
+
+  // Assinatura/footer
+  const sigBlockH = 28;
+  if (y + sigBlockH > PAGE_H - MB) { doc.addPage(); y = MT; }
+  y = Math.max(y + 6, PAGE_H - MB - sigBlockH);
+  drawHairline(doc, ML, y, CW, C.greenInk);
+  y += 6;
+  doc.setFontSize(F.caption);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.muted);
+  doc.text('ASSINATURA ELETRONICA', ML, y);
+  y += 5;
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.ink);
+  doc.text(replaceSpecials(medicoNome), ML, y);
+  y += 5;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...C.muted);
+  if (medicoCrm) doc.text(`CRM: ${medicoCrm}`, ML, y);
+  if (isApproved && consulta.validation_signature) {
+    const validatedAt = new Date(consulta.validated_at!).toLocaleString('pt-BR');
+    const sigShort = `${consulta.validation_signature.slice(0, 8)}...${consulta.validation_signature.slice(-8)}`;
+    doc.setFontSize(8);
+    doc.setTextColor(...C.greenDeep);
+    doc.text(`Assinado em ${validatedAt}`, PAGE_W - MR, y - 5, { align: 'right' });
+    doc.setFontSize(7);
+    doc.setTextColor(...C.muted);
+    doc.text(`Hash: ${sigShort}`, PAGE_W - MR, y, { align: 'right' });
+  }
+
+  // Marca d'agua RASCUNHO em todas paginas se nao aprovada
+  if (!isApproved) {
+    const totalPages = doc.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      const G = (doc as { GState?: (o: { opacity: number }) => unknown }).GState;
+      if (G) (doc as { setGState?: (g: unknown) => void }).setGState?.(G({ opacity: 0.07 }));
+      doc.setTextColor(220, 60, 60);
+      doc.setFontSize(96);
+      doc.setFont('helvetica', 'bold');
+      doc.text('RASCUNHO', PAGE_W / 2, PAGE_H / 2, { align: 'center', angle: -30 });
+      if (G) (doc as { setGState?: (g: unknown) => void }).setGState?.(G({ opacity: 1 }));
+    }
+  }
+
+  // Footer com paginacao
+  const total = doc.getNumberOfPages();
+  for (let p = 1; p <= total; p++) {
+    doc.setPage(p);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...C.muted);
+    doc.text(
+      'Conteudo gerado com auxilio de IA. Medico responsavel pelo conteudo final. CFM 1.821/2007 e 2.299/2021.',
+      ML,
+      PAGE_H - 8,
+    );
+    doc.setFontSize(7);
+    doc.text(`${p} / ${total}`, PAGE_W - MR, PAGE_H - 8, { align: 'right' });
+  }
+
+  const dateForFile = dataConsulta.toISOString().slice(0, 10);
+  const aliasForFile = consulta.paciente_alias
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '')
+    .slice(0, 40);
+  const filename = `prontuario-${dateForFile}-${aliasForFile || 'consulta'}${isApproved ? '-assinado' : '-rascunho'}.pdf`;
+  doc.save(filename);
+};

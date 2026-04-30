@@ -14,6 +14,7 @@ import PageSkeleton from "@/components/PageSkeleton";
 import {
   ArrowLeft, Loader2, Sparkles, AlertTriangle, Save, Check,
   Mic, FileText, ShieldCheck, Stethoscope, ListChecks, RotateCcw,
+  Download, History,
 } from "lucide-react";
 
 const ScribeReview = () => {
@@ -33,7 +34,9 @@ const ScribeReview = () => {
     S: false,
     O: false,
     A: false,
+    P: false,
   });
+  const [exporting, setExporting] = useState(false);
 
   // Hidrata draft quando consulta chega
   useEffect(() => {
@@ -80,6 +83,32 @@ const ScribeReview = () => {
     consulta.status === "transcrevendo" || consulta.status === "estruturando";
   const isApproved = consulta.status === "aprovada";
 
+  const handleExportPDF = async () => {
+    if (!consulta) return;
+    setExporting(true);
+    try {
+      const { exportConsultaPDF } = await import("@/utils/pdfExport");
+      await exportConsultaPDF({
+        consulta: {
+          ...consulta,
+          transcript: draftTranscript,
+          soap_jsonb: draftSoap,
+        },
+        medicoNome: user?.user_metadata?.full_name ?? user?.email ?? "Médico",
+        medicoCrm: user?.user_metadata?.crm ?? "",
+      });
+      toast({ title: "PDF exportado" });
+    } catch (e) {
+      toast({
+        title: "Erro ao exportar",
+        description: (e as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!consulta) return;
     setSaving(true);
@@ -105,7 +134,11 @@ const ScribeReview = () => {
     }
   };
 
-  const allReviewed = reviewedSections.S && reviewedSections.O && reviewedSections.A;
+  const allReviewed =
+    reviewedSections.S &&
+    reviewedSections.O &&
+    reviewedSections.A &&
+    reviewedSections.P;
 
   const handleApprove = async () => {
     if (!allReviewed) {
@@ -183,6 +216,23 @@ const ScribeReview = () => {
               {consulta.audio_duration_s && ` · ${Math.floor(consulta.audio_duration_s / 60)}min ${consulta.audio_duration_s % 60}s`}
             </p>
           </div>
+          {/* Auditoria — sempre visivel */}
+          <button
+            onClick={() => navigate(`/scribe/${consulta.id}/audit`)}
+            title="Log de auditoria"
+            className="hidden sm:inline-flex items-center justify-center w-9 h-9 rounded-lg text-[#4a5568] hover:bg-slate-100"
+          >
+            <History className="w-4 h-4" />
+          </button>
+          {/* Export PDF — habilitado mesmo em rascunho (com marca d'agua) */}
+          <button
+            onClick={handleExportPDF}
+            disabled={exporting || isProcessing}
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 h-9 rounded-lg border border-slate-200 text-sm font-semibold text-[#4a5568] hover:bg-slate-50 disabled:opacity-50"
+          >
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            PDF
+          </button>
           {!isApproved && (
             <>
               <button
@@ -594,19 +644,169 @@ const ScribeReview = () => {
                 />
               </SoapSection>
 
-              {/* P (Plano) — placeholder Phase 4 */}
-              <div className="p-4 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/40">
-                <div className="flex items-center gap-2 mb-1">
-                  <ListChecks className="w-4 h-4 text-[#94a3b8]" />
-                  <span className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#94a3b8]">
-                    P — Plano (em breve)
-                  </span>
+              {/* P — Plano */}
+              <SoapSection
+                title="P — Plano"
+                disabled={isApproved}
+                reviewed={reviewedSections.P}
+                onToggleReviewed={(v) =>
+                  setReviewedSections({ ...reviewedSections, P: v })
+                }
+              >
+                <FormField
+                  label="Conduta"
+                  multiline
+                  rows={3}
+                  value={draftSoap.P?.conduta ?? ""}
+                  onChange={(v) =>
+                    setDraftSoap({ ...draftSoap, P: { ...draftSoap.P, conduta: v } })
+                  }
+                  disabled={isApproved}
+                />
+                <ListField
+                  label="Exames solicitados"
+                  values={draftSoap.P?.exames_solicitados ?? []}
+                  onChange={(arr) =>
+                    setDraftSoap({
+                      ...draftSoap,
+                      P: { ...draftSoap.P, exames_solicitados: arr },
+                    })
+                  }
+                  disabled={isApproved}
+                />
+
+                {/* Prescrição rascunho */}
+                <div>
+                  <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-1.5">
+                    Prescrição (rascunho — revisar antes de assinar)
+                  </label>
+                  <div className="space-y-2">
+                    {(draftSoap.P?.prescricao_rascunho ?? []).map((rx, i) => (
+                      <div
+                        key={i}
+                        className="p-2.5 rounded-lg border border-amber-200 bg-amber-50/50 space-y-1.5"
+                      >
+                        <div className="flex gap-2">
+                          <input
+                            value={rx.medicamento ?? ""}
+                            onChange={(e) => {
+                              const arr = [...(draftSoap.P?.prescricao_rascunho ?? [])];
+                              arr[i] = { ...arr[i], medicamento: e.target.value };
+                              setDraftSoap({
+                                ...draftSoap,
+                                P: { ...draftSoap.P, prescricao_rascunho: arr },
+                              });
+                            }}
+                            disabled={isApproved}
+                            placeholder="Medicamento"
+                            className="flex-1 h-9 px-2.5 rounded-lg border border-slate-200 text-xs font-bold outline-none focus:border-[#005344]"
+                          />
+                          <input
+                            value={rx.duracao ?? ""}
+                            onChange={(e) => {
+                              const arr = [...(draftSoap.P?.prescricao_rascunho ?? [])];
+                              arr[i] = { ...arr[i], duracao: e.target.value };
+                              setDraftSoap({
+                                ...draftSoap,
+                                P: { ...draftSoap.P, prescricao_rascunho: arr },
+                              });
+                            }}
+                            disabled={isApproved}
+                            placeholder="Duração"
+                            className="w-32 h-9 px-2.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-[#005344]"
+                          />
+                          {!isApproved && (
+                            <button
+                              onClick={() => {
+                                const arr = (draftSoap.P?.prescricao_rascunho ?? []).filter(
+                                  (_, idx) => idx !== i,
+                                );
+                                setDraftSoap({
+                                  ...draftSoap,
+                                  P: { ...draftSoap.P, prescricao_rascunho: arr },
+                                });
+                              }}
+                              className="w-9 h-9 rounded-lg text-[#4a5568] hover:text-red-600 hover:bg-red-50 inline-flex items-center justify-center"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          value={rx.posologia ?? ""}
+                          onChange={(e) => {
+                            const arr = [...(draftSoap.P?.prescricao_rascunho ?? [])];
+                            arr[i] = { ...arr[i], posologia: e.target.value };
+                            setDraftSoap({
+                              ...draftSoap,
+                              P: { ...draftSoap.P, prescricao_rascunho: arr },
+                            });
+                          }}
+                          disabled={isApproved}
+                          placeholder="Posologia"
+                          className="w-full h-9 px-2.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-[#005344]"
+                        />
+                        <input
+                          value={rx.observacoes ?? ""}
+                          onChange={(e) => {
+                            const arr = [...(draftSoap.P?.prescricao_rascunho ?? [])];
+                            arr[i] = { ...arr[i], observacoes: e.target.value };
+                            setDraftSoap({
+                              ...draftSoap,
+                              P: { ...draftSoap.P, prescricao_rascunho: arr },
+                            });
+                          }}
+                          disabled={isApproved}
+                          placeholder="Observações (opcional)"
+                          className="w-full h-9 px-2.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-[#005344]"
+                        />
+                      </div>
+                    ))}
+                    {!isApproved && (
+                      <button
+                        onClick={() =>
+                          setDraftSoap({
+                            ...draftSoap,
+                            P: {
+                              ...draftSoap.P,
+                              prescricao_rascunho: [
+                                ...(draftSoap.P?.prescricao_rascunho ?? []),
+                                { medicamento: "", posologia: "", duracao: "", observacoes: "" },
+                              ],
+                            },
+                          })
+                        }
+                        className="text-xs font-semibold text-[#005344] hover:underline"
+                      >
+                        + Adicionar medicamento
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10.5px] text-amber-700 mt-1.5 leading-relaxed">
+                    <strong>Rascunho gerado por IA.</strong> O médico responsável deve
+                    revisar dose, frequência e duração de cada item antes de prescrever.
+                  </p>
                 </div>
-                <p className="text-xs text-[#94a3b8] leading-relaxed">
-                  DDx + exames + rascunho de prescrição chegam na próxima fase.
-                  Por enquanto, registre conduta no comentário acima.
-                </p>
-              </div>
+
+                <FormField
+                  label="Orientações ao paciente"
+                  multiline
+                  rows={3}
+                  value={draftSoap.P?.orientacoes ?? ""}
+                  onChange={(v) =>
+                    setDraftSoap({ ...draftSoap, P: { ...draftSoap.P, orientacoes: v } })
+                  }
+                  disabled={isApproved}
+                />
+                <FormField
+                  label="Retorno"
+                  value={draftSoap.P?.retorno ?? ""}
+                  onChange={(v) =>
+                    setDraftSoap({ ...draftSoap, P: { ...draftSoap.P, retorno: v } })
+                  }
+                  disabled={isApproved}
+                />
+              </SoapSection>
 
               {/* Bottom: validation status */}
               {!isApproved && (
@@ -616,11 +816,11 @@ const ScribeReview = () => {
                     Confirmação para assinatura
                   </p>
                   <p className="text-xs text-[#4a5568] leading-relaxed mb-3">
-                    Marque cada seção que você revisou. Aprovação requer S, O e A
-                    todos confirmados.
+                    Marque cada seção que você revisou. Aprovação requer S, O,
+                    A e P todos confirmados.
                   </p>
                   <div className="space-y-1">
-                    {(["S", "O", "A"] as const).map((k) => (
+                    {(["S", "O", "A", "P"] as const).map((k) => (
                       <label key={k} className="flex items-start gap-2 cursor-pointer">
                         <input
                           type="checkbox"
