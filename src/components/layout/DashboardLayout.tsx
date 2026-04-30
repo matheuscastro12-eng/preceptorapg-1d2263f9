@@ -62,6 +62,13 @@ const sidebarNavGroups: NavGroup[] = [
     ],
   },
   {
+    label: 'Clínica',
+    items: [
+      { icon: 'menu_book', label: 'Whitebook', path: '/whitebook', matchPaths: ['/whitebook'] },
+      { icon: 'mic', label: 'Scribe Clínico', path: '/scribe', matchPaths: ['/scribe'] },
+    ],
+  },
+  {
     label: 'Seus dados',
     items: [
       { icon: 'library_books', label: 'Biblioteca', path: '/library' },
