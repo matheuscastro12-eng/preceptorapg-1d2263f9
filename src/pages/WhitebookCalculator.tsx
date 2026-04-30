@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
@@ -8,7 +9,8 @@ import UpgradePaywall from "@/components/UpgradePaywall";
 import CalculatorRenderer, {
   type CalculatorDef,
 } from "@/components/whitebook/CalculatorRenderer";
-import { ArrowLeft, Calculator } from "lucide-react";
+import WhitebookAiDrawer from "@/components/whitebook/WhitebookAiDrawer";
+import { ArrowLeft, Calculator, Wand2 } from "lucide-react";
 
 const WhitebookCalculator = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -16,6 +18,7 @@ const WhitebookCalculator = () => {
   const { hasFeature, loading } = useFeatureAccess("whitebook");
   const navigate = useNavigate();
   const { calc, loading: loadingCalc } = useCalculator(slug);
+  const [aiOpen, setAiOpen] = useState(false);
 
   if (authLoading || loading || loadingCalc) {
     return <PageSkeleton variant="dashboard" />;
@@ -103,6 +106,21 @@ const WhitebookCalculator = () => {
           fonteUrl={fullCalc.fonte_url}
         />
       </div>
+
+      {/* Floating AI button */}
+      <button
+        onClick={() => setAiOpen(true)}
+        className="fixed bottom-6 right-6 z-30 inline-flex items-center gap-2 px-4 h-12 rounded-full bg-gradient-to-br from-[#003D32] via-[#005344] to-[#006D5B] text-white text-sm font-bold shadow-[0_8px_24px_-4px_rgba(0,109,91,0.45)] hover:shadow-[0_12px_28px_-4px_rgba(0,109,91,0.55)] transition-shadow"
+      >
+        <Wand2 className="w-4 h-4 text-[#C9A84C]" />
+        Pergunte à IA
+      </button>
+
+      <WhitebookAiDrawer
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        scope={fullCalc ? { type: "calculator", id: fullCalc.slug, label: fullCalc.nome } : null}
+      />
     </DashboardLayout>
   );
 };

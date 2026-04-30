@@ -8,8 +8,9 @@ import PageSkeleton from "@/components/PageSkeleton";
 import UpgradePaywall from "@/components/UpgradePaywall";
 import {
   ArrowLeft, ListChecks, AlertTriangle, BookOpen, ExternalLink,
-  CheckCircle2, Stethoscope, ShieldAlert,
+  CheckCircle2, Stethoscope, ShieldAlert, Wand2,
 } from "lucide-react";
+import WhitebookAiDrawer from "@/components/whitebook/WhitebookAiDrawer";
 
 interface CriterioItem {
   item?: string;
@@ -44,6 +45,7 @@ const WhitebookProtocol = () => {
   const navigate = useNavigate();
   const [proto, setProto] = useState<ProtocolFull | null>(null);
   const [loadingProto, setLoadingProto] = useState(true);
+  const [aiOpen, setAiOpen] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -235,6 +237,21 @@ const WhitebookProtocol = () => {
           </div>
         )}
       </div>
+
+      {/* Floating AI button */}
+      <button
+        onClick={() => setAiOpen(true)}
+        className="fixed bottom-6 right-6 z-30 inline-flex items-center gap-2 px-4 h-12 rounded-full bg-gradient-to-br from-[#003D32] via-[#005344] to-[#006D5B] text-white text-sm font-bold shadow-[0_8px_24px_-4px_rgba(0,109,91,0.45)] hover:shadow-[0_12px_28px_-4px_rgba(0,109,91,0.55)] transition-shadow"
+      >
+        <Wand2 className="w-4 h-4 text-[#C9A84C]" />
+        Pergunte à IA
+      </button>
+
+      <WhitebookAiDrawer
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        scope={proto ? { type: "protocol", id: proto.slug, label: proto.titulo } : null}
+      />
     </DashboardLayout>
   );
 };
