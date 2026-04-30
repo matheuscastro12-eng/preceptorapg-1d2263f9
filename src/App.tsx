@@ -60,6 +60,7 @@ const WhitebookDrug = lazy(() => import("./pages/WhitebookDrug"));
 const WhitebookProtocol = lazy(() => import("./pages/WhitebookProtocol"));
 const WhitebookAdmin = lazy(() => import("./pages/admin/WhitebookAdmin"));
 const Scribe = lazy(() => import("./pages/Scribe"));
+const ScribeNova = lazy(() => import("./pages/ScribeNova"));
 const ThankYou = lazy(() => import("./pages/ThankYou"));
 const SubscriptionThankYou = lazy(() => import("./pages/SubscriptionThankYou"));
 
@@ -178,6 +179,7 @@ const App = () => (
                 <Route path="/whitebook/protocol/:slug" element={<WhitebookProtocol />} />
                 <Route path="/admin/whitebook" element={<WhitebookAdmin />} />
                 <Route path="/scribe" element={<Scribe />} />
+                <Route path="/scribe/nova" element={<ScribeNova />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/obrigado" element={<SubscriptionThankYou />} />
                 <Route path="/obrigado/:plano" element={<SubscriptionThankYou />} />
