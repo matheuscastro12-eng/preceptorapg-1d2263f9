@@ -141,193 +141,180 @@ const Enamed = () => {
 
         {/* ═══════════════════════ MENU ═══════════════════════ */}
         {mode === 'menu' && (
-          <div className="w-full">
-            {/* Hero Header */}
-            <section className="mb-8 sm:mb-12 animate-fade-up">
-              <h1 className="font-['Manrope'] text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[#191c1d] mb-2">
-                Prepare-se para o ENAMED
-              </h1>
-              <p className="text-[#3e4945]/70 text-sm sm:text-base max-w-2xl leading-relaxed">
-                Bem-vindo à sua central de excelência clínica. Aqui, a precisão editorial encontra a tecnologia para potencializar sua aprovação no Exame Nacional de Médicos.
-              </p>
-            </section>
+          <div className="max-w-5xl mx-auto">
+            <div className="relative bg-white rounded-3xl border border-slate-200 shadow-[0_1px_2px_rgba(25,28,29,0.04)] overflow-hidden">
+              {/* Top accent — verde + ouro */}
+              <div className="h-1 bg-gradient-to-r from-[#003D32] via-[#005344] via-[#006D5B] to-[#C9A84C]" />
 
-            {/* Bento Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8">
+              <div className="px-5 sm:px-8 md:px-12 py-7 sm:py-9 md:py-12 space-y-9">
+                {/* Header editorial */}
+                <header>
+                  <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2.5 mb-3">
+                    <span className="w-6 h-px bg-[#C9A84C]" />
+                    Central ENAMED
+                  </p>
+                  <h1 className="font-['Manrope'] font-bold text-[28px] sm:text-[34px] tracking-[-0.025em] leading-[1.05] text-[#191C1D]">
+                    Prepare-se para o<br />
+                    Exame{' '}
+                    <em className="not-italic font-medium text-[#8a6f26]">
+                      Nacional de Médicos
+                    </em>
+                    .
+                  </h1>
+                  <p className="text-sm text-[#4a5568] mt-3 max-w-[52ch] leading-relaxed">
+                    Banco oficial INEP, simulado completo cronometrado e questões inéditas
+                    geradas por IA — tudo num só lugar.
+                  </p>
+                </header>
 
-              {/* ─── Banco de Questões INEP (Hero Card) ─── */}
-              <button
-                onClick={() => startBankMode('completo')}
-                className="col-span-1 lg:col-span-8 text-left group animate-fade-up"
-                style={{ animationDelay: '0.05s' }}
-              >
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#005344] to-[#006d5b] p-6 sm:p-10 text-white h-full flex flex-col justify-between min-h-[220px] sm:min-h-[260px] shadow-[0_12px_40px_rgba(0,83,68,0.15)] group-hover:shadow-[0_16px_48px_rgba(0,83,68,0.25)] transition-all duration-300 group-active:scale-[0.99]">
-                  <div className="absolute top-0 right-0 opacity-[0.06] scale-150 rotate-12 pointer-events-none">
-                    <MI name="history_edu" className="text-[180px] sm:text-[200px]" />
-                  </div>
-                  <div className="relative z-10">
-                    <span className="inline-block px-3 py-1 bg-white/15 backdrop-blur-md rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mb-3 sm:mb-4">Acesso Oficial</span>
-                    <h2 className="font-['Manrope'] text-xl sm:text-2xl lg:text-3xl font-bold mb-2 sm:mb-4">Banco de Questões INEP</h2>
-                    <p className="text-white/70 text-sm sm:text-base max-w-md leading-relaxed">Explore todas as questões das provas oficiais anteriores com comentários editoriais de especialistas.</p>
-                  </div>
-                  <div className="relative z-10 mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
-                    <span className="bg-white text-[#005344] px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-['Manrope'] font-bold text-xs sm:text-sm uppercase tracking-tight group-hover:bg-[#9df3dc] transition-colors">
-                      Acessar Banco Completo
-                    </span>
-                    <span className="text-[10px] sm:text-xs font-medium opacity-70">Questões no padrão ENAMED/Revalida</span>
-                  </div>
-                </div>
-              </button>
-
-              {/* ─── Stats + AI Insight Sidebar ─── */}
-              <div className="col-span-1 lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-4 sm:gap-6 lg:gap-8">
-                {/* Performance card */}
-                <div className="flex-1 bg-white rounded-xl p-4 sm:p-6 shadow-[0_12px_40px_rgba(25,28,29,0.06)] border border-[#bec9c4]/10 animate-fade-up" style={{ animationDelay: '0.1s' }}>
-                  <div className="flex items-center justify-between mb-3 sm:mb-4">
-                    <div className="p-2 bg-[#c8eade] rounded-lg">
-                      <MI name="trending_up" fill className="text-[20px] text-[#005344]" />
-                    </div>
+                {/* ── Desempenho ── */}
+                <section>
+                  <div className="flex items-baseline justify-between mb-3">
+                    <label className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a5568]">
+                      ① Seu desempenho
+                    </label>
                     {userStats.simCount > 0 && (
-                      <span className={`text-[10px] sm:text-xs font-bold ${userStats.trend >= 0 ? 'text-[#006D5B]' : 'text-red-500'}`}>
+                      <span className={`text-[10.5px] font-bold inline-flex items-center gap-1.5 ${userStats.trend >= 0 ? 'text-[#005344]' : 'text-red-500'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${userStats.trend >= 0 ? 'bg-[#005344]' : 'bg-red-500'}`} />
                         {userStats.trend >= 0 ? '+' : ''}{userStats.trend}% vs anterior
                       </span>
                     )}
                   </div>
-                  <p className="text-[#6e7975] text-[10px] sm:text-xs uppercase font-bold tracking-widest mb-1">Seu Desempenho</p>
-                  {userStats.simCount > 0 ? (
-                    <>
-                      <h3 className="font-['Manrope'] text-xl sm:text-2xl font-extrabold text-[#191c1d]">
-                        {userStats.avg}% <span className="text-xs sm:text-sm font-medium text-[#6e7975]">acerto médio</span>
-                      </h3>
-                      <div className="mt-3 sm:mt-4 h-2 w-full bg-[#e7e8e9] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#006D5B] rounded-full transition-all duration-700" style={{ width: `${userStats.avg}%` }} />
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-sm text-[#6e7975] mt-1">Faça simulados para ver suas estatísticas</p>
-                  )}
-                </div>
+                  <div className="bg-slate-50/60 border-2 border-slate-200 rounded-xl px-5 py-5">
+                    {userStats.simCount > 0 ? (
+                      <>
+                        <div className="flex items-end justify-between mb-3">
+                          <div>
+                            <p className="font-['Manrope'] text-[40px] font-black text-[#005344] tabular-nums leading-none">
+                              {userStats.avg}<span className="text-[20px] text-[#94a3b8]">%</span>
+                            </p>
+                            <p className="text-[11px] text-[#94a3b8] mt-1">acerto médio · {userStats.simCount} simulado{userStats.simCount === 1 ? '' : 's'}</p>
+                          </div>
+                        </div>
+                        <div className="h-1.5 w-full bg-white rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-[#005344] to-[#C9A84C] rounded-full transition-all duration-700" style={{ width: `${userStats.avg}%` }} />
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-sm text-[#4a5568]">Faça seu primeiro simulado para ver estatísticas aqui.</p>
+                    )}
+                  </div>
+                </section>
 
-                {/* AI Insight card */}
-                <div className="flex-1 bg-white/40 backdrop-blur-md rounded-xl p-4 sm:p-6 border border-[#006D5B]/15 relative overflow-hidden animate-fade-up" style={{ animationDelay: '0.15s' }}>
-                  <div className="absolute -right-4 -bottom-4 text-[#006D5B]/5 pointer-events-none">
-                    <MI name="psychology" className="text-[80px]" />
+                {/* ── Banco oficial INEP ── */}
+                <section>
+                  <div className="flex items-baseline justify-between mb-3">
+                    <label className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a5568] inline-flex items-center gap-2">
+                      ② Banco oficial INEP
+                      <span className="text-[9.5px] font-medium normal-case tracking-normal text-[#94a3b8]">
+                        questões reais com gabarito comentado
+                      </span>
+                    </label>
                   </div>
-                  <h4 className="text-[#006D5B] font-['Manrope'] font-bold text-xs sm:text-sm mb-2 flex items-center relative z-10">
-                    <MI name="auto_awesome" fill className="text-[14px] sm:text-[16px] mr-1.5" />
-                    Insight da IA
-                  </h4>
-                  <p className="text-[#3e4945] text-xs sm:text-sm italic leading-relaxed relative z-10">
-                    {userStats.simCount > 2
-                      ? `"Sua média está em ${userStats.avg}%. ${userStats.trend > 0 ? 'Continue nesse ritmo!' : 'Recomendamos focar nas áreas com mais erros nas próximas sessões.'}`
-                      : `"Comece seus simulados para receber insights personalizados sobre seu desempenho."`
-                    }
-                  </p>
-                </div>
-              </div>
-
-              {/* ─── Simulado Completo ─── */}
-              <button
-                onClick={() => startBankMode('completo')}
-                className="col-span-1 md:col-span-6 lg:col-span-6 text-left group animate-fade-up"
-                style={{ animationDelay: '0.12s' }}
-              >
-                <div className="bg-white rounded-xl p-5 sm:p-8 shadow-[0_12px_40px_rgba(25,28,29,0.06)] border border-[#bec9c4]/10 group-hover:bg-[#006D5B]/[0.03] transition-all duration-300 h-full">
-                  <div className="flex justify-between items-start mb-4 sm:mb-6">
-                    <div className="p-3 sm:p-4 bg-[#006D5B]/10 rounded-2xl">
-                      <MI name="inventory" fill className="text-[24px] sm:text-[28px] text-[#006D5B]" />
-                    </div>
-                    <span className="text-[9px] sm:text-[10px] font-bold text-[#006D5B] uppercase bg-[#9df3dc]/30 px-2 py-1 rounded">5 Grandes Áreas</span>
-                  </div>
-                  <h3 className="font-['Manrope'] text-lg sm:text-2xl font-extrabold mb-1.5 sm:mb-2 group-hover:text-[#006D5B] transition-colors">Simulado Completo</h3>
-                  <p className="text-[#3e4945]/70 text-xs sm:text-sm mb-6 sm:mb-8 leading-relaxed">Prova estruturada com tempo controlado, simulando a experiência real do ENAMED em todas as especialidades.</p>
-                  <div className="flex items-center justify-end">
-                    <span className="flex items-center text-[#006D5B] font-bold text-xs sm:text-sm">
-                      Iniciar Agora
-                      <MI name="arrow_forward" className="text-[18px] ml-2 group-hover:translate-x-1 transition-transform" />
-                    </span>
-                  </div>
-                </div>
-              </button>
-
-              {/* ─── Revisão Rápida ─── */}
-              <button
-                onClick={() => startBankMode('revisao')}
-                className="col-span-1 md:col-span-6 lg:col-span-6 text-left group animate-fade-up"
-                style={{ animationDelay: '0.16s' }}
-              >
-                <div className="bg-white rounded-xl p-5 sm:p-8 shadow-[0_12px_40px_rgba(25,28,29,0.06)] border border-[#bec9c4]/10 group-hover:bg-[#006D5B]/[0.03] transition-all duration-300 h-full">
-                  <div className="flex justify-between items-start mb-4 sm:mb-6">
-                    <div className="p-3 sm:p-4 bg-[#c8eade]/50 rounded-2xl">
-                      <MI name="flash_on" fill className="text-[24px] sm:text-[28px] text-[#46645c]" />
-                    </div>
-                    <span className="text-[9px] sm:text-[10px] font-bold text-[#46645c] uppercase bg-[#c8eade]/50 px-2 py-1 rounded">20 Questões</span>
-                  </div>
-                  <h3 className="font-['Manrope'] text-lg sm:text-2xl font-extrabold mb-1.5 sm:mb-2 group-hover:text-[#46645c] transition-colors">Revisão Rápida</h3>
-                  <p className="text-[#3e4945]/70 text-xs sm:text-sm mb-6 sm:mb-8 leading-relaxed">Treino diário de alta intensidade. Ideal para manter o ritmo de estudo entre turnos e plantões.</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] sm:text-xs font-semibold text-[#6e7975]">Tempo estimado: 15 min</span>
-                    <span className="flex items-center text-[#46645c] font-bold text-xs sm:text-sm">
-                      Praticar
-                      <MI name="bolt" fill className="text-[18px] ml-2 group-hover:translate-x-1 transition-transform" />
-                    </span>
-                  </div>
-                </div>
-              </button>
-
-              {/* ─── Simulado IA 50q (Dark Card) ─── */}
-              <div className="col-span-1 md:col-span-12 lg:col-span-5 animate-fade-up" style={{ animationDelay: '0.2s' }}>
-                <button onClick={() => startIaMode('ia_completo')} className="w-full text-left group">
-                  <div className="h-full bg-[#191c1d] p-6 sm:p-10 rounded-xl shadow-[0_12px_40px_rgba(25,28,29,0.15)] relative overflow-hidden flex flex-col justify-between min-h-[260px] sm:min-h-[320px] group-hover:shadow-[0_16px_48px_rgba(25,28,29,0.25)] transition-all duration-300 group-active:scale-[0.99]">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#006D5B]/30 to-transparent pointer-events-none" />
-                    <div className="relative z-10">
-                      <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                        <MI name="auto_awesome" fill className="text-[18px] text-[#9df3dc]" />
-                        <span className="text-[#9df3dc] text-[10px] sm:text-xs font-bold uppercase tracking-widest">Inovação Editorial</span>
-                      </div>
-                      <h3 className="font-['Manrope'] text-2xl sm:text-3xl font-extrabold text-white mb-3 sm:mb-4">Simulado IA 50q</h3>
-                      <p className="text-slate-400 text-xs sm:text-sm leading-relaxed mb-6 sm:mb-8">Questões inéditas geradas por nossa inteligência artificial proprietária, treinada nos padrões de cobrança mais recentes do ENAMED.</p>
-                    </div>
-                    <div className="relative z-10 w-full bg-[#9df3dc] text-[#005344] py-3 sm:py-4 rounded-lg font-['Manrope'] font-extrabold text-xs sm:text-sm uppercase tracking-tight text-center group-hover:bg-white transition-colors">
-                      Gerar Questões Inéditas
-                    </div>
-                  </div>
-                </button>
-              </div>
-
-              {/* ─── Estudo por Área (List View) ─── */}
-              <div className="col-span-1 md:col-span-12 lg:col-span-7 animate-fade-up" style={{ animationDelay: '0.24s' }}>
-                <div className="bg-[#f3f4f5] rounded-xl p-5 sm:p-8 h-full">
-                  <div className="flex items-center justify-between mb-5 sm:mb-8">
-                    <h3 className="font-['Manrope'] text-base sm:text-xl font-extrabold text-[#191c1d]">Estudo por Área</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button
-                      onClick={() => setMode('ia_area')}
-                      className="text-[#006D5B] text-[10px] sm:text-xs font-bold uppercase hover:underline"
+                      onClick={() => startBankMode('completo')}
+                      className="text-left p-5 rounded-xl border-2 border-slate-200 bg-white hover:border-[#005344] hover:bg-[#005344]/[0.02] transition-all group"
                     >
-                      Ver todas
+                      <div className="flex items-start gap-3 mb-2">
+                        <div className="w-9 h-9 rounded-lg bg-[#005344] text-white flex items-center justify-center shrink-0">
+                          <MI name="inventory" fill className="text-[18px]" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-['Manrope'] font-bold text-[14px] text-[#191C1D]">Simulado completo</h4>
+                          <p className="text-[11px] text-[#94a3b8] mt-0.5">5 grandes áreas · padrão prova</p>
+                        </div>
+                      </div>
+                      <p className="text-[12px] leading-relaxed text-[#4a5568] mb-3">
+                        Prova estruturada cronometrada, igual à experiência real do ENAMED.
+                      </p>
+                      <span className="text-[11px] font-bold text-[#005344] inline-flex items-center gap-1 group-hover:gap-2 transition-all">
+                        Iniciar agora <MI name="arrow_forward" className="text-[14px]" />
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => startBankMode('revisao')}
+                      className="text-left p-5 rounded-xl border-2 border-slate-200 bg-white hover:border-[#005344] hover:bg-[#005344]/[0.02] transition-all group"
+                    >
+                      <div className="flex items-start gap-3 mb-2">
+                        <div className="w-9 h-9 rounded-lg bg-[#C9A84C] text-white flex items-center justify-center shrink-0">
+                          <MI name="flash_on" fill className="text-[18px]" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-['Manrope'] font-bold text-[14px] text-[#191C1D]">Revisão rápida</h4>
+                          <p className="text-[11px] text-[#94a3b8] mt-0.5">20 questões · ~15 min</p>
+                        </div>
+                      </div>
+                      <p className="text-[12px] leading-relaxed text-[#4a5568] mb-3">
+                        Bateria curta de alta intensidade. Ideal para manter o ritmo entre plantões.
+                      </p>
+                      <span className="text-[11px] font-bold text-[#8a6f26] inline-flex items-center gap-1 group-hover:gap-2 transition-all">
+                        Praticar <MI name="arrow_forward" className="text-[14px]" />
+                      </span>
                     </button>
                   </div>
-                  <div className="space-y-2.5 sm:space-y-4">
-                    {AREA_OPTIONS.map(({ value, label, icon, desc, iconBg, iconColor }) => (
+                </section>
+
+                {/* ── Questões inéditas IA ── */}
+                <section>
+                  <div className="flex items-baseline justify-between mb-3">
+                    <label className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a5568] inline-flex items-center gap-2">
+                      ③ Questões inéditas IA
+                      <span className="text-[9.5px] font-medium normal-case tracking-normal text-[#94a3b8]">
+                        geradas por Gemini 2.5
+                      </span>
+                    </label>
+                  </div>
+                  <button
+                    onClick={() => startIaMode('ia_completo')}
+                    className="w-full text-left p-5 rounded-xl border-2 border-[#005344] bg-gradient-to-br from-[#003D32] via-[#005344] to-[#006D5B] text-white relative overflow-hidden group hover:shadow-[0_8px_24px_-8px_rgba(0,109,91,0.45)] transition-all"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#C9A84C]/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
+                    <div className="relative flex items-center gap-4">
+                      <div className="w-11 h-11 rounded-lg bg-white/15 backdrop-blur-sm flex items-center justify-center shrink-0">
+                        <MI name="auto_awesome" fill className="text-[22px] text-[#C9A84C]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-['Manrope'] font-bold text-[15px]">Simulado IA · 50 questões</h4>
+                        <p className="text-[12px] text-white/70 mt-0.5">
+                          Inéditas, padrão ENAMED/Revalida — diversidade real de cenários.
+                        </p>
+                      </div>
+                      <MI name="arrow_forward" className="text-[20px] opacity-70 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </button>
+                </section>
+
+                {/* ── Por área ── */}
+                <section>
+                  <div className="flex items-baseline justify-between mb-3">
+                    <label className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a5568] inline-flex items-center gap-2">
+                      ④ Estudo por área
+                      <span className="text-[9.5px] font-medium normal-case tracking-normal text-[#94a3b8]">
+                        20 questões IA na especialidade
+                      </span>
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {AREA_OPTIONS.map(({ value, label, icon, iconBg, iconColor }) => (
                       <button
                         key={value}
                         onClick={() => startIaMode('ia_area', value)}
-                        className="w-full bg-white p-3 sm:p-4 rounded-xl flex items-center justify-between hover:translate-x-1 transition-transform cursor-pointer group/item"
+                        className="text-left p-3.5 rounded-xl border-2 border-slate-200 bg-white hover:border-[#005344] hover:bg-[#005344]/[0.02] transition-all flex items-center gap-3 group"
                       >
-                        <div className="flex items-center gap-3 sm:gap-4">
-                          <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
-                            <MI name={icon} fill className={`text-[18px] sm:text-[20px] ${iconColor}`} />
-                          </div>
-                          <div className="text-left">
-                            <p className="font-['Manrope'] font-bold text-xs sm:text-sm text-[#191c1d] group-hover/item:text-[#006D5B] transition-colors">{label}</p>
-                            <p className="text-[9px] sm:text-[10px] text-[#6e7975] uppercase tracking-tight">{desc}</p>
-                          </div>
+                        <div className={`w-9 h-9 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
+                          <MI name={icon} fill className={`text-[18px] ${iconColor}`} />
                         </div>
-                        <MI name="chevron_right" className="text-[20px] text-[#6e7975] group-hover/item:text-[#006D5B] transition-colors shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-['Manrope'] font-bold text-[13px] text-[#191C1D] truncate">{label}</p>
+                          <p className="text-[10px] text-[#94a3b8] uppercase tracking-wider">20 q · IA</p>
+                        </div>
+                        <MI name="chevron_right" className="text-[18px] text-[#94a3b8] group-hover:text-[#005344] group-hover:translate-x-0.5 transition-all" />
                       </button>
                     ))}
                   </div>
-                </div>
+                </section>
               </div>
             </div>
           </div>
@@ -335,43 +322,61 @@ const Enamed = () => {
 
         {/* ═══════════════════════ AREA SELECTION ═══════════════════════ */}
         {mode === 'ia_area' && !generating && !resultado && (
-          <div className="w-full">
-            <div className="flex items-center gap-3 mb-6 sm:mb-8 animate-fade-up">
-              <button onClick={handleBackToMenu} className="flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-[#006D5B] transition-colors active:scale-95">
-                <ArrowLeft className="h-4 w-4" /> ENAMED
-              </button>
-              <div className="h-4 w-px bg-slate-200" />
-              <span className="text-sm font-semibold text-[#191c1d]">Escolha a Área</span>
-            </div>
+          <div className="max-w-5xl mx-auto">
+            <div className="relative bg-white rounded-3xl border border-slate-200 shadow-[0_1px_2px_rgba(25,28,29,0.04)] overflow-hidden">
+              <div className="h-1 bg-gradient-to-r from-[#003D32] via-[#005344] via-[#006D5B] to-[#C9A84C]" />
 
-            <div className="mb-6 sm:mb-10 animate-fade-up" style={{ animationDelay: '0.05s' }}>
-              <h2 className="font-['Manrope'] text-xl sm:text-3xl font-extrabold text-[#191c1d] mb-2 tracking-tight">
-                Selecione a <span className="text-[#006D5B]">Especialidade</span>
-              </h2>
-              <p className="text-xs sm:text-sm text-[#3e4945]/70">20 questões inéditas geradas por IA na área escolhida.</p>
-            </div>
+              <div className="px-5 sm:px-8 md:px-12 py-7 sm:py-9 md:py-12 space-y-9">
+                <div className="flex items-center gap-3 -mb-4">
+                  <button onClick={handleBackToMenu} className="flex items-center gap-1.5 text-[11px] font-semibold text-[#94a3b8] hover:text-[#005344] transition-colors active:scale-95">
+                    <ArrowLeft className="h-3.5 w-3.5" /> ENAMED
+                  </button>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {AREA_OPTIONS.map(({ value, label, icon, desc, iconBg, iconColor }, i) => (
-                <button
-                  key={value}
-                  onClick={() => startIaMode('ia_area', value)}
-                  className="text-left bg-white rounded-2xl p-6 sm:p-8 border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_32px_rgba(0,109,91,0.1)] hover:border-[#006D5B]/20 transition-all duration-300 cursor-pointer group animate-fade-up"
-                  style={{ animationDelay: `${0.1 + i * 0.05}s` }}
-                >
-                  <div className={`w-14 h-14 rounded-2xl ${iconBg} flex items-center justify-center mb-5`}>
-                    <MI name={icon} fill className={`text-[28px] ${iconColor}`} />
+                <header>
+                  <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2.5 mb-3">
+                    <span className="w-6 h-px bg-[#C9A84C]" />
+                    Simulado por área
+                  </p>
+                  <h1 className="font-['Manrope'] font-bold text-[28px] sm:text-[34px] tracking-[-0.025em] leading-[1.05] text-[#191C1D]">
+                    Foque numa{' '}
+                    <em className="not-italic font-medium text-[#8a6f26]">
+                      especialidade
+                    </em>
+                    <br />de cada vez.
+                  </h1>
+                  <p className="text-sm text-[#4a5568] mt-3 max-w-[52ch] leading-relaxed">
+                    20 questões inéditas geradas por IA, calibradas para o padrão ENAMED da
+                    área escolhida.
+                  </p>
+                </header>
+
+                <section>
+                  <div className="flex items-baseline justify-between mb-3">
+                    <label className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a5568]">
+                      ① Especialidade
+                    </label>
                   </div>
-                  <h3 className="font-['Manrope'] font-bold text-lg text-[#191c1d] group-hover:text-[#006D5B] transition-colors mb-1">
-                    {label}
-                  </h3>
-                  <p className="text-xs text-[#6e7975] uppercase tracking-wider font-medium mb-5">{desc}</p>
-                  <div className="flex items-center text-[#006D5B] text-sm font-semibold">
-                    Iniciar
-                    <MI name="arrow_forward" className="text-[18px] ml-1.5 group-hover:translate-x-1 transition-transform" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {AREA_OPTIONS.map(({ value, label, icon, desc, iconBg, iconColor }) => (
+                      <button
+                        key={value}
+                        onClick={() => startIaMode('ia_area', value)}
+                        className="text-left p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-[#005344] hover:bg-[#005344]/[0.02] transition-all flex items-center gap-3 group"
+                      >
+                        <div className={`w-10 h-10 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
+                          <MI name={icon} fill className={`text-[20px] ${iconColor}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-['Manrope'] font-bold text-[14px] text-[#191C1D]">{label}</p>
+                          <p className="text-[10.5px] text-[#94a3b8] uppercase tracking-wider mt-0.5">{desc}</p>
+                        </div>
+                        <MI name="arrow_forward" className="text-[18px] text-[#94a3b8] group-hover:text-[#005344] group-hover:translate-x-0.5 transition-all" />
+                      </button>
+                    ))}
                   </div>
-                </button>
-              ))}
+                </section>
+              </div>
             </div>
           </div>
         )}
