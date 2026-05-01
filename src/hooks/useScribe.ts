@@ -274,6 +274,43 @@ export async function startTranscription(consultaId: string): Promise<void> {
   if (!res.ok) throw new Error(json.error ?? `Erro ${res.status}`);
 }
 
+/** Reativa transcricao quando ficou travada (status 'transcrevendo' ou
+ * 'estruturando' por > N minutos). Resetando status pra trigger novo pipeline. */
+export async function retryTranscription(consultaId: string): Promise<void> {
+  // Reseta pra estado que permite ingestao
+  await supabase
+    .from("consultas")
+    .update({ status: "gravando", status_message: null })
+    .eq("id", consultaId);
+  // Re-chama transcribe-consult
+  await startTranscription(consultaId);
+}
+
+/** Reativa apenas a estruturacao SOAP (transcript ja existe, nao precisa
+ * baixar audio de novo). Usado quando generate-soap falhou mas transcript
+ * esta ok. */
+export async function retrySoapGeneration(consultaId: string): Promise<void> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) throw new Error("Sessao expirada");
+  await supabase
+    .from("consultas")
+    .update({ status: "estruturando", status_message: null })
+    .eq("id", consultaId);
+  const res = await fetch(`${API_URL}/generate-soap`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ consulta_id: consultaId }),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error ?? `Erro ${res.status}`);
+}
+
 export async function getConsultaAudioUrl(
   storagePath: string,
 ): Promise<string> {

@@ -188,29 +188,45 @@ serve(async (req) => {
       // Detecta mime do audio
       const mimeType = audioBlob.type || "audio/webm";
 
-      // Gemini 2.5 Pro multimodal
+      // Gemini 2.5 Flash multimodal — ~3x mais rapido que Pro pra
+      // transcricao, qualidade comparavel em audios curtos/medios.
       const url =
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`;
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: TRANSCRIBE_PROMPT }] },
-          contents: [
-            {
-              role: "user",
-              parts: [
-                { inlineData: { mimeType, data: audioBase64 } },
-                { text: "Transcreva a consulta seguindo as regras." },
-              ],
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      // Timeout de 90s no fetch — se Gemini pendurar, falha rapido em
+      // vez de deixar o status "transcrevendo" travado pra sempre.
+      const ctrl = new AbortController();
+      const timeoutId = setTimeout(() => ctrl.abort(), 90_000);
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: ctrl.signal,
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: TRANSCRIBE_PROMPT }] },
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  { inlineData: { mimeType, data: audioBase64 } },
+                  { text: "Transcreva a consulta seguindo as regras." },
+                ],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.2,
+              maxOutputTokens: 32768,
             },
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 32768,
-          },
-        }),
-      });
+          }),
+        });
+      } catch (e) {
+        if ((e as Error).name === "AbortError") {
+          throw new Error("Timeout de 90s no Gemini — tente novamente");
+        }
+        throw e;
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!response.ok) {
         const errText = await response.text();

@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   useConsulta,
   getConsultaAudioUrl,
+  retryTranscription,
+  retrySoapGeneration,
   type ConsultaSoap,
 } from "@/hooks/useScribe";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -37,6 +39,9 @@ const ScribeReview = () => {
     P: false,
   });
   const [exporting, setExporting] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  // Tempo decorrido em estado de processamento (pra detectar "stuck")
+  const [stuckSeconds, setStuckSeconds] = useState(0);
 
   // Hidrata draft quando consulta chega
   useEffect(() => {
@@ -54,6 +59,24 @@ const ScribeReview = () => {
       setAudioUrl(url);
     })();
   }, [consulta?.audio_storage_path]);
+
+  // Detecta consulta travada em status de processamento. Conta segundos
+  // desde que entrou em 'transcrevendo' ou 'estruturando'. Reseta ao
+  // mudar de status.
+  useEffect(() => {
+    if (
+      consulta?.status !== "transcrevendo" &&
+      consulta?.status !== "estruturando"
+    ) {
+      setStuckSeconds(0);
+      return;
+    }
+    setStuckSeconds(0);
+    const interval = window.setInterval(() => {
+      setStuckSeconds((s) => s + 1);
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [consulta?.status]);
 
   if (authLoading || loading || loadingConsulta) {
     return <PageSkeleton variant="dashboard" />;
@@ -82,6 +105,30 @@ const ScribeReview = () => {
   const isProcessing =
     consulta.status === "transcrevendo" || consulta.status === "estruturando";
   const isApproved = consulta.status === "aprovada";
+
+  const handleRetry = async () => {
+    if (!consulta) return;
+    setRetrying(true);
+    try {
+      // Se ja temos transcript, so refaz SOAP. Caso contrario, refaz tudo.
+      if (consulta.transcript && consulta.transcript.length > 20) {
+        await retrySoapGeneration(consulta.id);
+        toast({ title: "Estruturação SOAP reiniciada" });
+      } else {
+        await retryTranscription(consulta.id);
+        toast({ title: "Transcrição reiniciada" });
+      }
+      void refresh();
+    } catch (e) {
+      toast({
+        title: "Erro ao reprocessar",
+        description: (e as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   const handleExportPDF = async () => {
     if (!consulta) return;
@@ -257,30 +304,54 @@ const ScribeReview = () => {
 
         {/* Status banner */}
         {isProcessing && (
-          <div className="bg-gradient-to-br from-[#005344]/8 to-[#C9A84C]/8 border-b border-[#006D5B]/20 px-6 py-4 flex items-center gap-3">
+          <div className="bg-gradient-to-br from-[#005344]/8 to-[#C9A84C]/8 border-b border-[#006D5B]/20 px-6 py-4 flex items-center gap-3 flex-wrap">
             <Loader2 className="w-5 h-5 text-[#005344] animate-spin shrink-0" />
-            <div>
-              <p className="text-sm font-bold text-[#191C1D]">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-[#191C1D] inline-flex items-center gap-2">
                 {consulta.status === "transcrevendo"
                   ? "IA transcrevendo o áudio…"
                   : "IA estruturando em SOAP…"}
+                <span className="font-mono text-[11px] text-[#4a5568]">
+                  {Math.floor(stuckSeconds / 60)}:{String(stuckSeconds % 60).padStart(2, "0")}
+                </span>
               </p>
               <p className="text-xs text-[#4a5568]">
-                Tempo médio: 30s a 2min para consultas curtas. Esta página
-                atualiza automaticamente.
+                {stuckSeconds < 60
+                  ? "Áudios curtos: 20-40s. Áudios longos: 1-2min."
+                  : stuckSeconds < 120
+                    ? "Está demorando um pouco mais que o normal. Aguarde mais 1 min."
+                    : "Algo pode ter travado. Tente reprocessar."}
               </p>
             </div>
+            {stuckSeconds >= 90 && (
+              <button
+                onClick={handleRetry}
+                disabled={retrying}
+                className="shrink-0 inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#191C1D] text-white text-xs font-bold disabled:opacity-50"
+              >
+                {retrying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+                Reprocessar
+              </button>
+            )}
           </div>
         )}
         {consulta.status === "erro" && (
           <div className="bg-red-50 border-b border-red-200 px-6 py-4 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-red-700 shrink-0 mt-0.5" />
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-bold text-red-900">Erro no processamento</p>
               <p className="text-xs text-red-700 mt-0.5">
                 {consulta.status_message ?? "Erro desconhecido"}
               </p>
             </div>
+            <button
+              onClick={handleRetry}
+              disabled={retrying}
+              className="shrink-0 inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-red-600 text-white text-xs font-bold hover:bg-red-700 disabled:opacity-50"
+            >
+              {retrying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+              Tentar novamente
+            </button>
           </div>
         )}
 
