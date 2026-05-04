@@ -142,7 +142,7 @@ const Dashboard = () => {
   // Retorna {fullText, finishMeta} OU lanca erro de rede/servidor.
   const runGeneration = async (accessToken: string): Promise<{
     fullText: string;
-    finishMeta: { finish_reason?: string; chars?: number } | null;
+    finishMeta: { finish_reason?: string; chars?: number; message?: string; error_code?: number; error_status?: string } | null;
   }> => {
     const response = await fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-fechamento`,
@@ -156,7 +156,7 @@ const Dashboard = () => {
     const decoder = new TextDecoder();
     let fullText = '';
     let buffer = '';
-    let finishMeta: { finish_reason?: string; chars?: number } | null = null;
+    let finishMeta: { finish_reason?: string; chars?: number; message?: string; error_code?: number; error_status?: string } | null = null;
     const consumeLine = (line: string) => {
       if (!line.startsWith('data: ')) return;
       const jsonStr = line.slice(6).trim();
@@ -233,6 +233,9 @@ const Dashboard = () => {
           if (attempt < MAX_ATTEMPTS) continue;
           throw lastError;
         }
+        // ERRO de quota/key/permissao do upstream nao resolve com retry —
+        // quebra imediato pra mostrar mensagem real ao usuario.
+        if (result.finishMeta?.finish_reason === 'ERROR') break;
         const truncated = (result.finishMeta?.finish_reason && result.finishMeta.finish_reason !== 'STOP')
           || result.fullText.length < 500;
         if (!truncated) break; // sucesso
@@ -245,7 +248,15 @@ const Dashboard = () => {
       // Se mesmo apos retry o backend sinalizou parada anormal, avisa e NAO
       // auto-salva — evita salvar resumo truncado na biblioteca como se
       // estivesse completo.
-      if (finishMeta?.finish_reason && finishMeta.finish_reason !== 'STOP') {
+      if (finishMeta?.finish_reason === 'ERROR') {
+        // Erro mid-stream do Gemini (quota/key/etc) — surfaca a mensagem
+        // traduzida que o backend ja preparou.
+        toast({
+          title: finishMeta.error_code === 429 ? 'Quota da IA esgotada' : 'Erro do provedor de IA',
+          description: finishMeta.message ?? 'Erro desconhecido do Gemini. Cheque os logs.',
+          variant: 'destructive',
+        });
+      } else if (finishMeta?.finish_reason && finishMeta.finish_reason !== 'STOP') {
         const reasonMsg: Record<string, string> = {
           MAX_TOKENS: 'O modelo atingiu o limite de tokens antes de terminar. Tente um tema mais especifico ou reduza os objetivos.',
           SAFETY: 'O conteudo gerado foi bloqueado por filtros de seguranca. Tente reformular o tema.',

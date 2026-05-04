@@ -759,6 +759,7 @@ Agora gere o resumo completo dentro do escopo identificado.`;
     let lastFinishReason: string | undefined;
     let totalChars = 0;
     let usageMetadata: unknown;
+    let upstreamError: { code?: number; message?: string; status?: string } | null = null;
 
     const processLine = (line: string, controller: TransformStreamDefaultController) => {
       if (!line.startsWith("data: ")) return;
@@ -766,6 +767,26 @@ Agora gere o resumo completo dentro do escopo identificado.`;
       if (!jsonStr) return;
       try {
         const parsed = JSON.parse(jsonStr);
+
+        // Gemini envia erros mid-stream como {"error": {...}} dentro do SSE
+        // (HTTP 200 inicial, mas erro chega como chunk). Sem essa checagem,
+        // 429/quota/key invalida sao engolidos silenciosamente e o cliente
+        // ve "stream terminou" com pouco/zero texto.
+        if (parsed.error) {
+          upstreamError = {
+            code: parsed.error.code,
+            message: parsed.error.message,
+            status: parsed.error.status,
+          };
+          console.error("Gemini mid-stream error:", JSON.stringify({
+            user_id: userId,
+            tema: sanitizedTema,
+            error: parsed.error,
+            chars_so_far: totalChars,
+          }));
+          return;
+        }
+
         const candidate = parsed.candidates?.[0];
         const content = candidate?.content?.parts?.[0]?.text;
         if (candidate?.finishReason) lastFinishReason = candidate.finishReason;
@@ -794,21 +815,33 @@ Agora gere o resumo completo dentro do escopo identificado.`;
         // Log diagnostico — aparece em supabase functions logs.
         // Permite identificar quem teve geracao truncada e por que (SAFETY,
         // MAX_TOKENS, RECITATION, OTHER) sem precisar acessar a sessao do user.
-        if (lastFinishReason !== "STOP" || totalChars < 500) {
+        if (upstreamError || lastFinishReason !== "STOP" || totalChars < 500) {
           console.warn("generate-fechamento finished suspiciously:", JSON.stringify({
             user_id: userId,
             tema: sanitizedTema,
             modo: sanitizedModo,
             chars_generated: totalChars,
             finish_reason: lastFinishReason ?? "UNKNOWN",
+            upstream_error: upstreamError,
             usage: usageMetadata,
           }));
         }
 
-        // Sinaliza ao cliente o motivo da parada antes do [DONE].
-        // Frontend pode mostrar aviso "geracao interrompida (SAFETY)" quando
-        // finish_reason != STOP — ajuda usuario a saber que precisa retentar.
-        if (lastFinishReason && lastFinishReason !== "STOP") {
+        // Erro mid-stream do Gemini — sinaliza com mensagem traduzida.
+        if (upstreamError) {
+          const code = upstreamError.code;
+          const status = upstreamError.status ?? "";
+          let msg = upstreamError.message ?? "Erro do provedor de IA";
+          if (code === 429 || status === "RESOURCE_EXHAUSTED") {
+            msg = "Quota da API do Google esgotada. Verifique limites no Google AI Studio (a chave nova pode estar no tier free com limites baixos: ~10 req/min e ~250K tokens/dia).";
+          } else if (code === 403 || status === "PERMISSION_DENIED") {
+            msg = "Chave de API invalida ou sem permissao para gemini-2.5-flash. Verifique no Google AI Studio.";
+          } else if (code === 400 || status === "INVALID_ARGUMENT") {
+            msg = `Requisicao invalida ao Gemini: ${upstreamError.message ?? "verifique parametros"}`;
+          }
+          const meta = { meta: { finish_reason: "ERROR", error_code: code, error_status: status, chars: totalChars, message: msg } };
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(meta)}\n\n`));
+        } else if (lastFinishReason && lastFinishReason !== "STOP") {
           const meta = { meta: { finish_reason: lastFinishReason, chars: totalChars } };
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(meta)}\n\n`));
         }
