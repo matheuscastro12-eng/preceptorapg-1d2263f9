@@ -708,40 +708,62 @@ ${sanitizedObjetivos ? "5. Como cada objetivo do estudante mapeia para a estrutu
 
 Agora gere o resumo completo dentro do escopo identificado.`;
 
-    // Call Google Gemini API directly with SSE streaming
+    // Call Google Gemini API directly with SSE streaming.
+    // gemini-2.5-flash tem retornado 503 UNAVAILABLE intermitente em horario
+    // de pico (~1 em 3 chamadas). 503 e transitorio — fazemos retry com
+    // backoff exponencial (500ms, 1500ms) antes de abortar.
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GOOGLE_AI_API_KEY}`;
-
-    const response = await fetch(geminiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const requestBody = JSON.stringify({
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [
+        { role: "user", parts: [{ text: userPrompt }] },
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 65536,
       },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [
-          { role: "user", parts: [{ text: userPrompt }] },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 65536,
-        },
-      }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Google Gemini API error:", response.status, errorText);
+    let response: Response;
+    let lastInitialError = "";
+    const RETRYABLE_STATUSES = new Set([500, 502, 503, 504]);
+    const MAX_INITIAL_ATTEMPTS = 3;
+    for (let attempt = 1; attempt <= MAX_INITIAL_ATTEMPTS; attempt++) {
+      response = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: requestBody,
+      });
+      if (response.ok) break;
+      // Le o body so para log; clona pra nao consumir o stream se for OK depois.
+      const errText = await response.text().catch(() => "");
+      lastInitialError = errText;
+      const retryable = RETRYABLE_STATUSES.has(response.status);
+      console.warn(`Gemini initial attempt ${attempt}/${MAX_INITIAL_ATTEMPTS} failed:`, response.status, errText.slice(0, 300));
+      if (!retryable || attempt === MAX_INITIAL_ATTEMPTS) break;
+      // backoff exponencial 500ms, 1500ms
+      await new Promise((r) => setTimeout(r, 500 * Math.pow(3, attempt - 1)));
+    }
 
-      if (response.status === 429) {
+    if (!response!.ok) {
+      console.error("Google Gemini API error final:", response!.status, lastInitialError.slice(0, 500));
+
+      if (response!.status === 429) {
         return new Response(
           JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns minutos." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 403) {
+      if (response!.status === 403) {
         return new Response(
           JSON.stringify({ error: "Quota da API do Google excedida ou API key inválida. Verifique sua chave no Google AI Studio." }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response!.status === 503 || response!.status === 502 || response!.status === 504) {
+        return new Response(
+          JSON.stringify({ error: "Gemini 2.5 Flash esta sobrecarregado agora (retry interno tambem falhou). Tente em 1-2 minutos." }),
+          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       return new Response(
@@ -832,14 +854,21 @@ Agora gere o resumo completo dentro do escopo identificado.`;
           const code = upstreamError.code;
           const status = upstreamError.status ?? "";
           let msg = upstreamError.message ?? "Erro do provedor de IA";
+          let retryable = false;
           if (code === 429 || status === "RESOURCE_EXHAUSTED") {
-            msg = "Quota da API do Google esgotada. Verifique limites no Google AI Studio (a chave nova pode estar no tier free com limites baixos: ~10 req/min e ~250K tokens/dia).";
+            msg = "Quota da API do Google esgotada. Verifique limites no Google AI Studio.";
           } else if (code === 403 || status === "PERMISSION_DENIED") {
-            msg = "Chave de API invalida ou sem permissao para gemini-2.5-flash. Verifique no Google AI Studio.";
+            msg = "Chave de API invalida ou sem permissao para gemini-2.5-flash.";
           } else if (code === 400 || status === "INVALID_ARGUMENT") {
             msg = `Requisicao invalida ao Gemini: ${upstreamError.message ?? "verifique parametros"}`;
+          } else if (code === 503 || status === "UNAVAILABLE" || code === 502 || code === 504) {
+            msg = "Gemini 2.5 Flash sobrecarregado momentaneamente. Vamos tentar de novo automaticamente.";
+            retryable = true;
+          } else if (code && code >= 500) {
+            msg = "Erro temporario do Gemini. Vamos tentar de novo automaticamente.";
+            retryable = true;
           }
-          const meta = { meta: { finish_reason: "ERROR", error_code: code, error_status: status, chars: totalChars, message: msg } };
+          const meta = { meta: { finish_reason: "ERROR", error_code: code, error_status: status, chars: totalChars, message: msg, retryable } };
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(meta)}\n\n`));
         } else if (lastFinishReason && lastFinishReason !== "STOP") {
           const meta = { meta: { finish_reason: lastFinishReason, chars: totalChars } };

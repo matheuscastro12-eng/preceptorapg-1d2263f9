@@ -142,7 +142,7 @@ const Dashboard = () => {
   // Retorna {fullText, finishMeta} OU lanca erro de rede/servidor.
   const runGeneration = async (accessToken: string): Promise<{
     fullText: string;
-    finishMeta: { finish_reason?: string; chars?: number; message?: string; error_code?: number; error_status?: string } | null;
+    finishMeta: { finish_reason?: string; chars?: number; message?: string; error_code?: number; error_status?: string; retryable?: boolean } | null;
   }> => {
     const response = await fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-fechamento`,
@@ -156,7 +156,7 @@ const Dashboard = () => {
     const decoder = new TextDecoder();
     let fullText = '';
     let buffer = '';
-    let finishMeta: { finish_reason?: string; chars?: number; message?: string; error_code?: number; error_status?: string } | null = null;
+    let finishMeta: { finish_reason?: string; chars?: number; message?: string; error_code?: number; error_status?: string; retryable?: boolean } | null = null;
     const consumeLine = (line: string) => {
       if (!line.startsWith('data: ')) return;
       const jsonStr = line.slice(6).trim();
@@ -233,9 +233,12 @@ const Dashboard = () => {
           if (attempt < MAX_ATTEMPTS) continue;
           throw lastError;
         }
-        // ERRO de quota/key/permissao do upstream nao resolve com retry —
-        // quebra imediato pra mostrar mensagem real ao usuario.
-        if (result.finishMeta?.finish_reason === 'ERROR') break;
+        // Erro do upstream — retry apenas se backend marcou retryable
+        // (503/502/504/UNAVAILABLE). Quota/key/permissao nao resolve com retry.
+        if (result.finishMeta?.finish_reason === 'ERROR') {
+          if (result.finishMeta.retryable && attempt < MAX_ATTEMPTS) continue;
+          break;
+        }
         const truncated = (result.finishMeta?.finish_reason && result.finishMeta.finish_reason !== 'STOP')
           || result.fullText.length < 500;
         if (!truncated) break; // sucesso
