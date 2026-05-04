@@ -221,7 +221,7 @@ const Landing = () => {
                 Domine PBL, ENAMED e Revalida em <span className="text-brand-primary">1/3 do tempo</span>.
               </h1>
               <p className="text-base sm:text-lg lg:text-xl text-slate-600 leading-[1.6] mb-8 sm:mb-10 max-w-2xl">
-                Fechamentos acadêmicos com fisiopatologia em cascata, simulados no padrão INEP e chat com PubMed integrado. <span className="font-semibold text-brand-ink">Gere seu primeiro resumo em 20 segundos</span> — grátis, sem cartão.
+                Fechamentos acadêmicos com fisiopatologia em cascata, simulados no padrão INEP e chat com PubMed integrado. <span className="font-semibold text-brand-ink">Gere seu primeiro resumo em 20 segundos</span>, grátis e sem cartão.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <button
@@ -249,7 +249,7 @@ const Landing = () => {
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <span className="text-brand-primary text-base leading-none">✓</span>
-                  7 dias de garantia
+                  3 dias de garantia
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <span className="text-brand-primary text-base leading-none">✓</span>
@@ -317,7 +317,7 @@ const Landing = () => {
                 },
                 {
                   pain: 'Tem ENAMED chegando e o material disponível é só PowerPoint do professor',
-                  fix: 'Banco de questões no padrão INEP 2011-2025, com vinhetas extensas e distratores plausíveis — gerado sob demanda.',
+                  fix: 'Banco de questões no padrão INEP 2011-2025, com vinhetas extensas e distratores plausíveis. Gerado sob demanda.',
                 },
                 {
                   pain: 'Estuda hoje, esquece em 2 semanas, repete o ciclo no semestre seguinte',
@@ -459,7 +459,7 @@ const Landing = () => {
                 {' '}geradas <span className="text-brand-primary">sob demanda</span>.
               </h2>
               <p className="text-base text-slate-600 leading-relaxed mt-4">
-                Vinhetas clínicas extensas, laboratórios com valores numéricos e distratores plausíveis — calibrados na distribuição histórica INEP 2011–2025.
+                Vinhetas clínicas extensas, laboratórios com valores numéricos e distratores plausíveis, calibrados na distribuição histórica INEP 2011–2025.
               </p>
             </Reveal>
 
@@ -531,7 +531,7 @@ const Landing = () => {
                     Chat com PubMed
                   </h4>
                   <p className="text-sm text-slate-600 leading-relaxed">
-                    IA acadêmica que busca, resume e cita artigos do PubMed em português — respostas baseadas em evidência, não em achismo.
+                    IA acadêmica que busca, resume e cita artigos do PubMed em português. Respostas baseadas em evidência, não em achismo.
                   </p>
                 </div>
 
@@ -575,7 +575,7 @@ const Landing = () => {
                 Resumos de PBL com correlação clínico-básica, gerados em segundos.
               </h2>
               <p className="text-base text-slate-600 leading-relaxed mt-4">
-                Não é "resumo de slides". Fisiopatologia em cascata, mecanismos moleculares e anatomia aplicada ao caso — no padrão do fechamento acadêmico que o PBL exige.
+                Não é "resumo de slides". Fisiopatologia em cascata, mecanismos moleculares e anatomia aplicada ao caso, no padrão do fechamento acadêmico que o PBL exige.
               </p>
             </div>
 
@@ -867,7 +867,7 @@ const Landing = () => {
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-gold" />
                 </span>
                 <span className="text-xs sm:text-sm font-semibold text-brand-primary-dark">
-                  Oferta de lançamento — descontos de até 50% por tempo limitado
+                  Oferta de lançamento: descontos de até 50% por tempo limitado
                 </span>
               </div>
             </div>
@@ -1010,10 +1010,10 @@ const Landing = () => {
                 </div>
                 <div className="flex-1 text-center sm:text-left">
                   <p className="text-base sm:text-lg font-bold text-brand-ink mb-1" style={{ fontFamily: "'Manrope', sans-serif" }}>
-                    7 dias de garantia incondicional
+                    3 dias de garantia incondicional
                   </p>
                   <p className="text-sm text-slate-600 leading-relaxed">
-                    Use a plataforma à vontade durante 7 dias. Se não economizar pelo menos 5 horas de estudo na primeira semana, devolvemos 100% do valor. <span className="font-semibold text-brand-primary-dark">Sem perguntas.</span>
+                    Use a plataforma à vontade durante 3 dias. Se não economizar pelo menos 5 horas de estudo na primeira semana, devolvemos 100% do valor. <span className="font-semibold text-brand-primary-dark">Sem perguntas.</span>
                   </p>
                 </div>
               </div>
@@ -1072,11 +1072,11 @@ const Landing = () => {
                 },
                 {
                   q: 'Tem app pra celular?',
-                  a: 'A plataforma é totalmente responsiva — funciona no navegador do celular sem precisar instalar nada. App nativo iOS/Android está no roadmap pra 2026.',
+                  a: 'A plataforma é totalmente responsiva: funciona no navegador do celular sem precisar instalar nada. App nativo iOS/Android está no roadmap pra 2026.',
                 },
                 {
-                  q: 'Como funcionam os 7 dias de garantia?',
-                  a: 'Assina, usa a plataforma sem limite por 7 dias. Se não gostar, manda e-mail e devolvemos 100% do valor pago. Sem precisar justificar nem negociar.',
+                  q: 'Como funcionam os 3 dias de garantia?',
+                  a: 'Assina, usa a plataforma sem limite por 3 dias. Se não gostar, manda e-mail e devolvemos 100% do valor pago. Sem precisar justificar nem negociar.',
                 },
                 {
                   q: 'Posso testar antes de assinar?',
@@ -1128,7 +1128,7 @@ const Landing = () => {
           <Reveal as="div" className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
             <p className="text-[11px] font-semibold text-brand-gold uppercase tracking-[0.2em] mb-5 inline-flex items-center gap-2">
               <span className="w-8 h-px bg-brand-gold" />
-              Última chance — comece agora
+              Última chance: comece agora
               <span className="w-8 h-px bg-brand-gold" />
             </p>
             <h2
@@ -1139,7 +1139,7 @@ const Landing = () => {
               {' '}fechamento de PBL <span className="text-brand-gold/90">na tela</span>.
             </h2>
             <p className="text-base sm:text-lg text-white/75 mb-8 sm:mb-10 leading-relaxed max-w-xl mx-auto">
-              Criar conta é grátis e leva 30 segundos. Você só paga quando decidir que vale a pena — e ainda tem 7 dias de garantia.
+              Criar conta é grátis e leva 30 segundos. Você só paga quando decidir que vale a pena, e ainda tem 3 dias de garantia.
             </p>
             <button
               data-cta="final-cta-signup"
@@ -1158,7 +1158,7 @@ const Landing = () => {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="text-brand-gold text-base leading-none">✓</span>
-                7 dias de garantia
+                3 dias de garantia
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="text-brand-gold text-base leading-none">✓</span>
