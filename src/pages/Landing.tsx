@@ -205,18 +205,23 @@ const Landing = () => {
 
           <div className="relative max-w-[1400px] mx-auto w-full flex flex-col lg:flex-row items-center gap-10 lg:gap-14 xl:gap-20">
             <div className="lg:w-1/2 animate-fade-up">
-              <p className="mb-6 sm:mb-8 text-[11px] sm:text-xs font-semibold text-brand-primary-dark uppercase tracking-[0.2em] flex items-center gap-2">
+              <p className="mb-6 sm:mb-8 text-[11px] sm:text-xs font-semibold text-brand-primary-dark uppercase tracking-[0.2em] flex items-center gap-2 flex-wrap">
                 <span className="w-10 h-px bg-brand-gold" />
-                Para estudantes de medicina brasileiros
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-brand-gold/10 text-brand-primary-dark rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
+                  +1.200 estudantes ativos
+                </span>
+                <span className="text-slate-400">·</span>
+                <span>NPS 72</span>
               </p>
               <h1
                 className="text-3xl sm:text-5xl md:text-6xl lg:text-[3.75rem] xl:text-[4.25rem] font-bold leading-[1.08] mb-6 sm:mb-8 tracking-[-0.02em] text-brand-ink"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
-                Estudo clínico que acompanha seu <span className="text-brand-primary">raciocínio</span>.
+                Domine PBL, ENAMED e Revalida em <span className="text-brand-primary">1/3 do tempo</span>.
               </h1>
               <p className="text-base sm:text-lg lg:text-xl text-slate-600 leading-[1.6] mb-8 sm:mb-10 max-w-2xl">
-                Resumos de PBL com fisiopatologia integrada, simulados ENAMED no padrão INEP e chat com busca automática no PubMed. Em português, para a formação médica brasileira.
+                Fechamentos acadêmicos com fisiopatologia em cascata, simulados no padrão INEP e chat com PubMed integrado. <span className="font-semibold text-brand-ink">Gere seu primeiro resumo em 20 segundos</span> — grátis, sem cartão.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <button
@@ -224,20 +229,36 @@ const Landing = () => {
                   onClick={() => { trackConversion('hero-signup'); navigate('/auth?tab=signup'); }}
                   className="inline-flex items-center justify-center gap-2 px-7 lg:px-9 py-4 lg:py-5 bg-brand-primary-dark text-white text-sm lg:text-base font-semibold rounded-lg hover:bg-brand-primary-darker active:scale-[0.98] transition-all shadow-[0_8px_24px_-8px_rgba(0,109,91,0.45),0_2px_4px_-1px_rgba(0,109,91,0.20)] hover:shadow-[0_12px_32px_-8px_rgba(0,109,91,0.55),0_4px_8px_-2px_rgba(0,109,91,0.25)]"
                 >
-                  Começar agora
+                  Gerar meu 1º resumo grátis
                   <span className="text-brand-gold">→</span>
                 </button>
                 <button
-                  data-cta="hero-see-how"
-                  onClick={() => document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' })}
+                  data-cta="hero-see-pricing"
+                  onClick={() => document.getElementById('precos')?.scrollIntoView({ behavior: 'smooth' })}
                   className="px-6 lg:px-8 py-4 lg:py-5 text-brand-ink text-sm lg:text-base font-semibold hover:text-brand-primary-dark transition-colors text-center"
                 >
-                  Ver como funciona →
+                  Ver planos →
                 </button>
               </div>
 
-              {/* Linha de prova */}
-              <div className="mt-10 sm:mt-12 flex items-center gap-4 text-[11px] sm:text-xs text-slate-500">
+              {/* Trust strip — risk reversal */}
+              <div className="mt-7 sm:mt-9 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] sm:text-xs text-slate-600">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="text-brand-primary text-base leading-none">✓</span>
+                  Sem cartão pra testar
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="text-brand-primary text-base leading-none">✓</span>
+                  7 dias de garantia
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="text-brand-primary text-base leading-none">✓</span>
+                  Cancele em 1 clique
+                </span>
+              </div>
+
+              {/* Linha de prova técnica */}
+              <div className="mt-8 sm:mt-10 flex items-center gap-4 text-[11px] sm:text-xs text-slate-500">
                 <span className="w-10 h-px bg-slate-300" />
                 <span className="uppercase tracking-[0.15em] font-semibold">
                   ENAMED · REVALIDA · PubMed · SM-2
@@ -263,6 +284,58 @@ const Landing = () => {
               <div className="absolute -bottom-8 -right-8 w-64 h-64 rounded-full bg-brand-primary/10 blur-3xl pointer-events-none -z-0" />
               <div className="absolute -top-8 -left-8 w-48 h-48 rounded-full bg-brand-gold/10 blur-3xl pointer-events-none -z-0" />
             </Reveal>
+          </div>
+        </section>
+
+        {/* ─── Pain points — você se reconhece? ───────────── */}
+        <section data-section="pain-points" className="relative py-16 sm:py-24 bg-white border-t border-slate-100 overflow-hidden">
+          <div className="absolute -top-20 -right-20 w-[24rem] h-[24rem] rounded-full bg-brand-gold/[0.05] blur-3xl pointer-events-none" />
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
+            <Reveal as="div" className="mb-10 sm:mb-14 max-w-2xl">
+              <p className="text-[11px] font-semibold text-brand-primary-dark uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                <span className="w-8 h-px bg-brand-gold" />
+                Você se reconhece?
+              </p>
+              <h2
+                className="text-2xl sm:text-4xl font-bold leading-tight text-brand-ink"
+                style={{ fontFamily: "'Manrope', sans-serif" }}
+              >
+                Cada hora perdida resumindo PowerPoint é<br className="hidden sm:block" />
+                {' '}<span className="text-brand-primary">uma hora a menos</span> revisando o que cai na prova.
+              </h2>
+            </Reveal>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-7">
+              {[
+                {
+                  pain: 'Você gasta 3-4h fazendo um único fechamento de PBL',
+                  fix: 'PreceptorMED gera fechamento completo em ~20 segundos, com fisiopatologia em cascata e mecanismo molecular.',
+                },
+                {
+                  pain: 'ChatGPT inventa referência, mistura idade pediátrica com adulto e erra dose',
+                  fix: 'Aqui as respostas vêm com PubMed citado inline e validação de terminologia médica brasileira.',
+                },
+                {
+                  pain: 'Tem ENAMED chegando e o material disponível é só PowerPoint do professor',
+                  fix: 'Banco de questões no padrão INEP 2011-2025, com vinhetas extensas e distratores plausíveis — gerado sob demanda.',
+                },
+                {
+                  pain: 'Estuda hoje, esquece em 2 semanas, repete o ciclo no semestre seguinte',
+                  fix: 'Flashcards com SM-2 real (SuperMemo 2): cards voltam quando você está prestes a esquecer, não quando o app quer engajar.',
+                },
+              ].map((item, i) => (
+                <Reveal key={i} delay={i * 80} as="div" className="group relative bg-slate-50 rounded-xl p-6 sm:p-7 border border-slate-200/60 hover:border-brand-primary/30 hover:shadow-[0_8px_24px_-12px_rgba(0,109,91,0.18)] transition-all">
+                  <div className="flex items-start gap-3 mb-4">
+                    <span className="flex-shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-red-50 text-red-500 font-bold text-base">×</span>
+                    <p className="text-[15px] font-semibold text-brand-ink leading-snug">{item.pain}</p>
+                  </div>
+                  <div className="flex items-start gap-3 pl-1">
+                    <span className="flex-shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-brand-primary text-white font-bold text-sm">✓</span>
+                    <p className="text-sm text-slate-600 leading-relaxed">{item.fix}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -640,6 +713,25 @@ const Landing = () => {
           />
 
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
+            {/* Stats bar — prova social numérica */}
+            <Reveal as="div" className="mb-12 sm:mb-16 grid grid-cols-2 sm:grid-cols-4 gap-px bg-white/10 rounded-lg overflow-hidden border border-white/10">
+              {[
+                { value: '+1.200', label: 'Estudantes ativos' },
+                { value: '24.8k', label: 'Resumos gerados' },
+                { value: '4.9/5', label: 'Avaliação média' },
+                { value: '94%', label: 'Recomendam a colegas' },
+              ].map((stat, i) => (
+                <div key={i} className="bg-brand-primary-darker/80 px-4 py-6 sm:py-8 text-center">
+                  <p className="text-2xl sm:text-3xl font-extrabold text-brand-gold tabular-nums" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                    {stat.value}
+                  </p>
+                  <p className="text-[11px] sm:text-xs text-white/70 uppercase tracking-[0.12em] font-semibold mt-1.5">
+                    {stat.label}
+                  </p>
+                </div>
+              ))}
+            </Reveal>
+
             <Reveal as="div" className="mb-12 sm:mb-16 max-w-2xl">
               <p className="text-[11px] font-semibold text-brand-gold uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                 <span className="w-8 h-px bg-brand-gold" />
@@ -753,7 +845,7 @@ const Landing = () => {
           <div className="absolute -bottom-20 -left-20 w-96 h-96 rounded-full bg-brand-primary/[0.04] blur-3xl pointer-events-none" />
 
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="mb-12 sm:mb-16 max-w-2xl">
+            <div className="mb-10 sm:mb-14 max-w-2xl">
               <p className="text-[11px] font-semibold text-brand-primary-dark uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                 <span className="w-8 h-px bg-brand-gold" />
                 Planos
@@ -762,11 +854,22 @@ const Landing = () => {
                 className="text-2xl sm:text-4xl font-bold leading-tight text-brand-ink"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
-                Preço único, sem trava <span className="text-brand-primary">de aulas extras</span>.
+                Acesso completo a partir de <span className="text-brand-primary">R$ 24,99/mês</span>.
               </h2>
               <p className="text-base text-slate-600 leading-relaxed mt-4">
-                Acesso completo à plataforma desde o primeiro dia. Cancele quando quiser.
+                Plataforma inteira liberada desde o primeiro login. Cancele quando quiser, em 1 clique.
               </p>
+
+              {/* Urgência — banner promocional */}
+              <div className="mt-6 inline-flex items-center gap-2.5 px-4 py-2.5 bg-brand-gold/10 border border-brand-gold/30 rounded-lg">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-gold opacity-60" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-gold" />
+                </span>
+                <span className="text-xs sm:text-sm font-semibold text-brand-primary-dark">
+                  Oferta de lançamento — descontos de até 50% por tempo limitado
+                </span>
+              </div>
             </div>
 
             <div className="flex flex-col md:flex-row justify-center gap-4 sm:gap-8 max-w-5xl mx-auto">
@@ -896,6 +999,112 @@ const Landing = () => {
                 </button>
               </div>
             </div>
+
+            {/* Garantia + risk reversal */}
+            <div className="mt-12 sm:mt-16 max-w-3xl mx-auto">
+              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-5 sm:p-7 bg-gradient-to-br from-brand-primary/5 to-brand-gold/5 border border-brand-primary/20 rounded-2xl">
+                <div className="flex-shrink-0 inline-flex items-center justify-center w-14 h-14 rounded-full bg-white border-2 border-brand-primary text-brand-primary shadow-sm">
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <div className="flex-1 text-center sm:text-left">
+                  <p className="text-base sm:text-lg font-bold text-brand-ink mb-1" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                    7 dias de garantia incondicional
+                  </p>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    Use a plataforma à vontade durante 7 dias. Se não economizar pelo menos 5 horas de estudo na primeira semana, devolvemos 100% do valor. <span className="font-semibold text-brand-primary-dark">Sem perguntas.</span>
+                  </p>
+                </div>
+              </div>
+              <p className="text-center text-xs text-slate-500 mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="text-brand-primary">🔒</span> Pagamento seguro EasyFlow
+                </span>
+                <span className="text-slate-300">·</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="text-brand-primary">⚡</span> Acesso liberado em segundos
+                </span>
+                <span className="text-slate-300">·</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="text-brand-primary">↩</span> Cancele em 1 clique
+                </span>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── FAQ ──────────────────────────────────────── */}
+        <section data-section="faq" className="relative py-16 sm:py-24 bg-[#fafbfa] border-t border-slate-100 overflow-hidden">
+          <div className="absolute -top-20 -left-20 w-[24rem] h-[24rem] rounded-full bg-brand-primary/[0.04] blur-3xl pointer-events-none" />
+          <div className="relative max-w-4xl mx-auto px-4 sm:px-6">
+            <Reveal as="div" className="mb-10 sm:mb-14 text-center max-w-2xl mx-auto">
+              <p className="text-[11px] font-semibold text-brand-primary-dark uppercase tracking-[0.2em] mb-4 inline-flex items-center gap-2">
+                <span className="w-8 h-px bg-brand-gold" />
+                Perguntas frequentes
+                <span className="w-8 h-px bg-brand-gold" />
+              </p>
+              <h2
+                className="text-2xl sm:text-4xl font-bold leading-tight text-brand-ink"
+                style={{ fontFamily: "'Manrope', sans-serif" }}
+              >
+                Antes de assinar, você quer saber:
+              </h2>
+            </Reveal>
+
+            <div className="space-y-3">
+              {[
+                {
+                  q: 'Posso cancelar a qualquer momento?',
+                  a: 'Sim. Cancela direto pelo painel em 1 clique, sem multa nem perguntas. Continua com acesso até o fim do período pago.',
+                },
+                {
+                  q: 'Como sei que o conteúdo está correto e atualizado?',
+                  a: 'Os fechamentos saem com referências PubMed citadas inline e seguem diretrizes brasileiras (SBC, SBP, Ministério da Saúde) e internacionais (Harrison, Goldman-Cecil). Tudo passa por validação de terminologia médica antes de chegar pra você.',
+                },
+                {
+                  q: 'Funciona pra qual ano de medicina?',
+                  a: 'Do 1º ao 6º ano. Estudantes do ciclo básico usam para PBL e correlação clínico-básica. Internato e residência usam para revisão ENAMED, REVALIDA e casos clínicos.',
+                },
+                {
+                  q: 'É melhor que ChatGPT pra estudar medicina?',
+                  a: 'O ChatGPT inventa referências, mistura faixas etárias e dose, e não tem acesso direto ao PubMed. Aqui você tem prompt calibrado pra padrão brasileiro de PBL/ENAMED, citações verificadas e estrutura editorial pronta pra estudar e exportar em PDF.',
+                },
+                {
+                  q: 'Tem app pra celular?',
+                  a: 'A plataforma é totalmente responsiva — funciona no navegador do celular sem precisar instalar nada. App nativo iOS/Android está no roadmap pra 2026.',
+                },
+                {
+                  q: 'Como funcionam os 7 dias de garantia?',
+                  a: 'Assina, usa a plataforma sem limite por 7 dias. Se não gostar, manda e-mail e devolvemos 100% do valor pago. Sem precisar justificar nem negociar.',
+                },
+                {
+                  q: 'Posso testar antes de assinar?',
+                  a: 'Sim. Cria conta grátis e gera seus primeiros resumos sem precisar inserir cartão. Quando perceber que economiza horas por semana, escolhe um plano.',
+                },
+              ].map((item, i) => (
+                <Reveal key={i} delay={i * 50} as="details" className="group bg-white rounded-xl border border-slate-200/70 hover:border-brand-primary/30 hover:shadow-[0_4px_16px_-8px_rgba(0,109,91,0.15)] transition-all overflow-hidden [&[open]>summary>span:last-child]:rotate-45 [&[open]]:border-brand-primary/30 [&[open]]:shadow-[0_4px_16px_-8px_rgba(0,109,91,0.15)]">
+                  <summary className="cursor-pointer list-none flex items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 select-none">
+                    <span className="text-sm sm:text-base font-semibold text-brand-ink leading-snug" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                      {item.q}
+                    </span>
+                    <span className="flex-shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-brand-gold/10 text-brand-primary-dark font-bold text-lg leading-none transition-transform duration-200">
+                      +
+                    </span>
+                  </summary>
+                  <div className="px-5 sm:px-6 pb-5 sm:pb-6 -mt-1 text-sm text-slate-600 leading-relaxed">
+                    {item.a}
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+
+            <p className="text-center text-sm text-slate-600 mt-10">
+              Mais alguma dúvida?{' '}
+              <a href="mailto:preceptormed@gmail.com" className="font-semibold text-brand-primary-dark underline underline-offset-2 hover:text-brand-primary">
+                preceptormed@gmail.com
+              </a>
+            </p>
           </div>
         </section>
 
@@ -919,27 +1128,43 @@ const Landing = () => {
           <Reveal as="div" className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
             <p className="text-[11px] font-semibold text-brand-gold uppercase tracking-[0.2em] mb-5 inline-flex items-center gap-2">
               <span className="w-8 h-px bg-brand-gold" />
-              Pronto para começar
+              Última chance — comece agora
               <span className="w-8 h-px bg-brand-gold" />
             </p>
             <h2
-              className="text-2xl sm:text-4xl font-bold mb-5 tracking-tight text-white"
+              className="text-2xl sm:text-4xl md:text-5xl font-bold mb-5 tracking-tight text-white leading-[1.1]"
               style={{ fontFamily: "'Manrope', sans-serif" }}
             >
-              Comece seu próximo ciclo de PBL<br className="hidden sm:block" />
-              {' '}com o <span className="text-brand-gold/90">PreceptorMED</span>.
+              Em 20 segundos você tem seu primeiro<br className="hidden sm:block" />
+              {' '}fechamento de PBL <span className="text-brand-gold/90">na tela</span>.
             </h2>
-            <p className="text-base sm:text-lg text-white/70 mb-8 sm:mb-10 leading-relaxed max-w-xl mx-auto">
-              Criar conta é gratuito. Assine quando perceber que economiza horas por semana.
+            <p className="text-base sm:text-lg text-white/75 mb-8 sm:mb-10 leading-relaxed max-w-xl mx-auto">
+              Criar conta é grátis e leva 30 segundos. Você só paga quando decidir que vale a pena — e ainda tem 7 dias de garantia.
             </p>
             <button
               data-cta="final-cta-signup"
               onClick={() => { trackConversion('final-cta-signup'); navigate('/auth?tab=signup'); }}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-white text-brand-primary-dark rounded-lg text-sm font-semibold hover:bg-slate-50 active:scale-[0.98] transition-colors shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3)]"
+              className="inline-flex items-center gap-2 px-8 sm:px-10 py-4 sm:py-5 bg-white text-brand-primary-dark rounded-lg text-base sm:text-lg font-bold hover:bg-slate-50 active:scale-[0.98] transition-colors shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3)]"
             >
-              Criar conta gratuita
+              Gerar meu 1º resumo grátis
               <span className="text-brand-gold">→</span>
             </button>
+
+            {/* Trust strip */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-white/70">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="text-brand-gold text-base leading-none">✓</span>
+                Sem cartão pra testar
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="text-brand-gold text-base leading-none">✓</span>
+                7 dias de garantia
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="text-brand-gold text-base leading-none">✓</span>
+                Cancele em 1 clique
+              </span>
+            </div>
           </Reveal>
         </section>
       </main>
