@@ -138,6 +138,57 @@ const Dashboard = () => {
 
   const isSeminario = modo === 'seminario';
 
+  // Executa uma tentativa de geracao via SSE.
+  // Retorna {fullText, finishMeta} OU lanca erro de rede/servidor.
+  const runGeneration = async (accessToken: string): Promise<{
+    fullText: string;
+    finishMeta: { finish_reason?: string; chars?: number; message?: string; error_code?: number; error_status?: string; retryable?: boolean } | null;
+  }> => {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-fechamento`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ tema, objetivos, modo, secoes }) }
+    );
+    if (!response.ok) {
+      const e = await response.json().catch(() => ({}));
+      throw new Error(e.error || 'Erro ao gerar fechamento');
+    }
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    let buffer = '';
+    let finishMeta: { finish_reason?: string; chars?: number; message?: string; error_code?: number; error_status?: string; retryable?: boolean } | null = null;
+    const consumeLine = (line: string) => {
+      if (!line.startsWith('data: ')) return;
+      const jsonStr = line.slice(6).trim();
+      if (!jsonStr || jsonStr === '[DONE]') return;
+      try {
+        const parsed = JSON.parse(jsonStr);
+        if (parsed.meta?.finish_reason) {
+          finishMeta = parsed.meta;
+          return;
+        }
+        const content = parsed.choices?.[0]?.delta?.content;
+        if (content) {
+          if (!hasStartedReceiving) setHasStartedReceiving(true);
+          fullText += content;
+          setResultado(fullText);
+        }
+      } catch { /* partial JSON ja tratado pelo buffer */ }
+    };
+    if (reader) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) consumeLine(line);
+      }
+      if (buffer.length > 0) consumeLine(buffer);
+    }
+    return { fullText, finishMeta };
+  };
+
   const handleGenerate = async () => {
     if (!tema.trim()) {
       toast({ title: 'Tema obrigatório', description: 'Por favor, insira o tema central.', variant: 'destructive' });
@@ -148,7 +199,7 @@ const Dashboard = () => {
     setHasStartedReceiving(false);
     setIsComplete(false);
     try {
-      let { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       // If session belongs to the CRM service account, it's corrupted — clear and redirect
       if (session?.user?.email === 'crm-service@thepreceptor.com.br') {
         await supabase.auth.signOut();
@@ -159,56 +210,77 @@ const Dashboard = () => {
         window.location.href = '/auth';
         return;
       }
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-fechamento`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ tema, objetivos, modo, secoes }) }
-      );
-      if (!response.ok) { const e = await response.json().catch(() => ({})); throw new Error(e.error || 'Erro ao gerar fechamento'); }
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullText = '';
-      // Buffer de linha parcial — chunks de rede podem cortar uma linha SSE
-      // no meio. Sem isso, JSON.parse falha em fragmentos e o conteudo eh
-      // descartado silenciosamente (bug do "resumo truncado em 2 linhas").
-      let leftover = '';
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const text = leftover + decoder.decode(value, { stream: true });
-          const lines = text.split('\n');
-          // Ultima entrada pode ser linha incompleta — guarda pro proximo chunk.
-          leftover = lines.pop() ?? '';
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed.startsWith('data: ')) continue;
-            const jsonStr = trimmed.slice(6).trim();
-            if (!jsonStr || jsonStr === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(jsonStr);
-              const content = parsed.choices?.[0]?.delta?.content;
-              if (content) { if (!hasStartedReceiving) setHasStartedReceiving(true); fullText += content; setResultado(fullText); }
-            } catch { /* partial */ }
-          }
-        }
-        // Drena ultima linha que pode ter ficado sem \n no final do stream.
-        const tail = leftover.trim();
-        if (tail.startsWith('data: ')) {
-          const jsonStr = tail.slice(6).trim();
-          if (jsonStr && jsonStr !== '[DONE]') {
-            try {
-              const parsed = JSON.parse(jsonStr);
-              const content = parsed.choices?.[0]?.delta?.content;
-              if (content) { fullText += content; setResultado(fullText); }
-            } catch { /* ignore */ }
-          }
-        }
-      }
-      setIsComplete(true);
 
-      // Auto-save na biblioteca assim que termina de gerar.
-      // Nao bloqueia em caso de erro — user ainda pode salvar manualmente.
-      if (fullText && user) {
+      // Tentativa com retry automatico unico: se a primeira chegar truncada
+      // (provavelmente proxy fechou conexao SSE) ou der erro de rede, reseta
+      // o estado de exibicao e tenta uma vez antes de avisar o usuario.
+      const MAX_ATTEMPTS = 2;
+      let result: { fullText: string; finishMeta: { finish_reason?: string; chars?: number } | null } = { fullText: '', finishMeta: null };
+      let lastError: Error | null = null;
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        if (attempt > 1) {
+          // reset de UI antes do retry
+          setResultado('');
+          setHasStartedReceiving(false);
+          console.info(`generate-fechamento: retry ${attempt}/${MAX_ATTEMPTS}`);
+        }
+        try {
+          result = await runGeneration(session.access_token);
+          lastError = null;
+        } catch (err) {
+          lastError = err instanceof Error ? err : new Error(String(err));
+          // erro de rede/HTTP — vale retry se tivermos tentativa restante
+          if (attempt < MAX_ATTEMPTS) continue;
+          throw lastError;
+        }
+        // Erro do upstream — retry apenas se backend marcou retryable
+        // (503/502/504/UNAVAILABLE). Quota/key/permissao nao resolve com retry.
+        if (result.finishMeta?.finish_reason === 'ERROR') {
+          if (result.finishMeta.retryable && attempt < MAX_ATTEMPTS) continue;
+          break;
+        }
+        const truncated = (result.finishMeta?.finish_reason && result.finishMeta.finish_reason !== 'STOP')
+          || result.fullText.length < 500;
+        if (!truncated) break; // sucesso
+        if (attempt >= MAX_ATTEMPTS) break; // esgotou retries
+      }
+
+      setIsComplete(true);
+      const { fullText, finishMeta } = result;
+
+      // Se mesmo apos retry o backend sinalizou parada anormal, avisa e NAO
+      // auto-salva — evita salvar resumo truncado na biblioteca como se
+      // estivesse completo.
+      if (finishMeta?.finish_reason === 'ERROR') {
+        // Erro mid-stream do Gemini (quota/key/etc) — surfaca a mensagem
+        // traduzida que o backend ja preparou.
+        toast({
+          title: finishMeta.error_code === 429 ? 'Quota da IA esgotada' : 'Erro do provedor de IA',
+          description: finishMeta.message ?? 'Erro desconhecido do Gemini. Cheque os logs.',
+          variant: 'destructive',
+        });
+      } else if (finishMeta?.finish_reason && finishMeta.finish_reason !== 'STOP') {
+        const reasonMsg: Record<string, string> = {
+          MAX_TOKENS: 'O modelo atingiu o limite de tokens antes de terminar. Tente um tema mais especifico ou reduza os objetivos.',
+          SAFETY: 'O conteudo gerado foi bloqueado por filtros de seguranca. Tente reformular o tema.',
+          RECITATION: 'O conteudo foi bloqueado por similaridade com fontes protegidas. Tente reformular.',
+          OTHER: 'A geracao foi interrompida por um motivo desconhecido. Tente novamente.',
+        };
+        toast({
+          title: 'Geracao interrompida',
+          description: reasonMsg[finishMeta.finish_reason] ?? `Motivo: ${finishMeta.finish_reason}. Tente novamente.`,
+          variant: 'destructive',
+        });
+      } else if (fullText.length < 500) {
+        // Stream foi cortado prematuramente (provavelmente rede/proxy) e
+        // ainda nao recuperou apos retry. Nao salva, avisa o usuario.
+        toast({
+          title: 'Conexao instavel',
+          description: 'A geracao foi interrompida antes de terminar. Verifique sua conexao (tente outra rede ou desabilite extensoes do navegador) e tente novamente.',
+          variant: 'destructive',
+        });
+      } else if (fullText && user) {
+        // Auto-save apenas em geracao bem-sucedida.
         try {
           const { data: saved, error: saveError } = await supabase.from('fechamentos').insert({
             user_id: user.id,

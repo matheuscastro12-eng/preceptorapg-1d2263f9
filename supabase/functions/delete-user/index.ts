@@ -1,10 +1,54 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Tabelas com user_id sem FK para auth.users — ficam orfas se nao limparmos
+// manualmente antes do auth.admin.deleteUser. Tabelas com FK ON DELETE CASCADE
+// sao limpas automaticamente pelo Postgres.
+const ORPHAN_TABLES_BY_USER_ID = [
+  "fechamentos",
+  "flashcards",
+  "topic_progress",
+  "generation_logs",
+  "enamed_attempts",
+  "landing_events",
+] as const;
+
+// Tabelas de CRM — limpas explicitamente para evitar dados de marketing presos
+const CRM_TABLES_BY_USER_ID = [
+  "crm_funnel_events",
+  "crm_health_scores",
+  "crm_churn_predictions",
+  "crm_automations_log",
+  "crm_leads",
+  "subscriptions",
+  "user_roles",
+  "profiles",
+] as const;
+
+async function safeDelete(
+  supabase: SupabaseClient,
+  table: string,
+  column: string,
+  userId: string,
+): Promise<{ table: string; error: string | null }> {
+  try {
+    const { error } = await supabase.from(table).delete().eq(column, userId);
+    if (error) {
+      console.warn(`delete-user: failed to clean ${table}:`, error.message);
+      return { table, error: error.message };
+    }
+    return { table, error: null };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn(`delete-user: exception cleaning ${table}:`, msg);
+    return { table, error: msg };
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -14,10 +58,9 @@ serve(async (req) => {
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Verificar que quem chama e admin
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Unauthorized");
 
@@ -47,80 +90,43 @@ serve(async (req) => {
       user_id = bodyUserId;
     }
 
-    // Deletar dados publicos primeiro. A maioria tem ON DELETE CASCADE pro
-    // auth.users, mas algumas tabelas tem FK SET NULL ou triggers que podem
-    // travar auth.admin.deleteUser. Preferimos limpar explicitamente — se
-    // alguma tabela nao existir nesse projeto, o supabase-js retorna erro
-    // PGRST205/42P01 e seguimos em frente em vez de abortar a exclusao.
-    const tablesByUserId = [
-      "crm_funnel_events",
-      "crm_health_scores",
-      "crm_churn_predictions",
-      "crm_automations_log",
-      "crm_leads",
-      "fechamentos",
-      "fechamento_annotations",
-      "flashcards",
-      "flashcard_reviews",
-      "enamed_attempts",
-      "exam_attempts",
-      "ai_chat_messages",
-      "ai_chat_sessions",
-      "generation_logs",
-      "daily_activity",
-      "achievement_progress",
-      "user_achievements",
-      "follows",
-      "posts",
-      "post_likes",
-      "comments",
-      "support_tickets",
-      "support_messages",
-      "admin_inadimplencias",
-      "subscriptions",
-      "user_roles",
-      "profiles",
-    ];
+    // Limpar referrals (duas colunas distintas) — tolerante a falhas
+    await safeDelete(supabase, "crm_referrals", "referrer_id", user_id);
+    await safeDelete(supabase, "crm_referrals", "referred_id", user_id);
 
-    const tableErrors: string[] = [];
-    for (const table of tablesByUserId) {
-      const { error } = await supabase.from(table).delete().eq("user_id", user_id);
-      if (error && !/does not exist|relation .* does not exist|PGRST205|42P01/i.test(error.message)) {
-        // Erro real (FK violation, RLS, etc) — registra mas nao aborta;
-        // a falha real aparece no auth.admin.deleteUser logo abaixo.
-        console.warn(`delete from ${table} failed:`, error.message);
-        tableErrors.push(`${table}: ${error.message}`);
-      }
+    // Limpar dados de CRM e dependencias diretas
+    const cleanupResults = await Promise.all([
+      ...CRM_TABLES_BY_USER_ID.map((t) => safeDelete(supabase, t, "user_id", user_id)),
+      ...ORPHAN_TABLES_BY_USER_ID.map((t) => safeDelete(supabase, t, "user_id", user_id)),
+    ]);
+
+    const failures = cleanupResults.filter((r) => r.error !== null);
+    if (failures.length > 0) {
+      console.warn("delete-user: cleanup partial failures:", failures);
     }
 
-    // Tabelas com colunas alternativas (nao "user_id")
-    await supabase.from("crm_referrals").delete().eq("referrer_id", user_id);
-    await supabase.from("crm_referrals").delete().eq("referred_id", user_id);
-    await supabase.from("follows").delete().eq("follower_id", user_id);
-    await supabase.from("follows").delete().eq("following_id", user_id);
-    await supabase.from("messages").delete().eq("sender_id", user_id);
-    await supabase.from("messages").delete().eq("receiver_id", user_id);
-
-    // Deletar auth user
+    // Deletar auth user (cascade automatica nas tabelas com FK ON DELETE CASCADE)
     const { error: deleteError } = await supabase.auth.admin.deleteUser(user_id);
     if (deleteError) {
-      console.error("auth.admin.deleteUser failed for", user_id, deleteError, "table errors:", tableErrors);
-      throw new Error(
-        `Falha ao excluir conta: ${deleteError.message}` +
-          (tableErrors.length ? ` (${tableErrors.join("; ")})` : "")
-      );
+      console.error("delete-user: auth.admin.deleteUser falhou:", deleteError);
+      throw new Error(`Falha ao remover conta: ${deleteError.message}`);
     }
 
     return new Response(
-      JSON.stringify({ success: true, deleted: user_id }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({
+        success: true,
+        deleted: user_id,
+        cleanup_warnings: failures.length > 0 ? failures : undefined,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
-    const msg = (err as Error).message;
+    const msg = (err as Error).message ?? "Erro desconhecido";
     const status = msg === "Unauthorized" ? 401 : msg.startsWith("Forbidden") ? 403 : 400;
+    console.error("delete-user error:", msg);
     return new Response(
       JSON.stringify({ error: msg }),
-      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });

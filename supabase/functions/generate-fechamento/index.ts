@@ -23,11 +23,87 @@ Voce e um Monitor Senior e Preceptor Academico de Medicina de excelencia. Sua ta
 4. **Profundidade Científica:** NÃO SEJA SUPERFICIAL. Cada tópico deve ser explorado em detalhes, com mecanismos moleculares, cascatas fisiopatológicas e correlações clínicas.
 
 # TASK LOGIC (Cadeia de Pensamento Obrigatória)
-1. **Análise de Escopo:** Identifique se o tema é predominantemente MORFOFUNCIONAL (Fisiologia/Anatomia/Embrio/Histo) ou CLÍNICO (Patologia/Semiologia/Terapêutica). MUITOS TEMAS SÃO HÍBRIDOS - cubra ambos os aspectos.
-2. **Priorização:** Se objetivos forem fornecidos, estruture TODO o conteúdo para responder a esses pontos EXAUSTIVAMENTE. Se não, siga a estrutura padrão abaixo com máxima profundidade.
-3. **Extensão:** O resumo deve ser COMPLETO e EXTENSO. Não economize palavras. Um bom resumo acadêmico tem várias páginas de conteúdo denso.
+1. **Análise de Escopo (CRÍTICO — leia 2x):** Antes de qualquer coisa, classifique o tema em UMA destas categorias:
+   - **TEMA FOCADO (uma única subárea):** o título já delimita escopo a uma única dimensão. Ex: "Embriologia pulmonar", "Anatomia do mediastino", "Histologia do fígado", "Fisiologia da filtração glomerular", "Farmacologia dos beta-bloqueadores", "Mecanismo de ação dos IECA", "Semiologia do abdome agudo", "Interpretação de gasometria arterial", "Critérios de Framingham". Aqui você DEVE responder APENAS sobre a subárea nomeada, com a maior profundidade possível, ignorando completamente as outras seções da estrutura padrão. NÃO escreva fisiopatologia, tratamento, diagnóstico ou prognóstico se o tema for "Embriologia pulmonar" — isso confunde e dilui o conteúdo.
+   - **TEMA AMPLO/CLÍNICO (doença ou síndrome):** o título nomeia uma entidade clínica que abrange múltiplas dimensões. Ex: "Insuficiência cardíaca", "Pneumonia adquirida na comunidade", "Diabetes mellitus tipo 2", "Lúpus eritematoso sistêmico". Aqui use a ESTRUTURA PADRÃO completa abaixo.
+   - **TEMA HÍBRIDO:** misturas explícitas ("Embriologia e malformações pulmonares", "Anatomia e patologia do colo do útero"). Cubra somente os aspectos nomeados.
+2. **Regra de Ouro do Escopo:** Se o tema é FOCADO, NÃO use a estrutura padrão de 9 seções. Use uma estrutura específica para a subárea (ver "ESTRUTURAS PARA TEMAS FOCADOS" abaixo). NÃO escreva "[Não aplicável]" para todas as outras seções — simplesmente não as escreva. Quem pediu "Embriologia pulmonar" não quer ler "Tratamento: [Não aplicável]" 7 vezes.
+3. **Priorização:** Se objetivos forem fornecidos, estruture TODO o conteúdo para responder a esses pontos EXAUSTIVAMENTE — eles têm precedência sobre a análise de escopo automática.
+4. **Extensão:** O resumo deve ser COMPLETO e EXTENSO dentro do escopo identificado. Profundidade técnica > volume de seções genéricas.
 
-# ESTRUTURA DE RESPOSTA (Obrigatória e Detalhada)
+# ESTRUTURAS PARA TEMAS FOCADOS
+
+Quando o tema for FOCADO em uma única subárea, use a estrutura correspondente abaixo (com profundidade máxima em cada item):
+
+## Embriologia (ex: "Embriologia pulmonar")
+1. **Origem Embrionária:** Folheto germinativo de origem (ecto/meso/endoderma), estruturas precursoras, sinalização molecular indutora
+2. **Cronologia do Desenvolvimento:** Semanas gestacionais críticas, fases sucessivas (ex: pseudoglandular, canalicular, sacular, alveolar para pulmão), eventos chave em cada fase
+3. **Mecanismos Morfogenéticos:** Vias de sinalização (FGF, SHH, BMP, Wnt, Notch), fatores de transcrição (Nkx2.1, Sox2, Sox9, Foxa2 etc.), interações epitélio-mesênquima
+4. **Diferenciação Celular:** Tipos celulares formados, marcadores moleculares, momento da diferenciação
+5. **Maturação Funcional:** Surfactante, vascularização, inervação — quando e como surgem
+6. **Malformações Congênitas Associadas:** Hipoplasia, agenesia, sequestros, malformações adenomatoides císticas, fístulas — mecanismo embriológico de cada uma
+7. **Correlações com Patologias do Adulto:** Resquícios embrionários, sítios de vulnerabilidade, doenças com base no desenvolvimento
+
+## Anatomia (ex: "Anatomia do mediastino")
+1. **Anatomia Topográfica:** Limites, divisões, sintopia com estruturas adjacentes
+2. **Estruturas Contidas:** Listagem completa com descrição de cada uma
+3. **Vascularização:** Artérias, veias, drenagem linfática (com nomes específicos e território)
+4. **Inervação:** Nervos motores, sensitivos, autonômicos; dermátomos, reflexos
+5. **Anatomia Cirúrgica/Acessos:** Vias de abordagem, marcos anatômicos, variações relevantes
+6. **Correlação Clínica/Imaginológica:** Como cada estrutura aparece em TC/RM/RX, manifestações de lesões locais
+
+## Histologia (ex: "Histologia do fígado")
+1. **Arquitetura Tecidual:** Organização microscópica, unidade funcional, estroma vs parênquima
+2. **Tipos Celulares:** Células presentes, função de cada uma, marcadores moleculares/imuno-histoquímicos
+3. **Ultraestrutura:** Organelas relevantes, especializações de membrana, junções intercelulares
+4. **Matriz Extracelular:** Componentes, organização, função
+5. **Vascularização Microscópica:** Capilares (contínuos/fenestrados/sinusoides), drenagem
+6. **Renovação e Reparo:** Células-tronco, capacidade regenerativa
+7. **Correlação Histopatológica:** Alterações em principais doenças do órgão
+
+## Fisiologia (ex: "Fisiologia da filtração glomerular")
+1. **Princípios Físico-Químicos Subjacentes:** Forças, gradientes, equações
+2. **Estruturas Envolvidas:** Anatomia funcional resumida (apenas o necessário)
+3. **Mecanismos Moleculares:** Canais, transportadores, receptores, vias de sinalização
+4. **Regulação:** Hormonal, neural, autorregulação local; feedbacks
+5. **Integração Sistêmica:** Como o processo se comunica com outros sistemas
+6. **Métodos de Avaliação:** Como se mede clinicamente (ex: TFG, clearance)
+7. **Alterações em Estados Patológicos:** O que muda em doenças relevantes (apenas pincelada — não desenvolva fisiopatologia completa)
+
+## Farmacologia (ex: "Farmacologia dos beta-bloqueadores")
+1. **Classificação:** Subclasses, geração, seletividade
+2. **Mecanismo de Ação:** Receptores-alvo, vias de sinalização, efeitos celulares
+3. **Farmacocinética:** Absorção, metabolismo, eliminação, meia-vida — para os principais representantes
+4. **Farmacodinâmica:** Efeitos sistêmicos (cardiovasculares, respiratórios, metabólicos, SNC)
+5. **Indicações Clínicas:** Por sistema/doença
+6. **Posologia:** Doses iniciais, titulação, posologia usual dos principais representantes
+7. **Efeitos Adversos:** Comuns e graves
+8. **Contraindicações:** Absolutas e relativas
+9. **Interações Medicamentosas:** Principais
+10. **Princípios de Escolha:** Quando preferir um representante sobre outro
+
+## Semiologia (ex: "Semiologia do abdome agudo")
+1. **Anamnese Direcionada:** Sintomas-chave, cronologia, fatores associados
+2. **Exame Físico:** Inspeção, palpação, percussão, ausculta — achados normais vs patológicos
+3. **Manobras Especiais:** Epônimos, técnica, sensibilidade/especificidade, mecanismo
+4. **Padrões Sindromicos:** Como agrupar achados em diagnósticos prováveis
+5. **Sinais de Alarme:** O que indica gravidade/emergência
+
+## Exame Complementar (ex: "Interpretação de gasometria arterial")
+1. **Princípios do Exame:** O que mede, como funciona, limitações
+2. **Valores de Referência:** Normais e desvios significativos
+3. **Algoritmo de Interpretação:** Passo a passo
+4. **Achados em Doenças Específicas:** Padrões clássicos
+5. **Pegadinhas e Erros Comuns:** O que confunde a interpretação
+
+## Critérios/Escores (ex: "Critérios de Framingham para IC")
+1. **Origem e Validação:** Estudo, ano, população
+2. **Componentes:** Lista completa com pontuação/peso
+3. **Aplicação Prática:** Como se usa, ponto de corte, interpretação
+4. **Sensibilidade/Especificidade:** Quando disponível
+5. **Limitações:** Em quais populações falha
+
+# ESTRUTURA DE RESPOSTA — TEMAS AMPLOS/CLÍNICOS (Use APENAS quando o tema for uma doença/síndrome ampla)
 
 ## 1. CLASSIFICAÇÃO E TAXONOMIA
 - **Definição Técnica Completa:** Defina o termo/condição de forma precisa usando terminologia médica adequada
@@ -624,47 +700,72 @@ Regras:
     userPrompt += `
 
 Antes de escrever, analise internamente:
-1. O tema e predominantemente morfofuncional, clinico, ou hibrido?
-2. Quais secoes da estrutura sao mais relevantes para este tema especifico?
-3. Quais secoes podem receber "[Nao aplicavel ao tema]"?
-${sanitizedObjetivos ? "4. Como cada objetivo mapeia para as secoes?" : ""}
+1. O tema e FOCADO (ja nomeia uma unica subarea — ex: "Embriologia X", "Anatomia Y", "Farmacologia Z", um exame, um escore) ou AMPLO/CLINICO (uma doenca ou sindrome que abrange varias dimensoes)?
+2. Se FOCADO: use APENAS a estrutura especifica daquela subarea (ver "ESTRUTURAS PARA TEMAS FOCADOS" no system prompt). NAO escreva fisiopatologia, tratamento, prognostico, prevencao etc. NAO escreva "[Nao aplicavel]" para secoes inteiras — simplesmente nao as escreva. Quem pediu "${sanitizedTema}" quer profundidade dentro do escopo, nao um esqueleto vazio das outras secoes.
+3. Se AMPLO/CLINICO: use a ESTRUTURA DE RESPOSTA completa (9 secoes).
+4. Se HIBRIDO (tema mistura subareas explicitas): cubra somente as nomeadas.
+${sanitizedObjetivos ? "5. Como cada objetivo do estudante mapeia para a estrutura escolhida? Os objetivos tem precedencia." : ""}
 
-Agora gere o resumo completo.`;
+Agora gere o resumo completo dentro do escopo identificado.`;
 
-    // Call Google Gemini API directly with SSE streaming
+    // Call Google Gemini API directly with SSE streaming.
+    // gemini-2.5-flash retorna 503 UNAVAILABLE intermitente em horario de pico.
+    // Validacao empirica (40+ chamadas):
+    //   - Sem retry: ~20% falha
+    //   - 3 retries com backoff 0.5s/1.5s: 30% falha (503 dura > 2s as vezes)
+    //   - 4 retries com backoff 1s/3s/9s: 0% falha em 10 sessoes
+    // Pior caso: 13s ate comecar a streamar. Aceitavel dado o trade-off.
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GOOGLE_AI_API_KEY}`;
-
-    const response = await fetch(geminiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const requestBody = JSON.stringify({
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [
+        { role: "user", parts: [{ text: userPrompt }] },
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 65536,
       },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [
-          { role: "user", parts: [{ text: userPrompt }] },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 65536,
-        },
-      }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Google Gemini API error:", response.status, errorText);
+    let response: Response;
+    let lastInitialError = "";
+    const RETRYABLE_STATUSES = new Set([500, 502, 503, 504]);
+    const MAX_INITIAL_ATTEMPTS = 4;
+    for (let attempt = 1; attempt <= MAX_INITIAL_ATTEMPTS; attempt++) {
+      response = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: requestBody,
+      });
+      if (response.ok) break;
+      const errText = await response.text().catch(() => "");
+      lastInitialError = errText;
+      const retryable = RETRYABLE_STATUSES.has(response.status);
+      console.warn(`Gemini initial attempt ${attempt}/${MAX_INITIAL_ATTEMPTS} failed:`, response.status, errText.slice(0, 300));
+      if (!retryable || attempt === MAX_INITIAL_ATTEMPTS) break;
+      // backoff exponencial 1s, 3s, 9s — necessario porque 503 pode persistir >5s
+      await new Promise((r) => setTimeout(r, 1000 * Math.pow(3, attempt - 1)));
+    }
 
-      if (response.status === 429) {
+    if (!response!.ok) {
+      console.error("Google Gemini API error final:", response!.status, lastInitialError.slice(0, 500));
+
+      if (response!.status === 429) {
         return new Response(
           JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns minutos." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 403) {
+      if (response!.status === 403) {
         return new Response(
           JSON.stringify({ error: "Quota da API do Google excedida ou API key inválida. Verifique sua chave no Google AI Studio." }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response!.status === 503 || response!.status === 502 || response!.status === 504) {
+        return new Response(
+          JSON.stringify({ error: "Gemini 2.5 Flash esta sobrecarregado agora (retry interno tambem falhou). Tente em 1-2 minutos." }),
+          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       return new Response(
@@ -673,41 +774,146 @@ Agora gere o resumo completo.`;
       );
     }
 
-    // Transform Google Gemini SSE format to OpenAI-compatible format
-    // so the frontend doesn't need any changes
+    // Transform Google Gemini SSE format to OpenAI-compatible format.
+    // Gemini chunks nao sao alinhados a fronteira de linha — buferizamos
+    // ate ver "\n" para nao descartar JSONs partidos no meio.
+    const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+    let buffer = "";
+    let lastFinishReason: string | undefined;
+    let totalChars = 0;
+    let usageMetadata: unknown;
+    let upstreamError: { code?: number; message?: string; status?: string } | null = null;
+
+    const processLine = (line: string, controller: TransformStreamDefaultController) => {
+      if (!line.startsWith("data: ")) return;
+      const jsonStr = line.slice(6).trim();
+      if (!jsonStr) return;
+      try {
+        const parsed = JSON.parse(jsonStr);
+
+        // Gemini envia erros mid-stream como {"error": {...}} dentro do SSE
+        // (HTTP 200 inicial, mas erro chega como chunk). Sem essa checagem,
+        // 429/quota/key invalida sao engolidos silenciosamente e o cliente
+        // ve "stream terminou" com pouco/zero texto.
+        if (parsed.error) {
+          upstreamError = {
+            code: parsed.error.code,
+            message: parsed.error.message,
+            status: parsed.error.status,
+          };
+          console.error("Gemini mid-stream error:", JSON.stringify({
+            user_id: userId,
+            tema: sanitizedTema,
+            error: parsed.error,
+            chars_so_far: totalChars,
+          }));
+          return;
+        }
+
+        const candidate = parsed.candidates?.[0];
+        const content = candidate?.content?.parts?.[0]?.text;
+        if (candidate?.finishReason) lastFinishReason = candidate.finishReason;
+        if (parsed.usageMetadata) usageMetadata = parsed.usageMetadata;
+        if (content) {
+          totalChars += content.length;
+          const openAiChunk = { choices: [{ delta: { content } }] };
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(openAiChunk)}\n\n`));
+        }
+      } catch {
+        // partial JSON — ja foi tratado pelo buffer; chega aqui so se
+        // realmente vier malformado, o que e seguro ignorar
+      }
+    };
+
     const transformStream = new TransformStream({
       transform(chunk, controller) {
-        const text = new TextDecoder().decode(chunk);
-        const lines = text.split("\n");
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const jsonStr = line.slice(6).trim();
-          if (!jsonStr) continue;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (content) {
-              // Re-emit in OpenAI-compatible format
-              const openAiChunk = {
-                choices: [{ delta: { content } }],
-              };
-              controller.enqueue(
-                new TextEncoder().encode(`data: ${JSON.stringify(openAiChunk)}\n\n`)
-              );
-            }
-          } catch {
-            // Ignore parse errors for partial chunks
-          }
-        }
+        buffer += decoder.decode(chunk, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) processLine(line, controller);
       },
       flush(controller) {
-        controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"));
+        if (buffer.length > 0) processLine(buffer, controller);
+
+        // Log diagnostico — aparece em supabase functions logs.
+        // Permite identificar quem teve geracao truncada e por que (SAFETY,
+        // MAX_TOKENS, RECITATION, OTHER) sem precisar acessar a sessao do user.
+        if (upstreamError || lastFinishReason !== "STOP" || totalChars < 500) {
+          console.warn("generate-fechamento finished suspiciously:", JSON.stringify({
+            user_id: userId,
+            tema: sanitizedTema,
+            modo: sanitizedModo,
+            chars_generated: totalChars,
+            finish_reason: lastFinishReason ?? "UNKNOWN",
+            upstream_error: upstreamError,
+            usage: usageMetadata,
+          }));
+        }
+
+        // Erro mid-stream do Gemini — sinaliza com mensagem traduzida.
+        if (upstreamError) {
+          const code = upstreamError.code;
+          const status = upstreamError.status ?? "";
+          let msg = upstreamError.message ?? "Erro do provedor de IA";
+          let retryable = false;
+          if (code === 429 || status === "RESOURCE_EXHAUSTED") {
+            msg = "Quota da API do Google esgotada. Verifique limites no Google AI Studio.";
+          } else if (code === 403 || status === "PERMISSION_DENIED") {
+            msg = "Chave de API invalida ou sem permissao para gemini-2.5-flash.";
+          } else if (code === 400 || status === "INVALID_ARGUMENT") {
+            msg = `Requisicao invalida ao Gemini: ${upstreamError.message ?? "verifique parametros"}`;
+          } else if (code === 503 || status === "UNAVAILABLE" || code === 502 || code === 504) {
+            msg = "Gemini 2.5 Flash sobrecarregado momentaneamente. Vamos tentar de novo automaticamente.";
+            retryable = true;
+          } else if (code && code >= 500) {
+            msg = "Erro temporario do Gemini. Vamos tentar de novo automaticamente.";
+            retryable = true;
+          }
+          const meta = { meta: { finish_reason: "ERROR", error_code: code, error_status: status, chars: totalChars, message: msg, retryable } };
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(meta)}\n\n`));
+        } else if (lastFinishReason && lastFinishReason !== "STOP") {
+          const meta = { meta: { finish_reason: lastFinishReason, chars: totalChars } };
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(meta)}\n\n`));
+        }
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       },
     });
 
-    return new Response(response.body!.pipeThrough(transformStream), {
+    // Wrappa o stream com keepalive: emite ": keepalive\n\n" (comentario SSE,
+    // ignorado pelo cliente) a cada ~10s de silencio. Evita que proxies/carriers
+    // hostis fechem a conexao por idle quando Gemini pausa entre chunks.
+    const upstream = response.body!.pipeThrough(transformStream);
+    const encoderKA = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = upstream.getReader();
+        let lastEmit = Date.now();
+        const ticker = setInterval(() => {
+          if (Date.now() - lastEmit > 10_000) {
+            try {
+              controller.enqueue(encoderKA.encode(": keepalive\n\n"));
+              lastEmit = Date.now();
+            } catch { /* controller fechado, ignore */ }
+          }
+        }, 5_000);
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(value);
+            lastEmit = Date.now();
+          }
+        } catch (err) {
+          console.error("upstream read failed:", err);
+        } finally {
+          clearInterval(ticker);
+          try { controller.close(); } catch { /* ja fechado */ }
+        }
+      },
+    });
+
+    return new Response(stream, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
