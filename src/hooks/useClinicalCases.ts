@@ -2,10 +2,18 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+export interface QuestionOption {
+  label: string;
+  value?: string;
+}
+
 export interface ConversationMsg {
   role: "assistant" | "user";
   content: string;
   timestamp?: string;
+  options?: QuestionOption[];
+  multiple?: boolean;
+  allow_free_text?: boolean;
 }
 
 export interface ClinicalCase {
@@ -90,44 +98,40 @@ export function useClinicalCase(id: string | undefined) {
   return { caseData, questions, loading, error, reload };
 }
 
-export interface BuildCaseResponse {
+export interface CaseBasics {
+  paciente_nome: string;
+  paciente_idade: number;
+  paciente_idade_unidade?: "anos" | "meses" | "dias";
+  paciente_sexo: "M" | "F" | "I";
+  doenca_principal: string;
+}
+
+export interface BuildCompleteResponse {
   success: boolean;
   case_id: string;
-  conversation: ConversationMsg[];
-  next_question?: string;
-  field_hint?: string;
-  placeholder_hint?: string;
-  progress_pct?: number;
-  complete: boolean;
-  case_summary?: Record<string, unknown>;
+  case_summary: Record<string, unknown>;
   error?: string;
 }
 
-export async function startCaseChat(): Promise<BuildCaseResponse> {
-  const { data, error } = await supabase.functions.invoke("build-clinical-case", { body: { action: "start" } });
-  if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error ?? "Falha ao iniciar");
-  return data;
-}
-
-export async function replyCaseChat(
-  caseId: string,
-  userMessage: string,
-): Promise<BuildCaseResponse> {
+/**
+ * Modelo V4: form único. Professor escreve descrição livre + dados
+ * básicos; IA gera o caso clínico estruturado completo de uma vez.
+ */
+export async function buildCompleteCase(input: {
+  basics: CaseBasics;
+  descricao_livre: string;
+  case_id?: string;
+}): Promise<BuildCompleteResponse> {
   const { data, error } = await supabase.functions.invoke("build-clinical-case", {
-    body: { action: "reply", case_id: caseId, user_message: userMessage },
+    body: {
+      action: "build_complete",
+      basics: input.basics,
+      descricao_livre: input.descricao_livre,
+      case_id: input.case_id,
+    },
   });
   if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error ?? "Falha");
-  return data;
-}
-
-export async function finalizeCaseChat(caseId: string): Promise<BuildCaseResponse> {
-  const { data, error } = await supabase.functions.invoke("build-clinical-case", {
-    body: { action: "finalize", case_id: caseId },
-  });
-  if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error ?? "Falha");
+  if (!data?.success) throw new Error(data?.error ?? "Falha ao gerar caso");
   return data;
 }
 

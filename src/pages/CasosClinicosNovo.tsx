@@ -1,104 +1,31 @@
-import { useEffect, useRef, useState } from "react";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import {
-  startCaseChat, replyCaseChat, finalizeCaseChat,
-  type ConversationMsg, type BuildCaseResponse,
-} from "@/hooks/useClinicalCases";
-import { supabase } from "@/integrations/supabase/client";
+import { buildCompleteCase, type CaseBasics } from "@/hooks/useClinicalCases";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageSkeleton from "@/components/PageSkeleton";
 import UpgradePaywall from "@/components/UpgradePaywall";
 import {
-  ArrowLeft, Send, Sparkles, Loader2, Stethoscope, Flag, User as UserIcon,
+  ArrowLeft, Sparkles, Loader2, Stethoscope, Wand2, CheckCircle2,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 export default function CasosClinicosNovo() {
   const { user, loading: authLoading } = useAuth();
   const { hasAccess, loading: subLoading } = useSubscription();
-  const [params] = useSearchParams();
   const navigate = useNavigate();
-  const continuarId = params.get("continuar");
 
-  const [caseId, setCaseId] = useState<string | null>(null);
-  const [conversation, setConversation] = useState<ConversationMsg[]>([]);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [placeholder, setPlaceholder] = useState("");
-  const [completing, setCompleting] = useState(false);
-  const [bootstrapping, setBootstrapping] = useState(true);
-  // Índice da última mensagem do assistant que devemos animar com typewriter
-  const [typewriterIdx, setTypewriterIdx] = useState<number | null>(null);
+  const [nome, setNome] = useState("");
+  const [idade, setIdade] = useState<number | "">("");
+  const [unidade, setUnidade] = useState<"anos" | "meses" | "dias">("anos");
+  const [sexo, setSexo] = useState<"M" | "F" | "I" | "">("");
+  const [doenca, setDoenca] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [generating, setGenerating] = useState(false);
 
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const bootstrappedRef = useRef(false);
-
-  const userId = user?.id;
-
-  // Bootstrap
-  useEffect(() => {
-    if (authLoading || subLoading) return;
-    if (!userId || !hasAccess) { setBootstrapping(false); return; }
-    if (bootstrappedRef.current) { setBootstrapping(false); return; }
-    bootstrappedRef.current = true;
-
-    let alive = true;
-    (async () => {
-      try {
-        if (continuarId) {
-          const { data, error } = await supabase
-            .from("clinical_cases")
-            .select("id, conversation, status")
-            .eq("id", continuarId)
-            .maybeSingle();
-          if (error || !data) throw error ?? new Error("Caso não encontrado");
-          if (data.status === "complete") {
-            navigate(`/casos-clinicos/${data.id}`, { replace: true });
-            return;
-          }
-          if (alive) {
-            const conv = (data.conversation as ConversationMsg[]) ?? [];
-            setCaseId(data.id);
-            setConversation(conv);
-            setProgress(Math.min(85, (conv.length / 2) * 12));
-            // Sem typewriter ao continuar (mensagens já lidas)
-            setTypewriterIdx(null);
-          }
-        } else {
-          const res = await startCaseChat();
-          if (alive) {
-            setCaseId(res.case_id);
-            setConversation(res.conversation);
-            setPlaceholder(res.placeholder_hint ?? "");
-            setProgress(res.progress_pct ?? 5);
-            // Animar a saudação inicial
-            setTypewriterIdx(res.conversation.length - 1);
-            navigate(`/casos-clinicos/novo?continuar=${res.case_id}`, { replace: true });
-          }
-        }
-      } catch (e) {
-        toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
-      } finally {
-        if (alive) setBootstrapping(false);
-      }
-    })();
-    return () => { alive = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, subLoading, userId, hasAccess, continuarId]);
-
-  // Auto-scroll suave a cada nova msg
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-    }
-  }, [conversation, sending]);
-
-  if (authLoading || subLoading || bootstrapping) return <PageSkeleton variant="dashboard" />;
+  if (authLoading || subLoading) return <PageSkeleton variant="dashboard" />;
   if (!user) return <Navigate to="/auth" replace />;
   if (!hasAccess) {
     return (
@@ -109,77 +36,45 @@ export default function CasosClinicosNovo() {
       </DashboardLayout>
     );
   }
-  if (!caseId) {
-    return (
-      <DashboardLayout>
-        <div className="max-w-xl mx-auto py-20 px-4 text-center">
-          <p className="text-sm text-[#4a5568]">Não foi possível iniciar o caso.</p>
-          <button onClick={() => navigate("/casos-clinicos")} className="mt-4 px-4 h-10 rounded-lg bg-[#005344] text-white text-sm font-bold">Voltar</button>
-        </div>
-      </DashboardLayout>
-    );
-  }
 
-  const handleSend = async () => {
-    const txt = input.trim();
-    if (!txt || sending) return;
-    setSending(true);
-    setConversation((prev) => [...prev, { role: "user", content: txt }]);
-    setInput("");
+  const valid =
+    nome.trim().length >= 1 &&
+    typeof idade === "number" && idade > 0 &&
+    !!sexo &&
+    doenca.trim().length >= 3;
+
+  const handleGenerate = async () => {
+    if (!valid || generating) return;
+    setGenerating(true);
     try {
-      const res: BuildCaseResponse = await replyCaseChat(caseId, txt);
-      setConversation(res.conversation);
-      setProgress(res.progress_pct ?? progress);
-      setPlaceholder(res.placeholder_hint ?? "");
-      // Marca o último item (resposta nova do assistant) pra typewriter
-      setTypewriterIdx(res.conversation.length - 1);
-      if (res.complete) {
-        toast({
-          title: "Caso pronto!",
-          description: "PreceptorMED estruturou seu caso clínico.",
-        });
-        setTimeout(() => navigate(`/casos-clinicos/${caseId}`), 1200);
-      }
+      const basics: CaseBasics = {
+        paciente_nome: nome.trim(),
+        paciente_idade: idade as number,
+        paciente_idade_unidade: unidade,
+        paciente_sexo: sexo as "M" | "F" | "I",
+        doenca_principal: doenca.trim(),
+      };
+      const res = await buildCompleteCase({ basics, descricao_livre: descricao.trim() });
+      toast({
+        title: "Caso pronto!",
+        description: "PreceptorMED estruturou o caso completo.",
+      });
+      navigate(`/casos-clinicos/${res.case_id}`);
     } catch (e) {
-      toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
-      setConversation((prev) => prev.filter((m, i) => !(i === prev.length - 1 && m.content === txt)));
-      setInput(txt);
-    } finally {
-      setSending(false);
-      setTimeout(() => inputRef.current?.focus(), 150);
+      toast({ title: "Erro ao gerar caso", description: (e as Error).message, variant: "destructive" });
+      setGenerating(false);
     }
   };
-
-  const handleFinalize = async () => {
-    if (sending || completing) return;
-    if (!confirm("Finalizar agora? PreceptorMED vai estruturar o caso com a informação que tem.")) return;
-    setCompleting(true);
-    try {
-      const res = await finalizeCaseChat(caseId);
-      setConversation(res.conversation);
-      setTypewriterIdx(res.conversation.length - 1);
-      if (res.complete) {
-        toast({ title: "Caso pronto!" });
-        setTimeout(() => navigate(`/casos-clinicos/${caseId}`), 1000);
-      }
-    } catch (e) {
-      toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
-    } finally {
-      setCompleting(false);
-    }
-  };
-
-  const lastMsg = conversation[conversation.length - 1];
-  const isAssistantTurn = lastMsg?.role === "assistant";
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col" style={{ minHeight: "calc(100vh - 120px)" }}>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <motion.button
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => navigate("/casos-clinicos")}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#4a5568] hover:text-[#191C1D] mb-4 self-start group"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#4a5568] hover:text-[#191C1D] mb-4 group"
+          disabled={generating}
         >
           <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
           Casos clínicos
@@ -188,19 +83,10 @@ export default function CasosClinicosNovo() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-          className="flex-1 flex flex-col bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-[0_4px_24px_-12px_rgba(0,109,91,0.18),0_1px_2px_rgba(25,28,29,0.04)] relative"
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-[0_4px_24px_-12px_rgba(0,109,91,0.18)]"
         >
-          {/* Background grid sutil */}
-          <div
-            className="absolute inset-0 opacity-[0.025] pointer-events-none"
-            style={{
-              backgroundImage: 'radial-gradient(circle at 1px 1px, #005344 1px, transparent 0)',
-              backgroundSize: '20px 20px',
-            }}
-          />
-
-          {/* Top accent gradient com animação shimmer */}
+          {/* Top accent shimmer */}
           <div className="relative h-1 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-[#003D32] via-[#005344] via-[#006D5B] to-[#C9A84C]" />
             <motion.div
@@ -210,306 +96,225 @@ export default function CasosClinicosNovo() {
             />
           </div>
 
-          {/* Header */}
-          <div className="relative px-5 sm:px-7 py-4 border-b border-slate-100 flex items-center gap-3 bg-white/80 backdrop-blur">
-            <motion.div
-              initial={{ scale: 0, rotate: -45 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 400, damping: 18, delay: 0.15 }}
-              className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#003D32] via-[#005344] to-[#006D5B] flex items-center justify-center shrink-0 shadow-[0_4px_12px_-2px_rgba(0,109,91,0.4)]"
-            >
-              <Stethoscope className="w-5 h-5 text-[#C9A84C]" />
-            </motion.div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#8a6f26] flex items-center gap-1.5">
-                PreceptorMED
-                <motion.span
-                  className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"
-                  animate={{ scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                />
-              </p>
-              <h1 className="font-['Manrope'] font-bold text-base text-[#191C1D]">
-                Construindo caso clínico
-              </h1>
-            </div>
-            <AnimatePresence>
-              {conversation.length > 4 && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={handleFinalize}
-                  disabled={completing || sending}
-                  className="shrink-0 inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold border border-[#005344]/30 text-[#005344] hover:bg-[#005344]/5 disabled:opacity-50 transition-colors"
-                  title="Estrutura o caso com a informação que já temos"
-                >
-                  {completing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Flag className="w-3.5 h-3.5" />}
-                  Finalizar
-                </motion.button>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Progress bar com shimmer */}
-          <div className="relative h-1 bg-slate-100 overflow-hidden">
-            <motion.div
-              className="h-full bg-gradient-to-r from-[#005344] via-[#006D5B] to-[#C9A84C] relative"
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            >
+          <div className="px-5 sm:px-8 md:px-12 py-7 sm:py-9 md:py-11">
+            {/* Header */}
+            <div className="flex items-start gap-3 mb-7">
               <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                animate={{ x: ["-100%", "200%"] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
-              />
-            </motion.div>
-          </div>
-
-          {/* Messages */}
-          <div ref={scrollRef} className="relative flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-4 min-h-[300px]">
-            <AnimatePresence initial={false}>
-              {conversation.map((m, i) => (
-                <Message
-                  key={i}
-                  msg={m}
-                  isFresh={i === typewriterIdx}
-                  onTypewriterDone={() => {
-                    if (i === typewriterIdx) setTypewriterIdx(null);
-                  }}
-                />
-              ))}
-              {sending && <ThinkingMessage key="thinking" />}
-            </AnimatePresence>
-          </div>
-
-          {/* Input */}
-          <div className="relative border-t border-slate-100 p-4 shrink-0 bg-gradient-to-b from-white to-slate-50/50">
-            <form
-              onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-              className="flex items-center gap-2"
-            >
-              <motion.input
-                ref={inputRef}
-                whileFocus={{ scale: 1.005 }}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={placeholder || (isAssistantTurn ? "Sua resposta…" : "Aguarde…")}
-                disabled={sending || completing}
-                autoFocus
-                className="flex-1 h-12 px-4 rounded-xl border-2 border-slate-200 bg-white text-sm focus:outline-none focus:border-[#005344] focus:ring-4 focus:ring-[#005344]/10 transition-all disabled:opacity-50"
-              />
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.92 }}
-                disabled={sending || completing || !input.trim()}
-                className="shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#003D32] via-[#005344] to-[#006D5B] text-white inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_6px_18px_-4px_rgba(0,109,91,0.45)] relative overflow-hidden"
+                initial={{ scale: 0, rotate: -45 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 380, damping: 20, delay: 0.15 }}
+                className="shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-[#003D32] via-[#005344] to-[#006D5B] flex items-center justify-center shadow-[0_4px_12px_-2px_rgba(0,109,91,0.4)]"
               >
-                {/* Hover shine */}
-                <motion.span
-                  className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent"
-                  initial={{ x: "-100%" }}
-                  whileHover={{ x: "100%" }}
-                  transition={{ duration: 0.6 }}
+                <Stethoscope className="w-6 h-6 text-[#C9A84C]" />
+              </motion.div>
+              <div>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] mb-1.5 flex items-center gap-2">
+                  <span className="w-6 h-px bg-[#C9A84C]" />
+                  Novo caso clínico
+                </p>
+                <h1 className="font-['Manrope'] font-bold text-2xl sm:text-3xl tracking-[-0.02em] text-[#191C1D] leading-tight">
+                  Conte o caso e o PreceptorMED <em className="not-italic font-medium text-[#8a6f26]">monta tudo</em>.
+                </h1>
+                <p className="text-sm text-[#4a5568] mt-2 leading-relaxed">
+                  Preencha os dados básicos e descreva o caso da forma que vier — alguns detalhes,
+                  uma frase, palavras-chave. PreceptorMED estrutura HDA, exame, exames, hipóteses
+                  e conduta. Você revisa e edita o que precisar.
+                </p>
+              </div>
+            </div>
+
+            {/* Form */}
+            <div className="space-y-5">
+              {/* Linha 1: Nome */}
+              <div>
+                <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-1.5">
+                  Nome do paciente
+                </label>
+                <input
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  disabled={generating}
+                  placeholder="Ex: Caio Silva (pode ser fictício)"
+                  className="w-full h-12 px-4 rounded-xl border-2 border-slate-200 text-sm focus:outline-none focus:border-[#005344] focus:ring-4 focus:ring-[#005344]/10 transition-all disabled:opacity-50"
                 />
-                <AnimatePresence mode="wait">
-                  {sending ? (
-                    <motion.div
-                      key="loader"
-                      initial={{ opacity: 0, rotate: -90 }}
-                      animate={{ opacity: 1, rotate: 0 }}
-                      exit={{ opacity: 0, rotate: 90 }}
+              </div>
+
+              {/* Linha 2: Idade + unidade + sexo */}
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                <div className="sm:col-span-3">
+                  <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-1.5">
+                    Idade
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={idade}
+                    onChange={(e) => setIdade(e.target.value === "" ? "" : Math.max(0, Number(e.target.value)))}
+                    disabled={generating}
+                    placeholder="65"
+                    className="w-full h-12 px-4 rounded-xl border-2 border-slate-200 text-sm focus:outline-none focus:border-[#005344] focus:ring-4 focus:ring-[#005344]/10 transition-all disabled:opacity-50"
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-1.5">
+                    Unidade
+                  </label>
+                  <select
+                    value={unidade}
+                    onChange={(e) => setUnidade(e.target.value as "anos" | "meses" | "dias")}
+                    disabled={generating}
+                    className="w-full h-12 px-3 rounded-xl border-2 border-slate-200 text-sm focus:outline-none focus:border-[#005344] focus:ring-4 focus:ring-[#005344]/10 transition-all disabled:opacity-50 bg-white"
+                  >
+                    <option value="anos">anos</option>
+                    <option value="meses">meses</option>
+                    <option value="dias">dias</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-6">
+                  <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-1.5">
+                    Sexo
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { v: "M", l: "Masculino" },
+                      { v: "F", l: "Feminino" },
+                      { v: "I", l: "Intersexo" },
+                    ].map((s) => (
+                      <button
+                        key={s.v}
+                        type="button"
+                        onClick={() => setSexo(s.v as "M" | "F" | "I")}
+                        disabled={generating}
+                        className={`h-12 rounded-xl border-2 text-sm font-semibold transition-all disabled:opacity-50 ${
+                          sexo === s.v
+                            ? "bg-[#005344] text-white border-[#005344] shadow-[0_4px_12px_-4px_rgba(0,109,91,0.45)]"
+                            : "bg-white text-[#4a5568] border-slate-200 hover:border-[#005344]/40"
+                        }`}
+                      >
+                        {s.l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Linha 3: Doença */}
+              <div>
+                <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-1.5">
+                  Doença / quadro principal
+                </label>
+                <input
+                  value={doenca}
+                  onChange={(e) => setDoenca(e.target.value)}
+                  disabled={generating}
+                  placeholder="Ex: Insuficiência cardíaca com FE reduzida"
+                  className="w-full h-12 px-4 rounded-xl border-2 border-slate-200 text-sm focus:outline-none focus:border-[#005344] focus:ring-4 focus:ring-[#005344]/10 transition-all disabled:opacity-50"
+                />
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {[
+                    "IAM com supra de ST",
+                    "Insuficiência cardíaca",
+                    "DM2 descompensada",
+                    "Pneumonia comunitária",
+                    "AVC isquêmico",
+                    "Sepse",
+                    "Pancreatite aguda",
+                  ].map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setDoenca(d)}
+                      disabled={generating}
+                      className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-slate-100 text-[#4a5568] hover:bg-[#005344]/10 hover:text-[#005344] transition-colors disabled:opacity-50"
                     >
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="send"
-                      initial={{ opacity: 0, rotate: 45 }}
-                      animate={{ opacity: 1, rotate: 0 }}
-                      exit={{ opacity: 0, rotate: -45 }}
-                    >
-                      <Send className="w-4 h-4" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.button>
-            </form>
-            <AnimatePresence>
-              {placeholder && (
-                <motion.p
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 4 }}
-                  className="text-[11px] text-[#94a3b8] mt-2 inline-flex items-center gap-1"
-                >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Linha 4: Descrição livre */}
+              <div>
+                <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-1.5 flex items-center gap-2">
+                  Descreva o caso
+                  <span className="text-[#94a3b8] font-normal normal-case tracking-normal">— qualquer detalhe que tem em mente (opcional)</span>
+                </label>
+                <textarea
+                  value={descricao}
+                  onChange={(e) => setDescricao(e.target.value)}
+                  disabled={generating}
+                  rows={6}
+                  placeholder={`Ex: paciente chega com cansaço aos esforços há 6 meses, piora progressiva, edema MMII, ortopneia, DPN. HAS há 10a, ex-tabagista 30 maços/ano. Eco mostra FE 30%. Já em uso de losartana e HCTZ.
+
+Pode escrever em qualquer ordem, palavras-chave, frase solta. PreceptorMED organiza tudo.`}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 text-sm leading-relaxed focus:outline-none focus:border-[#005344] focus:ring-4 focus:ring-[#005344]/10 transition-all resize-y disabled:opacity-50"
+                />
+                <p className="text-[11px] text-[#94a3b8] mt-1.5 inline-flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-[#C9A84C]" />
-                  Dica: {placeholder}
-                </motion.p>
+                  Lacunas serão preenchidas pela IA com inferências clínicas plausíveis. Você pode editar tudo depois.
+                </p>
+              </div>
+
+              {/* Botão gerar */}
+              <motion.button
+                onClick={handleGenerate}
+                disabled={!valid || generating}
+                whileHover={valid && !generating ? { scale: 1.01 } : undefined}
+                whileTap={valid && !generating ? { scale: 0.98 } : undefined}
+                className="w-full h-13 mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-[#003D32] via-[#005344] to-[#006D5B] text-white text-sm font-bold shadow-[0_8px_24px_-4px_rgba(0,109,91,0.45)] hover:shadow-[0_12px_28px_-4px_rgba(0,109,91,0.55)] disabled:opacity-50 disabled:cursor-not-allowed transition-all relative overflow-hidden py-4"
+              >
+                <motion.span
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                  animate={generating ? { x: ["-100%", "200%"] } : {}}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: "linear" }}
+                />
+                <span className="relative inline-flex items-center gap-2">
+                  {generating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      PreceptorMED estruturando o caso…
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4 text-[#C9A84C]" />
+                      Gerar caso completo
+                    </>
+                  )}
+                </span>
+              </motion.button>
+
+              {generating && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center"
+                >
+                  <p className="text-[11px] text-[#4a5568] inline-flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Levo ~10–25s. Em seguida você revisa e edita o que quiser.
+                  </p>
+                </motion.div>
               )}
-            </AnimatePresence>
+            </div>
           </div>
+        </motion.div>
+
+        {/* Footer educativo */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-5 p-4 rounded-xl bg-gradient-to-br from-[#005344]/5 to-[#C9A84C]/5 border border-[#005344]/15 flex items-start gap-3"
+        >
+          <CheckCircle2 className="w-4 h-4 text-[#005344] shrink-0 mt-0.5" />
+          <p className="text-xs text-[#4a5568] leading-relaxed">
+            <strong className="text-[#191C1D]">Como funciona:</strong> PreceptorMED usa os dados que
+            você forneceu como ÂNCORA (não inventa idade/sexo/doença) e preenche os campos vazios com
+            inferências clinicamente plausíveis pra montar um caso didático completo. Depois você
+            pode <strong>gerar questões ENAMED</strong> em cima do caso.
+          </p>
         </motion.div>
       </div>
     </DashboardLayout>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// Avatar
-function Avatar({ role }: { role: "assistant" | "user" }) {
-  if (role === "assistant") {
-    return (
-      <motion.div
-        layout
-        initial={{ scale: 0, rotate: -180 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ type: "spring", stiffness: 380, damping: 22 }}
-        className="shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-[#003D32] via-[#005344] to-[#006D5B] flex items-center justify-center shadow-[0_3px_10px_-2px_rgba(0,109,91,0.4)]"
-      >
-        <Stethoscope className="w-4 h-4 text-[#C9A84C]" />
-      </motion.div>
-    );
-  }
-  return (
-    <motion.div
-      layout
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      transition={{ type: "spring", stiffness: 380, damping: 22 }}
-      className="shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center"
-    >
-      <UserIcon className="w-4 h-4 text-slate-600" />
-    </motion.div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// Mensagem com slide-in animado
-function Message({
-  msg, isFresh, onTypewriterDone,
-}: {
-  msg: ConversationMsg;
-  isFresh?: boolean;
-  onTypewriterDone?: () => void;
-}) {
-  const isUser = msg.role === "user";
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 14, x: isUser ? 16 : -16 }}
-      animate={{ opacity: 1, y: 0, x: 0 }}
-      exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
-      className={`flex items-end gap-2.5 ${isUser ? "flex-row-reverse" : ""}`}
-    >
-      <Avatar role={msg.role} />
-      <motion.div
-        whileHover={{ scale: 1.005 }}
-        className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
-          isUser
-            ? "bg-gradient-to-br from-[#005344] to-[#003D32] text-white rounded-br-md"
-            : "bg-white border border-slate-200 text-[#191C1D] rounded-bl-md"
-        }`}
-      >
-        {isFresh && !isUser ? (
-          <Typewriter text={msg.content} onDone={onTypewriterDone} />
-        ) : (
-          renderMarkdown(msg.content)
-        )}
-      </motion.div>
-    </motion.div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// Indicador "pensando" com onda
-function ThinkingMessage() {
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.3 }}
-      className="flex items-end gap-2.5"
-    >
-      <Avatar role="assistant" />
-      <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-1.5">
-          {[0, 1, 2].map((i) => (
-            <motion.span
-              key={i}
-              className="w-2 h-2 rounded-full bg-[#005344]"
-              animate={{ y: [0, -5, 0], opacity: [0.4, 1, 0.4] }}
-              transition={{
-                duration: 0.9,
-                repeat: Infinity,
-                delay: i * 0.15,
-                ease: "easeInOut",
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// Typewriter effect — simula digitação da IA
-function Typewriter({
-  text, onDone, speed = 16,
-}: {
-  text: string;
-  onDone?: () => void;
-  speed?: number;
-}) {
-  const [shown, setShown] = useState("");
-  const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    setShown("");
-    setDone(false);
-    if (!text) return;
-    let i = 0;
-    const inc = Math.max(1, Math.floor(text.length / 200)); // mais rápido em texto longo
-    const timer = window.setInterval(() => {
-      i = Math.min(text.length, i + inc + 1);
-      setShown(text.slice(0, i));
-      if (i >= text.length) {
-        window.clearInterval(timer);
-        setDone(true);
-        onDone?.();
-      }
-    }, speed);
-    return () => window.clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text]);
-
-  return (
-    <>
-      {renderMarkdown(shown)}
-      {!done && (
-        <motion.span
-          className="inline-block w-0.5 h-4 bg-[#005344] ml-0.5 align-middle"
-          animate={{ opacity: [1, 0, 1] }}
-          transition={{ duration: 0.8, repeat: Infinity }}
-        />
-      )}
-    </>
-  );
-}
-
-// Markdown leve: ** ** vira bold
-function renderMarkdown(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((p, i) =>
-    p.startsWith("**") && p.endsWith("**")
-      ? <strong key={i}>{p.slice(2, -2)}</strong>
-      : <span key={i}>{p}</span>
   );
 }
