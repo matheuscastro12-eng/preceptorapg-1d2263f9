@@ -43,6 +43,7 @@ const sidebarNavGroups: NavGroup[] = [
     items: [
       { icon: 'dashboard', label: 'Início', path: '/menu' },
       { icon: 'event_note', label: 'Cronograma', path: '/cronograma', matchPaths: ['/cronograma'] },
+      { icon: 'medical_information', label: 'Casos clínicos', path: '/casos-clinicos', matchPaths: ['/casos-clinicos'] },
       { icon: 'auto_awesome', label: 'Estudo com PreceptorMED', path: '/dashboard' },
     ],
   },
@@ -65,7 +66,7 @@ const sidebarNavGroups: NavGroup[] = [
   {
     label: 'Clínica',
     items: [
-      { icon: 'menu_book', label: 'Whitebook', path: '/whitebook', matchPaths: ['/whitebook'] },
+      { icon: 'menu_book', label: 'PreceptorBook', path: '/whitebook', matchPaths: ['/whitebook'] },
       { icon: 'mic', label: 'Scribe Clínico', path: '/scribe', matchPaths: ['/scribe'] },
     ],
   },

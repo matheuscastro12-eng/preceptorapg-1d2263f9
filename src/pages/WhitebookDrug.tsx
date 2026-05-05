@@ -173,7 +173,7 @@ const WhitebookDrug = () => {
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#4a5568] hover:text-[#191C1D] mb-4"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          Whitebook
+          PreceptorBook
         </button>
 
         {/* Header */}

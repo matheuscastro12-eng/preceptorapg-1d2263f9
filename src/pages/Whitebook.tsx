@@ -52,7 +52,7 @@ const Whitebook = () => {
         <div className="mb-6">
           <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2.5 mb-3">
             <span className="w-6 h-px bg-[#C9A84C]" />
-            Whitebook PreceptorMED
+            PreceptorBook
           </p>
           <h1 className="font-['Manrope'] font-bold text-3xl sm:text-4xl tracking-[-0.025em] leading-[1.05] text-[#191C1D]">
             Sua referência médica de bolso, com{" "}

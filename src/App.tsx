@@ -59,6 +59,9 @@ const WhitebookCalculator = lazy(() => import("./pages/WhitebookCalculator"));
 const WhitebookDrug = lazy(() => import("./pages/WhitebookDrug"));
 const WhitebookProtocol = lazy(() => import("./pages/WhitebookProtocol"));
 const WhitebookAdmin = lazy(() => import("./pages/admin/WhitebookAdmin"));
+const CasosClinicos = lazy(() => import("./pages/CasosClinicos"));
+const CasosClinicosNovo = lazy(() => import("./pages/CasosClinicosNovo"));
+const CasoClinico = lazy(() => import("./pages/CasoClinico"));
 const Cronograma = lazy(() => import("./pages/Cronograma"));
 const CronogramaNovo = lazy(() => import("./pages/CronogramaNovo"));
 const CronogramaDia = lazy(() => import("./pages/CronogramaDia"));
@@ -183,6 +186,9 @@ const App = () => (
                 <Route path="/whitebook/drug/:slug" element={<WhitebookDrug />} />
                 <Route path="/whitebook/protocol/:slug" element={<WhitebookProtocol />} />
                 <Route path="/admin/whitebook" element={<WhitebookAdmin />} />
+                <Route path="/casos-clinicos" element={<CasosClinicos />} />
+                <Route path="/casos-clinicos/novo" element={<CasosClinicosNovo />} />
+                <Route path="/casos-clinicos/:id" element={<CasoClinico />} />
                 <Route path="/cronograma" element={<Cronograma />} />
                 <Route path="/cronograma/novo" element={<CronogramaNovo />} />
                 <Route path="/cronograma/dia/:date" element={<CronogramaDia />} />

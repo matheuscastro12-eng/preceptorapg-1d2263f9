@@ -170,7 +170,7 @@ const WhitebookAiDrawer = ({ scope, open, onClose }: Props) => {
               Pergunte ao PreceptorMED
             </p>
             <h3 className="font-['Manrope'] font-bold text-base text-[#191C1D] truncate">
-              {scope?.label ?? "Whitebook"}
+              {scope?.label ?? "PreceptorBook"}
             </h3>
           </div>
           <button
@@ -187,7 +187,7 @@ const WhitebookAiDrawer = ({ scope, open, onClose }: Props) => {
             <div className="space-y-3">
               <div className="p-3 rounded-xl bg-gradient-to-br from-[#005344]/4 to-[#C9A84C]/4 border-l-3 border-[#C9A84C]">
                 <p className="text-xs text-[#191C1D] leading-relaxed">
-                  Faço perguntas em linguagem natural sobre {scope ? "este item" : "o conteúdo do Whitebook"}.
+                  Faço perguntas em linguagem natural sobre {scope ? "este item" : "o conteúdo do PreceptorBook"}.
                   Respondo apenas com base em fontes públicas que estão na base.
                 </p>
               </div>

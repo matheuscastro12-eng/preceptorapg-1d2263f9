@@ -195,7 +195,7 @@ const WhitebookAdmin = () => {
         <div className="mb-6">
           <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2.5 mb-3">
             <span className="w-6 h-px bg-[#C9A84C]" />
-            Whitebook · Admin
+            PreceptorBook · Admin
           </p>
           <h1 className="font-['Manrope'] font-bold text-3xl tracking-[-0.02em] text-[#191C1D]">
             Curadoria de conteúdo

@@ -110,7 +110,7 @@ const WhitebookProtocol = () => {
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#4a5568] hover:text-[#191C1D] mb-4"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          Whitebook
+          PreceptorBook
         </button>
 
         <div className="flex items-start gap-4 mb-5">

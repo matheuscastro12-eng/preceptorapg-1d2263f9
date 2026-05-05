@@ -50,7 +50,7 @@ const WhitebookCalculator = () => {
             className="inline-flex items-center gap-2 px-5 h-10 rounded-lg bg-[#191C1D] text-white text-sm font-bold"
           >
             <ArrowLeft className="w-4 h-4" />
-            Voltar pro Whitebook
+            Voltar pro PreceptorBook
           </button>
         </div>
       </DashboardLayout>
@@ -69,7 +69,7 @@ const WhitebookCalculator = () => {
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#4a5568] hover:text-[#191C1D] mb-4"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          Whitebook
+          PreceptorBook
         </button>
 
         {/* Header */}
