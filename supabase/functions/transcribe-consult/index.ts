@@ -191,7 +191,7 @@ serve(async (req) => {
       // Gemini 2.5 Flash multimodal — ~3x mais rapido que Pro pra
       // transcricao, qualidade comparavel em audios curtos/medios.
       const url =
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
       // Timeout de 90s no fetch — se Gemini pendurar, falha rapido em
       // vez de deixar o status "transcrevendo" travado pra sempre.
       const ctrl = new AbortController();

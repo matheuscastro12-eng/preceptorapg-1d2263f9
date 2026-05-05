@@ -307,7 +307,7 @@ serve(async (req) => {
 
   // Gemini streaming
   const geminiUrl =
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:streamGenerateContent?alt=sse&key=${apiKey}`;
   const response = await fetch(geminiUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

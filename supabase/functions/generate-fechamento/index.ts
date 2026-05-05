@@ -720,7 +720,7 @@ Agora gere o resumo completo dentro do escopo identificado.`;
     // até 3 continuações automáticas com novo prompt "continue de onde
     // parou", concatenando tudo como UM stream pro cliente. SAFETY e
     // RECITATION abortam (não vale continuar).
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GOOGLE_AI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:streamGenerateContent?alt=sse&key=${GOOGLE_AI_API_KEY}`;
     const RETRYABLE_STATUSES = new Set([500, 502, 503, 504]);
     const MAX_INITIAL_ATTEMPTS = 4;
     const MAX_CONTINUATIONS = 3;

@@ -236,7 +236,7 @@ serve(async (req) => {
     }
     userPrompt += `\n\n⚠️ Gere TODAS as ${numQuestions} questões. NÃO pare antes. Cada questão DEVE ter 4 alternativas (A-D) e gabarito comentado.`;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GOOGLE_AI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:streamGenerateContent?alt=sse&key=${GOOGLE_AI_API_KEY}`;
 
     const response = await fetch(geminiUrl, {
       method: "POST",

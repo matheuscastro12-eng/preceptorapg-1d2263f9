@@ -212,7 +212,7 @@ serve(async (req) => {
     }
 
     // IMPORTANTE: systemInstruction camelCase — snake_case e silenciosamente ignorado
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_AI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GOOGLE_AI_API_KEY}`;
 
     const response = await fetch(geminiUrl, {
       method: "POST",

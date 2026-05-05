@@ -247,7 +247,7 @@ Monte o caso clínico COMPLETO E ESTRUTURADO seguindo o schema. Preserve TODOS o
 let LAST_IA_ERROR = "";
 
 async function callIA(userPrompt: string): Promise<Record<string, unknown> | null> {
-  const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+  const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_KEY}`;
   const backoffs = [800, 2000, 5000, 10000];
   LAST_IA_ERROR = "";
 
