@@ -42,6 +42,7 @@ const sidebarNavGroups: NavGroup[] = [
     label: 'Estudo',
     items: [
       { icon: 'dashboard', label: 'Início', path: '/menu' },
+      { icon: 'event_note', label: 'Cronograma', path: '/cronograma', matchPaths: ['/cronograma'] },
       { icon: 'auto_awesome', label: 'Estudo com IA', path: '/dashboard' },
     ],
   },

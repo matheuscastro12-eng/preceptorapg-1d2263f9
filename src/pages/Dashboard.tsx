@@ -18,6 +18,7 @@ import type { GenerationMode } from '@/components/dashboard/ModeToggle';
 import OnboardingTour, { type TourStep } from '@/components/OnboardingTour';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Loader2, ArrowLeft, Save, Copy, Download, GraduationCap, BookOpen, Sparkles } from 'lucide-react';
+import { useStudyPlanContext, useAutoCompleteActivity } from '@/hooks/useStudyPlanContext';
 
 type ViewMode = 'interactive' | 'document';
 
@@ -100,6 +101,14 @@ const Dashboard = () => {
   const [secoes, setSecoes] = useState<Record<string, boolean>>(DEFAULT_SECOES);
   // ID do fechamento salvo (para anotações — marca-texto/comentários)
   const [fechamentoId, setFechamentoId] = useState<string | null>(null);
+
+  // Cronograma context: se a página foi aberta via "começar atividade" no plano
+  const planCtx = useStudyPlanContext();
+  // Pré-preenche o tema vindo do plano UMA vez ao montar
+  useEffect(() => {
+    if (planCtx.isFromPlan && planCtx.tema && !tema) setTema(planCtx.tema);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planCtx.isFromPlan]);
   const [resultado, setResultado] = useState('');
   const [generating, setGenerating] = useState(false);
   const [hasStartedReceiving, setHasStartedReceiving] = useState(false);
@@ -117,6 +126,13 @@ const Dashboard = () => {
     // Only auto-show result when generation starts streaming (not when resetting)
     if (hasStartedReceiving && !showResult && generating) setShowResult(true);
   }, [hasStartedReceiving, showResult, generating]);
+
+  // Auto-marca atividade do cronograma como concluída quando o fechamento termina
+  useAutoCompleteActivity(
+    isComplete && !!fechamentoId,
+    { planDay: planCtx.planDay, actIdx: planCtx.actIdx },
+    fechamentoId,
+  );
 
   // Fetch recent items for sidebar
   useEffect(() => {

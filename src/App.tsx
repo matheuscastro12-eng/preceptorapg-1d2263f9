@@ -59,6 +59,9 @@ const WhitebookCalculator = lazy(() => import("./pages/WhitebookCalculator"));
 const WhitebookDrug = lazy(() => import("./pages/WhitebookDrug"));
 const WhitebookProtocol = lazy(() => import("./pages/WhitebookProtocol"));
 const WhitebookAdmin = lazy(() => import("./pages/admin/WhitebookAdmin"));
+const Cronograma = lazy(() => import("./pages/Cronograma"));
+const CronogramaNovo = lazy(() => import("./pages/CronogramaNovo"));
+const CronogramaDia = lazy(() => import("./pages/CronogramaDia"));
 const Scribe = lazy(() => import("./pages/Scribe"));
 const ScribeNova = lazy(() => import("./pages/ScribeNova"));
 const ScribeReview = lazy(() => import("./pages/ScribeReview"));
@@ -180,6 +183,9 @@ const App = () => (
                 <Route path="/whitebook/drug/:slug" element={<WhitebookDrug />} />
                 <Route path="/whitebook/protocol/:slug" element={<WhitebookProtocol />} />
                 <Route path="/admin/whitebook" element={<WhitebookAdmin />} />
+                <Route path="/cronograma" element={<Cronograma />} />
+                <Route path="/cronograma/novo" element={<CronogramaNovo />} />
+                <Route path="/cronograma/dia/:date" element={<CronogramaDia />} />
                 <Route path="/scribe" element={<Scribe />} />
                 <Route path="/scribe/nova" element={<ScribeNova />} />
                 <Route path="/scribe/:id/review" element={<ScribeReview />} />
