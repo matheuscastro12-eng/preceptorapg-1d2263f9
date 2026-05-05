@@ -708,207 +708,253 @@ ${sanitizedObjetivos ? "5. Como cada objetivo do estudante mapeia para a estrutu
 
 Agora gere o resumo completo dentro do escopo identificado.`;
 
-    // Call Google Gemini API directly with SSE streaming.
-    // gemini-2.5-flash retorna 503 UNAVAILABLE intermitente em horario de pico.
-    // Validacao empirica (40+ chamadas):
-    //   - Sem retry: ~20% falha
-    //   - 3 retries com backoff 0.5s/1.5s: 30% falha (503 dura > 2s as vezes)
-    //   - 4 retries com backoff 1s/3s/9s: 0% falha em 10 sessoes
-    // Pior caso: 13s ate comecar a streamar. Aceitavel dado o trade-off.
+    // ────────────────────────────────────────────────────────────
+    // STREAMING COM CONTINUAÇÃO AUTOMÁTICA
+    // ────────────────────────────────────────────────────────────
+    // Gemini 2.5-flash:
+    //   - 503 UNAVAILABLE intermitente em horário de pico (~33% testes)
+    //   - Pode parar com finishReason=MAX_TOKENS, OTHER (corte interno),
+    //     SAFETY, RECITATION
+    //
+    // Estratégia: se a 1ª passada terminar SEM finishReason=STOP, fazemos
+    // até 3 continuações automáticas com novo prompt "continue de onde
+    // parou", concatenando tudo como UM stream pro cliente. SAFETY e
+    // RECITATION abortam (não vale continuar).
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GOOGLE_AI_API_KEY}`;
-    const requestBody = JSON.stringify({
-      systemInstruction: { parts: [{ text: systemPrompt }] },
-      contents: [
-        { role: "user", parts: [{ text: userPrompt }] },
-      ],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 65536,
-      },
-    });
-
-    let response: Response;
-    let lastInitialError = "";
     const RETRYABLE_STATUSES = new Set([500, 502, 503, 504]);
     const MAX_INITIAL_ATTEMPTS = 4;
-    for (let attempt = 1; attempt <= MAX_INITIAL_ATTEMPTS; attempt++) {
-      response = await fetch(geminiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: requestBody,
-      });
-      if (response.ok) break;
-      const errText = await response.text().catch(() => "");
-      lastInitialError = errText;
-      const retryable = RETRYABLE_STATUSES.has(response.status);
-      console.warn(`Gemini initial attempt ${attempt}/${MAX_INITIAL_ATTEMPTS} failed:`, response.status, errText.slice(0, 300));
-      if (!retryable || attempt === MAX_INITIAL_ATTEMPTS) break;
-      // backoff exponencial 1s, 3s, 9s — necessario porque 503 pode persistir >5s
-      await new Promise((r) => setTimeout(r, 1000 * Math.pow(3, attempt - 1)));
-    }
+    const MAX_CONTINUATIONS = 3;
 
-    if (!response!.ok) {
-      console.error("Google Gemini API error final:", response!.status, lastInitialError.slice(0, 500));
-
-      if (response!.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns minutos." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response!.status === 403) {
-        return new Response(
-          JSON.stringify({ error: "Quota da API do Google excedida ou API key inválida. Verifique sua chave no Google AI Studio." }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response!.status === 503 || response!.status === 502 || response!.status === 504) {
-        return new Response(
-          JSON.stringify({ error: "Gemini 2.5 Flash esta sobrecarregado agora (retry interno tambem falhou). Tente em 1-2 minutos." }),
-          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      return new Response(
-        JSON.stringify({ error: "Erro ao gerar conteúdo" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Transform Google Gemini SSE format to OpenAI-compatible format.
-    // Gemini chunks nao sao alinhados a fronteira de linha — buferizamos
-    // ate ver "\n" para nao descartar JSONs partidos no meio.
-    const decoder = new TextDecoder();
-    const encoder = new TextEncoder();
-    let buffer = "";
-    let lastFinishReason: string | undefined;
-    let totalChars = 0;
-    let usageMetadata: unknown;
-    let upstreamError: { code?: number; message?: string; status?: string } | null = null;
-
-    const processLine = (line: string, controller: TransformStreamDefaultController) => {
-      if (!line.startsWith("data: ")) return;
-      const jsonStr = line.slice(6).trim();
-      if (!jsonStr) return;
-      try {
-        const parsed = JSON.parse(jsonStr);
-
-        // Gemini envia erros mid-stream como {"error": {...}} dentro do SSE
-        // (HTTP 200 inicial, mas erro chega como chunk). Sem essa checagem,
-        // 429/quota/key invalida sao engolidos silenciosamente e o cliente
-        // ve "stream terminou" com pouco/zero texto.
-        if (parsed.error) {
-          upstreamError = {
-            code: parsed.error.code,
-            message: parsed.error.message,
-            status: parsed.error.status,
-          };
-          console.error("Gemini mid-stream error:", JSON.stringify({
-            user_id: userId,
-            tema: sanitizedTema,
-            error: parsed.error,
-            chars_so_far: totalChars,
-          }));
-          return;
-        }
-
-        const candidate = parsed.candidates?.[0];
-        const content = candidate?.content?.parts?.[0]?.text;
-        if (candidate?.finishReason) lastFinishReason = candidate.finishReason;
-        if (parsed.usageMetadata) usageMetadata = parsed.usageMetadata;
-        if (content) {
-          totalChars += content.length;
-          const openAiChunk = { choices: [{ delta: { content } }] };
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(openAiChunk)}\n\n`));
-        }
-      } catch {
-        // partial JSON — ja foi tratado pelo buffer; chega aqui so se
-        // realmente vier malformado, o que e seguro ignorar
-      }
+    type StreamResult = {
+      finishReason: string | undefined;
+      totalChars: number;
+      lastText: string;        // últimos N chars escritos (pra continuação)
+      upstreamError: { code?: number; message?: string; status?: string } | null;
+      usageMetadata: unknown;
     };
 
-    const transformStream = new TransformStream({
-      transform(chunk, controller) {
-        buffer += decoder.decode(chunk, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) processLine(line, controller);
-      },
-      flush(controller) {
-        if (buffer.length > 0) processLine(buffer, controller);
+    /** Faz UMA call Gemini com retry e transmite chunks pro cliente. */
+    async function streamOnce(
+      promptText: string,
+      controller: ReadableStreamDefaultController,
+      encoder: TextEncoder,
+    ): Promise<StreamResult> {
+      const requestBody = JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: "user", parts: [{ text: promptText }] }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 65536,
+        },
+      });
 
-        // Log diagnostico — aparece em supabase functions logs.
-        // Permite identificar quem teve geracao truncada e por que (SAFETY,
-        // MAX_TOKENS, RECITATION, OTHER) sem precisar acessar a sessao do user.
-        if (upstreamError || lastFinishReason !== "STOP" || totalChars < 500) {
-          console.warn("generate-fechamento finished suspiciously:", JSON.stringify({
-            user_id: userId,
-            tema: sanitizedTema,
-            modo: sanitizedModo,
-            chars_generated: totalChars,
-            finish_reason: lastFinishReason ?? "UNKNOWN",
-            upstream_error: upstreamError,
-            usage: usageMetadata,
-          }));
-        }
+      let response: Response | undefined;
+      let lastInitialError = "";
+      for (let attempt = 1; attempt <= MAX_INITIAL_ATTEMPTS; attempt++) {
+        response = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: requestBody,
+        });
+        if (response.ok) break;
+        lastInitialError = await response.text().catch(() => "");
+        const retryable = RETRYABLE_STATUSES.has(response.status);
+        console.warn(`Gemini attempt ${attempt}/${MAX_INITIAL_ATTEMPTS} failed:`, response.status, lastInitialError.slice(0, 200));
+        if (!retryable || attempt === MAX_INITIAL_ATTEMPTS) break;
+        await new Promise((r) => setTimeout(r, 1000 * Math.pow(3, attempt - 1)));
+      }
 
-        // Erro mid-stream do Gemini — sinaliza com mensagem traduzida.
-        if (upstreamError) {
-          const code = upstreamError.code;
-          const status = upstreamError.status ?? "";
-          let msg = upstreamError.message ?? "Erro do provedor de IA";
-          let retryable = false;
-          if (code === 429 || status === "RESOURCE_EXHAUSTED") {
-            msg = "Quota da API do Google esgotada. Verifique limites no Google AI Studio.";
-          } else if (code === 403 || status === "PERMISSION_DENIED") {
-            msg = "Chave de API invalida ou sem permissao para gemini-2.5-flash.";
-          } else if (code === 400 || status === "INVALID_ARGUMENT") {
-            msg = `Requisicao invalida ao Gemini: ${upstreamError.message ?? "verifique parametros"}`;
-          } else if (code === 503 || status === "UNAVAILABLE" || code === 502 || code === 504) {
-            msg = "Gemini 2.5 Flash sobrecarregado momentaneamente. Vamos tentar de novo automaticamente.";
-            retryable = true;
-          } else if (code && code >= 500) {
-            msg = "Erro temporario do Gemini. Vamos tentar de novo automaticamente.";
-            retryable = true;
+      if (!response || !response.ok) {
+        // Falha total na chamada (sem stream a parsear)
+        return {
+          finishReason: "ERROR",
+          totalChars: 0,
+          lastText: "",
+          upstreamError: {
+            code: response?.status ?? 0,
+            message: lastInitialError.slice(0, 300) || "Sem resposta do Gemini",
+            status: response?.statusText ?? "UNAVAILABLE",
+          },
+          usageMetadata: undefined,
+        };
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finishReason: string | undefined;
+      let totalChars = 0;
+      let lastText = "";
+      let upstreamError: StreamResult["upstreamError"] = null;
+      let usageMetadata: unknown;
+
+      const processLine = (line: string) => {
+        if (!line.startsWith("data: ")) return;
+        const jsonStr = line.slice(6).trim();
+        if (!jsonStr) return;
+        try {
+          const parsed = JSON.parse(jsonStr);
+          if (parsed.error) {
+            upstreamError = {
+              code: parsed.error.code,
+              message: parsed.error.message,
+              status: parsed.error.status,
+            };
+            return;
           }
-          const meta = { meta: { finish_reason: "ERROR", error_code: code, error_status: status, chars: totalChars, message: msg, retryable } };
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(meta)}\n\n`));
-        } else if (lastFinishReason && lastFinishReason !== "STOP") {
-          const meta = { meta: { finish_reason: lastFinishReason, chars: totalChars } };
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(meta)}\n\n`));
+          const candidate = parsed.candidates?.[0];
+          const content = candidate?.content?.parts?.[0]?.text;
+          if (candidate?.finishReason) finishReason = candidate.finishReason;
+          if (parsed.usageMetadata) usageMetadata = parsed.usageMetadata;
+          if (content) {
+            totalChars += content.length;
+            // mantém últimos 500 chars pra prompt de continuação
+            lastText = (lastText + content).slice(-500);
+            const openAiChunk = { choices: [{ delta: { content } }] };
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(openAiChunk)}\n\n`));
+          }
+        } catch {
+          /* partial JSON ignorado */
         }
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-      },
-    });
+      };
 
-    // Wrappa o stream com keepalive: emite ": keepalive\n\n" (comentario SSE,
-    // ignorado pelo cliente) a cada ~10s de silencio. Evita que proxies/carriers
-    // hostis fechem a conexao por idle quando Gemini pausa entre chunks.
-    const upstream = response.body!.pipeThrough(transformStream);
-    const encoderKA = new TextEncoder();
+      const reader = response.body!.getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) processLine(line);
+        }
+        if (buffer.length > 0) processLine(buffer);
+      } catch (err) {
+        console.error("upstream read failed:", err);
+      }
+
+      return { finishReason, totalChars, lastText, upstreamError, usageMetadata };
+    }
+
+    // ReadableStream principal: orquestra prompt inicial + continuações
+    const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
-        const reader = upstream.getReader();
+        // Keepalive ticker
         let lastEmit = Date.now();
         const ticker = setInterval(() => {
           if (Date.now() - lastEmit > 10_000) {
             try {
-              controller.enqueue(encoderKA.encode(": keepalive\n\n"));
+              controller.enqueue(encoder.encode(": keepalive\n\n"));
               lastEmit = Date.now();
-            } catch { /* controller fechado, ignore */ }
+            } catch { /* ignore */ }
           }
         }, 5_000);
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            controller.enqueue(value);
+
+        // Wrapper pra atualizar lastEmit cada vez que enqueueamos
+        const wrappedController: ReadableStreamDefaultController = {
+          enqueue: (v: Uint8Array) => {
+            controller.enqueue(v);
             lastEmit = Date.now();
+          },
+          close: () => controller.close(),
+          error: (e: unknown) => controller.error(e),
+          desiredSize: controller.desiredSize,
+        } as ReadableStreamDefaultController;
+
+        let totalCharsAll = 0;
+        let lastFinishReason: string | undefined;
+        let lastUpstreamError: StreamResult["upstreamError"] = null;
+        let continuationsUsed = 0;
+
+        try {
+          // PASSADA 1: prompt original
+          const r1 = await streamOnce(userPrompt, wrappedController, encoder);
+          totalCharsAll += r1.totalChars;
+          lastFinishReason = r1.finishReason;
+          lastUpstreamError = r1.upstreamError;
+
+          // CONTINUAÇÕES: se truncou por MAX_TOKENS / OTHER / undefined,
+          // tenta continuar de onde parou. SAFETY e RECITATION param.
+          let lastText = r1.lastText;
+          while (
+            !lastUpstreamError &&
+            lastFinishReason !== "STOP" &&
+            lastFinishReason !== "SAFETY" &&
+            lastFinishReason !== "RECITATION" &&
+            continuationsUsed < MAX_CONTINUATIONS &&
+            totalCharsAll > 0 // só continua se realmente escreveu algo
+          ) {
+            continuationsUsed++;
+            const continuationPrompt = `Continue EXATAMENTE de onde você parou no resumo abaixo. NÃO repita o conteúdo já escrito. NÃO comece com saudação ou recapitulação. Continue do PONTO EXATO da última frase.
+
+ÚLTIMOS 500 CARACTERES escritos:
+"""${lastText}"""
+
+(Continue daqui, mantendo o mesmo tom, formatação markdown e profundidade técnica.)`;
+
+            const rN = await streamOnce(continuationPrompt, wrappedController, encoder);
+            totalCharsAll += rN.totalChars;
+            lastFinishReason = rN.finishReason;
+            lastUpstreamError = rN.upstreamError;
+            if (rN.totalChars > 0) lastText = rN.lastText;
+            else break; // continuação não escreveu nada, abortar
           }
+
+          // Log diagnóstico
+          const wasTruncated = lastFinishReason !== "STOP" && !lastUpstreamError;
+          if (lastUpstreamError || wasTruncated || totalCharsAll < 500) {
+            console.warn("generate-fechamento finished:", JSON.stringify({
+              user_id: userId,
+              tema: sanitizedTema,
+              modo: sanitizedModo,
+              chars_total: totalCharsAll,
+              finish_reason_final: lastFinishReason ?? "UNKNOWN",
+              continuations: continuationsUsed,
+              upstream_error: lastUpstreamError,
+            }));
+          }
+
+          // Sinalização de erro/truncamento pro cliente
+          if (lastUpstreamError) {
+            const code = lastUpstreamError.code;
+            const status = lastUpstreamError.status ?? "";
+            let msg = lastUpstreamError.message ?? "Erro do provedor de IA";
+            let retryable = false;
+            if (code === 429 || status === "RESOURCE_EXHAUSTED") {
+              msg = "Quota do Gemini esgotada. Tente em 1-2 minutos.";
+            } else if (code === 403 || status === "PERMISSION_DENIED") {
+              msg = "Chave de API inválida ou sem permissão.";
+            } else if (code === 400 || status === "INVALID_ARGUMENT") {
+              msg = `Requisição inválida: ${lastUpstreamError.message ?? "verifique parâmetros"}`;
+            } else if (code === 503 || code === 502 || code === 504 || status === "UNAVAILABLE") {
+              msg = "Gemini 2.5 Flash sobrecarregado. Tente em 1-2 minutos.";
+              retryable = true;
+            } else if (code && code >= 500) {
+              msg = "Erro temporário do Gemini. Tente novamente.";
+              retryable = true;
+            }
+            const meta = { meta: { finish_reason: "ERROR", error_code: code, error_status: status, chars: totalCharsAll, message: msg, retryable } };
+            wrappedController.enqueue(encoder.encode(`data: ${JSON.stringify(meta)}\n\n`));
+          } else if (lastFinishReason === "SAFETY" || lastFinishReason === "RECITATION") {
+            const meta = { meta: { finish_reason: lastFinishReason, chars: totalCharsAll, message: lastFinishReason === "SAFETY" ? "Conteúdo bloqueado por filtro de segurança." : "Conteúdo bloqueado por recitação detectada." } };
+            wrappedController.enqueue(encoder.encode(`data: ${JSON.stringify(meta)}\n\n`));
+          } else if (wasTruncated) {
+            // Esgotamos continuações sem chegar em STOP — sinaliza ao cliente
+            const meta = { meta: { finish_reason: lastFinishReason ?? "TRUNCATED", chars: totalCharsAll, continuations_used: continuationsUsed } };
+            wrappedController.enqueue(encoder.encode(`data: ${JSON.stringify(meta)}\n\n`));
+          }
+
+          wrappedController.enqueue(encoder.encode("data: [DONE]\n\n"));
         } catch (err) {
-          console.error("upstream read failed:", err);
+          console.error("stream orchestration failed:", err);
+          const meta = { meta: { finish_reason: "ERROR", message: String((err as Error).message ?? err), retryable: true } };
+          try {
+            wrappedController.enqueue(encoder.encode(`data: ${JSON.stringify(meta)}\n\n`));
+            wrappedController.enqueue(encoder.encode("data: [DONE]\n\n"));
+          } catch { /* já fechado */ }
         } finally {
           clearInterval(ticker);
-          try { controller.close(); } catch { /* ja fechado */ }
+          try { controller.close(); } catch { /* já fechado */ }
         }
       },
     });
