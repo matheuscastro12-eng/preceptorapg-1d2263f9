@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -6,13 +6,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Navigate, useNavigate } from 'react-router-dom';
 import PageSkeleton from '@/components/PageSkeleton';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, RotateCcw, Check, X, Layers, Brain, Sparkles, Trash2, ChevronRight, BookOpen } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Check, X, Layers, Brain, Sparkles, Trash2, ChevronRight, BookOpen, Plus, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useRecordReview } from '@/hooks/useGamification';
+import { useStudyPlanContext, markPlanActivityComplete } from '@/hooks/useStudyPlanContext';
 
 interface Flashcard {
   id: string;
@@ -42,6 +42,7 @@ const Flashcards = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const recordReview = useRecordReview();
+  const planCtx = useStudyPlanContext();
 
   const [allCards, setAllCards] = useState<Flashcard[]>([]);
   const [decks, setDecks] = useState<Deck[]>([]);
@@ -52,7 +53,36 @@ const Flashcards = () => {
   const [loading, setLoading] = useState(true);
   const [reviewedCount, setReviewedCount] = useState(0);
 
+  // Criação de deck por tema livre
+  const [creatingDeck, setCreatingDeck] = useState(false);
+  const [newDeckTopic, setNewDeckTopic] = useState('');
+  const [generatingDeck, setGeneratingDeck] = useState(false);
+
+  const planAutoMarkedRef = useRef(false);
+
   useEffect(() => { if (user) fetchCards(); }, [user]);
+
+  // Deep link do cronograma: pré-preencher e iniciar fluxo
+  useEffect(() => {
+    if (loading) return;
+    if (!planCtx.isFromPlan) return;
+    const action = new URLSearchParams(window.location.search).get('action');
+
+    if (action === 'create' && planCtx.tema && !creatingDeck && !generatingDeck) {
+      setNewDeckTopic(planCtx.tema);
+      setCreatingDeck(true);
+    } else if (action === 'review' && planCtx.tema) {
+      // Tenta achar deck que casa com o tema
+      const tema = planCtx.tema.toLowerCase();
+      const match = decks.find(d =>
+        d.label.toLowerCase().includes(tema) ||
+        (d.area ?? '').toLowerCase().includes(tema)
+      );
+      if (match && match.dueCards > 0 && !selectedDeck) startDeck(match.key);
+      else if (decks.length > 0 && !selectedDeck) startDeck('all');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, planCtx.isFromPlan, decks.length]);
 
   const fetchCards = async () => {
     try {
@@ -104,14 +134,12 @@ const Flashcards = () => {
     const easeBefore = card.ease_factor;
     const intervalBefore = card.interval_days;
 
-    // Proper SM-2 algorithm
     const { sm2 } = await import('@/hooks/useGamification');
     const { ease: newEase, interval: newInterval, reps: newReps } = sm2(quality, card.ease_factor, card.interval_days, card.repetitions);
 
     const nextReview = new Date(); nextReview.setDate(nextReview.getDate() + newInterval);
     await supabase.from('flashcards').update({ interval_days: newInterval, ease_factor: newEase, repetitions: newReps, next_review: nextReview.toISOString() }).eq('id', card.id);
 
-    // Record review + award XP (fire and forget)
     recordReview.mutate({
       cardId: card.id, quality, easeBefore, easeAfter: newEase, intervalBefore, intervalAfter: newInterval,
     });
@@ -119,7 +147,16 @@ const Flashcards = () => {
     setReviewedCount(prev => prev + 1);
     setFlipped(false);
     if (currentIndex < dueCards.length - 1) setCurrentIndex(prev => prev + 1);
-    else { toast({ title: 'Sessao completa!', description: `Voce revisou ${reviewedCount + 1} cards. +XP!` }); setSelectedDeck(null); fetchCards(); }
+    else {
+      toast({ title: 'Sessão completa!', description: `Você revisou ${reviewedCount + 1} cards. +XP!` });
+      // Auto-marca atividade do plano se aplicável
+      if (planCtx.isFromPlan && planCtx.planDay && planCtx.actIdx !== null && !planAutoMarkedRef.current) {
+        planAutoMarkedRef.current = true;
+        markPlanActivityComplete(planCtx.planDay, planCtx.actIdx);
+      }
+      setSelectedDeck(null);
+      fetchCards();
+    }
   };
 
   const deleteCard = async (id: string) => {
@@ -133,49 +170,115 @@ const Flashcards = () => {
   const deleteDeck = async (deckKey: string) => {
     const ids = allCards.filter(c => (c.source_id || c.area || 'sem_origem') === deckKey).map(c => c.id);
     if (!ids.length) return;
+    if (!confirm(`Apagar ${ids.length} cards deste deck?`)) return;
     await supabase.from('flashcards').delete().in('id', ids);
     setAllCards(prev => prev.filter(c => !ids.includes(c.id)));
     setDecks(prev => prev.filter(d => d.key !== deckKey));
     toast({ title: 'Deck removido', description: `${ids.length} cards excluídos.` });
   };
 
+  const handleCreateDeckFromTopic = async () => {
+    const topic = newDeckTopic.trim();
+    if (topic.length < 3) {
+      toast({ title: 'Tema muito curto', description: 'Informe pelo menos 3 caracteres.', variant: 'destructive' });
+      return;
+    }
+    setGeneratingDeck(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-flashcards', {
+        body: {
+          source_type: 'topic',
+          source_id: null,
+          area: topic,
+          content: `Gere flashcards de alta qualidade para o tema clínico-acadêmico: "${topic}".
+
+Cubra os pontos mais importantes que costumam cair em provas de medicina:
+- Definição e classificação
+- Fisiopatologia (mecanismos-chave)
+- Quadro clínico (sinais e sintomas característicos)
+- Diagnóstico (critérios e exames)
+- Conduta inicial e tratamento
+- Complicações relevantes
+- Pontos clássicos de prova (red flags, números-chave, exceções)
+
+Foque em conhecimento testável e clinicamente relevante.`,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const created = data?.flashcards?.length ?? data?.count ?? 0;
+      toast({
+        title: 'Deck criado!',
+        description: `${created} flashcards de "${topic}" prontos para revisar.`,
+      });
+      setCreatingDeck(false);
+      setNewDeckTopic('');
+      await fetchCards();
+
+      // Auto-marca atividade do plano se aplicável
+      if (planCtx.isFromPlan && planCtx.planDay && planCtx.actIdx !== null && !planAutoMarkedRef.current) {
+        planAutoMarkedRef.current = true;
+        markPlanActivityComplete(planCtx.planDay, planCtx.actIdx);
+      }
+    } catch (e) {
+      toast({ title: 'Erro ao gerar', description: (e as Error).message, variant: 'destructive' });
+    } finally {
+      setGeneratingDeck(false);
+    }
+  };
+
   if (authLoading || subLoading || adminLoading) return <PageSkeleton variant="dashboard" />;
   if (!user) return <Navigate to="/auth" replace />;
-  // Free users can access flashcards (with daily limit enforced in generation)
 
   const totalDue = decks.reduce((sum, d) => sum + d.dueCards, 0);
   const totalAll = allCards.length;
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="h-6 w-6 animate-spin border-2 border-[#005344] border-t-transparent rounded-full" />
-          </div>
+          <FlashcardsSkeleton />
+        ) : creatingDeck ? (
+          <CreateDeckPanel
+            topic={newDeckTopic}
+            onTopicChange={setNewDeckTopic}
+            generating={generatingDeck}
+            onCancel={() => { setCreatingDeck(false); setNewDeckTopic(''); }}
+            onCreate={handleCreateDeckFromTopic}
+            fromPlan={planCtx.isFromPlan}
+          />
         ) : totalAll === 0 ? (
-          <EmptyState navigate={navigate} />
+          <EmptyState navigate={navigate} onCreateNew={() => setCreatingDeck(true)} />
         ) : selectedDeck === null ? (
           <div className="relative bg-white rounded-3xl border border-slate-200 shadow-[0_1px_2px_rgba(25,28,29,0.04)] overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-[#003D32] via-[#005344] via-[#006D5B] to-[#C9A84C]" />
             <div className="px-5 sm:px-8 md:px-12 py-7 sm:py-9 md:py-12 space-y-9">
-              <header>
-                <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2.5 mb-3">
-                  <span className="w-6 h-px bg-[#C9A84C]" />
-                  Repetição espaçada
-                </p>
-                <h1 className="font-['Manrope'] font-bold text-[28px] sm:text-[34px] tracking-[-0.025em] leading-[1.05] text-[#191C1D]">
-                  Memorize sem<br />
-                  esforço com{' '}
-                  <em className="not-italic font-medium text-[#8a6f26]">
-                    flashcards
-                  </em>
-                  .
-                </h1>
-                <p className="text-sm text-[#4a5568] mt-3 max-w-[52ch] leading-relaxed">
-                  Algoritmo SM-2 calibra o intervalo de cada card pelo seu desempenho.
-                  Revise pouco, lembre por meses.
-                </p>
+              <header className="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2.5 mb-3">
+                    <span className="w-6 h-px bg-[#C9A84C]" />
+                    Repetição espaçada
+                  </p>
+                  <h1 className="font-['Manrope'] font-bold text-[28px] sm:text-[34px] tracking-[-0.025em] leading-[1.05] text-[#191C1D]">
+                    Memorize sem esforço com{' '}
+                    <em className="not-italic font-medium text-[#8a6f26]">
+                      flashcards
+                    </em>
+                    .
+                  </h1>
+                  <p className="text-sm text-[#4a5568] mt-3 max-w-[52ch] leading-relaxed">
+                    Algoritmo SM-2 calibra o intervalo de cada card pelo seu desempenho.
+                    Revise pouco, lembre por meses.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setCreatingDeck(true)}
+                  className="shrink-0 inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-[#005344] text-white text-sm font-bold hover:bg-[#003D32] transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Novo deck
+                </button>
               </header>
 
               <DeckList decks={decks} totalDue={totalDue} totalAll={totalAll} onStartDeck={startDeck} onDeleteDeck={deleteDeck} />
@@ -213,6 +316,136 @@ const Flashcards = () => {
     </DashboardLayout>
   );
 };
+
+// ───────────────────────────────────────────────────────────────────
+// Skeleton melhor (substitui o loading pequeno que parecia mobile)
+function FlashcardsSkeleton() {
+  return (
+    <div className="relative bg-white rounded-3xl border border-slate-200 shadow-[0_1px_2px_rgba(25,28,29,0.04)] overflow-hidden">
+      <div className="h-1 bg-gradient-to-r from-[#003D32] via-[#005344] via-[#006D5B] to-[#C9A84C]" />
+      <div className="px-5 sm:px-8 md:px-12 py-7 sm:py-9 md:py-12 space-y-9">
+        <div>
+          <div className="h-3 w-40 rounded bg-slate-100 animate-pulse mb-3" />
+          <div className="h-9 w-3/4 max-w-md rounded bg-slate-100 animate-pulse mb-2" />
+          <div className="h-9 w-2/3 max-w-sm rounded bg-slate-100 animate-pulse mb-3" />
+          <div className="h-4 w-full max-w-lg rounded bg-slate-100 animate-pulse" />
+        </div>
+        <div className="space-y-3">
+          <div className="h-4 w-32 rounded bg-slate-100 animate-pulse" />
+          <div className="h-[58px] rounded-xl bg-slate-100 animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-4 w-32 rounded bg-slate-100 animate-pulse" />
+          <div className="rounded-xl border-2 border-slate-200 overflow-hidden">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 last:border-0">
+                <div className="h-9 w-9 rounded-lg bg-slate-100 animate-pulse" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-4 w-3/4 rounded bg-slate-100 animate-pulse" />
+                  <div className="h-3 w-1/2 rounded bg-slate-100 animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────
+function CreateDeckPanel({
+  topic, onTopicChange, generating, onCancel, onCreate, fromPlan,
+}: {
+  topic: string;
+  onTopicChange: (s: string) => void;
+  generating: boolean;
+  onCancel: () => void;
+  onCreate: () => void;
+  fromPlan: boolean;
+}) {
+  return (
+    <div className="relative bg-white rounded-3xl border border-slate-200 shadow-[0_1px_2px_rgba(25,28,29,0.04)] overflow-hidden">
+      <div className="h-1 bg-gradient-to-r from-[#003D32] via-[#005344] via-[#006D5B] to-[#C9A84C]" />
+      <div className="px-5 sm:px-8 md:px-12 py-9 md:py-12">
+        <button
+          onClick={onCancel}
+          className="flex items-center gap-1.5 text-[11px] font-semibold text-[#94a3b8] hover:text-[#005344] transition-colors mb-6"
+          disabled={generating}
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+        </button>
+
+        <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2.5 mb-3">
+          <span className="w-6 h-px bg-[#C9A84C]" />
+          Novo deck
+        </p>
+        <h1 className="font-['Manrope'] font-bold text-[28px] sm:text-[34px] tracking-[-0.025em] leading-[1.05] text-[#191C1D] mb-3">
+          Crie flashcards a partir{' '}
+          <em className="not-italic font-medium text-[#8a6f26]">de um tema</em>.
+        </h1>
+        <p className="text-sm text-[#4a5568] mb-8 max-w-[52ch] leading-relaxed">
+          Informe o tema clínico e a IA gera 10–20 flashcards cobrindo definição,
+          fisiopatologia, diagnóstico, conduta e pontos de prova.
+        </p>
+
+        <div className="max-w-xl">
+          <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-2">
+            Tema do deck
+          </label>
+          <input
+            value={topic}
+            onChange={(e) => onTopicChange(e.target.value)}
+            placeholder="Ex: Insuficiência cardíaca com FE reduzida"
+            disabled={generating}
+            autoFocus
+            onKeyDown={(e) => { if (e.key === 'Enter' && topic.trim().length >= 3 && !generating) onCreate(); }}
+            className="w-full h-12 px-4 rounded-xl border-2 border-slate-200 text-sm focus:outline-none focus:border-[#005344] focus:ring-4 focus:ring-[#005344]/10 transition-shadow disabled:opacity-50"
+          />
+          <p className="text-[11px] text-[#94a3b8] mt-1.5">
+            Quanto mais específico, melhores os flashcards. "IAM com supra de ST" &gt; "Cardio".
+          </p>
+
+          {fromPlan && (
+            <div className="mt-4 p-3 rounded-lg bg-[#005344]/5 border border-[#005344]/15 flex items-start gap-2">
+              <Sparkles className="w-4 h-4 text-[#005344] shrink-0 mt-0.5" />
+              <p className="text-xs text-[#005344] leading-relaxed">
+                Vindo do seu cronograma. Após gerar, a atividade será marcada como concluída automaticamente.
+              </p>
+            </div>
+          )}
+
+          <div className="flex gap-2 mt-8">
+            <button
+              onClick={onCancel}
+              disabled={generating}
+              className="px-5 h-12 rounded-xl text-sm font-bold text-[#4a5568] hover:bg-slate-100 transition-colors disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={onCreate}
+              disabled={generating || topic.trim().length < 3}
+              className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-gradient-to-br from-[#003D32] via-[#005344] to-[#006D5B] text-white text-sm font-bold shadow-[0_8px_24px_-4px_rgba(0,109,91,0.4)] hover:shadow-[0_12px_28px_-4px_rgba(0,109,91,0.55)] disabled:opacity-50 transition-all"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  IA gerando flashcards (~25s)...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 text-[#C9A84C]" />
+                  Gerar deck
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function DeckList({ decks, totalDue, totalAll, onStartDeck, onDeleteDeck }: { decks: Deck[]; totalDue: number; totalAll: number; onStartDeck: (k: string | 'all') => void; onDeleteDeck: (k: string) => void }) {
   return (
@@ -314,7 +547,7 @@ function ReviewSession({ dueCards, currentIndex, flipped, reviewedCount, onFlip,
   const currentCard = dueCards[currentIndex];
   const progress = dueCards.length > 0 ? (reviewedCount / dueCards.length) * 100 : 0;
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 max-w-2xl mx-auto">
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-xs text-slate-500">
           <span>{reviewedCount} de {dueCards.length} revisados</span>
@@ -376,7 +609,7 @@ function ReviewSession({ dueCards, currentIndex, flipped, reviewedCount, onFlip,
   );
 }
 
-function EmptyState({ navigate }: { navigate: (p: string) => void }) {
+function EmptyState({ navigate, onCreateNew }: { navigate: (p: string) => void; onCreateNew: () => void }) {
   return (
     <div className="relative bg-white rounded-3xl border border-slate-200 shadow-[0_1px_2px_rgba(25,28,29,0.04)] overflow-hidden">
       <div className="h-1 bg-gradient-to-r from-[#003D32] via-[#005344] via-[#006D5B] to-[#C9A84C]" />
@@ -393,17 +626,20 @@ function EmptyState({ navigate }: { navigate: (p: string) => void }) {
           <em className="not-italic font-medium text-[#8a6f26]">ainda</em>.
         </h2>
         <p className="text-sm text-[#4a5568] mb-8 leading-relaxed">
-          Gere flashcards a partir dos seus resumos na Biblioteca ou ao errar
-          questões em simulados.
+          Gere flashcards de qualquer tema clínico, dos seus resumos da Biblioteca ou
+          ao errar questões em simulados.
         </p>
         <div className="flex gap-3 flex-wrap justify-center">
           <button
-            onClick={() => navigate('/library')}
+            onClick={onCreateNew}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
             style={{ background: 'linear-gradient(135deg, #003D32 0%, #005344 50%, #006D5B 100%)' }}
           >
-            <BookOpen className="h-4 w-4" /> Ir à Biblioteca
+            <Plus className="h-4 w-4" /> Criar deck por tema
           </button>
+          <Button variant="outline" onClick={() => navigate('/library')} className="gap-1.5">
+            <BookOpen className="h-4 w-4" /> Ir à Biblioteca
+          </Button>
           <Button variant="outline" onClick={() => navigate('/exam?mode=prova')} className="gap-1.5">
             <Brain className="h-4 w-4" /> Simulado
           </Button>
