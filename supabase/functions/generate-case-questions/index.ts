@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
     const casoText = JSON.stringify(caseRow.caso_estruturado, null, 2);
     const prompt = `Gere ${n} questão(ões) ENAMED-style baseadas neste caso:\n\n--- CASO ---\nTítulo: ${caseRow.titulo ?? "—"}\n\n${casoText}\n\nUse os campos do caso como base. Misture níveis de dificuldade. Evite questões redundantes entre si.`;
 
-    const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_KEY}`;
+    const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
 
     let lastErr: string | null = null;
     let parsed: any = null;

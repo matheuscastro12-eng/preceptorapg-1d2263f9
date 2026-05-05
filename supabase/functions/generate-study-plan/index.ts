@@ -185,7 +185,7 @@ Responda APENAS o JSON estruturado conforme o schema.`;
 
     const userPrompt = `Dias com fases já definidas (${total} dias):\n${JSON.stringify(skeleton)}\n\nTópicos do estudante: ${body.topicos_input}\nHoras por dia: ${horas}h`;
 
-    const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_KEY}`;
+    const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
 
     let lastErr: string | null = null;
     let parsed: { topicos_normalizados: string[]; distribuicao: DiaIA[] } | null = null;
@@ -253,7 +253,7 @@ Responda APENAS o JSON estruturado conforme o schema.`;
         horas_dia: horas,
         status: "active",
         raw_plan: parsed,
-        generation_meta: { model: "gemini-flash-latest", attempts: 1 },
+        generation_meta: { model: "gemini-2.5-flash", attempts: 1 },
       })
       .select()
       .single();

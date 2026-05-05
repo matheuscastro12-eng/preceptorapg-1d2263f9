@@ -709,21 +709,21 @@ ${sanitizedObjetivos ? "5. Como cada objetivo do estudante mapeia para a estrutu
 Agora gere o resumo completo dentro do escopo identificado.`;
 
     // ────────────────────────────────────────────────────────────
-    // STREAMING COM CONTINUAÇÃO AUTOMÁTICA
+    // STREAMING COM CONTINUAÇÃO AUTOMÁTICA + FALLBACK DE MODELO
     // ────────────────────────────────────────────────────────────
-    // Gemini 2.5-flash:
-    //   - 503 UNAVAILABLE intermitente em horário de pico (~33% testes)
-    //   - Pode parar com finishReason=MAX_TOKENS, OTHER (corte interno),
-    //     SAFETY, RECITATION
-    //
-    // Estratégia: se a 1ª passada terminar SEM finishReason=STOP, fazemos
-    // até 3 continuações automáticas com novo prompt "continue de onde
-    // parou", concatenando tudo como UM stream pro cliente. SAFETY e
-    // RECITATION abortam (não vale continuar).
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:streamGenerateContent?alt=sse&key=${GOOGLE_AI_API_KEY}`;
+    // Padrão: gemini-2.5-flash (rápido, qualidade comprovada).
+    // Se 2.5-flash falha com 503 mesmo após 4 retries, troca pra
+    // gemini-2.5-pro (mais lento, mas robusto e qualidade superior).
+    // Continuação automática: se a passada terminar SEM finishReason=STOP,
+    // até 3 continuações com prompt "continue de onde parou".
+    // SAFETY e RECITATION abortam (não vale continuar).
     const RETRYABLE_STATUSES = new Set([500, 502, 503, 504]);
     const MAX_INITIAL_ATTEMPTS = 4;
     const MAX_CONTINUATIONS = 3;
+    const MODEL_PRIMARY = "gemini-2.5-flash";
+    const MODEL_FALLBACK = "gemini-2.5-pro";
+    const buildGeminiUrl = (model: string) =>
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${GOOGLE_AI_API_KEY}`;
 
     type StreamResult = {
       finishReason: string | undefined;
@@ -733,7 +733,8 @@ Agora gere o resumo completo dentro do escopo identificado.`;
       usageMetadata: unknown;
     };
 
-    /** Faz UMA call Gemini com retry e transmite chunks pro cliente. */
+    /** Faz UMA call Gemini com retry; se 503 persistir após retries com
+     * o modelo primário (flash), troca pra fallback (pro) e tenta de novo. */
     async function streamOnce(
       promptText: string,
       controller: ReadableStreamDefaultController,
@@ -750,22 +751,38 @@ Agora gere o resumo completo dentro do escopo identificado.`;
 
       let response: Response | undefined;
       let lastInitialError = "";
-      for (let attempt = 1; attempt <= MAX_INITIAL_ATTEMPTS; attempt++) {
-        response = await fetch(geminiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: requestBody,
-        });
-        if (response.ok) break;
-        lastInitialError = await response.text().catch(() => "");
-        const retryable = RETRYABLE_STATUSES.has(response.status);
-        console.warn(`Gemini attempt ${attempt}/${MAX_INITIAL_ATTEMPTS} failed:`, response.status, lastInitialError.slice(0, 200));
-        if (!retryable || attempt === MAX_INITIAL_ATTEMPTS) break;
-        await new Promise((r) => setTimeout(r, 1000 * Math.pow(3, attempt - 1)));
+      let modelUsed = MODEL_PRIMARY;
+      let triedFallback = false;
+
+      const attemptModel = async (model: string) => {
+        const url = buildGeminiUrl(model);
+        for (let attempt = 1; attempt <= MAX_INITIAL_ATTEMPTS; attempt++) {
+          response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: requestBody,
+          });
+          if (response.ok) return true;
+          lastInitialError = await response.text().catch(() => "");
+          const retryable = RETRYABLE_STATUSES.has(response.status);
+          console.warn(`Gemini[${model}] attempt ${attempt}/${MAX_INITIAL_ATTEMPTS} failed:`, response.status, lastInitialError.slice(0, 200));
+          if (!retryable || attempt === MAX_INITIAL_ATTEMPTS) return false;
+          await new Promise((r) => setTimeout(r, 1000 * Math.pow(3, attempt - 1)));
+        }
+        return false;
+      };
+
+      // Tenta com flash
+      const flashOk = await attemptModel(MODEL_PRIMARY);
+      if (!flashOk && response && RETRYABLE_STATUSES.has(response.status)) {
+        // Flash sobrecarregado mesmo após retries — fallback pra pro
+        triedFallback = true;
+        modelUsed = MODEL_FALLBACK;
+        console.warn(`[fallback] Switching to ${MODEL_FALLBACK} after ${MODEL_PRIMARY} failed with ${response.status}`);
+        await attemptModel(MODEL_FALLBACK);
       }
 
       if (!response || !response.ok) {
-        // Falha total na chamada (sem stream a parsear)
         return {
           finishReason: "ERROR",
           totalChars: 0,
@@ -775,9 +792,12 @@ Agora gere o resumo completo dentro do escopo identificado.`;
             message: lastInitialError.slice(0, 300) || "Sem resposta do Gemini",
             status: response?.statusText ?? "UNAVAILABLE",
           },
-          usageMetadata: undefined,
+          usageMetadata: { modelUsed, triedFallback },
         };
       }
+
+      // Anota qual modelo respondeu (visível em logs)
+      console.log(`[gemini] using model: ${modelUsed}${triedFallback ? " (FALLBACK)" : ""}`);
 
       const decoder = new TextDecoder();
       let buffer = "";

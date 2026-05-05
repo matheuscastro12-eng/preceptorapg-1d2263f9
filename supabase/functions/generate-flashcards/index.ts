@@ -73,7 +73,7 @@ serve(async (req) => {
     // Trim content to avoid token limits
     const trimmedContent = content.slice(0, 50000);
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GOOGLE_AI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_AI_API_KEY}`;
 
     const response = await fetch(geminiUrl, {
       method: "POST",

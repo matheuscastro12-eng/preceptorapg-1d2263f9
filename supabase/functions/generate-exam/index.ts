@@ -397,7 +397,7 @@ ${sanitizedConteudo}
     }
 
     // Call Google Gemini API with SSE streaming
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:streamGenerateContent?alt=sse&key=${GOOGLE_AI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GOOGLE_AI_API_KEY}`;
 
     const response = await fetch(geminiUrl, {
       method: "POST",

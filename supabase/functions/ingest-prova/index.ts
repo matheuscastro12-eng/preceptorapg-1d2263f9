@@ -107,7 +107,7 @@ async function callGeminiExtraction(
   source: { type: "text"; pagesText: string } | { type: "pdf"; base64: string },
 ): Promise<ExtractionResult> {
   const url =
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   const userParts: Array<Record<string, unknown>> =
     source.type === "text"
@@ -171,7 +171,7 @@ async function generateJustificativaIA(
   gabarito: string,
 ): Promise<string> {
   const url =
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   const altLetras = alternativas.map((alt, i) =>
     `${String.fromCharCode(65 + i)}) ${alt}`

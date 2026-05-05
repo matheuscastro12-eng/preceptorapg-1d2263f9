@@ -183,7 +183,7 @@ serve(async (req) => {
       throw new Error("GOOGLE_AI_API_KEY is not configured");
     }
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GOOGLE_AI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_AI_API_KEY}`;
 
     const response = await fetch(geminiUrl, {
       method: "POST",
