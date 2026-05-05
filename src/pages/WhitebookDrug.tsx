@@ -8,38 +8,56 @@ import PageSkeleton from "@/components/PageSkeleton";
 import UpgradePaywall from "@/components/UpgradePaywall";
 import {
   ArrowLeft, Pill, AlertTriangle, BookOpen, ExternalLink, Heart, Baby,
-  User as UserIcon, Beaker, Info, ShieldAlert, Wand2,
+  User as UserIcon, Beaker, Info, ShieldAlert, Wand2, Activity,
 } from "lucide-react";
 import WhitebookAiDrawer from "@/components/whitebook/WhitebookAiDrawer";
 
+// Schema rico (formato real do seed)
 interface Apresentacao {
   forma?: string;
   concentracao?: string;
 }
+interface Indicacao {
+  para?: string;
+  dose?: string;
+  frequencia?: string;
+  max?: string;
+  max_dia?: string;
+  duracao?: string;
+  via?: string;
+  obs?: string;
+}
 interface DoseAdulto {
-  padrao?: string;
-  max_diaria?: string;
+  indicacoes?: Indicacao[];
+  iv?: { dose?: string; frequencia?: string; max?: string };
+  max_dia?: string;
+  obs_geral?: string;
+  equivalencia?: string;
 }
 interface DosePediatrica {
-  mg_kg_dia?: string;
-  max?: string;
-  observacoes?: string;
+  indicacoes?: Indicacao[];
+  atencao?: string;
 }
 interface DoseIdoso {
-  observacoes?: string;
+  obs?: string;
+  max_dia?: string;
 }
-interface Ajuste {
-  condicao?: string;
+interface AjusteRenal {
+  clcr?: string;
+  ajuste?: string;
+}
+interface AjusteHepatico {
+  contexto?: string;
   ajuste?: string;
 }
 interface Interacao {
-  droga?: string;
-  severidade?: string;
-  mecanismo?: string;
+  com?: string;
+  efeito?: string;
+  manejo?: string;
 }
 interface EfeitoAdverso {
-  categoria?: string;
-  lista?: string[];
+  freq?: string;
+  evento?: string;
 }
 
 interface DrugFull {
@@ -53,8 +71,8 @@ interface DrugFull {
   dose_adulto: DoseAdulto | null;
   dose_pediatrica: DosePediatrica | null;
   dose_idoso: DoseIdoso | null;
-  ajuste_renal: Ajuste[] | null;
-  ajuste_hepatico: Ajuste[] | null;
+  ajuste_renal: AjusteRenal[] | null;
+  ajuste_hepatico: AjusteHepatico[] | null;
   gestacao_categoria: string | null;
   gestacao_obs: string | null;
   lactacao: string | null;
@@ -65,6 +83,21 @@ interface DrugFull {
   monitoramento: string[] | null;
   bula_fonte_url: string | null;
 }
+
+const SEVERITY_TONE: Record<string, string> = {
+  comum: "bg-amber-100 text-amber-800",
+  incomum: "bg-orange-100 text-orange-800",
+  raro: "bg-red-100 text-red-800",
+};
+
+const tonOfFreq = (f?: string): string => {
+  if (!f) return "bg-slate-100 text-slate-700";
+  const k = f.toLowerCase();
+  for (const key of Object.keys(SEVERITY_TONE)) {
+    if (k.includes(key)) return SEVERITY_TONE[key];
+  }
+  return "bg-slate-100 text-slate-700";
+};
 
 const WhitebookDrug = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -126,6 +159,12 @@ const WhitebookDrug = () => {
     );
   }
 
+  const hasAdultoIndicacoes = drug.dose_adulto?.indicacoes && drug.dose_adulto.indicacoes.length > 0;
+  const hasPedsIndicacoes = drug.dose_pediatrica?.indicacoes && drug.dose_pediatrica.indicacoes.length > 0;
+  const hasIdoso = drug.dose_idoso?.obs || drug.dose_idoso?.max_dia;
+  const hasAjusteRenal = drug.ajuste_renal && drug.ajuste_renal.length > 0;
+  const hasAjusteHepatico = drug.ajuste_hepatico && drug.ajuste_hepatico.length > 0;
+
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -172,7 +211,7 @@ const WhitebookDrug = () => {
           </div>
         </div>
 
-        {/* Alertas de seguranca */}
+        {/* Alertas de segurança */}
         {drug.alertas_seguranca && drug.alertas_seguranca.length > 0 && (
           <div className="rounded-xl bg-red-50 border-2 border-red-200 p-4 mb-5 flex items-start gap-3">
             <ShieldAlert className="w-5 h-5 text-red-700 shrink-0 mt-0.5" />
@@ -180,7 +219,7 @@ const WhitebookDrug = () => {
               <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-red-700 mb-1">
                 Alertas de segurança
               </p>
-              <ul className="text-sm text-red-900 leading-relaxed space-y-0.5">
+              <ul className="text-sm text-red-900 leading-relaxed space-y-1">
                 {drug.alertas_seguranca.map((a, i) => (
                   <li key={i}>• {a}</li>
                 ))}
@@ -196,7 +235,7 @@ const WhitebookDrug = () => {
               {drug.apresentacoes.map((a, i) => (
                 <span
                   key={i}
-                  className="px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs text-[#191C1D]"
+                  className="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-[#191C1D]"
                 >
                   {a.forma ? <strong>{a.forma}</strong> : null}
                   {a.forma && a.concentracao ? " · " : null}
@@ -207,57 +246,109 @@ const WhitebookDrug = () => {
           </Section>
         )}
 
-        {/* Doses */}
-        <Section icon={UserIcon} title="Doses">
-          <div className="space-y-3">
-            {drug.dose_adulto?.padrao && (
-              <DoseCard label="Adulto" content={drug.dose_adulto.padrao} extra={drug.dose_adulto.max_diaria ? `Máx: ${drug.dose_adulto.max_diaria}` : undefined} />
-            )}
-            {drug.dose_pediatrica?.mg_kg_dia && (
-              <DoseCard
-                label="Pediátrica"
-                content={drug.dose_pediatrica.mg_kg_dia}
-                extra={[
-                  drug.dose_pediatrica.max ? `Máx: ${drug.dose_pediatrica.max}` : null,
-                  drug.dose_pediatrica.observacoes,
-                ].filter(Boolean).join(" · ")}
-              />
-            )}
-            {drug.dose_idoso?.observacoes && (
-              <DoseCard label="Idoso" content={drug.dose_idoso.observacoes} />
-            )}
-          </div>
-        </Section>
+        {/* Doses Adulto */}
+        {hasAdultoIndicacoes && (
+          <Section icon={UserIcon} title="Dose adulto">
+            <div className="space-y-3">
+              {drug.dose_adulto!.indicacoes!.map((ind, i) => (
+                <IndicacaoCard key={i} ind={ind} />
+              ))}
+              {drug.dose_adulto?.iv && (
+                <div className="p-3 rounded-lg bg-blue-50 border-l-3 border-blue-400">
+                  <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-blue-700 mb-1">
+                    Endovenoso
+                  </p>
+                  <p className="text-sm text-[#191C1D]">
+                    {drug.dose_adulto.iv.dose}
+                    {drug.dose_adulto.iv.frequencia && ` · ${drug.dose_adulto.iv.frequencia}`}
+                    {drug.dose_adulto.iv.max && ` · máx ${drug.dose_adulto.iv.max}`}
+                  </p>
+                </div>
+              )}
+              {drug.dose_adulto?.max_dia && (
+                <div className="text-xs text-[#4a5568] italic px-1">
+                  <strong>Dose máxima diária:</strong> {drug.dose_adulto.max_dia}
+                </div>
+              )}
+              {drug.dose_adulto?.obs_geral && (
+                <div className="text-xs text-[#4a5568] italic px-1">
+                  {drug.dose_adulto.obs_geral}
+                </div>
+              )}
+              {drug.dose_adulto?.equivalencia && (
+                <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900">
+                  <strong>Equivalência:</strong> {drug.dose_adulto.equivalencia}
+                </div>
+              )}
+            </div>
+          </Section>
+        )}
+
+        {/* Doses Pediátricas */}
+        {hasPedsIndicacoes && (
+          <Section icon={Baby} title="Dose pediátrica">
+            <div className="space-y-3">
+              {drug.dose_pediatrica!.indicacoes!.map((ind, i) => (
+                <IndicacaoCard key={i} ind={ind} pediatrico />
+              ))}
+              {drug.dose_pediatrica?.atencao && (
+                <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-900 leading-relaxed">
+                    {drug.dose_pediatrica.atencao}
+                  </p>
+                </div>
+              )}
+            </div>
+          </Section>
+        )}
+
+        {/* Idoso */}
+        {hasIdoso && (
+          <Section icon={UserIcon} title="Idoso">
+            <div className="p-3 rounded-lg bg-slate-50 border-l-3 border-slate-300">
+              {drug.dose_idoso?.obs && (
+                <p className="text-sm text-[#191C1D] leading-relaxed">{drug.dose_idoso.obs}</p>
+              )}
+              {drug.dose_idoso?.max_dia && (
+                <p className="text-xs text-[#4a5568] mt-1">
+                  <strong>Máx:</strong> {drug.dose_idoso.max_dia}
+                </p>
+              )}
+            </div>
+          </Section>
+        )}
 
         {/* Ajustes */}
-        {((drug.ajuste_renal && drug.ajuste_renal.length > 0) ||
-          (drug.ajuste_hepatico && drug.ajuste_hepatico.length > 0)) && (
-          <Section icon={Info} title="Ajustes">
-            {drug.ajuste_renal && drug.ajuste_renal.length > 0 && (
-              <div className="mb-3">
-                <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-1.5">
-                  Função renal
+        {(hasAjusteRenal || hasAjusteHepatico) && (
+          <Section icon={Activity} title="Ajustes por função orgânica">
+            {hasAjusteRenal && (
+              <div className="mb-4">
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-2">
+                  Função renal (clcr mL/min)
                 </p>
-                <div className="space-y-1">
-                  {drug.ajuste_renal.map((a, i) => (
-                    <div key={i} className="text-sm">
-                      <strong className="text-[#191C1D]">{a.condicao}</strong>
-                      {a.ajuste && <span className="text-[#4a5568]"> — {a.ajuste}</span>}
+                <div className="space-y-1.5">
+                  {drug.ajuste_renal!.map((a, i) => (
+                    <div key={i} className="flex items-baseline gap-3 text-sm">
+                      <span className="font-mono font-bold text-[#005344] shrink-0 min-w-[80px]">
+                        {a.clcr ?? "—"}
+                      </span>
+                      <span className="text-[#191C1D] leading-snug">{a.ajuste}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            {drug.ajuste_hepatico && drug.ajuste_hepatico.length > 0 && (
+            {hasAjusteHepatico && (
               <div>
-                <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-1.5">
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-2">
                   Função hepática
                 </p>
-                <div className="space-y-1">
-                  {drug.ajuste_hepatico.map((a, i) => (
+                <div className="space-y-1.5">
+                  {drug.ajuste_hepatico!.map((a, i) => (
                     <div key={i} className="text-sm">
-                      <strong className="text-[#191C1D]">{a.condicao}</strong>
-                      {a.ajuste && <span className="text-[#4a5568]"> — {a.ajuste}</span>}
+                      <strong className="text-[#191C1D]">{a.contexto}:</strong>{" "}
+                      <span className="text-[#4a5568]">{a.ajuste}</span>
                     </div>
                   ))}
                 </div>
@@ -270,7 +361,7 @@ const WhitebookDrug = () => {
         {(drug.gestacao_categoria || drug.gestacao_obs || drug.lactacao) && (
           <Section icon={Baby} title="Gestação e lactação">
             {drug.gestacao_categoria && (
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-50 border border-amber-200 mb-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-50 border border-amber-200 mb-3">
                 <span className="text-[10.5px] font-bold uppercase tracking-wider text-amber-700">
                   Categoria FDA
                 </span>
@@ -293,10 +384,10 @@ const WhitebookDrug = () => {
         {/* Contraindicações */}
         {drug.contraindicacoes && drug.contraindicacoes.length > 0 && (
           <Section icon={AlertTriangle} title="Contraindicações">
-            <ul className="space-y-1 text-sm text-[#191C1D] leading-relaxed">
+            <ul className="space-y-1.5 text-sm text-[#191C1D] leading-relaxed">
               {drug.contraindicacoes.map((c, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="text-[#94a3b8] shrink-0">•</span>
+                  <span className="text-red-500 shrink-0 font-bold">×</span>
                   <span>{c}</span>
                 </li>
               ))}
@@ -307,19 +398,23 @@ const WhitebookDrug = () => {
         {/* Interações */}
         {drug.interacoes && drug.interacoes.length > 0 && (
           <Section icon={Heart} title="Interações relevantes">
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {drug.interacoes.map((it, i) => (
-                <div key={i} className="p-3 rounded-lg bg-slate-50 border border-slate-100">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <strong className="text-sm text-[#191C1D]">{it.droga}</strong>
-                    {it.severidade && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-100 text-red-700">
-                        {it.severidade}
-                      </span>
-                    )}
-                  </div>
-                  {it.mecanismo && (
-                    <p className="text-xs text-[#4a5568] leading-relaxed">{it.mecanismo}</p>
+                <div key={i} className="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+                  <p className="text-sm font-bold text-[#191C1D] mb-1">
+                    + {it.com}
+                  </p>
+                  {it.efeito && (
+                    <p className="text-xs text-[#4a5568] leading-relaxed mb-1">
+                      <span className="font-semibold text-[#191C1D]">Efeito: </span>
+                      {it.efeito}
+                    </p>
+                  )}
+                  {it.manejo && (
+                    <p className="text-xs text-[#005344] leading-relaxed">
+                      <span className="font-semibold">Manejo: </span>
+                      {it.manejo}
+                    </p>
                   )}
                 </div>
               ))}
@@ -330,30 +425,30 @@ const WhitebookDrug = () => {
         {/* Efeitos adversos */}
         {drug.efeitos_adversos && drug.efeitos_adversos.length > 0 && (
           <Section icon={Info} title="Efeitos adversos">
-            {drug.efeitos_adversos.map((cat, i) => (
-              <div key={i} className="mb-3 last:mb-0">
-                {cat.categoria && (
-                  <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-1">
-                    {cat.categoria}
-                  </p>
-                )}
-                {cat.lista && cat.lista.length > 0 && (
-                  <p className="text-sm text-[#191C1D] leading-relaxed">
-                    {cat.lista.join(" · ")}
-                  </p>
-                )}
-              </div>
-            ))}
+            <div className="space-y-2">
+              {drug.efeitos_adversos.map((ea, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                  {ea.freq && (
+                    <span
+                      className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0 mt-0.5 ${tonOfFreq(ea.freq)}`}
+                    >
+                      {ea.freq}
+                    </span>
+                  )}
+                  <span className="text-sm text-[#191C1D] leading-snug flex-1">{ea.evento}</span>
+                </div>
+              ))}
+            </div>
           </Section>
         )}
 
         {/* Monitoramento */}
         {drug.monitoramento && drug.monitoramento.length > 0 && (
           <Section icon={Beaker} title="Monitoramento">
-            <ul className="space-y-1 text-sm text-[#191C1D]">
+            <ul className="space-y-1.5 text-sm text-[#191C1D]">
               {drug.monitoramento.map((m, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="text-[#94a3b8] shrink-0">•</span>
+                  <span className="text-[#005344] shrink-0">→</span>
                   <span>{m}</span>
                 </li>
               ))}
@@ -429,14 +524,37 @@ function Section({
   );
 }
 
-function DoseCard({ label, content, extra }: { label: string; content: string; extra?: string }) {
+function IndicacaoCard({ ind, pediatrico = false }: { ind: Indicacao; pediatrico?: boolean }) {
+  const linhaPrincipal = [ind.dose, ind.frequencia, ind.via]
+    .filter(Boolean)
+    .join(" · ");
+  const detalhes = [
+    ind.duracao && `Duração: ${ind.duracao}`,
+    ind.max && `Máx: ${ind.max}`,
+    ind.max_dia && `Máx/dia: ${ind.max_dia}`,
+  ].filter(Boolean);
   return (
-    <div className="p-3 rounded-lg bg-gradient-to-br from-[#005344]/4 to-[#C9A84C]/4 border-l-3 border-[#C9A84C]">
-      <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#8a6f26] mb-1">
-        {label}
+    <div
+      className={`p-3.5 rounded-lg border-l-3 ${
+        pediatrico
+          ? "bg-gradient-to-br from-pink-50/40 to-amber-50/40 border-pink-300"
+          : "bg-gradient-to-br from-[#005344]/[0.04] to-[#C9A84C]/[0.04] border-[#C9A84C]"
+      }`}
+    >
+      {ind.para && (
+        <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#8a6f26] mb-1">
+          {ind.para}
+        </p>
+      )}
+      <p className="text-sm text-[#191C1D] leading-snug font-medium">
+        {linhaPrincipal || ind.dose || "—"}
       </p>
-      <p className="text-sm text-[#191C1D] leading-relaxed">{content}</p>
-      {extra && <p className="text-xs text-[#4a5568] mt-1">{extra}</p>}
+      {detalhes.length > 0 && (
+        <p className="text-xs text-[#4a5568] mt-1">{detalhes.join(" · ")}</p>
+      )}
+      {ind.obs && (
+        <p className="text-xs text-[#4a5568] italic mt-1.5 leading-relaxed">{ind.obs}</p>
+      )}
     </div>
   );
 }
