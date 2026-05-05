@@ -94,13 +94,13 @@ const ContentSelector = ({ selectedIds, onSelectionChange, disabled }: ContentSe
               Voce precisa gerar um resumo primeiro
             </h3>
             <p className="text-sm text-[#4a5568] max-w-md mx-auto mb-4 leading-relaxed">
-              Os simulados sao construidos a partir dos resumos/fechamentos que voce salva na biblioteca. Gere pelo menos um em <strong>Estudos com IA</strong> antes de vir pra ca.
+              Os simulados sao construidos a partir dos resumos/fechamentos que voce salva na biblioteca. Gere pelo menos um em <strong>Estudos com PreceptorMED</strong> antes de vir pra ca.
             </p>
             <button
               onClick={() => navigate('/dashboard')}
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#006D5B] text-white text-sm font-bold rounded-lg hover:bg-[#005344] active:scale-95 transition-all shadow-md"
             >
-              Ir para Estudos com IA
+              Ir para Estudos com PreceptorMED
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

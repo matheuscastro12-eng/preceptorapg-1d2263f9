@@ -34,7 +34,7 @@ const examTourSteps: TourStep[] = [
   {
     target: '[data-tour="generate-exam-btn"]',
     title: 'Gerar Prova',
-    description: 'Clique para a IA elaborar as questões no modo simulação.',
+    description: 'Clique para o PreceptorMED elaborar as questões no modo simulação.',
     placement: 'right',
   },
 ];
@@ -280,7 +280,7 @@ const Exam = () => {
                       <p className="text-xs text-slate-400">
                         {hasStartedReceiving
                           ? 'Recebendo conteúdo — as questões aparecerão automaticamente.'
-                          : 'Conectando com a IA, aguarde um momento.'}
+                          : 'Conectando com o PreceptorMED, aguarde um momento.'}
                       </p>
                     </div>
                   </div>

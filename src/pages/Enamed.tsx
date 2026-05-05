@@ -163,7 +163,7 @@ const Enamed = () => {
                   </h1>
                   <p className="text-sm text-[#4a5568] mt-3 max-w-[52ch] leading-relaxed">
                     Banco oficial INEP, simulado completo cronometrado e questões inéditas
-                    geradas por IA — tudo num só lugar.
+                    geradas por PreceptorMED — tudo num só lugar.
                   </p>
                 </header>
 
@@ -256,11 +256,11 @@ const Enamed = () => {
                   </div>
                 </section>
 
-                {/* ── Questões inéditas IA ── */}
+                {/* ── Questões inéditas PreceptorMED ── */}
                 <section>
                   <div className="flex items-baseline justify-between mb-3">
                     <label className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a5568] inline-flex items-center gap-2">
-                      ③ Questões inéditas IA
+                      ③ Questões inéditas PreceptorMED
                       <span className="text-[9.5px] font-medium normal-case tracking-normal text-[#94a3b8]">
                         geradas por Gemini 2.5
                       </span>
@@ -276,7 +276,7 @@ const Enamed = () => {
                         <MI name="auto_awesome" fill className="text-[22px] text-[#C9A84C]" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-['Manrope'] font-bold text-[15px]">Simulado IA · 50 questões</h4>
+                        <h4 className="font-['Manrope'] font-bold text-[15px]">Simulado PreceptorMED · 50 questões</h4>
                         <p className="text-[12px] text-white/70 mt-0.5">
                           Inéditas, padrão ENAMED/Revalida — diversidade real de cenários.
                         </p>
@@ -292,7 +292,7 @@ const Enamed = () => {
                     <label className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a5568] inline-flex items-center gap-2">
                       ④ Estudo por área
                       <span className="text-[9.5px] font-medium normal-case tracking-normal text-[#94a3b8]">
-                        20 questões IA na especialidade
+                        20 questões PreceptorMED na especialidade
                       </span>
                     </label>
                   </div>
@@ -308,7 +308,7 @@ const Enamed = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-['Manrope'] font-bold text-[13px] text-[#191C1D] truncate">{label}</p>
-                          <p className="text-[10px] text-[#94a3b8] uppercase tracking-wider">20 q · IA</p>
+                          <p className="text-[10px] text-[#94a3b8] uppercase tracking-wider">20 q · PreceptorMED</p>
                         </div>
                         <MI name="chevron_right" className="text-[18px] text-[#94a3b8] group-hover:text-[#005344] group-hover:translate-x-0.5 transition-all" />
                       </button>
@@ -346,7 +346,7 @@ const Enamed = () => {
                     <br />de cada vez.
                   </h1>
                   <p className="text-sm text-[#4a5568] mt-3 max-w-[52ch] leading-relaxed">
-                    20 questões inéditas geradas por IA, calibradas para o padrão ENAMED da
+                    20 questões inéditas geradas por PreceptorMED, calibradas para o padrão ENAMED da
                     área escolhida.
                   </p>
                 </header>
@@ -413,7 +413,7 @@ const Enamed = () => {
           </>
         )}
 
-        {/* ═══════════════════════ IA GENERATION MODE ═══════════════════════ */}
+        {/* ═══════════════════════ PreceptorMED GENERATION MODE ═══════════════════════ */}
         {isIaMode && (generating || resultado || isComplete) && (
           <>
             <div className="flex items-center gap-3 mb-4 animate-fade-up">
@@ -422,7 +422,7 @@ const Enamed = () => {
               </button>
               <div className="h-4 w-px bg-slate-200" />
               <span className="text-sm font-semibold text-[#191c1d]">
-                ENAMED IA {selectedArea ? `— ${AREA_LABELS[selectedArea]}` : '— Simulado'}
+                ENAMED PreceptorMED {selectedArea ? `— ${AREA_LABELS[selectedArea]}` : '— Simulado'}
               </span>
             </div>
             <div className="flex flex-col lg:flex-row gap-4 min-h-[50vh] lg:h-[calc(100vh-10rem)]">
@@ -438,7 +438,7 @@ const Enamed = () => {
               {resultado && (
                 <ContextChat
                   context={resultado}
-                  contextLabel="simulado ENAMED IA"
+                  contextLabel="simulado ENAMED PreceptorMED"
                   suggestions={enamedChatSuggestions}
                 />
               )}

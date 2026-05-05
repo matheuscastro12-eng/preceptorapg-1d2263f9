@@ -298,7 +298,7 @@ const ScribeNova = () => {
                   className="mt-0.5 w-4 h-4 accent-[#005344]"
                 />
                 <span className="text-sm text-[#191C1D] leading-relaxed">
-                  Paciente consentiu com <strong>uso de IA</strong> para
+                  Paciente consentiu com <strong>uso do PreceptorMED</strong> para
                   estruturar transcrição em prontuário (Google Gemini, dado
                   trafega criptografado).
                 </span>
@@ -317,7 +317,7 @@ const ScribeNova = () => {
                   <span className="text-sm text-[#191C1D] leading-relaxed">
                     Sou médico/residente e <strong>assumo responsabilidade integral</strong>{" "}
                     pelo conteúdo final do prontuário (CFM 1.821/2007 e
-                    2.299/2021). A IA é ferramenta de apoio à documentação.
+                    2.299/2021). O PreceptorMED é ferramenta de apoio à documentação.
                   </span>
                 </label>
               </div>
@@ -384,7 +384,7 @@ const ScribeNova = () => {
             <h3 className="font-['Manrope'] font-bold text-lg text-[#191C1D] mb-1">
               {uploadProgress === "creating" && "Criando consulta…"}
               {uploadProgress === "uploading" && "Enviando áudio criptografado…"}
-              {uploadProgress === "starting" && "Iniciando transcrição IA…"}
+              {uploadProgress === "starting" && "Iniciando transcrição PreceptorMED…"}
             </h3>
             <p className="text-sm text-[#4a5568] leading-relaxed">
               {audioDuration > 0 && (

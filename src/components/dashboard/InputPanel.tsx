@@ -105,7 +105,7 @@ const InputPanel = ({
             .
           </h1>
           <p className="text-sm text-[#4a5568] mt-3 max-w-[52ch] leading-relaxed">
-            Tema, objetivos opcionais e estrutura. A IA escreve em ~20s, com
+            Tema, objetivos opcionais e estrutura. O PreceptorMED escreve em ~20s, com
             referências indexadas e profundidade técnica.
           </p>
         </header>

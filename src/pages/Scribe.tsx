@@ -88,7 +88,7 @@ const Scribe = () => {
             <h1 className="font-['Manrope'] font-bold text-3xl sm:text-4xl tracking-[-0.025em] leading-[1.05] text-[#191C1D]">
               Grave a consulta,{" "}
               <em className="not-italic font-medium text-[#8a6f26]">
-                a IA monta o prontuário
+                o PreceptorMED monta o prontuário
               </em>
               .
             </h1>
@@ -141,7 +141,7 @@ const Scribe = () => {
         <div className="mt-10 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-900 leading-relaxed">
-            <strong>Responsabilidade médica:</strong> a IA é ferramenta de
+            <strong>Responsabilidade médica:</strong> o PreceptorMED é ferramenta de
             apoio à documentação. O médico revisa e assina cada prontuário —
             é responsável pelo conteúdo final perante CFM (Resoluções
             1.821/2007 e 2.299/2021). Consentimento do paciente registrado

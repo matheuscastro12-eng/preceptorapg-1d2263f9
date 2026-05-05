@@ -3,7 +3,7 @@ import { useOnlineUsers, type OnlineUser } from "@/hooks/useOnlineUsers";
 import { ChevronDown, ChevronUp, Users, Wifi, WifiOff } from "lucide-react";
 
 const PAGE_LABELS: Array<[RegExp, string]> = [
-  [/^\/dashboard/, "Estudo com IA"],
+  [/^\/dashboard/, "Estudo com PreceptorMED"],
   [/^\/menu/, "Início"],
   [/^\/library/, "Biblioteca"],
   [/^\/exam/, "Simulado"],

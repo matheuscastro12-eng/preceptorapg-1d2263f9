@@ -53,7 +53,7 @@ const ProvaSimulado = () => {
   const [submitting, setSubmitting] = useState(false);
   // Modo estudo: revela gabarito + justificativa imediatamente apos marcar
   const [studyMode, setStudyMode] = useState(false);
-  // Estado de IA explicando questoes (por questao_id)
+  // Estado de PreceptorMED explicando questoes (por questao_id)
   const [explainingQid, setExplainingQid] = useState<string | null>(null);
   // Justificativas locais atualizadas (cache otimista)
   const [localJust, setLocalJust] = useState<Record<string, { text: string; origem: "ia" | "pdf" }>>({});
@@ -159,7 +159,7 @@ const ProvaSimulado = () => {
             <Sparkles className="w-7 h-7 text-[#005344] animate-pulse" />
           </div>
           <h1 className="font-['Manrope'] font-bold text-xl text-[#191C1D] mb-2">
-            IA extraindo as primeiras questões…
+            PreceptorMED extraindo as primeiras questões…
           </h1>
           <p className="text-sm text-[#4a5568] leading-relaxed">
             Em alguns segundos elas vão aparecer aqui pra você começar.
@@ -219,7 +219,7 @@ const ProvaSimulado = () => {
       if (!cached) {
         toast({
           title: "Explicação gerada",
-          description: "A IA produziu uma análise detalhada da questão.",
+          description: "O PreceptorMED produziu uma análise detalhada da questão.",
         });
       }
     } catch (e) {
@@ -451,7 +451,7 @@ const ProvaSimulado = () => {
                             <summary className="cursor-pointer text-xs font-semibold text-[#005344] inline-flex items-center gap-1">
                               <Sparkles className="w-3.5 h-3.5 text-[#C9A84C]" />
                               {just.origem === "ia"
-                                ? "Justificativa (gerada por IA)"
+                                ? "Justificativa (gerada por PreceptorMED)"
                                 : "Justificativa (do PDF)"}
                             </summary>
                             <div className="mt-2 p-3 rounded-lg bg-gradient-to-br from-[#005344]/5 to-[#C9A84C]/5 border-l-2 border-[#C9A84C] text-sm text-[#191C1D] leading-relaxed whitespace-pre-wrap">
@@ -488,7 +488,7 @@ const ProvaSimulado = () => {
                           ) : (
                             <>
                               <Wand2 className="w-3.5 h-3.5 text-[#C9A84C]" />
-                              Explicar com IA
+                              Explicar com PreceptorMED
                             </>
                           )}
                         </button>
@@ -544,7 +544,7 @@ const ProvaSimulado = () => {
               <span className="font-mono">
                 {currentIdx + 1}/{total}
                 {isLive && prova.status === "extracting" && (
-                  <span className="text-[#8a6f26]"> · IA carregando mais…</span>
+                  <span className="text-[#8a6f26]"> · PreceptorMED carregando mais…</span>
                 )}
               </span>
               <span className="inline-flex items-center gap-1">
@@ -657,7 +657,7 @@ const ProvaSimulado = () => {
                 })}
               </div>
 
-              {/* Painel modo-estudo: gabarito + justificativa + IA */}
+              {/* Painel modo-estudo: gabarito + justificativa + PreceptorMED */}
               {studyMode && answers[q.id] && (
                 <StudyPanel
                   questao={q}
@@ -802,7 +802,7 @@ function StudyPanel({
                   <>Justificativa do PDF</>
                 ) : (
                   <>
-                    <Sparkles className="w-3 h-3" /> Explicação por IA
+                    <Sparkles className="w-3 h-3" /> Explicação por PreceptorMED
                   </>
                 )}
               </span>
@@ -835,12 +835,12 @@ function StudyPanel({
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                IA pensando…
+                PreceptorMED pensando…
               </>
             ) : (
               <>
                 <Wand2 className="w-4 h-4 text-[#C9A84C]" />
-                Pedir explicação detalhada à IA
+                Pedir explicação detalhada ao PreceptorMED
               </>
             )}
           </button>

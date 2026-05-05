@@ -167,7 +167,7 @@ const WhitebookAiDrawer = ({ scope, open, onClose }: Props) => {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#8a6f26]">
-              Pergunte à IA
+              Pergunte ao PreceptorMED
             </p>
             <h3 className="font-['Manrope'] font-bold text-base text-[#191C1D] truncate">
               {scope?.label ?? "Whitebook"}
@@ -278,7 +278,7 @@ const WhitebookAiDrawer = ({ scope, open, onClose }: Props) => {
           </form>
           <p className="text-[10px] text-[#94a3b8] mt-2 inline-flex items-center gap-1">
             <Sparkles className="w-3 h-3" />
-            IA pode errar. Sempre confirme com a bula/diretriz.
+            PreceptorMED pode errar. Sempre confirme com a bula/diretriz.
           </p>
         </div>
       </div>

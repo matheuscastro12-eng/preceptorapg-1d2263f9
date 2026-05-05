@@ -278,7 +278,7 @@ const ScientificStudio = () => {
               Curadoria Científica
             </h1>
             <p className="text-sm text-slate-400 max-w-sm mx-auto">
-              Orientação de IA para seus trabalhos acadêmicos. Escolha o tipo de documento.
+              Orientação do PreceptorMED para seus trabalhos acadêmicos. Escolha o tipo de documento.
             </p>
           </div>
 

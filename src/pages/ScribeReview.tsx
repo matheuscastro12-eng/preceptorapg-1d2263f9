@@ -309,8 +309,8 @@ const ScribeReview = () => {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-[#191C1D] inline-flex items-center gap-2">
                 {consulta.status === "transcrevendo"
-                  ? "IA transcrevendo o áudio…"
-                  : "IA estruturando em SOAP…"}
+                  ? "PreceptorMED transcrevendo o áudio…"
+                  : "PreceptorMED estruturando em SOAP…"}
                 <span className="font-mono text-[11px] text-[#4a5568]">
                   {Math.floor(stuckSeconds / 60)}:{String(stuckSeconds % 60).padStart(2, "0")}
                 </span>
@@ -360,7 +360,7 @@ const ScribeReview = () => {
           <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-start gap-3">
             <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-900 leading-relaxed">
-              <strong>Você é responsável pelo conteúdo final.</strong> A IA
+              <strong>Você é responsável pelo conteúdo final.</strong> O PreceptorMED
               produz rascunho a partir da transcrição. Revise cada campo,
               edite o que precisar, marque as seções como revisadas e assine.
             </p>
@@ -403,7 +403,7 @@ const ScribeReview = () => {
                 />
               )}
               <p className="text-[11px] text-[#94a3b8] leading-relaxed">
-                Edite o transcript se a IA errou termos ou nomes. As alterações
+                Edite o transcript se o PreceptorMED errou termos ou nomes. As alterações
                 são salvas ao clicar "Salvar" ou "Aprovar".
               </p>
             </div>
@@ -854,7 +854,7 @@ const ScribeReview = () => {
                     )}
                   </div>
                   <p className="text-[10.5px] text-amber-700 mt-1.5 leading-relaxed">
-                    <strong>Rascunho gerado por IA.</strong> O médico responsável deve
+                    <strong>Rascunho gerado por PreceptorMED.</strong> O médico responsável deve
                     revisar dose, frequência e duração de cada item antes de prescrever.
                   </p>
                 </div>

@@ -385,7 +385,7 @@ function CreateDeckPanel({
           <em className="not-italic font-medium text-[#8a6f26]">de um tema</em>.
         </h1>
         <p className="text-sm text-[#4a5568] mb-8 max-w-[52ch] leading-relaxed">
-          Informe o tema clínico e a IA gera 10–20 flashcards cobrindo definição,
+          Informe o tema clínico e o PreceptorMED gera 10–20 flashcards cobrindo definição,
           fisiopatologia, diagnóstico, conduta e pontos de prova.
         </p>
 
@@ -431,7 +431,7 @@ function CreateDeckPanel({
               {generating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  IA gerando flashcards (~25s)...
+                  PreceptorMED gerando flashcards (~25s)...
                 </>
               ) : (
                 <>

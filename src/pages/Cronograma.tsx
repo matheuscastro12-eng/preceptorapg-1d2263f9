@@ -48,7 +48,7 @@ export default function Cronograma() {
               Cronograma personalizado
             </h1>
             <p className="text-base text-[#4a5568] leading-relaxed max-w-md mx-auto">
-              Coloque sua próxima prova e tópicos. A IA monta um plano dia-a-dia que liga fechamentos,
+              Coloque sua próxima prova e tópicos. O PreceptorMED monta um plano dia-a-dia que liga fechamentos,
               flashcards e simulados — você só executa.
             </p>
           </div>
@@ -74,7 +74,7 @@ export default function Cronograma() {
               Pra qual prova você está estudando?
             </h1>
             <p className="text-base text-[#4a5568] leading-relaxed max-w-xl mx-auto">
-              Em 30 segundos a IA monta um plano dia-a-dia ligando fechamentos, flashcards e questões
+              Em 30 segundos o PreceptorMED monta um plano dia-a-dia ligando fechamentos, flashcards e questões
               ENAMED. Você só executa.
             </p>
           </div>
@@ -83,7 +83,7 @@ export default function Cronograma() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             {[
               { n: "1", t: "Conta sua prova", d: "Nome, data e tópicos que vão cair" },
-              { n: "2", t: "IA monta o plano", d: "Distribui tudo em fases: aprendizado → revisão" },
+              { n: "2", t: "PreceptorMED monta o plano", d: "Distribui tudo em fases: aprendizado → revisão" },
               { n: "3", t: "Executa e marca", d: "Cada atividade já abre a feature certa" },
             ].map((s) => (
               <div key={s.n} className="bg-white rounded-2xl border border-slate-200 p-5">

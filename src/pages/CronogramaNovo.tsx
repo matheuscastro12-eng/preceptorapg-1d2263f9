@@ -182,7 +182,7 @@ export default function CronogramaNovo() {
               O que vai cair?
             </h1>
             <p className="text-sm text-[#4a5568] mb-6 leading-relaxed">
-              Lista os tópicos do jeito que vier — abreviações, siglas, mistura de áreas. A IA normaliza tudo.
+              Lista os tópicos do jeito que vier — abreviações, siglas, mistura de áreas. O PreceptorMED normaliza tudo.
             </p>
 
             <div>
@@ -285,7 +285,7 @@ export default function CronogramaNovo() {
                 {submitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    IA montando seu plano (~30s)...
+                    PreceptorMED montando seu plano (~30s)...
                   </>
                 ) : (
                   <>

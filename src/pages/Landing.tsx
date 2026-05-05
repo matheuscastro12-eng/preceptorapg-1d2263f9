@@ -386,7 +386,7 @@ const Landing = () => {
                 },
                 {
                   title: 'Chat com PubMed integrado',
-                  desc: 'IA busca artigos na PubMed, resume em português e cita fontes inline. Não é busca cega. É síntese com evidência.',
+                  desc: 'PreceptorMED busca artigos na PubMed, resume em português e cita fontes inline. Não é busca cega. É síntese com evidência.',
                   meta: 'Gemini 2.5 + E-utilities',
                 },
                 {
@@ -531,7 +531,7 @@ const Landing = () => {
                     Chat com PubMed
                   </h4>
                   <p className="text-sm text-slate-600 leading-relaxed">
-                    IA acadêmica que busca, resume e cita artigos do PubMed em português. Respostas baseadas em evidência, não em achismo.
+                    PreceptorMED busca, resume e cita artigos do PubMed em português. Respostas baseadas em evidência, não em achismo.
                   </p>
                 </div>
 
@@ -783,7 +783,7 @@ const Landing = () => {
               {/* Depoimento 2 — João */}
               <Reveal as="article" delay={120} className="flex flex-col">
                 <p className="text-[15px] text-white/85 leading-relaxed mb-6">
-                  Eu não tenho dúvidas que o PreceptorMED é o futuro da medicina. As respostas oferecidas pela IA são de longe as mais detalhadas. Não somente isso, a plataforma sempre utiliza referências nas quais eu confio. Me surpreende também a constante expansão das ferramentas, que além de me ajudar nos estudos, também me auxilia na realização de trabalhos científicos.
+                  Eu não tenho dúvidas que o PreceptorMED é o futuro da medicina. As respostas oferecidas pelo PreceptorMED são de longe as mais detalhadas. Não somente isso, a plataforma sempre utiliza referências nas quais eu confio. Me surpreende também a constante expansão das ferramentas, que além de me ajudar nos estudos, também me auxilia na realização de trabalhos científicos.
                   <br /><br />
                   <span className="font-semibold text-brand-gold">Se você tiver a oportunidade de assinar, assine.</span>
                 </p>
@@ -1178,7 +1178,7 @@ const Landing = () => {
               <span className="text-xl font-bold text-slate-900" style={{ fontFamily: "'Manrope', sans-serif" }}>PreceptorMED</span>
             </div>
             <p className="max-w-xs text-sm text-slate-500">
-              © {new Date().getFullYear()} PreceptorMED. Plataforma de estudo médico com IA.
+              © {new Date().getFullYear()} PreceptorMED. Plataforma de estudo médico com PreceptorMED.
             </p>
           </div>
 

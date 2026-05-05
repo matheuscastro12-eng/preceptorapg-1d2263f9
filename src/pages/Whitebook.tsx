@@ -56,7 +56,7 @@ const Whitebook = () => {
           </p>
           <h1 className="font-['Manrope'] font-bold text-3xl sm:text-4xl tracking-[-0.025em] leading-[1.05] text-[#191C1D]">
             Sua referência médica de bolso, com{" "}
-            <em className="not-italic font-medium text-[#8a6f26]">IA acoplada</em>.
+            <em className="not-italic font-medium text-[#8a6f26]">PreceptorMED acoplado</em>.
           </h1>
         </div>
 
@@ -158,7 +158,7 @@ const Whitebook = () => {
         className="fixed bottom-6 left-6 z-30 inline-flex items-center gap-2 px-4 h-12 rounded-full bg-gradient-to-br from-[#003D32] via-[#005344] to-[#006D5B] text-white text-sm font-bold shadow-[0_8px_24px_-4px_rgba(0,109,91,0.45)] hover:shadow-[0_12px_28px_-4px_rgba(0,109,91,0.55)] transition-shadow"
       >
         <Wand2 className="w-4 h-4 text-[#C9A84C]" />
-        Pergunte à IA
+        Pergunte ao PreceptorMED
       </button>
 
       <WhitebookAiDrawer

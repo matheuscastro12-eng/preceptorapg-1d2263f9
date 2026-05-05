@@ -43,7 +43,7 @@ const sidebarNavGroups: NavGroup[] = [
     items: [
       { icon: 'dashboard', label: 'Início', path: '/menu' },
       { icon: 'event_note', label: 'Cronograma', path: '/cronograma', matchPaths: ['/cronograma'] },
-      { icon: 'auto_awesome', label: 'Estudo com IA', path: '/dashboard' },
+      { icon: 'auto_awesome', label: 'Estudo com PreceptorMED', path: '/dashboard' },
     ],
   },
   {
@@ -292,7 +292,7 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
             <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-brand-gold/15 blur-2xl pointer-events-none" />
             <div className="relative">
               <p className="text-xs font-bold text-brand-gold mb-1">✦ Desbloqueie tudo</p>
-              <p className="text-[11px] text-white/80 mb-3 leading-relaxed">Resumos ilimitados, simulados IA, biblioteca pessoal.</p>
+              <p className="text-[11px] text-white/80 mb-3 leading-relaxed">Resumos ilimitados, simulados PreceptorMED, biblioteca pessoal.</p>
               <button
                 onClick={() => navigate('/pricing')}
                 className="w-full text-xs font-semibold text-brand-primary-darker bg-brand-gold py-2 rounded-lg hover:bg-brand-gold/90 transition-colors"

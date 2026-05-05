@@ -59,7 +59,7 @@ function splitIntoSections(markdown: string): { title: string; content: string }
 
 const dashboardTourSteps: TourStep[] = [
   { target: '[data-tour="tema-input"]',    title: 'Tema do Resumo',       description: 'Digite o tema central. Use os chips de sugestão ou escreva livremente.', placement: 'right' },
-  { target: '[data-tour="objetivos-input"]', title: 'Objetivos (Opcional)', description: 'Liste objetivos específicos ou deixe em branco para a IA sugerir.', placement: 'right' },
+  { target: '[data-tour="objetivos-input"]', title: 'Objetivos (Opcional)', description: 'Liste objetivos específicos ou deixe em branco para o PreceptorMED sugerir.', placement: 'right' },
   { target: '[data-tour="mode-toggle"]',   title: 'Tipo de Conteúdo',     description: 'Escolha entre Resumo (conteúdo focado) ou Seminário (apresentação completa).', placement: 'right' },
   { target: '[data-tour="generate-btn"]',  title: 'Gerar Conteúdo',       description: 'Clique para iniciar. O conteúdo aparecerá em tempo real no painel ao lado.', placement: 'right' },
 ];
@@ -271,7 +271,7 @@ const Dashboard = () => {
         // Erro mid-stream do Gemini (quota/key/etc) — surfaca a mensagem
         // traduzida que o backend ja preparou.
         toast({
-          title: finishMeta.error_code === 429 ? 'Quota da IA esgotada' : 'Erro do provedor de IA',
+          title: finishMeta.error_code === 429 ? 'Quota do PreceptorMED esgotada' : 'Erro do provedor PreceptorMED',
           description: finishMeta.message ?? 'Erro desconhecido do Gemini. Cheque os logs.',
           variant: 'destructive',
         });
@@ -492,7 +492,7 @@ const Dashboard = () => {
                         </span>
                         <span>
                           <span className="material-symbols-outlined">auto_awesome</span>
-                          Gerado por IA
+                          Gerado por PreceptorMED
                         </span>
                       </div>
                     </header>
@@ -696,7 +696,7 @@ const Dashboard = () => {
                       </span>
                       <span>
                         <span className="material-symbols-outlined">auto_awesome</span>
-                        Gerado por IA
+                        Gerado por PreceptorMED
                       </span>
                     </div>
                   </header>
@@ -836,7 +836,7 @@ const Dashboard = () => {
                     Pérola
                   </p>
                   <p className="text-[13px] text-[#191C1D] leading-relaxed">
-                    Objetivos em <strong>linguagem técnica</strong> guiam a IA a
+                    Objetivos em <strong>linguagem técnica</strong> guiam o PreceptorMED a
                     estruturar diretrizes em vez de enciclopédia. Ex: prefira{' '}
                     <em>"Critérios de Framingham"</em> a <em>"como diagnosticar IC"</em>.
                   </p>

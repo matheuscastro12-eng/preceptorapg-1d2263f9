@@ -66,7 +66,7 @@ export default function RevenueIntelligence() {
         className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-500 hover:to-blue-500 transition-all shadow-lg shadow-purple-900/30"
       >
         <Sparkles className="w-3.5 h-3.5" />
-        Analisar com IA
+        Analisar com PreceptorMED
       </button>
 
       {open && (

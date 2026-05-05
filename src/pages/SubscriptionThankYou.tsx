@@ -166,7 +166,7 @@ export default function SubscriptionThankYou() {
               {[
                 {
                   icon: 'auto_awesome',
-                  title: 'Resumos com IA',
+                  title: 'Resumos com PreceptorMED',
                   desc: 'Gere resumos estruturados sobre qualquer tema médico em segundos.',
                   action: () => navigate('/dashboard'),
                   color: '#006D5B',
@@ -176,7 +176,7 @@ export default function SubscriptionThankYou() {
                 {
                   icon: 'chat_bubble',
                   title: 'Preceptor Chat',
-                  desc: 'Tire dúvidas com IA especializada em medicina baseada em evidências.',
+                  desc: 'Tire dúvidas com PreceptorMED especializado em medicina baseada em evidências.',
                   action: () => navigate('/ai-chat'),
                   color: '#005344',
                   bg: '#d0ebe4',

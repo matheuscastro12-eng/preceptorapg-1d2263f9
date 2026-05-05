@@ -100,7 +100,7 @@ const ScribeTosModal = () => {
             <p>
               Ferramenta de apoio à documentação clínica que transcreve áudio
               de consulta e estrutura o conteúdo em prontuário SOAP. Toda
-              saída da IA é considerada <strong>rascunho</strong> até a
+              saída do PreceptorMED é considerada <strong>rascunho</strong> até a
               revisão e assinatura eletrônica do médico.
             </p>
           </div>
@@ -111,7 +111,7 @@ const ScribeTosModal = () => {
             </h3>
             <p>
               O médico é o responsável legal pelo conteúdo do prontuário,
-              independentemente da participação da IA. As resoluções do CFM
+              independentemente da participação do PreceptorMED. As resoluções do CFM
               que regem prontuário (1.821/2007) e uso de TI em medicina
               (2.299/2021) continuam aplicáveis. Você revisa cada campo,
               edita o que for necessário e assina antes de salvar.
@@ -141,7 +141,7 @@ const ScribeTosModal = () => {
               Prescrição
             </h3>
             <p>
-              A IA pode <strong>sugerir</strong> rascunho de prescrição
+              O PreceptorMED pode <strong>sugerir</strong> rascunho de prescrição
               baseado no que você disse durante a consulta. <strong>Nunca</strong>{" "}
               prescreve por conta própria. Cada item da prescrição precisa
               ser revisado quanto a dose, frequência, duração e
@@ -209,7 +209,7 @@ const ScribeTosModal = () => {
                 className="mt-0.5 w-4 h-4 accent-[#005344]"
               />
               <span className="text-sm text-amber-900">
-                Entendo que <strong>tudo que a IA gera é rascunho</strong>,
+                Entendo que <strong>tudo que o PreceptorMED gera é rascunho</strong>,
                 inclusive sugestões de prescrição. Reviso cada campo antes
                 de assinar e exportar.
               </span>

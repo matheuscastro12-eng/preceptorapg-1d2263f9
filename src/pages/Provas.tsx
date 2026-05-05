@@ -37,7 +37,7 @@ const STATUS_CONFIG: Record<
   { label: string; color: string; icon: typeof Loader2 }
 > = {
   uploading:    { label: "Enviando…",        color: "bg-slate-100 text-slate-600 border-slate-200",   icon: Hourglass },
-  extracting:   { label: "IA processando…",  color: "bg-blue-50 text-blue-700 border-blue-200",       icon: Sparkles  },
+  extracting:   { label: "PreceptorMED processando…",  color: "bg-blue-50 text-blue-700 border-blue-200",       icon: Sparkles  },
   reviewing:    { label: "Revisar",          color: "bg-amber-50 text-amber-700 border-amber-200",    icon: Edit3     },
   ready:        { label: "Pronta",           color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: CheckCircle2 },
   failed:       { label: "Falhou",           color: "bg-red-50 text-red-700 border-red-200",          icon: CircleAlert },
@@ -97,13 +97,13 @@ const Provas = () => {
             <h1 className="font-['Manrope'] font-bold text-3xl sm:text-4xl tracking-[-0.025em] leading-[1.05] text-[#191C1D]">
               Sobe a prova,{" "}
               <em className="not-italic font-medium text-[#8a6f26]">
-                a IA monta o simulado
+                o PreceptorMED monta o simulado
               </em>
               .
             </h1>
             <p className="text-sm text-[#4a5568] mt-2 max-w-[58ch] leading-relaxed">
               Envie um PDF de qualquer prova (residência, faculdade, ENAMED).
-              A IA extrai as questões, mantém o gabarito original e roda como
+              O PreceptorMED extrai as questões, mantém o gabarito original e roda como
               simulado online com correção e justificativa.
             </p>
           </div>
@@ -175,7 +175,7 @@ const Provas = () => {
             if (live) {
               toast({
                 title: "Modo expresso ativo",
-                description: "Vai começando — a IA continua extraindo no fundo.",
+                description: "Vai começando — o PreceptorMED continua extraindo no fundo.",
               });
               navigate(`/provas/${provaId}/simulado?live=1`);
             } else {
@@ -402,7 +402,7 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
         Nenhuma prova importada ainda
       </h3>
       <p className="text-sm text-[#4a5568] max-w-md mx-auto leading-relaxed mb-6">
-        Suba o PDF de uma prova de residência, ENAMED ou da sua faculdade. A IA
+        Suba o PDF de uma prova de residência, ENAMED ou da sua faculdade. O PreceptorMED
         extrai as questões com o gabarito original e monta um simulado online no
         nosso formato.
       </p>
@@ -422,7 +422,7 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
           },
           {
             n: "02",
-            t: "IA extrai e revisa",
+            t: "PreceptorMED extrai e revisa",
             d: "Gemini 2.5 Vision lê tudo em ~30s e mantém o texto literal da prova.",
           },
           {
@@ -708,7 +708,7 @@ function UploadModal({
             </div>
           </div>
 
-          {/* Step 4: justificativa IA */}
+          {/* Step 4: justificativa PreceptorMED */}
           <div>
             <label className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-200 cursor-pointer hover:border-slate-300 has-[:checked]:border-[#006D5B] has-[:checked]:bg-[#006D5B]/5 transition-colors">
               <input
@@ -721,10 +721,10 @@ function UploadModal({
               <div>
                 <p className="text-sm font-bold text-[#191C1D] flex items-center gap-1.5">
                   <Sparkles className="w-4 h-4 text-[#C9A84C]" />
-                  Gerar justificativa via IA
+                  Gerar justificativa via PreceptorMED
                 </p>
                 <p className="text-xs text-[#4a5568] leading-relaxed mt-0.5">
-                  Para questões onde o PDF não tem gabarito comentado, a IA gera
+                  Para questões onde o PDF não tem gabarito comentado, o PreceptorMED gera
                   uma explicação acadêmica baseada no enunciado e no gabarito.
                 </p>
               </div>
@@ -776,8 +776,8 @@ function UploadModal({
                       : stage === "uploading"
                         ? "Enviando arquivo…"
                         : chunkProgress
-                          ? `IA processando lote ${chunkProgress.done}/${chunkProgress.total}…`
-                          : "IA estruturando questões…"}
+                          ? `PreceptorMED processando lote ${chunkProgress.done}/${chunkProgress.total}…`
+                          : "PreceptorMED estruturando questões…"}
                   </p>
                   <p className="text-xs text-[#4a5568] mt-0.5">
                     {stage === "extracting_text"

@@ -14,8 +14,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const menuTourSteps: TourStep[] = [
-  { target: '[data-tour="estudo"]',      title: 'Estudo com IA',       description: 'Gere seu primeiro resumo! Escolha um tema e a IA cria conteudo completo para voce estudar.', placement: 'bottom' },
-  { target: '[data-tour="preceptoria"]', title: 'Preceptor Chat',      description: 'Tire duvidas com a IA. Pergunte qualquer coisa sobre medicina — e como ter um preceptor 24h.', placement: 'bottom' },
+  { target: '[data-tour="estudo"]',      title: 'Estudo com PreceptorMED', description: 'Gere seu primeiro resumo! Escolha um tema e o PreceptorMED cria conteudo completo para voce estudar.', placement: 'bottom' },
+  { target: '[data-tour="preceptoria"]', title: 'Preceptor Chat',      description: 'Tire duvidas com o PreceptorMED. Pergunte qualquer coisa sobre medicina — e como ter um preceptor 24h.', placement: 'bottom' },
   { target: '[data-tour="pratica"]',     title: 'ENAMED & Simulados',  description: 'Pratique com questoes reais do ENAMED e simulados para testar seu conhecimento.', placement: 'bottom' },
   { target: '[data-tour="flashcards"]',  title: 'Flashcards',          description: 'Crie flashcards automaticos. Revise com repeticao espacada para fixar conteudo.', placement: 'bottom' },
   { target: '[data-tour="biblioteca"]',  title: 'Sua Biblioteca',      description: 'Todos seus resumos ficam aqui. Acesse, favorite e exporte seus materiais.', placement: 'top' },
@@ -161,7 +161,7 @@ const MainMenu = () => {
               <div className="bg-white/15 backdrop-blur-sm border border-white/10 w-12 h-12 rounded-xl flex items-center justify-center mb-5">
                 <MI name="auto_awesome" fill className="text-white text-[22px]" />
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight">Estudo com IA</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight">Estudo com PreceptorMED</h3>
               <p className="text-white/80 text-sm leading-relaxed mb-6 max-w-sm">
                 Gere resumos estruturados e roteiros de seminário sobre qualquer tema médico.
               </p>
@@ -187,7 +187,7 @@ const MainMenu = () => {
               </div>
               <h3 className="text-xl sm:text-2xl font-bold text-brand-ink mb-2 tracking-tight">Preceptor Chat</h3>
               <p className="text-brand-ink-2 text-sm leading-relaxed mb-6 max-w-sm">
-                Tire dúvidas com IA em tempo real. Respostas com referências do PubMed.
+                Tire dúvidas com PreceptorMED em tempo real. Respostas com referências do PubMed.
               </p>
               <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-primary">
                 Abrir chat
@@ -281,7 +281,7 @@ const MainMenu = () => {
                 <MI name="auto_awesome" fill className="text-[22px] text-brand-primary" />
               </div>
               <p className="text-sm font-semibold text-brand-ink">Sua biblioteca está vazia</p>
-              <p className="text-xs text-brand-ink-2 mt-1 mb-4">Gere seu primeiro resumo com IA para começar a estudar.</p>
+              <p className="text-xs text-brand-ink-2 mt-1 mb-4">Gere seu primeiro resumo com PreceptorMED para começar a estudar.</p>
               <button onClick={() => go('/dashboard')} className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-primary-dark text-white text-sm font-semibold rounded-lg hover:bg-brand-primary-darker transition-colors">
                 <MI name="bolt" fill className="text-[14px]" />Gerar primeiro resumo
               </button>

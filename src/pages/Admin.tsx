@@ -844,7 +844,7 @@ const EnamedPopulator = () => {
           Popular Banco ENAMED
         </CardTitle>
         <CardDescription>
-          Gera 50 questões por área (250 total) usando IA no padrão INEP/Revalida. Processo leva ~15-20 minutos.
+          Gera 50 questões por área (250 total) usando PreceptorMED no padrão INEP/Revalida. Processo leva ~15-20 minutos.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

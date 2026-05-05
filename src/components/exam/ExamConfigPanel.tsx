@@ -41,9 +41,9 @@ const ExamConfigPanel = ({
   const stepNivel = next();
 
   const eyebrowLabel = lockedMode === 'caso_clinico'
-    ? 'Caso clínico com IA'
+    ? 'Caso clínico com PreceptorMED'
     : lockedMode === 'prova'
-      ? 'Simulado com IA'
+      ? 'Simulado com PreceptorMED'
       : 'Nova simulação';
 
   const heroTitle = lockedMode === 'caso_clinico' ? (
@@ -70,7 +70,7 @@ const ExamConfigPanel = ({
             {heroTitle}
           </h1>
           <p className="text-sm text-[#4a5568] mt-3 max-w-[52ch] leading-relaxed">
-            Selecione resumos da sua biblioteca, defina o nível e a IA monta um
+            Selecione resumos da sua biblioteca, defina o nível e o PreceptorMED monta um
             simulado personalizado em segundos — com gabarito comentado.
           </p>
         </header>
@@ -279,7 +279,7 @@ const ExamConfigPanel = ({
           </button>
           <p className="text-[11px] text-[#94a3b8] text-center mt-3">
             {generating
-              ? 'A IA está elaborando — aguarde…'
+              ? 'O PreceptorMED está elaborando — aguarde…'
               : isProva
                 ? `Tempo médio · ~${Math.max(10, Math.round(config.quantidade * 0.6))}s · Gemini 2.5`
                 : 'Tempo médio · ~15s · Gemini 2.5'}

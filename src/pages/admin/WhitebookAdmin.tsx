@@ -51,7 +51,7 @@ const WhitebookAdmin = () => {
   const [protocols, setProtocols] = useState<ProtocolRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Form state pra adicionar via IA
+  // Form state pra adicionar via PreceptorMED
   const [rawText, setRawText] = useState("");
   const [fonteUrl, setFonteUrl] = useState("");
   const [fonte, setFonte] = useState("");
@@ -201,7 +201,7 @@ const WhitebookAdmin = () => {
             Curadoria de conteúdo
           </h1>
           <p className="text-sm text-[#4a5568] mt-2 max-w-[60ch]">
-            Cole texto bruto de fonte pública (bula ANVISA, diretriz, PCDT) — IA
+            Cole texto bruto de fonte pública (bula ANVISA, diretriz, PCDT) — PreceptorMED
             estrutura → você revisa → publica. Workflow padrão de provas
             importadas.
           </p>
@@ -239,12 +239,12 @@ const WhitebookAdmin = () => {
           </button>
         </div>
 
-        {/* Form: estruturar via IA */}
+        {/* Form: estruturar via PreceptorMED */}
         <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6 shadow-[0_1px_2px_rgba(25,28,29,0.04)]">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="w-4 h-4 text-[#8a6f26]" />
             <h2 className="text-sm font-bold text-[#191C1D]">
-              Adicionar via IA — modo {mode === "drug" ? "droga" : "protocolo"}
+              Adicionar via PreceptorMED — modo {mode === "drug" ? "droga" : "protocolo"}
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
@@ -270,8 +270,8 @@ const WhitebookAdmin = () => {
             rows={8}
             placeholder={
               mode === "drug"
-                ? "Cole o texto da bula ANVISA aqui (mínimo 100 caracteres). A IA extrai posologia, ajustes, interações, etc."
-                : "Cole o texto da diretriz aqui (mínimo 100 caracteres). A IA extrai critérios diagnósticos, conduta passo-a-passo, exames, red flags."
+                ? "Cole o texto da bula ANVISA aqui (mínimo 100 caracteres). O PreceptorMED extrai posologia, ajustes, interações, etc."
+                : "Cole o texto da diretriz aqui (mínimo 100 caracteres). O PreceptorMED extrai critérios diagnósticos, conduta passo-a-passo, exames, red flags."
             }
             className="w-full p-3 rounded-lg border border-slate-200 text-sm font-mono outline-none focus:border-[#005344] focus:ring-2 focus:ring-[#005344]/15 resize-y"
           />
@@ -287,12 +287,12 @@ const WhitebookAdmin = () => {
               {structuring ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  IA processando…
+                  PreceptorMED processando…
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 text-[#C9A84C]" />
-                  Estruturar com IA
+                  Estruturar com PreceptorMED
                 </>
               )}
             </button>

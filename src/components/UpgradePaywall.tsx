@@ -123,7 +123,7 @@ const UpgradePaywall = ({
 
   // chat-limit variant (full paywall after limit reached)
   const benefits = [
-    { icon: Brain, text: 'Fechamentos ilimitados com IA' },
+    { icon: Brain, text: 'Fechamentos ilimitados com PreceptorMED' },
     { icon: GraduationCap, text: 'Simulados estilo residência' },
     { icon: MessageSquare, text: 'Chat acadêmico sem limites' },
     { icon: BookOpen, text: 'Biblioteca pessoal completa' },

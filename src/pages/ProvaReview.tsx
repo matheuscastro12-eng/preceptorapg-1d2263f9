@@ -268,7 +268,7 @@ const ProvaReview = () => {
             <Loader2 className="w-5 h-5 text-[#005344] animate-spin shrink-0" />
             <div>
               <p className="text-sm font-bold text-[#191C1D]">
-                IA processando questões…
+                PreceptorMED processando questões…
               </p>
               <p className="text-xs text-[#4a5568]">
                 Tempo médio: 30–90s. Esta página vai atualizar automaticamente
@@ -510,7 +510,7 @@ function QuestaoCard({
           {questao.justificativa_origem === "pdf"
             ? "Just. do PDF"
             : questao.justificativa_origem === "ia"
-              ? <><Sparkles className="w-3 h-3 inline" /> Just. IA</>
+              ? <><Sparkles className="w-3 h-3 inline" /> Just. PreceptorMED</>
               : "Sem just."}
         </span>
         {questao.pagina_origem && (

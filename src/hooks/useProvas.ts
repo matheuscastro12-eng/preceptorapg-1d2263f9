@@ -108,7 +108,7 @@ export interface UploadProvaParams {
   numAlternativas: 4 | 5;
   gerarJustificativaIa: boolean;
   /** Modo expresso: questoes ja sao auto-aprovadas e o user pode iniciar
-   * o simulado live enquanto a IA termina os chunks restantes. */
+   * o simulado live enquanto o PreceptorMED termina os chunks restantes. */
   modoExpresso?: boolean;
   pdfFile: File;
   numPaginas: number;
