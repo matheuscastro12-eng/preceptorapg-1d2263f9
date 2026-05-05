@@ -86,6 +86,13 @@ export default function CrmEmailTemplates() {
 
   useEffect(() => { load(); }, []);
 
+  // Memo precisa vir ANTES dos useEffects que o usam nas deps,
+  // senao TDZ no primeiro render ("Cannot access 'current' before initialization").
+  const current = useMemo(
+    () => templates.find((t) => t.trigger_name === selected) ?? null,
+    [templates, selected]
+  );
+
   // Re-fetcha quando a aba volta a ter foco — evita ver versao stale
   // quando outro admin editou enquanto voce estava em outra janela.
   // CRITICO: NAO recarrega se o user tem mudancas nao salvas no editor,
@@ -139,11 +146,6 @@ export default function CrmEmailTemplates() {
     }
     setBrandSaving(false);
   };
-
-  const current = useMemo(
-    () => templates.find((t) => t.trigger_name === selected) ?? null,
-    [templates, selected]
-  );
 
   // Hidrata o draft apenas quando o user MUDA de template selecionado
   // (clica em outro template na sidebar). Antes essa dep era [current],
