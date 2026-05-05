@@ -128,7 +128,8 @@ const responseSchema = {
     evolucao: { type: "string" },
     pontos_aprendizado: { type: "array", items: { type: "string" } },
   },
-  required: ["titulo", "resumo_curto", "queixa_principal", "hda", "diagnostico_final", "conduta_proposta", "pontos_aprendizado"],
+  // Sem required: Gemini é exigente com schema; deixar tudo opcional
+  // e validar no código aumenta tolerância sem perder qualidade.
 };
 
 Deno.serve(async (req) => {
@@ -174,7 +175,10 @@ Monte o caso clínico COMPLETO E ESTRUTURADO seguindo o schema. Preserve TODOS o
 
     const summary = await callIA(userPrompt);
     if (!summary) {
-      return jsonErr(502, "PreceptorMED falhou em gerar o caso. Tente novamente em alguns segundos.");
+      return jsonErr(
+        502,
+        `PreceptorMED falhou em gerar o caso após várias tentativas. Último erro: ${LAST_IA_ERROR}. Tente novamente em alguns segundos.`,
+      );
     }
 
     // Persistir
@@ -239,13 +243,19 @@ Monte o caso clínico COMPLETO E ESTRUTURADO seguindo o schema. Preserve TODOS o
 });
 
 // ─────────────────────────────────────────────────────────────────────
+// Última mensagem de erro da IA — devolvida ao front pra debug
+let LAST_IA_ERROR = "";
+
 async function callIA(userPrompt: string): Promise<Record<string, unknown> | null> {
   const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
   const backoffs = [800, 2000, 5000, 10000];
-  let lastErr = "";
+  LAST_IA_ERROR = "";
 
   for (let attempt = 0; attempt < backoffs.length; attempt++) {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 90000);
+
       const res = await fetch(geminiURL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -259,13 +269,14 @@ async function callIA(userPrompt: string): Promise<Record<string, unknown> | nul
             maxOutputTokens: 16000,
           },
         }),
-        signal: AbortSignal.timeout(60000),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
-        lastErr = `HTTP ${res.status}: ${txt.slice(0, 200)}`;
-        console.warn(`[callIA] tentativa ${attempt + 1} falhou: ${lastErr}`);
+        LAST_IA_ERROR = `HTTP ${res.status}: ${txt.slice(0, 300)}`;
+        console.warn(`[callIA] tentativa ${attempt + 1} falhou: ${LAST_IA_ERROR}`);
         if (res.status >= 500 || res.status === 429) {
           await sleep(backoffs[attempt]);
           continue;
@@ -274,9 +285,21 @@ async function callIA(userPrompt: string): Promise<Record<string, unknown> | nul
       }
 
       const out = await res.json();
-      const text = out?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      // Verifica finish reason — IA pode ter parado por safety, length, etc
+      const candidate = out?.candidates?.[0];
+      const finishReason = candidate?.finishReason;
+      if (finishReason && finishReason !== "STOP" && finishReason !== "MAX_TOKENS") {
+        LAST_IA_ERROR = `Gemini finish reason: ${finishReason}`;
+        console.warn(`[callIA] tentativa ${attempt + 1}: ${LAST_IA_ERROR}`);
+        await sleep(backoffs[attempt]);
+        continue;
+      }
+
+      const text = candidate?.content?.parts?.[0]?.text;
       if (!text) {
-        lastErr = "resposta vazia";
+        LAST_IA_ERROR = "resposta vazia da Gemini";
+        console.warn(`[callIA] tentativa ${attempt + 1}: ${LAST_IA_ERROR}`);
         await sleep(backoffs[attempt]);
         continue;
       }
@@ -287,19 +310,30 @@ async function callIA(userPrompt: string): Promise<Record<string, unknown> | nul
       }
 
       try {
-        return JSON.parse(cleanText) as Record<string, unknown>;
+        const parsed = JSON.parse(cleanText) as Record<string, unknown>;
+        // Validação mínima: pelo menos titulo e queixa precisam existir
+        if (!parsed.titulo && !parsed.queixa_principal && !parsed.hda) {
+          LAST_IA_ERROR = "JSON sem campos essenciais (titulo/queixa/HDA)";
+          console.warn(`[callIA] tentativa ${attempt + 1}: ${LAST_IA_ERROR}`);
+          await sleep(backoffs[attempt]);
+          continue;
+        }
+        return parsed;
       } catch (parseErr) {
-        lastErr = `JSON parse: ${String(parseErr)}`;
-        console.warn(`[callIA] tentativa ${attempt + 1}: ${lastErr}`);
+        LAST_IA_ERROR = `JSON parse: ${String(parseErr)}`;
+        console.warn(`[callIA] tentativa ${attempt + 1}: ${LAST_IA_ERROR} | text: ${cleanText.slice(0, 200)}`);
         await sleep(backoffs[attempt]);
       }
     } catch (e) {
-      lastErr = String((e as Error).message ?? e);
-      console.warn(`[callIA] tentativa ${attempt + 1} exception: ${lastErr}`);
+      const isAbort = (e as Error).name === "AbortError";
+      LAST_IA_ERROR = isAbort
+        ? "timeout (90s)"
+        : String((e as Error).message ?? e);
+      console.warn(`[callIA] tentativa ${attempt + 1} exception: ${LAST_IA_ERROR}`);
       await sleep(backoffs[attempt]);
     }
   }
-  console.error(`[callIA] FALHA após ${backoffs.length} tentativas: ${lastErr}`);
+  console.error(`[callIA] FALHA após ${backoffs.length} tentativas: ${LAST_IA_ERROR}`);
   return null;
 }
 

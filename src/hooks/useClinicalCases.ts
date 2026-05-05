@@ -116,6 +116,9 @@ export interface BuildCompleteResponse {
 /**
  * Modelo V4: form único. Professor escreve descrição livre + dados
  * básicos; IA gera o caso clínico estruturado completo de uma vez.
+ *
+ * Em caso de erro non-2xx, tenta extrair a mensagem real de erro do
+ * corpo da resposta (supabase-js v2 envolve em FunctionsHttpError).
  */
 export async function buildCompleteCase(input: {
   basics: CaseBasics;
@@ -130,7 +133,27 @@ export async function buildCompleteCase(input: {
       case_id: input.case_id,
     },
   });
-  if (error) throw new Error(error.message);
+
+  // Mesmo com error (non-2xx), supabase-js às vezes traz `data` com o
+  // payload de erro estruturado. Prioriza ele.
+  if (data && typeof data === "object" && "error" in data && data.error) {
+    throw new Error(String(data.error));
+  }
+
+  if (error) {
+    // FunctionsHttpError tem .context com { response: Response }
+    const ctx = (error as { context?: { response?: Response } }).context;
+    if (ctx?.response) {
+      try {
+        const body = await ctx.response.json();
+        if (body?.error) throw new Error(String(body.error));
+      } catch {
+        /* fallthrough */
+      }
+    }
+    throw new Error(error.message ?? "Falha ao gerar caso");
+  }
+
   if (!data?.success) throw new Error(data?.error ?? "Falha ao gerar caso");
   return data;
 }
