@@ -33,11 +33,19 @@ export default function CasosClinicosNovo() {
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  // GUARD: garante que bootstrap roda UMA vez por monte (sobrevive a
+  // re-renders quando AuthContext re-emite user no foco da janela).
+  const bootstrappedRef = useRef(false);
+
+  const userId = user?.id;
 
   // Bootstrap: novo OR continuar
   useEffect(() => {
     if (authLoading || subLoading) return;
-    if (!user || !hasAccess) { setBootstrapping(false); return; }
+    if (!userId || !hasAccess) { setBootstrapping(false); return; }
+    // Idempotente: não cria novo caso se já bootstrappou neste monte.
+    if (bootstrappedRef.current) { setBootstrapping(false); return; }
+    bootstrappedRef.current = true;
 
     let alive = true;
     (async () => {
@@ -67,6 +75,11 @@ export default function CasosClinicosNovo() {
             setConversation(res.conversation);
             setPlaceholder(res.placeholder_hint ?? "");
             setProgress(res.progress_pct ?? 5);
+            // Substitui a entrada da URL por ?continuar=ID — protege
+            // contra refresh/troca de aba: se o efeito rodar de novo
+            // (ex: outro componente forçar remount), continuamos o caso
+            // ao invés de criar outro.
+            navigate(`/casos-clinicos/novo?continuar=${res.case_id}`, { replace: true });
           }
         }
       } catch (e) {
@@ -76,7 +89,8 @@ export default function CasosClinicosNovo() {
       }
     })();
     return () => { alive = false; };
-  }, [authLoading, subLoading, user, hasAccess, continuarId, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, subLoading, userId, hasAccess, continuarId]);
 
   // Auto-scroll
   useEffect(() => {
