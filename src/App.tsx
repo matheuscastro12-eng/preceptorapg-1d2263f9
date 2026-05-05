@@ -1,7 +1,11 @@
 import { lazy as reactLazy, Suspense } from "react";
 
 // Wraps React.lazy to auto-reload quando um chunk antigo sumiu pos-deploy.
-// Usa sessionStorage pra evitar loop infinito caso o problema seja real.
+//
+// Estrategia: dois reloads tolerados antes de jogar erro real. O segundo
+// reload usa cache-buster (?_cb=ts) na URL pra forcar o navegador a
+// pegar um index.html novo do servidor (alguns navegadores agressivos
+// servem index.html cached mesmo com Cache-Control no-store).
 const lazy = <T extends { default: React.ComponentType<any> }>(
   factory: () => Promise<T>,
 ) =>
@@ -11,17 +15,44 @@ const lazy = <T extends { default: React.ComponentType<any> }>(
       const isChunkError =
         msg.includes("Failed to fetch dynamically imported module") ||
         msg.includes("Importing a module script failed") ||
-        msg.includes("error loading dynamically imported module");
-      const alreadyReloaded = sessionStorage.getItem("chunk-reload-attempt");
-      if (isChunkError && !alreadyReloaded) {
-        sessionStorage.setItem("chunk-reload-attempt", "1");
-        window.location.reload();
-        return new Promise<T>(() => {});
+        msg.includes("error loading dynamically imported module") ||
+        msg.includes("Loading chunk") ||
+        msg.includes("ChunkLoadError");
+
+      if (!isChunkError) throw err;
+
+      const attemptStr = sessionStorage.getItem("chunk-reload-attempt");
+      const attempt = attemptStr ? parseInt(attemptStr, 10) : 0;
+
+      if (attempt >= 2) {
+        // Tentou 2 reloads e ainda falha. Limpa e propaga (ErrorBoundary mostra).
+        sessionStorage.removeItem("chunk-reload-attempt");
+        throw err;
       }
-      sessionStorage.removeItem("chunk-reload-attempt");
-      throw err;
+
+      sessionStorage.setItem("chunk-reload-attempt", String(attempt + 1));
+
+      if (attempt === 0) {
+        // 1ª tentativa: reload simples (deveria pegar novo index.html)
+        window.location.reload();
+      } else {
+        // 2ª tentativa: cache-buster forçado na URL
+        const url = new URL(window.location.href);
+        url.searchParams.set("_cb", String(Date.now()));
+        window.location.replace(url.toString());
+      }
+      return new Promise<T>(() => {});
     }),
   );
+
+// Limpa o contador de reload quando a app monta com sucesso (Suspense
+// resolveu pelo menos uma vez), pra que o próximo deploy também consiga
+// 2 tentativas frescas.
+if (typeof window !== "undefined") {
+  window.addEventListener("load", () => {
+    setTimeout(() => sessionStorage.removeItem("chunk-reload-attempt"), 2000);
+  });
+}
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
