@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS public.wb_prescriptions (
   titulo text NOT NULL,
   doenca text NOT NULL,
   condicao_clinica text,
-  protocol_slug text REFERENCES public.wb_protocols(slug) ON DELETE SET NULL,
+  protocol_slug text, -- soft link to wb_protocols(slug), NULL se ainda não existe protocolo
+  -- (FK strict removida pra permitir prescrição independente; UI faz cross-link)
   contexto text, -- 'PA', 'UPA', 'UTI', 'Enfermaria', 'Ambulatorial'
   resumo text,
   itens jsonb NOT NULL DEFAULT '[]'::jsonb,
@@ -31,6 +32,9 @@ CREATE TABLE IF NOT EXISTS public.wb_prescriptions (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Caso a tabela já tenha sido criada com FK em deploy anterior, removê-la
+ALTER TABLE public.wb_prescriptions DROP CONSTRAINT IF EXISTS wb_prescriptions_protocol_slug_fkey;
 
 CREATE INDEX IF NOT EXISTS idx_wb_prescriptions_search ON public.wb_prescriptions USING GIN (search_vector);
 CREATE INDEX IF NOT EXISTS idx_wb_prescriptions_protocol ON public.wb_prescriptions(protocol_slug) WHERE protocol_slug IS NOT NULL;
