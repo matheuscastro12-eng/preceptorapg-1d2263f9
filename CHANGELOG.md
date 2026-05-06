@@ -7,8 +7,9 @@ Histórico das principais mudanças do produto, em ordem cronológica reversa.
 ### Adicionado
 - **PreceptorBook — Mecanismo de ação das drogas:** todas as drogas existentes agora têm campo `mecanismo_acao` com descrição molecular/celular detalhada.
 - **PreceptorBook — Bloco UTI/emergência (20 drogas):** vasopressores (noradrenalina, epinefrina, dopamina, dobutamina, vasopressina, milrinona), sedação UTI (fentanil, morfina, midazolam, propofol, dexmedetomidina, ketamina) e ATB hospitalar (pip-tazo, cefepime, meropenem, ertapenem, linezolida, daptomicina, polimixina B, tigeciclina).
-- **PreceptorBook — Bloco Cardio/anticoag (8 drogas):** apixabana, dabigatrana, nitroglicerina, nitroprussiato, metoprolol, propranolol, digoxina, amiodarona. **Total: 78 drogas.**
-- **PreceptorBook — Prescrições por doença (17):** agudas — sepse, IAM com supra, anafilaxia, CAD, emergência hipertensiva, asma exacerbação, PAC internação, ITU, IC aguda/EAP, AVC isquêmico, status epilepticus, TEP/TVP; crônicas — HAS, DM2, dislipidemia, FA controle/anticoagulação, profilaxia TVP hospitalar.
+- **PreceptorBook — Bloco Cardio/anticoag (8 drogas):** apixabana, dabigatrana, nitroglicerina, nitroprussiato, metoprolol, propranolol, digoxina, amiodarona.
+- **PreceptorBook — Bloco Endo/Psiq (16 drogas):** empagliflozina, dapagliflozina, semaglutida, liraglutida, sitagliptina, glimepirida, hidrocortisona, dexametasona, sertralina, fluoxetina, escitalopram, venlafaxina, risperidona, olanzapina, quetiapina, lítio. **Total: 94 drogas.**
+- **PreceptorBook — Prescrições por doença (23):** agudas — sepse, IAM com supra, anafilaxia, CAD, emergência hipertensiva, asma exacerbação, PAC internação, ITU, IC aguda/EAP, AVC isquêmico, status epilepticus, TEP/TVP; crônicas — HAS, DM2, dislipidemia, FA controle, profilaxia TVP hospitalar, depressão maior, TAG, hipotireoidismo, hipertireoidismo (Graves), DPOC manutenção, transtorno bipolar.
 
 ## mai/2026 — Casos clínicos + estabilização Gemini
 
