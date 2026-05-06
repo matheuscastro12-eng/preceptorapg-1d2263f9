@@ -181,18 +181,29 @@ Monte o caso clínico COMPLETO E ESTRUTURADO seguindo o schema. Preserve TODOS o
       );
     }
 
-    // Persistir
+    // Persistir — campos básicos vêm SEMPRE do form (constraint do banco
+    // exige sexo IN (M,F,I) e unidade IN (anos,meses,dias); IA pode
+    // retornar valor livre tipo "masculino" e quebrar a check.
     const payload = {
       user_id: userId,
       status: "complete",
       titulo: summary.titulo ?? null,
       resumo_curto: summary.resumo_curto ?? null,
-      paciente_nome: summary.paciente_nome ?? b.paciente_nome,
-      paciente_idade: summary.paciente_idade ?? b.paciente_idade,
-      paciente_idade_unidade: summary.paciente_idade_unidade ?? idadeUnidade,
-      paciente_sexo: summary.paciente_sexo ?? b.paciente_sexo,
-      doenca_principal: summary.doenca_principal ?? b.doenca_principal,
-      caso_estruturado: summary,
+      paciente_nome: b.paciente_nome,
+      paciente_idade: b.paciente_idade,
+      paciente_idade_unidade: idadeUnidade,
+      paciente_sexo: b.paciente_sexo,
+      doenca_principal: b.doenca_principal,
+      // Garante que o caso_estruturado tb tem os valores normalizados
+      // (a IA recebe e usa, mas se diverge, sobrescreve)
+      caso_estruturado: {
+        ...summary,
+        paciente_nome: b.paciente_nome,
+        paciente_idade: b.paciente_idade,
+        paciente_idade_unidade: idadeUnidade,
+        paciente_sexo: b.paciente_sexo,
+        doenca_principal: b.doenca_principal,
+      },
       conversation: [
         {
           role: "user",
