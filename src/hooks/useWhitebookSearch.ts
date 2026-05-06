@@ -128,7 +128,7 @@ export function useWhitebookDrugs(query: string) {
         const ilike = `%${trimmed}%`;
         q = q.or(`nome_principio.ilike.${ilike},classe_terapeutica.ilike.${ilike}`);
       }
-      const { data } = await q.order("nome_principio").limit(100);
+      const { data } = await q.order("nome_principio").limit(500);
       if (alive) {
         setItems((data ?? []) as DrugListItem[]);
         setLoading(false);
@@ -167,7 +167,7 @@ export function useWhitebookProtocols(query: string) {
         const ilike = `%${trimmed}%`;
         q = q.or(`titulo.ilike.${ilike},categoria.ilike.${ilike},resumo.ilike.${ilike}`);
       }
-      const { data } = await q.order("titulo").limit(100);
+      const { data } = await q.order("titulo").limit(500);
       if (alive) {
         setItems((data ?? []) as ProtocolListItem[]);
         setLoading(false);
@@ -209,7 +209,7 @@ export function useWhitebookPrescriptions(query: string) {
           `titulo.ilike.${ilike},doenca.ilike.${ilike},condicao_clinica.ilike.${ilike},resumo.ilike.${ilike}`,
         );
       }
-      const { data } = await q.order("doenca").limit(100);
+      const { data } = await q.order("doenca").limit(500);
       if (alive) {
         setItems((data ?? []) as PrescriptionListItem[]);
         setLoading(false);
