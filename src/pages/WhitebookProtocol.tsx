@@ -8,7 +8,7 @@ import PageSkeleton from "@/components/PageSkeleton";
 import UpgradePaywall from "@/components/UpgradePaywall";
 import {
   ArrowLeft, ListChecks, AlertTriangle, BookOpen, ExternalLink,
-  CheckCircle2, Stethoscope, ShieldAlert, Wand2,
+  CheckCircle2, Stethoscope, ShieldAlert, Wand2, FileText,
 } from "lucide-react";
 import WhitebookAiDrawer from "@/components/whitebook/WhitebookAiDrawer";
 
@@ -46,6 +46,7 @@ const WhitebookProtocol = () => {
   const [proto, setProto] = useState<ProtocolFull | null>(null);
   const [loadingProto, setLoadingProto] = useState(true);
   const [aiOpen, setAiOpen] = useState(false);
+  const [prescriptions, setPrescriptions] = useState<Array<{ slug: string; titulo: string; resumo: string | null }>>([]);
 
   useEffect(() => {
     if (!slug) return;
@@ -60,6 +61,14 @@ const WhitebookProtocol = () => {
       if (alive) {
         setProto((data as ProtocolFull) ?? null);
         setLoadingProto(false);
+      }
+      const { data: pres } = await supabase
+        .from("wb_prescriptions")
+        .select("slug, titulo, resumo")
+        .eq("protocol_slug", slug)
+        .eq("published", true);
+      if (alive && pres) {
+        setPrescriptions(pres as Array<{ slug: string; titulo: string; resumo: string | null }>);
       }
     })();
     return () => {
@@ -206,6 +215,30 @@ const WhitebookProtocol = () => {
                 >
                   {e}
                 </span>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Prescrições vinculadas */}
+        {prescriptions.length > 0 && (
+          <Section icon={FileText} title="Prescrições baseadas neste protocolo">
+            <div className="space-y-2">
+              {prescriptions.map((p) => (
+                <button
+                  key={p.slug}
+                  onClick={() => navigate(`/whitebook/prescription/${p.slug}`)}
+                  className="w-full text-left p-3.5 rounded-lg border border-slate-200 hover:border-[#005344] hover:bg-[#005344]/5 transition-colors group"
+                >
+                  <p className="text-sm font-bold text-[#191C1D] group-hover:text-[#005344] mb-1">
+                    {p.titulo}
+                  </p>
+                  {p.resumo && (
+                    <p className="text-xs text-[#4a5568] leading-relaxed line-clamp-2">
+                      {p.resumo}
+                    </p>
+                  )}
+                </button>
               ))}
             </div>
           </Section>

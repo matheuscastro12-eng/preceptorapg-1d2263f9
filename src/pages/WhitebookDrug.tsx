@@ -8,7 +8,7 @@ import PageSkeleton from "@/components/PageSkeleton";
 import UpgradePaywall from "@/components/UpgradePaywall";
 import {
   ArrowLeft, Pill, AlertTriangle, BookOpen, ExternalLink, Heart, Baby,
-  User as UserIcon, Beaker, Info, ShieldAlert, Wand2, Activity,
+  User as UserIcon, Beaker, Info, ShieldAlert, Wand2, Activity, Atom, FileText,
 } from "lucide-react";
 import WhitebookAiDrawer from "@/components/whitebook/WhitebookAiDrawer";
 
@@ -81,7 +81,14 @@ interface DrugFull {
   efeitos_adversos: EfeitoAdverso[] | null;
   alertas_seguranca: string[] | null;
   monitoramento: string[] | null;
+  mecanismo_acao: string | null;
   bula_fonte_url: string | null;
+}
+
+interface PrescriptionLink {
+  slug: string;
+  titulo: string;
+  doenca: string;
 }
 
 const SEVERITY_TONE: Record<string, string> = {
@@ -107,6 +114,7 @@ const WhitebookDrug = () => {
   const [drug, setDrug] = useState<DrugFull | null>(null);
   const [loadingDrug, setLoadingDrug] = useState(true);
   const [aiOpen, setAiOpen] = useState(false);
+  const [prescriptions, setPrescriptions] = useState<PrescriptionLink[]>([]);
 
   useEffect(() => {
     if (!slug) return;
@@ -121,6 +129,17 @@ const WhitebookDrug = () => {
       if (alive) {
         setDrug((data as DrugFull) ?? null);
         setLoadingDrug(false);
+      }
+      // Busca prescrições que mencionam essa droga (drug_slug nos itens)
+      const { data: pres } = await supabase
+        .from("wb_prescriptions")
+        .select("slug, titulo, doenca, itens")
+        .eq("published", true);
+      if (alive && pres) {
+        const linked = (pres as Array<{ slug: string; titulo: string; doenca: string; itens: Array<{ drug_slug?: string }> }>)
+          .filter((p) => Array.isArray(p.itens) && p.itens.some((it) => it?.drug_slug === slug))
+          .map(({ slug, titulo, doenca }) => ({ slug, titulo, doenca }));
+        setPrescriptions(linked);
       }
     })();
     return () => {
@@ -226,6 +245,15 @@ const WhitebookDrug = () => {
               </ul>
             </div>
           </div>
+        )}
+
+        {/* Mecanismo de ação */}
+        {drug.mecanismo_acao && (
+          <Section icon={Atom} title="Mecanismo de ação">
+            <p className="text-sm text-[#191C1D] leading-relaxed">
+              {drug.mecanismo_acao}
+            </p>
+          </Section>
         )}
 
         {/* Apresentações */}
@@ -453,6 +481,31 @@ const WhitebookDrug = () => {
                 </li>
               ))}
             </ul>
+          </Section>
+        )}
+
+        {/* Prescrições que usam essa droga */}
+        {prescriptions.length > 0 && (
+          <Section icon={FileText} title="Prescrições que usam esta droga">
+            <div className="space-y-2">
+              {prescriptions.map((p) => (
+                <button
+                  key={p.slug}
+                  onClick={() => navigate(`/whitebook/prescription/${p.slug}`)}
+                  className="w-full text-left p-3 rounded-lg border border-slate-200 hover:border-[#005344] hover:bg-[#005344]/5 transition-colors flex items-start justify-between gap-3 group"
+                >
+                  <div>
+                    <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#8a6f26] mb-0.5">
+                      {p.doenca}
+                    </p>
+                    <p className="text-sm font-semibold text-[#191C1D] group-hover:text-[#005344]">
+                      {p.titulo}
+                    </p>
+                  </div>
+                  <ArrowLeft className="w-4 h-4 rotate-180 text-[#94a3b8] group-hover:text-[#005344] shrink-0 mt-1" />
+                </button>
+              ))}
+            </div>
           </Section>
         )}
 

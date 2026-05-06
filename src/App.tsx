@@ -89,6 +89,7 @@ const Whitebook = lazy(() => import("./pages/Whitebook"));
 const WhitebookCalculator = lazy(() => import("./pages/WhitebookCalculator"));
 const WhitebookDrug = lazy(() => import("./pages/WhitebookDrug"));
 const WhitebookProtocol = lazy(() => import("./pages/WhitebookProtocol"));
+const WhitebookPrescription = lazy(() => import("./pages/WhitebookPrescription"));
 const WhitebookAdmin = lazy(() => import("./pages/admin/WhitebookAdmin"));
 const CasosClinicos = lazy(() => import("./pages/CasosClinicos"));
 const CasosClinicosNovo = lazy(() => import("./pages/CasosClinicosNovo"));
@@ -216,6 +217,7 @@ const App = () => (
                 <Route path="/whitebook/calculator/:slug" element={<WhitebookCalculator />} />
                 <Route path="/whitebook/drug/:slug" element={<WhitebookDrug />} />
                 <Route path="/whitebook/protocol/:slug" element={<WhitebookProtocol />} />
+                <Route path="/whitebook/prescription/:slug" element={<WhitebookPrescription />} />
                 <Route path="/admin/whitebook" element={<WhitebookAdmin />} />
                 <Route path="/casos-clinicos" element={<CasosClinicos />} />
                 <Route path="/casos-clinicos/novo" element={<CasosClinicosNovo />} />

@@ -7,17 +7,18 @@ import {
   useWhitebookDrugs,
   useWhitebookProtocols,
   useWhitebookIcd,
+  useWhitebookPrescriptions,
 } from "@/hooks/useWhitebookSearch";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageSkeleton from "@/components/PageSkeleton";
 import UpgradePaywall from "@/components/UpgradePaywall";
 import {
-  Search, Calculator, Pill, ListChecks, FileText,
+  Search, Calculator, Pill, ListChecks, FileText, ClipboardList,
   ChevronRight, Sparkles, BookOpen, Wand2,
 } from "lucide-react";
 import WhitebookAiDrawer from "@/components/whitebook/WhitebookAiDrawer";
 
-type Tab = "calc" | "drug" | "protocol" | "icd";
+type Tab = "calc" | "drug" | "protocol" | "prescription" | "icd";
 
 const Whitebook = () => {
   const { user, loading: authLoading } = useAuth();
@@ -30,6 +31,7 @@ const Whitebook = () => {
   const { items: calcs, loading: loadingCalcs } = useWhitebookCalculators(query);
   const { items: drugs, loading: loadingDrugs } = useWhitebookDrugs(query);
   const { items: protocols, loading: loadingProtocols } = useWhitebookProtocols(query);
+  const { items: prescriptions, loading: loadingPrescriptions } = useWhitebookPrescriptions(query);
   const { items: icds, loading: loadingIcd } = useWhitebookIcd(query);
 
   if (authLoading || loading) return <PageSkeleton variant="dashboard" />;
@@ -103,6 +105,13 @@ const Whitebook = () => {
             onClick={() => setTab("protocol")}
           />
           <TabPill
+            icon={ClipboardList}
+            label="Prescrições"
+            count={prescriptions.length}
+            active={tab === "prescription"}
+            onClick={() => setTab("prescription")}
+          />
+          <TabPill
             icon={FileText}
             label="CID-10"
             count={icds.length}
@@ -133,6 +142,14 @@ const Whitebook = () => {
             loading={loadingProtocols}
             items={protocols}
             onClick={(slug) => navigate(`/whitebook/protocol/${slug}`)}
+            query={query}
+          />
+        )}
+        {tab === "prescription" && (
+          <PrescriptionsBlock
+            loading={loadingPrescriptions}
+            items={prescriptions}
+            onClick={(slug) => navigate(`/whitebook/prescription/${slug}`)}
             query={query}
           />
         )}
@@ -330,6 +347,54 @@ function ProtocolsBlock({
           subtitle={[p.categoria, p.resumo].filter(Boolean).join(" — ")}
           onClick={() => onClick(p.slug)}
         />
+      ))}
+    </div>
+  );
+}
+
+function PrescriptionsBlock({
+  loading, items, onClick, query,
+}: {
+  loading: boolean;
+  items: ReturnType<typeof useWhitebookPrescriptions>["items"];
+  onClick: (slug: string) => void;
+  query: string;
+}) {
+  const groups = useMemo(() => {
+    const map = new Map<string, typeof items>();
+    for (const p of items) {
+      const arr = map.get(p.doenca) ?? [];
+      arr.push(p);
+      map.set(p.doenca, arr);
+    }
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [items]);
+
+  if (loading) return <SkeletonGrid />;
+  if (items.length === 0) return <EmptyState query={query} kind="prescrições" />;
+  return (
+    <div className="space-y-6">
+      {groups.map(([doenca, list]) => (
+        <section key={doenca}>
+          <div className="flex items-center gap-2 mb-3">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a5568]">
+              {doenca}
+            </h3>
+            <span className="font-mono text-[10.5px] text-[#94a3b8]">{list.length}</span>
+            <div className="flex-1 h-px bg-slate-200 ml-1" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {list.map((p) => (
+              <ItemCard
+                key={p.id}
+                icon={ClipboardList}
+                title={p.titulo}
+                subtitle={[p.contexto, p.resumo].filter(Boolean).join(" — ")}
+                onClick={() => onClick(p.slug)}
+              />
+            ))}
+          </div>
+        </section>
       ))}
     </div>
   );

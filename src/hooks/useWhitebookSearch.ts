@@ -181,6 +181,48 @@ export function useWhitebookProtocols(query: string) {
   return { items, loading };
 }
 
+export interface PrescriptionListItem {
+  id: string;
+  slug: string;
+  titulo: string;
+  doenca: string;
+  contexto: string | null;
+  resumo: string | null;
+}
+
+export function useWhitebookPrescriptions(query: string) {
+  const [items, setItems] = useState<PrescriptionListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    void (async () => {
+      const trimmed = query.trim();
+      let q = supabase
+        .from("wb_prescriptions")
+        .select("id, slug, titulo, doenca, contexto, resumo")
+        .eq("published", true);
+      if (trimmed) {
+        const ilike = `%${trimmed}%`;
+        q = q.or(
+          `titulo.ilike.${ilike},doenca.ilike.${ilike},condicao_clinica.ilike.${ilike},resumo.ilike.${ilike}`,
+        );
+      }
+      const { data } = await q.order("doenca").limit(100);
+      if (alive) {
+        setItems((data ?? []) as PrescriptionListItem[]);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [query]);
+
+  return { items, loading };
+}
+
 export interface IcdItem {
   code: string;
   descricao_pt: string;
