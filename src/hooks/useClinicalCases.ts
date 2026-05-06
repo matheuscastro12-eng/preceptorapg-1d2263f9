@@ -117,45 +117,69 @@ export interface BuildCompleteResponse {
  * Modelo V4: form único. Professor escreve descrição livre + dados
  * básicos; IA gera o caso clínico estruturado completo de uma vez.
  *
- * Em caso de erro non-2xx, tenta extrair a mensagem real de erro do
- * corpo da resposta (supabase-js v2 envolve em FunctionsHttpError).
+ * Usa fetch direto (não supabase.functions.invoke) pra ter controle
+ * total da resposta — a invoke() do supabase-js v2 mascara o body de
+ * erro em "non-2xx status code" sem expor a mensagem real do edge.
  */
 export async function buildCompleteCase(input: {
   basics: CaseBasics;
   descricao_livre: string;
   case_id?: string;
 }): Promise<BuildCompleteResponse> {
-  const { data, error } = await supabase.functions.invoke("build-clinical-case", {
-    body: {
-      action: "build_complete",
-      basics: input.basics,
-      descricao_livre: input.descricao_livre,
-      case_id: input.case_id,
-    },
-  });
-
-  // Mesmo com error (non-2xx), supabase-js às vezes traz `data` com o
-  // payload de erro estruturado. Prioriza ele.
-  if (data && typeof data === "object" && "error" in data && data.error) {
-    throw new Error(String(data.error));
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("Sessão expirada — faça login novamente.");
   }
 
-  if (error) {
-    // FunctionsHttpError tem .context com { response: Response }
-    const ctx = (error as { context?: { response?: Response } }).context;
-    if (ctx?.response) {
-      try {
-        const body = await ctx.response.json();
-        if (body?.error) throw new Error(String(body.error));
-      } catch {
-        /* fallthrough */
-      }
-    }
-    throw new Error(error.message ?? "Falha ao gerar caso");
+  const SUPA_URL = import.meta.env.VITE_SUPABASE_URL as string;
+  const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+  const url = `${SUPA_URL}/functions/v1/build-clinical-case`;
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token}`,
+        "apikey": ANON_KEY,
+      },
+      body: JSON.stringify({
+        action: "build_complete",
+        basics: input.basics,
+        descricao_livre: input.descricao_livre,
+        case_id: input.case_id,
+      }),
+    });
+  } catch (e) {
+    throw new Error(`Falha de rede: ${(e as Error).message}`);
   }
 
-  if (!data?.success) throw new Error(data?.error ?? "Falha ao gerar caso");
-  return data;
+  // Tenta sempre ler o body como JSON — edge function retorna
+  // { success, error?, ... } mesmo em status >= 400
+  let body: { success?: boolean; error?: string; case_id?: string; case_summary?: Record<string, unknown> } = {};
+  try {
+    body = await response.json();
+  } catch {
+    // Body não é JSON — provavelmente erro do gateway/Supabase
+  }
+
+  if (!response.ok || body.success === false) {
+    const msg = body.error
+      ? String(body.error)
+      : `HTTP ${response.status} ${response.statusText || "sem detalhes"}`;
+    throw new Error(msg);
+  }
+
+  if (!body.case_id) {
+    throw new Error("Resposta sem case_id");
+  }
+
+  return {
+    success: true,
+    case_id: body.case_id,
+    case_summary: body.case_summary ?? {},
+  };
 }
 
 export async function generateCaseQuestions(caseId: string, n: number): Promise<{ count: number }> {
