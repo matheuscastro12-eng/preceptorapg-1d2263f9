@@ -246,10 +246,30 @@ Monte o caso clínico COMPLETO E ESTRUTURADO seguindo o schema. Preserve TODOS o
 // Última mensagem de erro da IA — devolvida ao front pra debug
 let LAST_IA_ERROR = "";
 
+const MODEL_PRIMARY = "gemini-2.5-flash";
+const MODEL_FALLBACK = "gemini-2.5-pro";
+
 async function callIA(userPrompt: string): Promise<Record<string, unknown> | null> {
-  const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+  // Tenta primeiro com flash; se 5xx persistente, fallback pro pro
+  for (const model of [MODEL_PRIMARY, MODEL_FALLBACK]) {
+    const result = await callIAWithModel(userPrompt, model);
+    if (result) {
+      console.log(`[callIA-${model}] sucesso com modelo: ${model}`);
+      return result;
+    }
+    if (model === MODEL_PRIMARY) {
+      console.warn(`[callIA-${model}] flash falhou, tentando fallback ${MODEL_FALLBACK}`);
+    }
+  }
+  return null;
+}
+
+async function callIAWithModel(
+  userPrompt: string,
+  model: string,
+): Promise<Record<string, unknown> | null> {
+  const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
   const backoffs = [800, 2000, 5000, 10000];
-  LAST_IA_ERROR = "";
 
   for (let attempt = 0; attempt < backoffs.length; attempt++) {
     try {
@@ -275,8 +295,8 @@ async function callIA(userPrompt: string): Promise<Record<string, unknown> | nul
 
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
-        LAST_IA_ERROR = `HTTP ${res.status}: ${txt.slice(0, 300)}`;
-        console.warn(`[callIA] tentativa ${attempt + 1} falhou: ${LAST_IA_ERROR}`);
+        LAST_IA_ERROR = `HTTP ${res.status} (${model}): ${txt.slice(0, 300)}`;
+        console.warn(`[callIA-${model}] tentativa ${attempt + 1} falhou: ${LAST_IA_ERROR}`);
         if (res.status >= 500 || res.status === 429) {
           await sleep(backoffs[attempt]);
           continue;
@@ -291,7 +311,7 @@ async function callIA(userPrompt: string): Promise<Record<string, unknown> | nul
       const finishReason = candidate?.finishReason;
       if (finishReason && finishReason !== "STOP" && finishReason !== "MAX_TOKENS") {
         LAST_IA_ERROR = `Gemini finish reason: ${finishReason}`;
-        console.warn(`[callIA] tentativa ${attempt + 1}: ${LAST_IA_ERROR}`);
+        console.warn(`[callIA-${model}] tentativa ${attempt + 1}: ${LAST_IA_ERROR}`);
         await sleep(backoffs[attempt]);
         continue;
       }
@@ -299,7 +319,7 @@ async function callIA(userPrompt: string): Promise<Record<string, unknown> | nul
       const text = candidate?.content?.parts?.[0]?.text;
       if (!text) {
         LAST_IA_ERROR = "resposta vazia da Gemini";
-        console.warn(`[callIA] tentativa ${attempt + 1}: ${LAST_IA_ERROR}`);
+        console.warn(`[callIA-${model}] tentativa ${attempt + 1}: ${LAST_IA_ERROR}`);
         await sleep(backoffs[attempt]);
         continue;
       }
@@ -314,14 +334,14 @@ async function callIA(userPrompt: string): Promise<Record<string, unknown> | nul
         // Validação mínima: pelo menos titulo e queixa precisam existir
         if (!parsed.titulo && !parsed.queixa_principal && !parsed.hda) {
           LAST_IA_ERROR = "JSON sem campos essenciais (titulo/queixa/HDA)";
-          console.warn(`[callIA] tentativa ${attempt + 1}: ${LAST_IA_ERROR}`);
+          console.warn(`[callIA-${model}] tentativa ${attempt + 1}: ${LAST_IA_ERROR}`);
           await sleep(backoffs[attempt]);
           continue;
         }
         return parsed;
       } catch (parseErr) {
         LAST_IA_ERROR = `JSON parse: ${String(parseErr)}`;
-        console.warn(`[callIA] tentativa ${attempt + 1}: ${LAST_IA_ERROR} | text: ${cleanText.slice(0, 200)}`);
+        console.warn(`[callIA-${model}] tentativa ${attempt + 1}: ${LAST_IA_ERROR} | text: ${cleanText.slice(0, 200)}`);
         await sleep(backoffs[attempt]);
       }
     } catch (e) {
@@ -329,11 +349,11 @@ async function callIA(userPrompt: string): Promise<Record<string, unknown> | nul
       LAST_IA_ERROR = isAbort
         ? "timeout (90s)"
         : String((e as Error).message ?? e);
-      console.warn(`[callIA] tentativa ${attempt + 1} exception: ${LAST_IA_ERROR}`);
+      console.warn(`[callIA-${model}] tentativa ${attempt + 1} exception: ${LAST_IA_ERROR}`);
       await sleep(backoffs[attempt]);
     }
   }
-  console.error(`[callIA] FALHA após ${backoffs.length} tentativas: ${LAST_IA_ERROR}`);
+  console.error(`[callIA-${model}] FALHA após ${backoffs.length} tentativas: ${LAST_IA_ERROR}`);
   return null;
 }
 
