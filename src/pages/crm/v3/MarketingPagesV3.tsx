@@ -534,61 +534,180 @@ export function AnalyticsV3() {
 }
 
 /* =========================================================
-   USERS — CRM internos via crm-auth edge function
+   USERS — usuários da plataforma (alunos) via crm-auth list_users
    ========================================================= */
-function useCrmAdminUsers() {
+interface PlatformUser {
+  user_id: string;
+  email: string;
+  full_name?: string;
+  phone?: string | null;
+  created_at: string;
+  subscription?: {
+    status: string;
+    plan_type: string;
+    access_expires_at: string | null;
+  };
+}
+
+function usePlatformUsers() {
   return useQuery({
-    queryKey: ["crm", "admin-users"],
+    queryKey: ["crm", "platform-users"],
     queryFn: async () => {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-auth`;
-      const token = (() => { try { const raw = localStorage.getItem("sb-crm-auth-token"); return raw ? JSON.parse(raw).token : null; } catch { return null; } })();
+      const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const token = localStorage.getItem("crm_token");
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": apiKey,
+          "Authorization": `Bearer ${apiKey}`,
+        },
         body: JSON.stringify({ action: "list_users", token }),
       });
       if (!res.ok) return [];
       const json = await res.json();
-      return (json.users ?? []) as any[];
+      const profiles: any[] = json.profiles ?? [];
+      const subs: any[] = json.subscriptions ?? [];
+      const subMap: Record<string, any> = {};
+      subs.forEach((s) => { subMap[s.user_id] = s; });
+
+      return profiles.map((p) => ({
+        user_id: p.user_id,
+        email: p.email,
+        full_name: p.full_name,
+        phone: p.phone,
+        created_at: p.created_at,
+        subscription: subMap[p.user_id] ? {
+          status: subMap[p.user_id].status,
+          plan_type: subMap[p.user_id].plan_type,
+          access_expires_at: subMap[p.user_id].access_expires_at,
+        } : undefined,
+      })) as PlatformUser[];
     },
   });
 }
 
 export function UsersV3() {
-  const { data: users } = useCrmAdminUsers();
+  const { data: users } = usePlatformUsers();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "paying" | "free" | "none">("all");
+
   const lista = users ?? [];
 
+  const isExpired = (sub?: PlatformUser["subscription"]) => {
+    if (!sub?.access_expires_at) return false;
+    return new Date(sub.access_expires_at) < new Date();
+  };
+
+  const stats = {
+    total: lista.length,
+    paying: lista.filter((u) => u.subscription?.plan_type === "monthly" || u.subscription?.plan_type === "annual" || u.subscription?.plan_type === "biannual").length,
+    free: lista.filter((u) => u.subscription?.plan_type === "free_access" && !isExpired(u.subscription)).length,
+    none: lista.filter((u) => !u.subscription || u.subscription.status !== "active" || isExpired(u.subscription)).length,
+  };
+
+  const filtered = lista.filter((u) => {
+    if (search) {
+      const s = search.toLowerCase();
+      if (!u.email.toLowerCase().includes(s) && !(u.full_name ?? "").toLowerCase().includes(s)) return false;
+    }
+    if (filter === "paying") return u.subscription?.plan_type === "monthly" || u.subscription?.plan_type === "annual" || u.subscription?.plan_type === "biannual";
+    if (filter === "free") return u.subscription?.plan_type === "free_access" && !isExpired(u.subscription);
+    if (filter === "none") return !u.subscription || u.subscription.status !== "active" || isExpired(u.subscription);
+    return true;
+  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  const planLabel = (pt?: string) => {
+    if (!pt) return "—";
+    return PLAN_LABEL[pt] ?? pt;
+  };
+
+  const statusTag = (sub?: PlatformUser["subscription"]) => {
+    if (!sub || sub.status !== "active" || isExpired(sub)) {
+      return <span className="crm-tag crm-tag-gray"><span className="crm-tag-dot" />Sem acesso</span>;
+    }
+    if (sub.plan_type === "free_access") {
+      return <span className="crm-tag crm-tag-warn"><span className="crm-tag-dot" />Gratuito</span>;
+    }
+    return <span className={`crm-tag crm-tag-${PLAN_TAG[sub.plan_type] ?? "gray"}`}><span className="crm-tag-dot" />{planLabel(sub.plan_type)}</span>;
+  };
+
   return (
-    <CrmShellV3 mode="marketing" crumbs={[{ label: "CRM" }, { label: "Marketing" }, { label: "Configurações" }, { label: "Usuários" }]}
-      topbarTools={<><button className="crm-btn crm-btn-primary"><Plus size={13} /> Convidar usuário</button></>}
-    >
+    <CrmShellV3 mode="marketing" crumbs={[{ label: "CRM" }, { label: "Marketing" }, { label: "Usuários" }]}>
       <main className="crm-page">
         <PageHero
-          eyebrow="Sistema · Usuários do CRM"
-          title={<>{lista.length} pessoas <em>com acesso interno</em></>}
-          sub="Lista carregada via edge function crm-auth (action: list_users). Papéis: super_admin, admin, editor, viewer."
+          eyebrow="Sistema · Gestão de usuários"
+          title={<>{fmt(stats.total)} usuários <em>cadastrados</em></>}
+          sub="Lista de alunos da plataforma cruzada com subscriptions ativas. Carregada via edge function crm-auth (action: list_users)."
         />
 
+        <section className="crm-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+          <Kpi label="Total" value={fmt(stats.total)} deltaText="usuários cadastrados" accent="mrr" />
+          <Kpi label="Pagantes" value={fmt(stats.paying)} deltaText="monthly + annual + biannual" />
+          <Kpi label="Gratuitos" value={fmt(stats.free)} deltaText="free_access ativo" accent="warn" />
+          <Kpi label="Sem acesso" value={fmt(stats.none)} deltaText="inativos ou expirados" />
+        </section>
+
         <section className="crm-card">
-          <CardHead title="Membros do CRM" />
-          {lista.length > 0 ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "var(--crm-surface-2)", borderBottom: "1px solid var(--crm-line)" }}>
+            <input
+              placeholder="Buscar por email ou nome…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                background: "var(--crm-surface)",
+                border: "1px solid var(--crm-line)",
+                borderRadius: 6,
+                padding: "6px 10px",
+                fontFamily: "var(--crm-text)",
+                fontSize: 12.5,
+                flex: 1, maxWidth: 320,
+              }}
+            />
+            <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
+              {[
+                { key: "all" as const, label: "Todos", count: stats.total },
+                { key: "paying" as const, label: "Pagantes", count: stats.paying },
+                { key: "free" as const, label: "Gratuitos", count: stats.free },
+                { key: "none" as const, label: "Sem acesso", count: stats.none },
+              ].map((f) => (
+                <button key={f.key} onClick={() => setFilter(f.key)}
+                  className={filter === f.key ? "crm-btn crm-btn-primary" : "crm-btn crm-btn-ghost"}
+                  style={{ fontSize: 12 }}
+                >
+                  {f.label} ({f.count})
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {filtered.length > 0 ? (
             <table className="crm-tbl">
-              <thead><tr><th>Usuário</th><th>Email</th><th>Papel</th><th>Acesso</th><th>Criado em</th></tr></thead>
+              <thead><tr><th>Usuário</th><th>Email</th><th>Status</th><th>Plano</th><th>Expira</th><th>Cadastro</th></tr></thead>
               <tbody>
-                {lista.map((r: any) => (
-                  <tr key={r.id ?? r.email}>
-                    <td><div className="lead-name">{r.name ?? r.full_name ?? r.email}</div></td>
-                    <td className="muted">{r.email}</td>
-                    <td><span className={`crm-tag crm-tag-${r.role === "super_admin" ? "gold" : r.role === "admin" ? "green" : "gray"}`}><span className="crm-tag-dot" />{r.role ?? "viewer"}</span></td>
-                    <td className="muted"><span className="crm-mono">{r.access ?? r.scope ?? "—"}</span></td>
-                    <td className="muted">{r.created_at ? new Date(r.created_at).toLocaleDateString("pt-BR") : "—"}</td>
+                {filtered.slice(0, 100).map((u) => (
+                  <tr key={u.user_id}>
+                    <td><div className="lead-name">{u.full_name ?? "—"}</div>{u.phone && <div className="lead-email">{u.phone}</div>}</td>
+                    <td className="muted">{u.email}</td>
+                    <td>{statusTag(u.subscription)}</td>
+                    <td className="muted">{planLabel(u.subscription?.plan_type)}</td>
+                    <td className="muted">{u.subscription?.access_expires_at ? new Date(u.subscription.access_expires_at).toLocaleDateString("pt-BR") : "—"}</td>
+                    <td className="muted">{u.created_at ? new Date(u.created_at).toLocaleDateString("pt-BR") : "—"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
             <div style={{ padding: 48, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
-              Sem usuários retornados pela função crm-auth. Verifique a action <code>list_users</code>.
+              {lista.length === 0
+                ? "Sem usuários retornados pela função crm-auth. Verifique a action list_users."
+                : "Sem usuários para o filtro/busca atual."}
+            </div>
+          )}
+          {filtered.length > 100 && (
+            <div style={{ padding: "12px 16px", fontSize: 12, color: "var(--crm-ink-4)", textAlign: "center", borderTop: "1px solid var(--crm-line)" }}>
+              Exibindo primeiros 100 de {filtered.length} resultados.
             </div>
           )}
         </section>

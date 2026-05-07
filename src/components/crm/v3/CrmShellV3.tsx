@@ -41,9 +41,9 @@ const MARKETING_NAV: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
-    label: "Sistema",
+    label: "Gestão",
     items: [
-      { to: "/admin/crm-mkt/users", label: "Usuários do CRM", icon: Settings },
+      { to: "/admin/crm-mkt/users", label: "Usuários", icon: Users },
     ],
   },
 ];
