@@ -1,35 +1,67 @@
 import { useState } from "react";
 import CrmShellV3 from "@/components/crm/v3/CrmShellV3";
 import { Search, Plus, Download, Filter, Columns, MoreHorizontal, MessageSquare } from "lucide-react";
+import { useLeads, useFunnelKpis, useDashboardKpis } from "@/hooks/useCrm";
+import type { CrmLead, LeadStatus } from "@/lib/crm/types";
 
-interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  score: number;
-  status: { tag: "green" | "blue" | "warn" | "gray" | "red"; label: string };
-  fase: string;
-  produto: "PreceptorMED" | "PreceptorIA" | "PreceptorRev";
-  source: string;
-  campaign: string;
-  ultima: string;
+const STATUS_TAG: Record<LeadStatus, "green" | "blue" | "warn" | "gray" | "red"> = {
+  visitor: "gray",
+  signup: "blue",
+  active_trial: "blue",
+  engaged: "green",
+  subscriber: "green",
+  churned: "red",
+  win_back: "warn",
+};
+
+const STATUS_LABEL: Record<LeadStatus, string> = {
+  visitor: "Visitor",
+  signup: "Signup",
+  active_trial: "Trial ativo",
+  engaged: "Engajado",
+  subscriber: "Assinante",
+  churned: "Churn",
+  win_back: "Win-back",
+};
+
+function fmtAtividade(iso: string | null): string {
+  if (!iso) return "—";
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 60_000) return "agora";
+  if (diff < 3_600_000) return `há ${Math.floor(diff / 60_000)} min`;
+  if (diff < 86_400_000) return `há ${Math.floor(diff / 3_600_000)} h`;
+  return `há ${Math.floor(diff / 86_400_000)} dias`;
 }
 
-const LEADS: Lead[] = [
-  { id: "PMD-3812", name: "Bruna Cosendey Albuquerque", email: "bruna.cosendey@unifesp.edu.br", score: 91, status: { tag: "green", label: "Trial ativo" }, fase: "R+ Cardio", produto: "PreceptorMED", source: "google_ads", campaign: "cpc · residencia-cardio-mar26", ultima: "há 14 min" },
-  { id: "PMD-3789", name: "Pedro Henrique Lacerda", email: "pedrolacerda@hotmail.com", score: 88, status: { tag: "green", label: "Engajado" }, fase: "R+ Clínica", produto: "PreceptorMED", source: "instagram", campaign: "organic · @preceptormed", ultima: "há 1 h" },
-  { id: "PMD-3754", name: "Marcela Tinoco Nunes", email: "marcela.tinoco@medusp.br", score: 82, status: { tag: "green", label: "Engajado" }, fase: "Internato", produto: "PreceptorIA", source: "direct", campaign: "—", ultima: "há 3 h" },
-  { id: "PMD-3742", name: "Thiago Carvalho Sá", email: "thiago.csa@medusp.br", score: 74, status: { tag: "blue", label: "Trial ativo" }, fase: "R+ Cardio", produto: "PreceptorMED", source: "google_ads", campaign: "cpc · residencia-cardio-mar26", ultima: "há 5 h" },
-  { id: "PMD-3728", name: "Felipe Brandão Rios", email: "felipe.brandao@residencia.org", score: 67, status: { tag: "warn", label: "Trial ativo" }, fase: "R+ Pediatria", produto: "PreceptorMED", source: "facebook", campaign: "cpc · pediatria-abr", ultima: "há 1 dia" },
-  { id: "PMD-3712", name: "Camila Reis Andrade", email: "camilarandrade@gmail.com", score: 62, status: { tag: "blue", label: "Signup" }, fase: "Pré-prova", produto: "PreceptorMED", source: "tiktok", campaign: "organic · @preceptor", ultima: "há 1 dia" },
-  { id: "PMD-3701", name: "Rafael Oliveira Mendes", email: "rafa.mendes@hotmail.com", score: 58, status: { tag: "warn", label: "Trial ativo" }, fase: "R+ Cirurgia", produto: "PreceptorMED", source: "instagram", campaign: "cpc · cirurgia-mar26", ultima: "há 2 dias" },
-  { id: "PMD-3692", name: "Juliana Pacheco Lima", email: "juliana.lima@unb.br", score: 51, status: { tag: "warn", label: "Engajado" }, fase: "Internato", produto: "PreceptorMED", source: "direct", campaign: "indicação", ultima: "há 2 dias" },
-  { id: "PMD-3681", name: "Diego Torres Almeida", email: "d.torres@medusp.br", score: 44, status: { tag: "gray", label: "Signup" }, fase: "R+ Cardio", produto: "PreceptorMED", source: "google_ads", campaign: "cpc · residencia-cardio-mar26", ultima: "há 4 dias" },
-  { id: "PMD-3672", name: "Ana Carolina Furtado", email: "anac.furtado@gmail.com", score: 38, status: { tag: "gray", label: "Signup" }, fase: "Pré-prova", produto: "PreceptorMED", source: "organic_search", campaign: 'google · "como passar residência"', ultima: "há 5 dias" },
-];
+const fmt = (v: number) => v.toLocaleString("pt-BR");
 
 export default function LeadsV3() {
-  const [selected, setSelected] = useState<Lead>(LEADS[0]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<LeadStatus | undefined>(undefined);
+  const [page] = useState(1);
+  const [selected, setSelected] = useState<CrmLead | null>(null);
+
+  const { data } = useLeads({ status: statusFilter, search: search || undefined, page });
+  const { data: funnel } = useFunnelKpis();
+  const { data: kpis } = useDashboardKpis();
+
+  const leads: CrmLead[] = data?.leads ?? [];
+  const total = data?.total ?? 0;
+
+  // Stage pills agregados
+  const agg = (funnel ?? []).reduce(
+    (acc, f) => ({
+      visitors: acc.visitors + (f.visitors ?? 0),
+      signups: acc.signups + (f.signups ?? 0),
+      active_trials: acc.active_trials + (f.active_trials ?? 0),
+      engaged: acc.engaged + (f.engaged ?? 0),
+      subscribers: acc.subscribers + (f.subscribers ?? 0),
+      churned: acc.churned + (f.churned ?? 0),
+    }),
+    { visitors: 0, signups: 0, active_trials: 0, engaged: 0, subscribers: 0, churned: 0 }
+  );
+
+  const cur = selected ?? leads[0] ?? null;
 
   return (
     <CrmShellV3
@@ -45,22 +77,22 @@ export default function LeadsV3() {
       <main className="crm-page">
         <div>
           <div className="crm-page-eyebrow">Marketing · Lead Intelligence</div>
-          <h1 className="crm-page-title">2 481 leads <em>vivos no banco</em></h1>
+          <h1 className="crm-page-title">{fmt(kpis?.totalLeads ?? total)} leads <em>vivos no banco</em></h1>
           <p className="crm-page-sub">
-            Score automático de 0–100 baseado em engajamento, fase médica e canal de origem. Ranking atualizado a cada 4h pelo motor de ML.
+            Score de 0–100 calculado pelo backend (lead-score edge function). Lista paginada de crm_leads ordenada por lead_score desc.
           </p>
         </div>
 
         {/* Stage pills */}
         <div className="crm-card" style={{ overflow: "hidden" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
-            <StagePill label="Visitor" val="28 412" pct="+ 2 814 (30d)" />
-            <StagePill label="Signup" val="1 242" pct="34,0% conv." />
-            <StagePill label="Trial ativo" val="658" pct="53,0% conv." active />
-            <StagePill label="Engajado" val="389" pct="61,1% conv." />
-            <StagePill label="Assinante" val="784" pct="25,1% conv." />
-            <StagePill label="Churn" val="31" pct="3,8% / mês" valColor="var(--crm-neg)" />
-            <StagePill label="Win-back" val="9" pct="29% recovery" />
+            <StagePill label="Visitor" val={fmt(agg.visitors)} pct={`${(funnel ?? []).length} produtos`} onClick={() => setStatusFilter(undefined)} active={!statusFilter} />
+            <StagePill label="Signup" val={fmt(agg.signups)} pct={agg.visitors > 0 ? `${((agg.signups / agg.visitors) * 100).toFixed(1)}% conv.` : "—"} onClick={() => setStatusFilter("signup")} active={statusFilter === "signup"} />
+            <StagePill label="Trial ativo" val={fmt(agg.active_trials)} pct={agg.signups > 0 ? `${((agg.active_trials / agg.signups) * 100).toFixed(1)}% conv.` : "—"} onClick={() => setStatusFilter("active_trial")} active={statusFilter === "active_trial"} />
+            <StagePill label="Engajado" val={fmt(agg.engaged)} pct={agg.active_trials > 0 ? `${((agg.engaged / agg.active_trials) * 100).toFixed(1)}% conv.` : "—"} onClick={() => setStatusFilter("engaged")} active={statusFilter === "engaged"} />
+            <StagePill label="Assinante" val={fmt(agg.subscribers)} pct={agg.engaged > 0 ? `${((agg.subscribers / agg.engaged) * 100).toFixed(1)}% conv.` : "—"} onClick={() => setStatusFilter("subscriber")} active={statusFilter === "subscriber"} />
+            <StagePill label="Churn" val={fmt(agg.churned)} pct={`${kpis?.churnRate ?? 0}% / mês`} valColor="var(--crm-neg)" onClick={() => setStatusFilter("churned")} active={statusFilter === "churned"} />
+            <StagePill label="Win-back" val="—" pct="recovery" onClick={() => setStatusFilter("win_back")} active={statusFilter === "win_back"} />
           </div>
         </div>
 
@@ -77,6 +109,8 @@ export default function LeadsV3() {
                   <Search style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "var(--crm-ink-4)" }} />
                   <input
                     placeholder="Buscar por email ou nome…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
                     style={{
                       background: "var(--crm-surface)",
                       border: "1px solid var(--crm-line)",
@@ -94,110 +128,123 @@ export default function LeadsV3() {
                 </div>
               </div>
 
-              <table className="crm-tbl">
-                <thead>
-                  <tr>
-                    <th style={{ width: 24 }}><input type="checkbox" /></th>
-                    <th>Lead</th>
-                    <th>Score</th>
-                    <th>Status</th>
-                    <th>Fase</th>
-                    <th>Produto</th>
-                    <th>Origem</th>
-                    <th>Última atividade</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {LEADS.map((l) => (
-                    <tr
-                      key={l.id}
-                      onClick={() => setSelected(l)}
-                      style={{
-                        background: selected.id === l.id ? "var(--crm-green-tint)" : undefined,
-                        cursor: "pointer",
-                      }}
-                    >
-                      <td><input type="checkbox" /></td>
-                      <td>
-                        <div className="lead-name">{l.name}</div>
-                        <div className="lead-email">{l.email}</div>
-                      </td>
-                      <td>
-                        <div className="crm-score">
-                          <div className="crm-score-bar" style={{ ["--score" as never]: `${l.score}%` }} />
-                          <span className="crm-score-num">{l.score}</span>
-                        </div>
-                      </td>
-                      <td><span className={`crm-tag crm-tag-${l.status.tag}`}><span className="crm-tag-dot" />{l.status.label}</span></td>
-                      <td className="muted">{l.fase}</td>
-                      <td><span className="crm-tag crm-tag-outline-green">{l.produto}</span></td>
-                      <td>
-                        <div className="muted crm-mono" style={{ fontSize: 12 }}>{l.source}</div>
-                        <div className="muted" style={{ fontSize: 11 }}>{l.campaign}</div>
-                      </td>
-                      <td className="muted crm-mono">{l.ultima}</td>
-                      <td><button className="crm-btn-icon"><MoreHorizontal /></button></td>
+              {leads.length > 0 ? (
+                <table className="crm-tbl">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 24 }}><input type="checkbox" /></th>
+                      <th>Lead</th>
+                      <th>Score</th>
+                      <th>Status</th>
+                      <th>Fase</th>
+                      <th>Produto</th>
+                      <th>Origem</th>
+                      <th>Última atividade</th>
+                      <th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {leads.map((l) => (
+                      <tr
+                        key={l.id}
+                        onClick={() => setSelected(l)}
+                        style={{
+                          background: cur?.id === l.id ? "var(--crm-green-tint)" : undefined,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <td><input type="checkbox" /></td>
+                        <td>
+                          <div className="lead-name">{l.nome ?? l.email}</div>
+                          <div className="lead-email">{l.email}</div>
+                        </td>
+                        <td>
+                          <div className="crm-score">
+                            <div className="crm-score-bar" style={{ ["--score" as never]: `${l.lead_score}%` }} />
+                            <span className="crm-score-num">{l.lead_score}</span>
+                          </div>
+                        </td>
+                        <td><span className={`crm-tag crm-tag-${STATUS_TAG[l.status]}`}><span className="crm-tag-dot" />{STATUS_LABEL[l.status]}</span></td>
+                        <td className="muted">{l.fase_medica ?? "—"}</td>
+                        <td><span className="crm-tag crm-tag-outline-green">{l.produto_interesse}</span></td>
+                        <td>
+                          <div className="muted crm-mono" style={{ fontSize: 12 }}>{l.utm_source ?? "direct"}</div>
+                          <div className="muted" style={{ fontSize: 11 }}>{l.utm_campaign ?? "—"}</div>
+                        </td>
+                        <td className="muted crm-mono">{fmtAtividade(l.last_activity_at)}</td>
+                        <td><button className="crm-btn-icon"><MoreHorizontal /></button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{ padding: 48, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
+                  Sem leads para os filtros atuais.
+                </div>
+              )}
 
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "12px 16px", fontSize: 12, color: "var(--crm-ink-4)",
                 borderTop: "1px solid var(--crm-line)",
               }}>
-                <span>Mostrando <strong className="crm-strong">1–{LEADS.length}</strong> de <strong className="crm-strong">658</strong> leads</span>
-                <div style={{ display: "inline-flex", gap: 4 }}>
-                  {["‹", "1", "2", "3", "4", "…", "55", "›"].map((p, i) => (
-                    <button key={i} className={p === "1" ? "crm-btn crm-btn-primary" : "crm-btn-icon"} style={{ width: 26, height: 26, padding: 0, fontFamily: "var(--crm-mono)", fontSize: 11.5 }}>{p}</button>
-                  ))}
-                </div>
+                <span>Mostrando <strong className="crm-strong">1–{leads.length}</strong> de <strong className="crm-strong">{fmt(total)}</strong> leads</span>
               </div>
             </div>
           </div>
 
           {/* Drawer */}
           <aside className="crm-card" style={{ position: "sticky", top: 76 }}>
-            <div style={{ padding: "16px 16px 14px", borderBottom: "1px solid var(--crm-line-soft)" }}>
-              <div className="crm-mono" style={{ fontSize: 10.5, color: "var(--crm-ink-4)", letterSpacing: "0.04em" }}>LEAD #{selected.id}</div>
-              <div style={{ fontFamily: "var(--crm-sans)", fontSize: 18, fontWeight: 700, color: "var(--crm-ink)", letterSpacing: "-0.015em", marginTop: 4, lineHeight: 1.15 }}>{selected.name}</div>
-              <div style={{ fontSize: 12, color: "var(--crm-ink-3)", marginTop: 2 }}>{selected.email}</div>
-              <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                <span className={`crm-tag crm-tag-${selected.status.tag}`}><span className="crm-tag-dot" />{selected.status.label}</span>
-                <span className="crm-tag crm-tag-outline-green">{selected.produto}</span>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: "1px solid var(--crm-line-soft)", background: "var(--crm-surface-2)" }}>
-              <ScoreRing score={selected.score} />
-              <div>
-                <div className="crm-strong" style={{ fontFamily: "var(--crm-sans)", fontSize: 13 }}>
-                  {selected.score >= 80 ? "Hot lead" : selected.score >= 60 ? "Warm lead" : "Cold lead"}
+            {cur ? (
+              <>
+                <div style={{ padding: "16px 16px 14px", borderBottom: "1px solid var(--crm-line-soft)" }}>
+                  <div className="crm-mono" style={{ fontSize: 10.5, color: "var(--crm-ink-4)", letterSpacing: "0.04em" }}>LEAD #{String(cur.id).slice(0, 8)}</div>
+                  <div style={{ fontFamily: "var(--crm-sans)", fontSize: 18, fontWeight: 700, color: "var(--crm-ink)", letterSpacing: "-0.015em", marginTop: 4, lineHeight: 1.15 }}>{cur.nome ?? cur.email}</div>
+                  <div style={{ fontSize: 12, color: "var(--crm-ink-3)", marginTop: 2 }}>{cur.email}</div>
+                  <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                    <span className={`crm-tag crm-tag-${STATUS_TAG[cur.status]}`}><span className="crm-tag-dot" />{STATUS_LABEL[cur.status]}</span>
+                    <span className="crm-tag crm-tag-outline-green">{cur.produto_interesse}</span>
+                  </div>
                 </div>
-                <div className="crm-muted" style={{ fontSize: 11.5, lineHeight: 1.4 }}>
-                  Probabilidade de conversão estimada em <strong className="crm-strong">{Math.min(95, selected.score + 6)}%</strong> nos próximos 7 dias.
+
+                <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: "1px solid var(--crm-line-soft)", background: "var(--crm-surface-2)" }}>
+                  <ScoreRing score={cur.lead_score} />
+                  <div>
+                    <div className="crm-strong" style={{ fontFamily: "var(--crm-sans)", fontSize: 13 }}>
+                      {cur.lead_score >= 80 ? "Hot lead" : cur.lead_score >= 60 ? "Warm lead" : "Cold lead"}
+                    </div>
+                    <div className="crm-muted" style={{ fontSize: 11.5, lineHeight: 1.4 }}>
+                      Score de <strong className="crm-strong">{cur.lead_score}/100</strong> calculado pela edge function lead-score.
+                    </div>
+                  </div>
                 </div>
+
+                <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--crm-line-soft)" }}>
+                  <h4 style={{ fontFamily: "var(--crm-sans)", fontSize: 11, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--crm-ink-4)", margin: "0 0 8px" }}>Origem</h4>
+                  <dl style={{ display: "grid", gridTemplateColumns: "90px 1fr", gap: "6px 10px", fontSize: 12, margin: 0 }}>
+                    <dt style={{ color: "var(--crm-ink-4)" }}>Source</dt>
+                    <dd style={{ margin: 0, color: "var(--crm-ink)", fontWeight: 500 }} className="crm-mono">{cur.utm_source ?? "direct"}</dd>
+                    <dt style={{ color: "var(--crm-ink-4)" }}>Campanha</dt>
+                    <dd style={{ margin: 0, color: "var(--crm-ink)", fontWeight: 500 }} className="crm-mono">{cur.utm_campaign ?? "—"}</dd>
+                    <dt style={{ color: "var(--crm-ink-4)" }}>Fase</dt>
+                    <dd style={{ margin: 0, color: "var(--crm-ink)", fontWeight: 500 }}>{cur.fase_medica ?? "—"}</dd>
+                    {cur.faculdade && <>
+                      <dt style={{ color: "var(--crm-ink-4)" }}>Faculdade</dt>
+                      <dd style={{ margin: 0, color: "var(--crm-ink)", fontWeight: 500 }}>{cur.faculdade}</dd>
+                    </>}
+                  </dl>
+                </div>
+
+                <div style={{ padding: "14px 16px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <button className="crm-btn crm-btn-primary"><MessageSquare size={13} /> Mensagem</button>
+                  <button className="crm-btn crm-btn-ghost">Acionar playbook</button>
+                </div>
+              </>
+            ) : (
+              <div style={{ padding: 48, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
+                Selecione um lead para ver detalhes.
               </div>
-            </div>
-
-            <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--crm-line-soft)" }}>
-              <h4 style={{ fontFamily: "var(--crm-sans)", fontSize: 11, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--crm-ink-4)", margin: "0 0 8px" }}>Origem</h4>
-              <dl style={{ display: "grid", gridTemplateColumns: "90px 1fr", gap: "6px 10px", fontSize: 12, margin: 0 }}>
-                <dt style={{ color: "var(--crm-ink-4)" }}>Source</dt>
-                <dd style={{ margin: 0, color: "var(--crm-ink)", fontWeight: 500 }} className="crm-mono">{selected.source}</dd>
-                <dt style={{ color: "var(--crm-ink-4)" }}>Campanha</dt>
-                <dd style={{ margin: 0, color: "var(--crm-ink)", fontWeight: 500 }} className="crm-mono">{selected.campaign}</dd>
-                <dt style={{ color: "var(--crm-ink-4)" }}>Fase</dt>
-                <dd style={{ margin: 0, color: "var(--crm-ink)", fontWeight: 500 }}>{selected.fase}</dd>
-              </dl>
-            </div>
-
-            <div style={{ padding: "14px 16px", display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <button className="crm-btn crm-btn-primary"><MessageSquare size={13} /> Mensagem</button>
-              <button className="crm-btn crm-btn-ghost">Acionar playbook</button>
-            </div>
+            )}
           </aside>
         </div>
       </main>
@@ -205,9 +252,9 @@ export default function LeadsV3() {
   );
 }
 
-function StagePill({ label, val, pct, active, valColor }: { label: string; val: string; pct: string; active?: boolean; valColor?: string }) {
+function StagePill({ label, val, pct, active, valColor, onClick }: { label: string; val: string; pct: string; active?: boolean; valColor?: string; onClick?: () => void }) {
   return (
-    <div style={{
+    <div onClick={onClick} style={{
       padding: "12px 14px",
       borderRight: "1px solid var(--crm-line-soft)",
       background: active ? "var(--crm-green-tint)" : "var(--crm-surface)",
