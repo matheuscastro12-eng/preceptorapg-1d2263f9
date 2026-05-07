@@ -7,6 +7,8 @@ import { usePDIs, usePDIStats } from "@/hooks/usePDI";
 import { useTrilhas, usePosicoes, usePromocoesTrimestrais } from "@/hooks/useCarreira";
 import { useVagas, useContratacaoMetricas } from "@/hooks/useContratacoes";
 import { useFolhaConsolidada, useProjecaoFolha } from "@/hooks/useSalarios";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const fmtBRL = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 const fmtBRL2 = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -442,7 +444,42 @@ function IntegrationCard({ name, status, desc, meta }: { name: string; status: "
 /* =========================================================
    WEBHOOKS
    ========================================================= */
+function useWebhookEvents() {
+  return useQuery({
+    queryKey: ["crm-admin", "webhook-events"],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("webhook_events")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      return (data ?? []) as any[];
+    },
+  });
+}
+
 export function WebhooksV3() {
+  const { data: events } = useWebhookEvents();
+  const lista = events ?? [];
+
+  const last24h = new Date(Date.now() - 24 * 3600000).toISOString();
+  const eventos24h = lista.filter((e) => e.created_at >= last24h);
+  const sucessos = lista.filter((e) => e.processed === true && !e.error_message).length;
+  const falhas = lista.filter((e) => e.processed === false || !!e.error_message).length;
+  const taxaSucesso = lista.length > 0 ? ((sucessos / lista.length) * 100).toFixed(1) : "—";
+
+  // agregação por provider
+  const providers: Record<string, number> = {};
+  lista.forEach((e) => { providers[e.provider] = (providers[e.provider] ?? 0) + 1; });
+
+  const fmtWhen = (iso: string) => {
+    const diff = Date.now() - new Date(iso).getTime();
+    if (diff < 60000) return "agora";
+    if (diff < 3600000) return `há ${Math.floor(diff / 60000)} min`;
+    if (diff < 86400000) return `há ${Math.floor(diff / 3600000)}h`;
+    return `há ${Math.floor(diff / 86400000)}d`;
+  };
+
   return (
     <CrmShellV3 mode="admin" crumbs={[{ label: "CRM" }, { label: "Admin" }, { label: "Webhooks" }]}
       topbarTools={<><button className="crm-btn crm-btn-primary"><Plus size={13} /> Novo webhook</button></>}
@@ -451,43 +488,57 @@ export function WebhooksV3() {
         <PageHero
           eyebrow="Admin · Sistema · Webhooks"
           title={<>Logs de <em>webhooks</em></>}
-          sub="Histórico de eventos recebidos: Asaas, Stripe, Resend, Google Forms. Falhas geram alerta automático."
+          sub="Histórico real de webhook_events. EasyFlow, Stripe, Resend e outros providers que escrevem na tabela."
         />
 
         <section className="crm-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
-          <Kpi label="Eventos 24h" value="1 240" delta="↑ 12%" deltaSign="pos" accent="mrr" />
-          <Kpi label="Sucesso" value="99,2%" delta="↑ 0,3pp" deltaSign="pos" />
-          <Kpi label="Falhas" value="9" delta="0,8%" deltaSign="neg" accent="warn" />
-          <Kpi label="Latência média" value="180ms" delta="P95: 480ms" deltaSign="flat" />
+          <Kpi label="Eventos 24h" value={eventos24h.length} accent="mrr" />
+          <Kpi label="Total cadastrado" value={lista.length} deltaText="últimos 200 logs" />
+          <Kpi label="Taxa sucesso" value={`${taxaSucesso}%`} accent={Number(taxaSucesso) >= 95 ? "mrr" : "warn"} />
+          <Kpi label="Falhas" value={falhas} deltaText={`em ${lista.length} eventos`} accent={falhas > 0 ? "neg" : undefined} />
         </section>
 
-        <section className="crm-card">
-          <CardHead title="Logs recentes" sub="últimas 12 entradas · clique para detalhes" />
-          <table className="crm-tbl">
-            <thead><tr><th>Evento</th><th>Origem</th><th>Status</th><th>Latência</th><th>Quando</th><th></th></tr></thead>
-            <tbody>
-              {[
-                { e: "subscription.created", o: "Asaas", st: "200", lat: "142ms", w: "agora", cl: "green" },
-                { e: "payment.confirmed", o: "Asaas", st: "200", lat: "98ms", w: "há 1 min", cl: "green" },
-                { e: "payment.failed", o: "Asaas", st: "200", lat: "120ms", w: "há 3 min", cl: "green" },
-                { e: "email.delivered", o: "Resend", st: "200", lat: "44ms", w: "há 5 min", cl: "green" },
-                { e: "checkout.completed", o: "Stripe", st: "200", lat: "180ms", w: "há 8 min", cl: "green" },
-                { e: "subscription.cancelled", o: "Asaas", st: "200", lat: "156ms", w: "há 12 min", cl: "green" },
-                { e: "form.submitted", o: "Google Forms", st: "500", lat: "timeout", w: "há 18 min", cl: "red" },
-                { e: "payment.refunded", o: "Stripe", st: "200", lat: "210ms", w: "há 22 min", cl: "green" },
-                { e: "email.bounced", o: "Resend", st: "200", lat: "62ms", w: "há 30 min", cl: "warn" },
-              ].map((r, i) => (
-                <tr key={i}>
-                  <td><code style={{ background: "var(--crm-surface-2)", padding: "2px 8px", borderRadius: 3, fontFamily: "var(--crm-mono)", fontSize: 12, color: "var(--crm-green-deep)" }}>{r.e}</code></td>
-                  <td><span className="crm-tag crm-tag-gray"><span className="crm-tag-dot" />{r.o}</span></td>
-                  <td><span className={`crm-tag crm-tag-${r.cl}`}><span className="crm-tag-dot" />{r.st}</span></td>
-                  <td className="num">{r.lat}</td>
-                  <td className="muted">{r.w}</td>
-                  <td><button className="crm-btn-icon"><Activity /></button></td>
-                </tr>
+        {Object.keys(providers).length > 0 && (
+          <section className="crm-card">
+            <CardHead title="Por provider" sub="distribuição de eventos por origem" />
+            <div className="crm-card-pad" style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              {Object.entries(providers).map(([p, c]) => (
+                <div key={p} style={{ padding: "10px 14px", background: "var(--crm-surface-2)", border: "1px solid var(--crm-line)", borderRadius: 6 }}>
+                  <div className="crm-mono" style={{ fontSize: 11, color: "var(--crm-ink-4)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>{p}</div>
+                  <div style={{ fontFamily: "var(--crm-sans)", fontSize: 20, fontWeight: 700, color: "var(--crm-ink)", marginTop: 4 }}>{c}</div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </section>
+        )}
+
+        <section className="crm-card">
+          <CardHead title="Logs recentes" sub={`${lista.length} eventos · clique para ver payload`} />
+          {lista.length > 0 ? (
+            <table className="crm-tbl">
+              <thead><tr><th>Evento</th><th>Provider</th><th>Status</th><th>Erro</th><th>Quando</th><th></th></tr></thead>
+              <tbody>
+                {lista.slice(0, 50).map((r) => (
+                  <tr key={r.id}>
+                    <td><code style={{ background: "var(--crm-surface-2)", padding: "2px 8px", borderRadius: 3, fontFamily: "var(--crm-mono)", fontSize: 12, color: "var(--crm-green-deep)" }}>{r.event_type}</code></td>
+                    <td><span className="crm-tag crm-tag-gray"><span className="crm-tag-dot" />{r.provider}</span></td>
+                    <td>
+                      <span className={`crm-tag crm-tag-${r.processed && !r.error_message ? "green" : "red"}`}>
+                        <span className="crm-tag-dot" />{r.processed && !r.error_message ? "ok" : "falha"}
+                      </span>
+                    </td>
+                    <td className="muted" style={{ maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.error_message ?? "—"}</td>
+                    <td className="muted">{fmtWhen(r.created_at)}</td>
+                    <td><button className="crm-btn-icon" title={JSON.stringify(r.payload).slice(0, 200)}><Activity /></button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div style={{ padding: 48, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
+              Sem eventos em <code>webhook_events</code> ainda. Aguarde os primeiros disparos do EasyFlow/Stripe.
+            </div>
+          )}
         </section>
       </main>
     </CrmShellV3>

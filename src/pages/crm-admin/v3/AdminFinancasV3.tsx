@@ -421,14 +421,20 @@ function CashflowChart() {
    DESPESAS — dados reais
    ========================================================= */
 export function DespesasV3() {
-  const mesAtual = new Date().toISOString().slice(0, 7);
-  const { data: despesas } = useDespesas({ mes: mesAtual });
+  const mesAtualKey = new Date().toISOString().slice(0, 7);
+  const [periodo, setPeriodo] = useState<"mes" | "tudo">("tudo");
+  const filtroMes = periodo === "mes" ? mesAtualKey : undefined;
+  const { data: despesas } = useDespesas(filtroMes ? { mes: filtroMes } : undefined);
   const { data: resumo } = useDespesaResumo();
-  const { data: porCategoria } = useDespesasPorCategoria();
+  const { data: porCategoria } = useDespesasPorCategoria(filtroMes ? { mes: filtroMes } : undefined);
 
   return (
     <CrmShellV3 mode="admin" crumbs={[{ label: "CRM" }, { label: "Admin" }, { label: "Despesas" }]}
-      topbarTools={<><button className="crm-btn crm-btn-ghost"><Download size={13} /> Exportar</button><button className="crm-btn crm-btn-primary"><Plus size={13} /> Lançar despesa</button></>}
+      topbarTools={<>
+        <PeriodBar options={["Mês atual", "Tudo"]} active={periodo === "mes" ? "Mês atual" : "Tudo"} onChange={(v) => setPeriodo(v === "Mês atual" ? "mes" : "tudo")} />
+        <button className="crm-btn crm-btn-ghost"><Download size={13} /> Exportar</button>
+        <button className="crm-btn crm-btn-primary"><Plus size={13} /> Lançar despesa</button>
+      </>}
     >
       <main className="crm-page">
         <PageHero
@@ -470,7 +476,7 @@ export function DespesasV3() {
         )}
 
         <section className="crm-card">
-          <CardHead title={`Lançamentos · ${mesAtual}`} sub={despesas ? `${despesas.length} lançamentos` : ""} />
+          <CardHead title={`Lançamentos · ${periodo === "mes" ? mesAtualKey : "todo o período"}`} sub={despesas ? `${despesas.length} lançamentos` : ""} />
           {despesas && despesas.length > 0 ? (
             <table className="crm-tbl">
               <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Responsável</th><th style={{ textAlign: "right" }}>Valor</th><th>Recorrente</th></tr></thead>
@@ -493,7 +499,7 @@ export function DespesasV3() {
             </table>
           ) : (
             <div style={{ padding: 48, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
-              Sem lançamentos no mês atual.
+              Sem lançamentos no período selecionado.
             </div>
           )}
         </section>
