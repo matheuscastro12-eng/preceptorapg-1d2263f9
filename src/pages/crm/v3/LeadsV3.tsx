@@ -1,7 +1,9 @@
 import { useState } from "react";
 import CrmShellV3 from "@/components/crm/v3/CrmShellV3";
 import { Search, Plus, Download, Filter, Columns, MoreHorizontal, MessageSquare } from "lucide-react";
-import { useLeads, useFunnelKpis, useDashboardKpis } from "@/hooks/useCrm";
+import { useLeads, useDashboardKpis } from "@/hooks/useCrm";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/crm/supabase";
 import type { CrmLead, LeadStatus } from "@/lib/crm/types";
 
 const STATUS_TAG: Record<LeadStatus, "green" | "blue" | "warn" | "gray" | "red"> = {
@@ -35,6 +37,37 @@ function fmtAtividade(iso: string | null): string {
 
 const fmt = (v: number) => v.toLocaleString("pt-BR");
 
+// Conta leads por status DIRETO da tabela crm_leads + assinantes ativos reais de subscriptions
+function useStageCounts() {
+  return useQuery({
+    queryKey: ["crm", "stage-counts-real"],
+    queryFn: async () => {
+      const statuses: LeadStatus[] = ["visitor", "signup", "active_trial", "engaged", "subscriber", "churned", "win_back"];
+      const counts: Record<string, number> = {};
+
+      // Conta crm_leads por status
+      await Promise.all(statuses.map(async (s) => {
+        const { count } = await supabase.from("crm_leads").select("*", { count: "exact", head: true }).eq("status", s);
+        counts[s] = count ?? 0;
+      }));
+
+      // Override "subscriber" com contagem real de subscriptions ativas e não expiradas
+      const nowIso = new Date().toISOString();
+      const { data: activeSubs } = await supabase
+        .from("subscriptions")
+        .select("user_id, status, plan_type, access_expires_at")
+        .eq("status", "active")
+        .in("plan_type", ["monthly", "annual", "biannual"]);
+
+      const realActive = (activeSubs ?? []).filter((s: any) => !s.access_expires_at || s.access_expires_at > nowIso).length;
+      counts.subscriber_real = realActive;
+
+      return counts;
+    },
+    refetchInterval: 60_000,
+  });
+}
+
 export default function LeadsV3() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<LeadStatus | undefined>(undefined);
@@ -42,24 +75,23 @@ export default function LeadsV3() {
   const [selected, setSelected] = useState<CrmLead | null>(null);
 
   const { data } = useLeads({ status: statusFilter, search: search || undefined, page });
-  const { data: funnel } = useFunnelKpis();
+  const { data: stages } = useStageCounts();
   const { data: kpis } = useDashboardKpis();
 
   const leads: CrmLead[] = data?.leads ?? [];
   const total = data?.total ?? 0;
 
-  // Stage pills agregados
-  const agg = (funnel ?? []).reduce(
-    (acc, f) => ({
-      visitors: acc.visitors + (f.visitors ?? 0),
-      signups: acc.signups + (f.signups ?? 0),
-      active_trials: acc.active_trials + (f.active_trials ?? 0),
-      engaged: acc.engaged + (f.engaged ?? 0),
-      subscribers: acc.subscribers + (f.subscribers ?? 0),
-      churned: acc.churned + (f.churned ?? 0),
-    }),
-    { visitors: 0, signups: 0, active_trials: 0, engaged: 0, subscribers: 0, churned: 0 }
-  );
+  // Stage pills com dados reais do DB
+  const agg = {
+    visitors: stages?.visitor ?? 0,
+    signups: stages?.signup ?? 0,
+    active_trials: stages?.active_trial ?? 0,
+    engaged: stages?.engaged ?? 0,
+    subscribers: stages?.subscriber_real ?? 0,
+    subscribers_lead: stages?.subscriber ?? 0, // crm_leads.status='subscriber' (pode ter stale)
+    churned: stages?.churned ?? 0,
+    win_back: stages?.win_back ?? 0,
+  };
 
   const cur = selected ?? leads[0] ?? null;
 
@@ -86,14 +118,19 @@ export default function LeadsV3() {
         {/* Stage pills */}
         <div className="crm-card" style={{ overflow: "hidden" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
-            <StagePill label="Visitor" val={fmt(agg.visitors)} pct={`${(funnel ?? []).length} produtos`} onClick={() => setStatusFilter(undefined)} active={!statusFilter} />
-            <StagePill label="Signup" val={fmt(agg.signups)} pct={agg.visitors > 0 ? `${((agg.signups / agg.visitors) * 100).toFixed(1)}% conv.` : "—"} onClick={() => setStatusFilter("signup")} active={statusFilter === "signup"} />
-            <StagePill label="Trial ativo" val={fmt(agg.active_trials)} pct={agg.signups > 0 ? `${((agg.active_trials / agg.signups) * 100).toFixed(1)}% conv.` : "—"} onClick={() => setStatusFilter("active_trial")} active={statusFilter === "active_trial"} />
-            <StagePill label="Engajado" val={fmt(agg.engaged)} pct={agg.active_trials > 0 ? `${((agg.engaged / agg.active_trials) * 100).toFixed(1)}% conv.` : "—"} onClick={() => setStatusFilter("engaged")} active={statusFilter === "engaged"} />
-            <StagePill label="Assinante" val={fmt(agg.subscribers)} pct={agg.engaged > 0 ? `${((agg.subscribers / agg.engaged) * 100).toFixed(1)}% conv.` : "—"} onClick={() => setStatusFilter("subscriber")} active={statusFilter === "subscriber"} />
+            <StagePill label="Visitor" val={fmt(agg.visitors)} pct="crm_leads" onClick={() => setStatusFilter(undefined)} active={!statusFilter} />
+            <StagePill label="Signup" val={fmt(agg.signups)} pct="status=signup" onClick={() => setStatusFilter("signup")} active={statusFilter === "signup"} />
+            <StagePill label="Trial ativo" val={fmt(agg.active_trials)} pct="status=active_trial" onClick={() => setStatusFilter("active_trial")} active={statusFilter === "active_trial"} />
+            <StagePill label="Engajado" val={fmt(agg.engaged)} pct="status=engaged" onClick={() => setStatusFilter("engaged")} active={statusFilter === "engaged"} />
+            <StagePill label="Assinante" val={fmt(agg.subscribers)} pct="subscriptions ativas" onClick={() => setStatusFilter("subscriber")} active={statusFilter === "subscriber"} />
             <StagePill label="Churn" val={fmt(agg.churned)} pct={`${kpis?.churnRate ?? 0}% / mês`} valColor="var(--crm-neg)" onClick={() => setStatusFilter("churned")} active={statusFilter === "churned"} />
-            <StagePill label="Win-back" val="—" pct="recovery" onClick={() => setStatusFilter("win_back")} active={statusFilter === "win_back"} />
+            <StagePill label="Win-back" val={fmt(agg.win_back)} pct="status=win_back" onClick={() => setStatusFilter("win_back")} active={statusFilter === "win_back"} />
           </div>
+          {agg.subscribers !== agg.subscribers_lead && (
+            <div style={{ padding: "8px 14px", fontSize: 11, color: "var(--crm-ink-4)", borderTop: "1px solid var(--crm-line-soft)", background: "var(--crm-surface-2)" }}>
+              <strong style={{ color: "var(--crm-ink-3)" }}>Nota:</strong> {agg.subscribers} assinantes ativos reais (subscriptions com status=active, não expirados). {agg.subscribers_lead} estão marcados como <code>subscriber</code> em crm_leads — pode haver lag de sincronização.
+            </div>
+          )}
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 18, alignItems: "flex-start" }}>

@@ -1,14 +1,14 @@
 import { useState } from "react";
 import CrmShellV3, { Kpi, PageHero, PeriodBar, CardHead } from "@/components/crm/v3/CrmShellV3";
 import {
-  Plus, Download, Send, Activity, Edit3, Eye,
+  Plus, Download, Send, Activity, Edit3, Eye, Gift, UserX, Loader2,
 } from "lucide-react";
 import {
   useDashboardKpis, useHealthDistribution, useHealthScoresList,
   useActiveChurnRisks, useAutomationsPerformance, useRecentAutomations, useUtmBreakdown,
 } from "@/hooks/useCrm";
 import { supabase } from "@/lib/crm/supabase";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR");
 const fmtBRL = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -588,10 +588,81 @@ function usePlatformUsers() {
   });
 }
 
+type AccessDuration = "unlimited" | "4h" | "1d" | "3d" | "7d" | "15d" | "30d";
+const DURATION_LABELS: Record<AccessDuration, string> = {
+  unlimited: "Ilimitado", "4h": "4 horas", "1d": "1 dia",
+  "3d": "3 dias", "7d": "7 dias", "15d": "15 dias", "30d": "30 dias",
+};
+
+function expiresFor(d: AccessDuration): string | null {
+  if (d === "unlimited") return null;
+  const ms: Record<string, number> = {
+    "4h": 4 * 3600000, "1d": 86400000, "3d": 3 * 86400000,
+    "7d": 7 * 86400000, "15d": 15 * 86400000, "30d": 30 * 86400000,
+  };
+  return new Date(Date.now() + ms[d]).toISOString();
+}
+
+async function callCrmAction(action: string, payload: Record<string, unknown>) {
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-admin-actions`;
+  const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const token = localStorage.getItem("crm_token");
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": apiKey, "Authorization": `Bearer ${apiKey}` },
+    body: JSON.stringify({ action, token, ...payload }),
+  });
+  return res.json();
+}
+
+function useGrantAccess() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: { user_id: string; duration: AccessDuration }) => {
+      const result = await callCrmAction("grant_access", {
+        user_id: p.user_id,
+        plan_type: "free_access",
+        access_expires_at: expiresFor(p.duration),
+      });
+      if (result.error) throw new Error(result.error);
+      return result;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["crm", "platform-users"] }),
+  });
+}
+
+function useRevokeAccess() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (user_id: string) => {
+      const result = await callCrmAction("revoke_access", { user_id });
+      if (result.error) throw new Error(result.error);
+      return result;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["crm", "platform-users"] }),
+  });
+}
+
+function fmtRemaining(iso: string | null): string {
+  if (!iso) return "ilimitado";
+  const diff = new Date(iso).getTime() - Date.now();
+  if (diff < 0) return "expirado";
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins}m`;
+}
+
 export function UsersV3() {
-  const { data: users } = usePlatformUsers();
+  const { data: users, isLoading } = usePlatformUsers();
+  const grant = useGrantAccess();
+  const revoke = useRevokeAccess();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "paying" | "free" | "none">("all");
+  const [durationFor, setDurationFor] = useState<Record<string, AccessDuration>>({});
+  const [busy, setBusy] = useState<string | null>(null);
 
   const lista = users ?? [];
 
@@ -600,11 +671,14 @@ export function UsersV3() {
     return new Date(sub.access_expires_at) < new Date();
   };
 
+  const isActive = (u: PlatformUser) =>
+    u.subscription && u.subscription.status === "active" && !isExpired(u.subscription);
+
   const stats = {
     total: lista.length,
-    paying: lista.filter((u) => u.subscription?.plan_type === "monthly" || u.subscription?.plan_type === "annual" || u.subscription?.plan_type === "biannual").length,
-    free: lista.filter((u) => u.subscription?.plan_type === "free_access" && !isExpired(u.subscription)).length,
-    none: lista.filter((u) => !u.subscription || u.subscription.status !== "active" || isExpired(u.subscription)).length,
+    paying: lista.filter((u) => isActive(u) && (u.subscription!.plan_type === "monthly" || u.subscription!.plan_type === "annual" || u.subscription!.plan_type === "biannual")).length,
+    free: lista.filter((u) => isActive(u) && u.subscription!.plan_type === "free_access").length,
+    none: lista.filter((u) => !isActive(u)).length,
   };
 
   const filtered = lista.filter((u) => {
@@ -612,9 +686,9 @@ export function UsersV3() {
       const s = search.toLowerCase();
       if (!u.email.toLowerCase().includes(s) && !(u.full_name ?? "").toLowerCase().includes(s)) return false;
     }
-    if (filter === "paying") return u.subscription?.plan_type === "monthly" || u.subscription?.plan_type === "annual" || u.subscription?.plan_type === "biannual";
-    if (filter === "free") return u.subscription?.plan_type === "free_access" && !isExpired(u.subscription);
-    if (filter === "none") return !u.subscription || u.subscription.status !== "active" || isExpired(u.subscription);
+    if (filter === "paying") return isActive(u) && (u.subscription!.plan_type === "monthly" || u.subscription!.plan_type === "annual" || u.subscription!.plan_type === "biannual");
+    if (filter === "free") return isActive(u) && u.subscription!.plan_type === "free_access";
+    if (filter === "none") return !isActive(u);
     return true;
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
@@ -623,14 +697,30 @@ export function UsersV3() {
     return PLAN_LABEL[pt] ?? pt;
   };
 
-  const statusTag = (sub?: PlatformUser["subscription"]) => {
-    if (!sub || sub.status !== "active" || isExpired(sub)) {
+  const statusTag = (u: PlatformUser) => {
+    const sub = u.subscription;
+    if (!isActive(u)) {
+      if (sub?.access_expires_at && isExpired(sub)) {
+        return <span className="crm-tag crm-tag-gray"><span className="crm-tag-dot" />Expirado</span>;
+      }
       return <span className="crm-tag crm-tag-gray"><span className="crm-tag-dot" />Sem acesso</span>;
     }
-    if (sub.plan_type === "free_access") {
+    if (sub!.plan_type === "free_access") {
       return <span className="crm-tag crm-tag-warn"><span className="crm-tag-dot" />Gratuito</span>;
     }
-    return <span className={`crm-tag crm-tag-${PLAN_TAG[sub.plan_type] ?? "gray"}`}><span className="crm-tag-dot" />{planLabel(sub.plan_type)}</span>;
+    return <span className={`crm-tag crm-tag-${PLAN_TAG[sub!.plan_type] ?? "gray"}`}><span className="crm-tag-dot" />{planLabel(sub!.plan_type)}</span>;
+  };
+
+  const handleGrant = async (uid: string) => {
+    const dur = durationFor[uid] ?? "30d";
+    setBusy(uid);
+    try { await grant.mutateAsync({ user_id: uid, duration: dur }); } finally { setBusy(null); }
+  };
+
+  const handleRevoke = async (uid: string) => {
+    if (!confirm("Revogar acesso deste usuário?")) return;
+    setBusy(uid);
+    try { await revoke.mutateAsync(uid); } finally { setBusy(null); }
   };
 
   return (
@@ -639,18 +729,18 @@ export function UsersV3() {
         <PageHero
           eyebrow="Sistema · Gestão de usuários"
           title={<>{fmt(stats.total)} usuários <em>cadastrados</em></>}
-          sub="Lista de alunos da plataforma cruzada com subscriptions ativas. Carregada via edge function crm-auth (action: list_users)."
+          sub="Lista real de alunos da plataforma cruzada com subscriptions ativas. Conceda ou revogue acesso gratuito direto da tabela."
         />
 
         <section className="crm-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
           <Kpi label="Total" value={fmt(stats.total)} deltaText="usuários cadastrados" accent="mrr" />
-          <Kpi label="Pagantes" value={fmt(stats.paying)} deltaText="monthly + annual + biannual" />
-          <Kpi label="Gratuitos" value={fmt(stats.free)} deltaText="free_access ativo" accent="warn" />
+          <Kpi label="Pagantes" value={fmt(stats.paying)} deltaText="ativos · monthly+annual+biannual" />
+          <Kpi label="Gratuitos ativos" value={fmt(stats.free)} deltaText="free_access dentro do prazo" accent="warn" />
           <Kpi label="Sem acesso" value={fmt(stats.none)} deltaText="inativos ou expirados" />
         </section>
 
         <section className="crm-card">
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "var(--crm-surface-2)", borderBottom: "1px solid var(--crm-line)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "var(--crm-surface-2)", borderBottom: "1px solid var(--crm-line)", flexWrap: "wrap" }}>
             <input
               placeholder="Buscar por email ou nome…"
               value={search}
@@ -662,10 +752,10 @@ export function UsersV3() {
                 padding: "6px 10px",
                 fontFamily: "var(--crm-text)",
                 fontSize: 12.5,
-                flex: 1, maxWidth: 320,
+                flex: 1, minWidth: 200, maxWidth: 320,
               }}
             />
-            <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
+            <div style={{ display: "flex", gap: 6, marginLeft: "auto", flexWrap: "wrap" }}>
               {[
                 { key: "all" as const, label: "Todos", count: stats.total },
                 { key: "paying" as const, label: "Pagantes", count: stats.paying },
@@ -682,32 +772,97 @@ export function UsersV3() {
             </div>
           </div>
 
-          {filtered.length > 0 ? (
+          {isLoading ? (
+            <div style={{ padding: 48, textAlign: "center", color: "var(--crm-ink-4)" }}>
+              <Loader2 className="animate-spin" style={{ display: "inline-block", color: "var(--crm-green-deep)" }} />
+            </div>
+          ) : filtered.length > 0 ? (
             <table className="crm-tbl">
-              <thead><tr><th>Usuário</th><th>Email</th><th>Status</th><th>Plano</th><th>Expira</th><th>Cadastro</th></tr></thead>
+              <thead><tr><th>Usuário</th><th>Status</th><th>Plano</th><th>Tempo restante</th><th>Cadastro</th><th style={{ textAlign: "right" }}>Ação</th></tr></thead>
               <tbody>
-                {filtered.slice(0, 100).map((u) => (
-                  <tr key={u.user_id}>
-                    <td><div className="lead-name">{u.full_name ?? "—"}</div>{u.phone && <div className="lead-email">{u.phone}</div>}</td>
-                    <td className="muted">{u.email}</td>
-                    <td>{statusTag(u.subscription)}</td>
-                    <td className="muted">{planLabel(u.subscription?.plan_type)}</td>
-                    <td className="muted">{u.subscription?.access_expires_at ? new Date(u.subscription.access_expires_at).toLocaleDateString("pt-BR") : "—"}</td>
-                    <td className="muted">{u.created_at ? new Date(u.created_at).toLocaleDateString("pt-BR") : "—"}</td>
-                  </tr>
-                ))}
+                {filtered.slice(0, 100).map((u) => {
+                  const active = isActive(u);
+                  const sub = u.subscription;
+                  const dur = durationFor[u.user_id] ?? "30d";
+                  const isBusy = busy === u.user_id;
+                  return (
+                    <tr key={u.user_id}>
+                      <td>
+                        <div className="lead-name">{u.full_name ?? "—"}</div>
+                        <div className="lead-email">{u.email}</div>
+                      </td>
+                      <td>{statusTag(u)}</td>
+                      <td className="muted">{planLabel(sub?.plan_type)}</td>
+                      <td>
+                        {active && sub?.plan_type === "free_access" ? (
+                          <span className="crm-mono" style={{
+                            fontSize: 12,
+                            color: sub.access_expires_at && new Date(sub.access_expires_at).getTime() - Date.now() < 86400000 ? "var(--crm-neg)" : "var(--crm-green-deep)",
+                            fontWeight: 600,
+                          }}>{fmtRemaining(sub.access_expires_at)}</span>
+                        ) : active && sub ? (
+                          <span className="crm-mono" style={{ fontSize: 12, color: "var(--crm-ink-3)" }}>
+                            {sub.access_expires_at ? new Date(sub.access_expires_at).toLocaleDateString("pt-BR") : "ilimitado"}
+                          </span>
+                        ) : (
+                          <span className="muted" style={{ fontSize: 12 }}>—</span>
+                        )}
+                      </td>
+                      <td className="muted">{u.created_at ? new Date(u.created_at).toLocaleDateString("pt-BR") : "—"}</td>
+                      <td>
+                        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", alignItems: "center" }}>
+                          {active && sub?.plan_type === "free_access" ? (
+                            <button
+                              onClick={() => handleRevoke(u.user_id)}
+                              disabled={isBusy}
+                              className="crm-btn crm-btn-ghost"
+                              style={{ fontSize: 11, color: "var(--crm-neg)" }}
+                            >
+                              {isBusy ? <Loader2 size={11} className="animate-spin" /> : <UserX size={11} />} Revogar
+                            </button>
+                          ) : !active ? (
+                            <>
+                              <select
+                                value={dur}
+                                onChange={(e) => setDurationFor((prev) => ({ ...prev, [u.user_id]: e.target.value as AccessDuration }))}
+                                style={{
+                                  background: "var(--crm-surface)", border: "1px solid var(--crm-line)",
+                                  borderRadius: 4, padding: "3px 6px", fontSize: 11, fontFamily: "var(--crm-mono)",
+                                }}
+                              >
+                                {(Object.keys(DURATION_LABELS) as AccessDuration[]).map((k) => (
+                                  <option key={k} value={k}>{DURATION_LABELS[k]}</option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() => handleGrant(u.user_id)}
+                                disabled={isBusy}
+                                className="crm-btn crm-btn-primary"
+                                style={{ fontSize: 11 }}
+                              >
+                                {isBusy ? <Loader2 size={11} className="animate-spin" /> : <Gift size={11} />} Liberar
+                              </button>
+                            </>
+                          ) : (
+                            <span className="muted crm-mono" style={{ fontSize: 11 }}>plano pago</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           ) : (
             <div style={{ padding: 48, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
               {lista.length === 0
-                ? "Sem usuários retornados pela função crm-auth. Verifique a action list_users."
+                ? "Sem usuários retornados pela função crm-auth."
                 : "Sem usuários para o filtro/busca atual."}
             </div>
           )}
           {filtered.length > 100 && (
             <div style={{ padding: "12px 16px", fontSize: 12, color: "var(--crm-ink-4)", textAlign: "center", borderTop: "1px solid var(--crm-line)" }}>
-              Exibindo primeiros 100 de {filtered.length} resultados.
+              Exibindo primeiros 100 de {filtered.length}. Use a busca para refinar.
             </div>
           )}
         </section>
