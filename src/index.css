@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* CRM v3 — Editorial light theme (verde-floresta + ouro) */
+@import "./styles/crm-design.css";
+
 /* PreceptorMED — Premium Minimalist Design System
    Philosophy: Zinc neutrals. Medical green/teal as surgical accents only.
    OLED-first dark mode. Pure white light mode.

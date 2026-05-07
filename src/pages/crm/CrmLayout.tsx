@@ -1,12 +1,21 @@
 import { useEffect, Suspense } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
 import Sidebar from "@/components/crm/Sidebar";
 import CrmLogin from "./CrmLogin";
 import { Loader2, ShieldX, LogOut } from "lucide-react";
 
+// Páginas que já trazem seu próprio shell (v3) — pular sidebar/wrapper escuro
+const V3_PAGES = new Set([
+  "/admin/crm-mkt",
+  "/admin/crm-mkt/leads",
+  "/admin/crm-mkt/funnel",
+]);
+
 export default function CrmLayout() {
   const { crmUser, loading, hasMarketingAccess, logout } = useCrmAuth();
+  const location = useLocation();
+  const isV3 = V3_PAGES.has(location.pathname.replace(/\/$/, ""));
 
   useEffect(() => {
     document.title = "PM CRM";
@@ -40,6 +49,19 @@ export default function CrmLayout() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  // Páginas v3: render direto sem sidebar antigo (a página já tem seu shell)
+  if (isV3) {
+    return (
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-screen bg-[#F7F4EE]">
+          <Loader2 className="h-8 w-8 text-[#0F4128] animate-spin" />
+        </div>
+      }>
+        <Outlet />
+      </Suspense>
     );
   }
 
