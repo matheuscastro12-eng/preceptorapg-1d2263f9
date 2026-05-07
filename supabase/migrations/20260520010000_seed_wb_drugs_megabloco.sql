@@ -473,6 +473,7 @@ INSERT INTO public.wb_drugs (
   ARRAY['SC','IV'],
   $$[{"forma":"caneta","concentracao":"100 UI/mL"},{"forma":"frasco","concentracao":"100 UI/mL"}]$$::jsonb,
   $${"indicacoes":[{"para":"DM1 — bolus pré-refeição","dose":"contagem de carboidratos: ~1 U/10-15g CHO + correção (1U para cada 30-50 mg/dL acima alvo)","via":"SC ABDOME","frequencia":"3 refeições principais","obs":"INICIAR 5-15 MIN ANTES da refeição (vs insulina regular 30 min antes — vantagem)"},{"para":"DM2 com mau controle pós-prandial","dose":"adicionar bolus pré-refeição mais hiperglicêmica","obs":"basal-bolus em paciente que precisa intensificar"},{"para":"infusão IV em CAD/UTI","dose":"0,1 U/kg/h BIC","via":"IV BIC","obs":"alternativa à insulina regular em alguns protocolos UTI"},{"para":"bomba de infusão contínua subcutânea (BICS)","dose":"basal contínuo + bolus por refeição (programa)","obs":"em DM1 difícil controle"}]}$$::jsonb,
+  $${"indicacoes":[{"para":"DM1 peds bolus pré-refeição","dose":"~1 U/10-15g CHO conforme contagem"}]}$$::jsonb,
   'B','Categoria B. Compatível em gestação (mais experiência com asparte/lispro do que com glulisina).','Compatível.',
   ARRAY['hipoglicemia ativa','hipersensibilidade'],
   $$[{"freq":"comum","evento":"HIPOGLICEMIA"},{"freq":"comum","evento":"reação no local"},{"freq":"comum","evento":"ganho peso"}]$$::jsonb,
