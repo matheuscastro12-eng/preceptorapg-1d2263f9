@@ -1,13 +1,15 @@
 import { Link } from "react-router-dom";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
 import "@/styles/crm-design.css";
-import { LayoutGrid, Wallet, ArrowRight, LogOut, ShieldX } from "lucide-react";
+import { LayoutGrid, Wallet, ArrowRight, LogOut } from "lucide-react";
 
 export default function HubV3() {
-  const { crmUser, hasMarketingAccess, hasAdminAccess, isSuperAdmin, isAdmin, logout } = useCrmAuth();
-  // Super admins / admins enxergam tudo mesmo sem as flags acesso_marketing/acesso_admin no DB
-  const showMarketing = hasMarketingAccess || isSuperAdmin || isAdmin;
-  const showAdmin = hasAdminAccess || isSuperAdmin || isAdmin;
+  const { crmUser, logout } = useCrmAuth();
+  // Hub é só atalho de navegação — quem realmente bloqueia acesso é cada layout (CrmLayout / CrmAdminLayout).
+  // Mostramos os dois cards sempre que tem usuário logado; se tentar entrar sem permissão real,
+  // o layout exibe a tela de "Acesso negado" do backend.
+  const showMarketing = !!crmUser;
+  const showAdmin = !!crmUser;
 
   return (
     <div className="crm-v3" style={{ minHeight: "100vh", background: "var(--crm-bg)", padding: "56px 32px" }}>
@@ -35,22 +37,7 @@ export default function HubV3() {
           Cada modo tem sua própria navegação e foco.
         </p>
 
-        {!showMarketing && !showAdmin ? (
-          <div className="crm-card" style={{ padding: 32, textAlign: "center" }}>
-            <ShieldX size={36} style={{ color: "var(--crm-neg)", marginBottom: 12 }} />
-            <div style={{ fontFamily: "var(--crm-sans)", fontSize: 18, fontWeight: 700, color: "var(--crm-ink)", marginBottom: 6 }}>
-              Sem acesso ao CRM
-            </div>
-            <p style={{ fontSize: 13, color: "var(--crm-ink-3)", lineHeight: 1.5, margin: "0 0 8px", maxWidth: "60ch", marginInline: "auto" }}>
-              Sua conta <strong>{crmUser?.username ?? "—"}</strong> não tem nenhuma das flags <code>acesso_marketing</code> ou <code>acesso_admin</code> ativas, e o role <code>{crmUser?.role ?? "viewer"}</code> não concede acesso automático.
-            </p>
-            <p style={{ fontSize: 12, color: "var(--crm-ink-4)", lineHeight: 1.5, margin: "0 0 16px" }}>
-              Peça pra um super_admin atualizar sua linha em <code>crm_admin_users</code> definindo <code>acesso_marketing = true</code> e/ou <code>acesso_admin = true</code>.
-            </p>
-            <button onClick={logout} className="crm-btn crm-btn-ghost"><LogOut size={13} /> Sair</button>
-          </div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: showMarketing && showAdmin ? "1fr 1fr" : "1fr", gap: 18, maxWidth: showMarketing && showAdmin ? undefined : 560 }}>
+        <div style={{ display: "grid", gridTemplateColumns: showMarketing && showAdmin ? "1fr 1fr" : "1fr", gap: 18, maxWidth: showMarketing && showAdmin ? undefined : 560 }}>
             {showMarketing && (
               <Link to="/admin/crm-mkt" className="crm-card" style={{ padding: 28, textDecoration: "none", color: "inherit", display: "block" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
@@ -89,8 +76,7 @@ export default function HubV3() {
                 </span>
               </Link>
             )}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
