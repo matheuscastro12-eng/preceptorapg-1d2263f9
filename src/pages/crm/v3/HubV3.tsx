@@ -1,15 +1,22 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
 import "@/styles/crm-design.css";
-import { LayoutGrid, Wallet, ArrowRight, LogOut } from "lucide-react";
+import { LayoutGrid, Wallet, ArrowRight, LogOut, Loader2 } from "lucide-react";
 
 export default function HubV3() {
-  const { crmUser, logout } = useCrmAuth();
-  // Hub é só atalho de navegação — quem realmente bloqueia acesso é cada layout (CrmLayout / CrmAdminLayout).
-  // Mostramos os dois cards sempre que tem usuário logado; se tentar entrar sem permissão real,
-  // o layout exibe a tela de "Acesso negado" do backend.
-  const showMarketing = !!crmUser;
-  const showAdmin = !!crmUser;
+  const { crmUser, loading, logout } = useCrmAuth();
+
+  // Loading silencioso enquanto restaura sessão
+  if (loading) {
+    return (
+      <div className="crm-v3" style={{ minHeight: "100vh", background: "var(--crm-bg)", display: "grid", placeItems: "center" }}>
+        <Loader2 className="animate-spin" style={{ color: "var(--crm-green-deep)" }} />
+      </div>
+    );
+  }
+
+  // Sem sessão — manda pro login (CrmLayout faz o redirect pra LoginV3)
+  if (!crmUser) return <Navigate to="/admin/crm-mkt" replace />;
 
   return (
     <div className="crm-v3" style={{ minHeight: "100vh", background: "var(--crm-bg)", padding: "56px 32px" }}>
@@ -37,45 +44,42 @@ export default function HubV3() {
           Cada modo tem sua própria navegação e foco.
         </p>
 
-        <div style={{ display: "grid", gridTemplateColumns: showMarketing && showAdmin ? "1fr 1fr" : "1fr", gap: 18, maxWidth: showMarketing && showAdmin ? undefined : 560 }}>
-            {showMarketing && (
-              <Link to="/admin/crm-mkt" className="crm-card" style={{ padding: 28, textDecoration: "none", color: "inherit", display: "block" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: "var(--crm-green-deep)", color: "#fff", display: "grid", placeItems: "center" }}>
-                    <LayoutGrid size={18} />
-                  </div>
-                  <span className="crm-mono" style={{ fontSize: 11, color: "#fff", background: "var(--crm-green-deep)", padding: "2px 8px", borderRadius: 3, letterSpacing: "0.07em" }}>MARKETING</span>
-                </div>
-                <div style={{ fontFamily: "var(--crm-sans)", fontSize: 24, fontWeight: 700, color: "var(--crm-ink)", letterSpacing: "-0.02em", marginBottom: 6 }}>
-                  Aquisição & engajamento
-                </div>
-                <p style={{ fontSize: 13, color: "var(--crm-ink-3)", lineHeight: 1.5, margin: "0 0 16px" }}>
-                  Dashboard, leads, funil, saúde dos alunos, churn, automações, e-mail templates, suporte e landing pages.
-                </p>
-                <span className="crm-row" style={{ gap: 6, color: "var(--crm-green-deep)", fontSize: 13, fontWeight: 600 }}>
-                  Entrar <ArrowRight size={14} />
-                </span>
-              </Link>
-            )}
-            {showAdmin && (
-              <Link to="/admin/crm-admin" className="crm-card" style={{ padding: 28, textDecoration: "none", color: "inherit", display: "block" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: "var(--crm-ink)", color: "#fff", display: "grid", placeItems: "center" }}>
-                    <Wallet size={18} />
-                  </div>
-                  <span className="crm-mono" style={{ fontSize: 11, color: "#fff", background: "var(--crm-ink)", padding: "2px 8px", borderRadius: 3, letterSpacing: "0.07em" }}>ADMIN</span>
-                </div>
-                <div style={{ fontFamily: "var(--crm-sans)", fontSize: 24, fontWeight: 700, color: "var(--crm-ink)", letterSpacing: "-0.02em", marginBottom: 6 }}>
-                  Finanças & people
-                </div>
-                <p style={{ fontSize: 13, color: "var(--crm-ink-3)", lineHeight: 1.5, margin: "0 0 16px" }}>
-                  DRE editável, fluxo de caixa, business plan, time, 1:1s, PDIs, carreira, contratações, salários e webhooks.
-                </p>
-                <span className="crm-row" style={{ gap: 6, color: "var(--crm-green-deep)", fontSize: 13, fontWeight: 600 }}>
-                  Entrar <ArrowRight size={14} />
-                </span>
-              </Link>
-            )}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+          <Link to="/admin/crm-mkt" className="crm-card" style={{ padding: 28, textDecoration: "none", color: "inherit", display: "block" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: "var(--crm-green-deep)", color: "#fff", display: "grid", placeItems: "center" }}>
+                <LayoutGrid size={18} />
+              </div>
+              <span className="crm-mono" style={{ fontSize: 11, color: "#fff", background: "var(--crm-green-deep)", padding: "2px 8px", borderRadius: 3, letterSpacing: "0.07em" }}>MARKETING</span>
+            </div>
+            <div style={{ fontFamily: "var(--crm-sans)", fontSize: 24, fontWeight: 700, color: "var(--crm-ink)", letterSpacing: "-0.02em", marginBottom: 6 }}>
+              Aquisição & engajamento
+            </div>
+            <p style={{ fontSize: 13, color: "var(--crm-ink-3)", lineHeight: 1.5, margin: "0 0 16px" }}>
+              Dashboard, leads, funil, saúde dos alunos, churn, automações, e-mail templates, suporte e landing pages.
+            </p>
+            <span className="crm-row" style={{ gap: 6, color: "var(--crm-green-deep)", fontSize: 13, fontWeight: 600 }}>
+              Entrar <ArrowRight size={14} />
+            </span>
+          </Link>
+
+          <Link to="/admin/crm-admin" className="crm-card" style={{ padding: 28, textDecoration: "none", color: "inherit", display: "block" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: "var(--crm-ink)", color: "#fff", display: "grid", placeItems: "center" }}>
+                <Wallet size={18} />
+              </div>
+              <span className="crm-mono" style={{ fontSize: 11, color: "#fff", background: "var(--crm-ink)", padding: "2px 8px", borderRadius: 3, letterSpacing: "0.07em" }}>ADMIN</span>
+            </div>
+            <div style={{ fontFamily: "var(--crm-sans)", fontSize: 24, fontWeight: 700, color: "var(--crm-ink)", letterSpacing: "-0.02em", marginBottom: 6 }}>
+              Finanças & people
+            </div>
+            <p style={{ fontSize: 13, color: "var(--crm-ink-3)", lineHeight: 1.5, margin: "0 0 16px" }}>
+              DRE editável, fluxo de caixa, business plan, time, 1:1s, PDIs, carreira, contratações, salários e webhooks.
+            </p>
+            <span className="crm-row" style={{ gap: 6, color: "var(--crm-green-deep)", fontSize: 13, fontWeight: 600 }}>
+              Entrar <ArrowRight size={14} />
+            </span>
+          </Link>
         </div>
       </div>
     </div>
