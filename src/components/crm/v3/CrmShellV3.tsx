@@ -4,7 +4,7 @@ import { useCrmAuth } from "@/contexts/CrmAuthContext";
 import {
   LayoutGrid, Users, Filter, Heart, AlertTriangle, Zap, Mail,
   MessageSquare, Settings, Wallet, TrendingUp, Target, ListChecks,
-  CalendarDays, Trophy, Briefcase, BarChart3, LogOut, Bell, Share2, Plus, Home,
+  CalendarDays, Trophy, Briefcase, BarChart3, LogOut, Bell, Share2, Plus, Home, Activity,
 } from "lucide-react";
 import "@/styles/crm-design.css";
 
@@ -36,7 +36,7 @@ const MARKETING_NAV: { label: string; items: NavItem[] }[] = [
       { to: "/admin/crm-mkt/churn", label: "Risco de churn", icon: AlertTriangle },
       { to: "/admin/crm-mkt/automations", label: "Automações", icon: Zap },
       { to: "/admin/crm-mkt/templates-email", label: "E-mail templates", icon: Mail },
-      { to: "/admin/crm-mkt/analytics", label: "Analytics", icon: BarChart3 },
+      { to: "/admin/crm-mkt/analytics", label: "Atividade & uso", icon: Activity },
       { to: "/admin/crm-mkt/suporte", label: "Suporte", icon: MessageSquare },
     ],
   },

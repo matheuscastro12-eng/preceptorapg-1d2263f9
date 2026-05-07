@@ -456,78 +456,306 @@ export function EmailTemplatesV3() {
 }
 
 /* =========================================================
-   ANALYTICS — dados reais
+   ATIVIDADE / ANALYTICS — dados reais de generation_logs + user_progression
    ========================================================= */
-function useDAUWAUMAU() {
+function useRealActivity() {
   return useQuery({
-    queryKey: ["crm", "dau-wau-mau"],
+    queryKey: ["crm", "real-activity"],
     queryFn: async () => {
-      const now = new Date();
-      const d1 = new Date(now.getTime() - 86400000).toISOString();
-      const d7 = new Date(now.getTime() - 7 * 86400000).toISOString();
-      const d30 = new Date(now.getTime() - 30 * 86400000).toISOString();
+      const now = Date.now();
+      const d1 = new Date(now - 86400000).toISOString();
+      const d7 = new Date(now - 7 * 86400000).toISOString();
+      const d30 = new Date(now - 30 * 86400000).toISOString();
 
-      const [{ count: dau }, { count: wau }, { count: mau }] = await Promise.all([
-        supabase.from("crm_leads").select("*", { count: "exact", head: true }).gte("last_activity_at", d1),
-        supabase.from("crm_leads").select("*", { count: "exact", head: true }).gte("last_activity_at", d7),
-        supabase.from("crm_leads").select("*", { count: "exact", head: true }).gte("last_activity_at", d30),
-      ]);
+      // Pega TODOS os logs dos últimos 30 dias (com user_id, function_name, created_at)
+      const { data: logs30 } = await supabase
+        .from("generation_logs")
+        .select("user_id, function_name, created_at")
+        .gte("created_at", d30)
+        .order("created_at", { ascending: false })
+        .limit(50000);
 
-      return { dau: dau ?? 0, wau: wau ?? 0, mau: mau ?? 0 };
+      const all = logs30 ?? [];
+      const dauSet = new Set<string>();
+      const wauSet = new Set<string>();
+      const mauSet = new Set<string>();
+      const featureCount: Record<string, { calls: number; users: Set<string> }> = {};
+      const userCount: Record<string, { calls: number; lastUsed: string; features: Set<string> }> = {};
+      const dailyCount: Record<string, number> = {};
+
+      all.forEach((l: any) => {
+        if (l.created_at >= d1) dauSet.add(l.user_id);
+        if (l.created_at >= d7) wauSet.add(l.user_id);
+        mauSet.add(l.user_id);
+
+        if (!featureCount[l.function_name]) featureCount[l.function_name] = { calls: 0, users: new Set() };
+        featureCount[l.function_name].calls += 1;
+        featureCount[l.function_name].users.add(l.user_id);
+
+        if (!userCount[l.user_id]) userCount[l.user_id] = { calls: 0, lastUsed: l.created_at, features: new Set() };
+        userCount[l.user_id].calls += 1;
+        if (l.created_at > userCount[l.user_id].lastUsed) userCount[l.user_id].lastUsed = l.created_at;
+        userCount[l.user_id].features.add(l.function_name);
+
+        const day = l.created_at.split("T")[0];
+        dailyCount[day] = (dailyCount[day] ?? 0) + 1;
+      });
+
+      const dau = dauSet.size;
+      const wau = wauSet.size;
+      const mau = mauSet.size;
+
+      // Top users
+      const topUserIds = Object.entries(userCount).sort((a, b) => b[1].calls - a[1].calls).slice(0, 30).map(([uid]) => uid);
+
+      // Profiles para enriquecer
+      const { data: profiles } = topUserIds.length > 0
+        ? await supabase.from("profiles").select("user_id, email, full_name").in("user_id", topUserIds)
+        : { data: [] };
+      const profMap: Record<string, any> = {};
+      (profiles ?? []).forEach((p: any) => { profMap[p.user_id] = p; });
+
+      const topUsers = Object.entries(userCount)
+        .sort((a, b) => b[1].calls - a[1].calls)
+        .slice(0, 30)
+        .map(([uid, info]) => ({
+          user_id: uid,
+          email: profMap[uid]?.email ?? "—",
+          name: profMap[uid]?.full_name ?? null,
+          calls: info.calls,
+          features: info.features.size,
+          lastUsed: info.lastUsed,
+        }));
+
+      // Top features
+      const topFeatures = Object.entries(featureCount)
+        .sort((a, b) => b[1].calls - a[1].calls)
+        .map(([name, info]) => ({
+          name,
+          calls: info.calls,
+          users: info.users.size,
+        }));
+
+      // Daily timeseries
+      const days = Array.from({ length: 30 }, (_, i) => {
+        const d = new Date(now - i * 86400000);
+        return d.toISOString().split("T")[0];
+      }).reverse();
+      const timeseries = days.map((d) => ({ day: d, calls: dailyCount[d] ?? 0 }));
+
+      return { dau, wau, mau, topUsers, topFeatures, timeseries, totalCalls: all.length };
     },
+    refetchInterval: 60_000,
   });
 }
 
-export function AnalyticsV3() {
-  const { data: utm } = useUtmBreakdown();
-  const { data: usage } = useDAUWAUMAU();
-  const { data: kpis } = useDashboardKpis();
+function useStreakLeaders() {
+  return useQuery({
+    queryKey: ["crm", "streak-leaders"],
+    queryFn: async () => {
+      const { data: progression } = await supabase
+        .from("user_progression")
+        .select("user_id, streak_days, best_streak, total_xp, level, last_activity_date, cards_reviewed_total")
+        .order("streak_days", { ascending: false })
+        .limit(30);
 
-  const stickiness = (usage?.mau ?? 0) > 0 ? Math.round(((usage?.dau ?? 0) / (usage?.mau ?? 1)) * 100) : 0;
-  const totalUTM = (utm ?? []).reduce((s: number, u: any) => s + u.leads, 0);
+      const ids = (progression ?? []).map((p: any) => p.user_id);
+      const { data: profiles } = ids.length > 0
+        ? await supabase.from("profiles").select("user_id, email, full_name").in("user_id", ids)
+        : { data: [] };
+      const profMap: Record<string, any> = {};
+      (profiles ?? []).forEach((p: any) => { profMap[p.user_id] = p; });
+
+      return (progression ?? []).map((p: any) => ({
+        ...p,
+        email: profMap[p.user_id]?.email ?? "—",
+        name: profMap[p.user_id]?.full_name ?? null,
+      }));
+    },
+    refetchInterval: 60_000,
+  });
+}
+
+const FEATURE_LABELS: Record<string, string> = {
+  "ai-chat": "Chat IA",
+  "generate-fechamento": "Resumo PBL",
+  "generate-exam": "Simulado",
+  "generate-flashcards": "Flashcards (gerar)",
+  "generate-enamed": "ENAMED",
+  "scientific-mentor": "Mentor científico",
+};
+
+function fmtRelative(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 60000) return "agora";
+  if (diff < 3600000) return `há ${Math.floor(diff / 60000)} min`;
+  if (diff < 86400000) return `há ${Math.floor(diff / 3600000)} h`;
+  return `há ${Math.floor(diff / 86400000)} dias`;
+}
+
+export function AnalyticsV3() {
+  const { data: act, isLoading } = useRealActivity();
+  const { data: streaks } = useStreakLeaders();
+  const { data: utm } = useUtmBreakdown();
+
+  const stickiness = (act?.mau ?? 0) > 0 ? Math.round(((act?.dau ?? 0) / (act?.mau ?? 1)) * 100) : 0;
+  const maxDay = Math.max(1, ...((act?.timeseries ?? []).map((d) => d.calls)));
 
   return (
-    <CrmShellV3 mode="marketing" crumbs={[{ label: "CRM" }, { label: "Marketing" }, { label: "Analytics" }]}>
+    <CrmShellV3 mode="marketing" crumbs={[{ label: "CRM" }, { label: "Marketing" }, { label: "Atividade" }]}>
       <main className="crm-page">
         <PageHero
-          eyebrow="Marketing · Product Analytics"
-          title={<>Comportamento <em>do produto</em></>}
-          sub="DAU/WAU/MAU calculados a partir de last_activity_at em crm_leads. UTM breakdown agrega leads por fonte."
+          eyebrow="Marketing · Atividade real"
+          title={<>Quem está <em>usando o app</em></>}
+          sub="DAU/WAU/MAU calculados de generation_logs (uso real de IA). Streaks vêm de user_progression. Tudo direto do banco — sem caches."
         />
 
         <section className="crm-kpi-row" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
-          <Kpi label="DAU" value={fmt(usage?.dau ?? 0)} accent="mrr" />
-          <Kpi label="WAU" value={fmt(usage?.wau ?? 0)} />
-          <Kpi label="MAU" value={fmt(usage?.mau ?? 0)} />
-          <Kpi label="Total leads" value={fmt(kpis?.totalLeads ?? 0)} />
-          <Kpi label="Stickiness" value={`${stickiness}%`} deltaText="DAU/MAU" accent="warn" />
+          <Kpi label="DAU" value={fmt(act?.dau ?? 0)} deltaText="users com chamada IA hoje" accent="mrr" />
+          <Kpi label="WAU" value={fmt(act?.wau ?? 0)} deltaText="últimos 7 dias" />
+          <Kpi label="MAU" value={fmt(act?.mau ?? 0)} deltaText="últimos 30 dias" />
+          <Kpi label="Stickiness" value={`${stickiness}%`} deltaText="DAU / MAU" accent="warn" />
+          <Kpi label="Calls IA / 30d" value={fmt(act?.totalCalls ?? 0)} deltaText="generation_logs" />
         </section>
 
-        <section className="crm-card">
-          <CardHead title="UTM breakdown" sub={`${(utm ?? []).length} fontes · ${totalUTM} leads atribuídos`} />
-          {(utm ?? []).length > 0 ? (
-            <table className="crm-tbl">
-              <thead><tr><th>Fonte</th><th style={{ textAlign: "right" }}>Leads</th><th style={{ textAlign: "right" }}>Subscribers</th><th style={{ textAlign: "right" }}>Conv.</th><th style={{ textAlign: "right" }}>Score médio</th></tr></thead>
-              <tbody>
-                {(utm ?? []).map((u: any) => {
-                  const conv = u.leads > 0 ? Math.round((u.subscribers / u.leads) * 100) : 0;
-                  const avgScore = u.leads > 0 ? Math.round(u.total_score / u.leads) : 0;
-                  return (
-                    <tr key={u.source}>
-                      <td className="lead-name"><code style={{ background: "var(--crm-surface-2)", padding: "2px 6px", borderRadius: 3, fontFamily: "var(--crm-mono)", fontSize: 12 }}>{u.source}</code></td>
-                      <td className="num">{fmt(u.leads)}</td>
-                      <td className="num">{fmt(u.subscribers)}</td>
-                      <td className="num"><span style={{ color: conv >= 10 ? "var(--crm-green-deep)" : "var(--crm-ink)", fontWeight: 700 }}>{conv}%</span></td>
-                      <td className="num">{avgScore}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          ) : (
-            <div style={{ padding: 32, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>Sem dados de UTM em crm_leads.</div>
-          )}
-        </section>
+        {isLoading ? (
+          <section className="crm-card"><div style={{ padding: 48, textAlign: "center", color: "var(--crm-ink-4)" }}><Loader2 className="animate-spin" style={{ display: "inline-block", color: "var(--crm-green-deep)" }} /></div></section>
+        ) : (
+          <>
+            {/* Daily activity */}
+            <section className="crm-card">
+              <CardHead title="Atividade diária · 30 dias" sub={`Total ${fmt(act?.totalCalls ?? 0)} chamadas de IA`} />
+              <div className="crm-card-pad">
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 120 }}>
+                  {(act?.timeseries ?? []).map((d) => {
+                    const h = (d.calls / maxDay) * 100;
+                    const date = new Date(d.day);
+                    const isToday = d.day === new Date().toISOString().split("T")[0];
+                    return (
+                      <div key={d.day} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }} title={`${date.toLocaleDateString("pt-BR")} — ${d.calls} chamadas`}>
+                        <div style={{
+                          width: "100%",
+                          height: `${Math.max(h, 2)}%`,
+                          background: isToday ? "var(--crm-gold-deep)" : "var(--crm-green-deep)",
+                          borderRadius: "2px 2px 0 0",
+                        }} />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 10, color: "var(--crm-ink-4)" }} className="crm-mono">
+                  <span>{(act?.timeseries ?? [])[0]?.day ? new Date((act?.timeseries ?? [])[0].day).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : ""}</span>
+                  <span>hoje</span>
+                </div>
+              </div>
+            </section>
+
+            {/* Top users */}
+            <section className="crm-card">
+              <CardHead title="Top usuários ativos · 30d" sub={`Ordenados por chamadas de IA · top ${(act?.topUsers ?? []).length}`} />
+              {(act?.topUsers ?? []).length > 0 ? (
+                <table className="crm-tbl">
+                  <thead><tr><th>#</th><th>Usuário</th><th style={{ textAlign: "right" }}>Calls IA</th><th style={{ textAlign: "right" }}>Features</th><th>Última atividade</th></tr></thead>
+                  <tbody>
+                    {(act?.topUsers ?? []).map((u, i) => (
+                      <tr key={u.user_id}>
+                        <td className="muted crm-mono" style={{ fontSize: 11 }}>{i + 1}</td>
+                        <td>
+                          <div className="lead-name">{u.name ?? u.email}</div>
+                          {u.name && <div className="lead-email">{u.email}</div>}
+                        </td>
+                        <td className="num"><strong style={{ color: "var(--crm-green-deep)" }}>{fmt(u.calls)}</strong></td>
+                        <td className="num">{u.features}</td>
+                        <td className="muted">{fmtRelative(u.lastUsed)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{ padding: 32, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>Nenhuma chamada de IA em <code>generation_logs</code> nos últimos 30d.</div>
+              )}
+            </section>
+
+            {/* Top features */}
+            <section className="crm-card">
+              <CardHead title="Uso por feature · 30d" sub="Quais features de IA são mais usadas" />
+              {(act?.topFeatures ?? []).length > 0 ? (
+                <div className="crm-card-pad" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {(act?.topFeatures ?? []).map((f) => {
+                    const max = (act?.topFeatures ?? [])[0]?.calls ?? 1;
+                    const pct = (f.calls / max) * 100;
+                    return (
+                      <div key={f.name}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                          <span style={{ fontSize: 13, color: "var(--crm-ink-2)" }}>{FEATURE_LABELS[f.name] ?? f.name}</span>
+                          <span className="crm-mono" style={{ fontSize: 12, color: "var(--crm-ink)", fontWeight: 700 }}>{fmt(f.calls)} <span style={{ fontWeight: 400, color: "var(--crm-ink-4)" }}>· {f.users} users</span></span>
+                        </div>
+                        <div style={{ height: 14, background: "var(--crm-surface-3)", borderRadius: 4, overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${Math.max(pct, 2)}%`, background: "var(--crm-green-deep)", borderRadius: 4 }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ padding: 32, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>Sem chamadas em generation_logs.</div>
+              )}
+            </section>
+
+            {/* Streaks */}
+            <section className="crm-card">
+              <CardHead title="Top streaks ativos" sub="user_progression · ordenado por streak_days" />
+              {(streaks ?? []).length > 0 ? (
+                <table className="crm-tbl">
+                  <thead><tr><th>#</th><th>Usuário</th><th style={{ textAlign: "right" }}>Streak atual</th><th style={{ textAlign: "right" }}>Melhor</th><th style={{ textAlign: "right" }}>XP</th><th style={{ textAlign: "right" }}>Lvl</th><th>Última ativ.</th></tr></thead>
+                  <tbody>
+                    {(streaks ?? []).slice(0, 20).map((u: any, i) => (
+                      <tr key={u.user_id}>
+                        <td className="muted crm-mono" style={{ fontSize: 11 }}>{i + 1}</td>
+                        <td>
+                          <div className="lead-name">{u.name ?? u.email}</div>
+                          {u.name && <div className="lead-email">{u.email}</div>}
+                        </td>
+                        <td className="num"><strong style={{ color: u.streak_days >= 7 ? "var(--crm-green-deep)" : "var(--crm-ink)" }}>{u.streak_days}</strong> dias</td>
+                        <td className="num muted">{u.best_streak}d</td>
+                        <td className="num">{fmt(u.total_xp ?? 0)}</td>
+                        <td className="num muted">{u.level ?? 1}</td>
+                        <td className="muted">{u.last_activity_date ? new Date(u.last_activity_date).toLocaleDateString("pt-BR") : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{ padding: 32, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>Sem registros em user_progression.</div>
+              )}
+            </section>
+
+            {/* UTM (mantido — análise de aquisição) */}
+            {(utm ?? []).length > 0 && (
+              <section className="crm-card">
+                <CardHead title="UTM breakdown · aquisição" sub={`${(utm ?? []).length} fontes`} />
+                <table className="crm-tbl">
+                  <thead><tr><th>Fonte</th><th style={{ textAlign: "right" }}>Leads</th><th style={{ textAlign: "right" }}>Subscribers</th><th style={{ textAlign: "right" }}>Conv.</th><th style={{ textAlign: "right" }}>Score médio</th></tr></thead>
+                  <tbody>
+                    {(utm ?? []).slice().sort((a: any, b: any) => b.leads - a.leads).map((u: any) => {
+                      const conv = u.leads > 0 ? Math.round((u.subscribers / u.leads) * 100) : 0;
+                      const avgScore = u.leads > 0 ? Math.round(u.total_score / u.leads) : 0;
+                      return (
+                        <tr key={u.source}>
+                          <td className="lead-name"><code style={{ background: "var(--crm-surface-2)", padding: "2px 6px", borderRadius: 3, fontFamily: "var(--crm-mono)", fontSize: 12 }}>{u.source}</code></td>
+                          <td className="num">{fmt(u.leads)}</td>
+                          <td className="num">{fmt(u.subscribers)}</td>
+                          <td className="num"><span style={{ color: conv >= 10 ? "var(--crm-green-deep)" : "var(--crm-ink)", fontWeight: 700 }}>{conv}%</span></td>
+                          <td className="num">{avgScore}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+            )}
+          </>
+        )}
       </main>
     </CrmShellV3>
   );
