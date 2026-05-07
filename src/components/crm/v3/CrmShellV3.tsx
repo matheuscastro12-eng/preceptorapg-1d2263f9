@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
+import "@/styles/crm-design.css";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
 import {
   LayoutGrid, Activity, Users, Filter, Heart, AlertTriangle, Zap, Mail,

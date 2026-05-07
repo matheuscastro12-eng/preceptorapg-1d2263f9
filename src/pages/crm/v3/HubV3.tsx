@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
+import "@/styles/crm-design.css";
 import { LayoutGrid, Wallet, ArrowRight, LogOut } from "lucide-react";
 
 export default function HubV3() {

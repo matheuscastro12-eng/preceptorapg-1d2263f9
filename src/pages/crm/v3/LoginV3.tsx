@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Loader2, Lock, User } from "lucide-react";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
+import "@/styles/crm-design.css";
 
 export default function LoginV3() {
   const { login } = useCrmAuth();

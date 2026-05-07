@@ -1,9 +1,11 @@
+/* CRM v3 — Editorial light theme (verde-floresta + ouro)
+   Importado primeiro para que @import seja válido conforme spec CSS.
+   O escopo .crm-v3 garante que tokens não vazem para o resto do app. */
+@import "./styles/crm-design.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* CRM v3 — Editorial light theme (verde-floresta + ouro) */
-@import "./styles/crm-design.css";
 
 /* PreceptorMED — Premium Minimalist Design System
    Philosophy: Zinc neutrals. Medical green/teal as surgical accents only.
