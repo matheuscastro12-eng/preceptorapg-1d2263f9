@@ -5,11 +5,25 @@ import AdminSidebar from "@/components/crm-admin/AdminSidebar";
 import CrmLogin from "@/pages/crm/CrmLogin";
 import { Loader2, ShieldX, LogOut } from "lucide-react";
 
-// Páginas v3 com shell próprio
+// Páginas v3 com shell próprio — todas as rotas Admin agora são v3
 const V3_PAGES = new Set([
   "/admin/crm-admin",
+  "/admin/crm-admin/receita",
+  "/admin/crm-admin/despesas",
+  "/admin/crm-admin/fluxo-caixa",
+  "/admin/crm-admin/inadimplencia",
+  "/admin/crm-admin/forecast",
+  "/admin/crm-admin/metas",
+  "/admin/crm-admin/relatorio",
   "/admin/crm-admin/dre",
   "/admin/crm-admin/time",
+  "/admin/crm-admin/one-on-one",
+  "/admin/crm-admin/pdi",
+  "/admin/crm-admin/carreira",
+  "/admin/crm-admin/contratacoes",
+  "/admin/crm-admin/salarios",
+  "/admin/crm-admin/easyflow",
+  "/admin/crm-admin/webhooks",
 ]);
 
 export default function CrmAdminLayout() {

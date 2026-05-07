@@ -6,10 +6,20 @@ import CrmLogin from "./CrmLogin";
 import { Loader2, ShieldX, LogOut } from "lucide-react";
 
 // Páginas que já trazem seu próprio shell (v3) — pular sidebar/wrapper escuro
+// Todas as rotas Marketing agora são v3
 const V3_PAGES = new Set([
   "/admin/crm-mkt",
   "/admin/crm-mkt/leads",
   "/admin/crm-mkt/funnel",
+  "/admin/crm-mkt/landing-funnel",
+  "/admin/crm-mkt/health",
+  "/admin/crm-mkt/churn",
+  "/admin/crm-mkt/automations",
+  "/admin/crm-mkt/templates-email",
+  "/admin/crm-mkt/cohorts",
+  "/admin/crm-mkt/users",
+  "/admin/crm-mkt/analytics",
+  "/admin/crm-mkt/suporte",
 ]);
 
 export default function CrmLayout() {

@@ -194,6 +194,67 @@ export default function CrmShellV3({ mode, crumbs, topbarTools, children }: Shel
 }
 
 // helpers compartilhados
+export function PageHero({ eyebrow, title, sub, actions }: { eyebrow: string; title: ReactNode; sub?: string; actions?: ReactNode }) {
+  return (
+    <section className="crm-hero">
+      <div>
+        <div className="crm-page-eyebrow">{eyebrow}</div>
+        <h1 className="crm-page-title">{title}</h1>
+        {sub && <p className="crm-page-sub">{sub}</p>}
+      </div>
+      {actions && <div className="crm-row" style={{ gap: 8 }}>{actions}</div>}
+    </section>
+  );
+}
+
+export function PeriodBar({ options, active, onChange }: { options: string[]; active?: string; onChange?: (v: string) => void }) {
+  return (
+    <div className="crm-period-bar">
+      {options.map((o) => (
+        <button key={o} className={active === o ? "active" : ""} onClick={() => onChange?.(o)}>{o}</button>
+      ))}
+    </div>
+  );
+}
+
+export function CardHead({ title, sub, side }: { title: ReactNode; sub?: string; side?: ReactNode }) {
+  return (
+    <div className="crm-card-head">
+      <div>
+        <div className="crm-card-title">{title}</div>
+        {sub && <div className="crm-card-sub">{sub}</div>}
+      </div>
+      {side && <div className="crm-card-side">{side}</div>}
+    </div>
+  );
+}
+
+export function EmptyState({ icon: Icon, title, sub, cta }: { icon?: typeof LayoutGrid; title: string; sub?: string; cta?: ReactNode }) {
+  return (
+    <div style={{
+      padding: "48px 24px", textAlign: "center",
+      border: "1px dashed var(--crm-line)",
+      borderRadius: "var(--crm-radius)",
+      background: "var(--crm-surface-2)",
+    }}>
+      {Icon && (
+        <div style={{
+          width: 44, height: 44, borderRadius: 10,
+          background: "var(--crm-green-soft)",
+          color: "var(--crm-green-deep)",
+          display: "grid", placeItems: "center",
+          margin: "0 auto 12px",
+        }}>
+          <Icon size={20} strokeWidth={1.8} />
+        </div>
+      )}
+      <h3 style={{ margin: 0, fontFamily: "var(--crm-sans)", fontSize: 16, fontWeight: 700, color: "var(--crm-ink)", letterSpacing: "-0.01em" }}>{title}</h3>
+      {sub && <p style={{ margin: "6px auto 0", maxWidth: 420, fontSize: 13, color: "var(--crm-ink-3)", lineHeight: 1.5 }}>{sub}</p>}
+      {cta && <div style={{ marginTop: 16 }}>{cta}</div>}
+    </div>
+  );
+}
+
 export function Sparkline({ d, color = "#1B5E3B", area = false }: { d: string; color?: string; area?: boolean }) {
   return (
     <svg className="crm-kpi-spark" viewBox="0 0 100 28" preserveAspectRatio="none">

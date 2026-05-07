@@ -105,40 +105,40 @@ const ThankYou = lazy(() => import("./pages/ThankYou"));
 const SubscriptionThankYou = lazy(() => import("./pages/SubscriptionThankYou"));
 
 // CRM pages (lazy — admin only)
-const CrmHub = lazy(() => import("./pages/crm/CrmHub"));
+const CrmHub = lazy(() => import("./pages/crm/v3/HubV3"));
 const CrmLayout = lazy(() => import("./pages/crm/CrmLayout"));
 const CrmDashboard = lazy(() => import("./pages/crm/v3/DashboardV3"));
 const CrmLeads = lazy(() => import("./pages/crm/v3/LeadsV3"));
 const CrmFunnel = lazy(() => import("./pages/crm/v3/FunnelV3"));
-const CrmLandingFunnel = lazy(() => import("./pages/crm/CrmLandingFunnel"));
-const CrmHealth = lazy(() => import("./pages/crm/CrmHealth"));
-const CrmChurn = lazy(() => import("./pages/crm/CrmChurn"));
-const CrmAutomations = lazy(() => import("./pages/crm/CrmAutomations"));
-const CrmEmailTemplates = lazy(() => import("./pages/crm/CrmEmailTemplates"));
-const CrmCohorts = lazy(() => import("./pages/crm/CrmCohorts"));
-const CrmUsers = lazy(() => import("./pages/crm/CrmUsers"));
-const CrmAnalytics = lazy(() => import("./pages/crm/CrmAnalytics"));
+const CrmLandingFunnel = lazy(() => import("./pages/crm/v3/MarketingPagesV3").then((m) => ({ default: m.LandingFunnelV3 })));
+const CrmHealth = lazy(() => import("./pages/crm/v3/MarketingPagesV3").then((m) => ({ default: m.HealthV3 })));
+const CrmChurn = lazy(() => import("./pages/crm/v3/MarketingPagesV3").then((m) => ({ default: m.ChurnV3 })));
+const CrmAutomations = lazy(() => import("./pages/crm/v3/MarketingPagesV3").then((m) => ({ default: m.AutomationsV3 })));
+const CrmEmailTemplates = lazy(() => import("./pages/crm/v3/MarketingPagesV3").then((m) => ({ default: m.EmailTemplatesV3 })));
+const CrmCohorts = lazy(() => import("./pages/crm/v3/MarketingPagesV3").then((m) => ({ default: m.CohortsV3 })));
+const CrmUsers = lazy(() => import("./pages/crm/v3/MarketingPagesV3").then((m) => ({ default: m.UsersV3 })));
+const CrmAnalytics = lazy(() => import("./pages/crm/v3/MarketingPagesV3").then((m) => ({ default: m.AnalyticsV3 })));
+const CrmSuporte = lazy(() => import("./pages/crm/v3/MarketingPagesV3").then((m) => ({ default: m.SuporteV3 })));
 
-// CRM Admin pages (lazy — admin only)
+// CRM Admin pages (lazy — admin only) — todos v3
 const CrmAdminLayout = lazy(() => import("./pages/crm-admin/CrmAdminLayout"));
-const AdminDashboard = lazy(() => import("./pages/crm-admin/AdminDashboard"));
-const AdminReceita = lazy(() => import("./pages/crm-admin/AdminReceita"));
-const AdminDespesas = lazy(() => import("./pages/crm-admin/AdminDespesas"));
-const AdminFluxoCaixa = lazy(() => import("./pages/crm-admin/AdminFluxoCaixa"));
+const AdminDashboard = lazy(() => import("./pages/crm-admin/v3/AdminFinancasV3").then((m) => ({ default: m.AdminDashboardV3 })));
+const AdminReceita = lazy(() => import("./pages/crm-admin/v3/AdminFinancasV3").then((m) => ({ default: m.ReceitaV3 })));
+const AdminDespesas = lazy(() => import("./pages/crm-admin/v3/AdminFinancasV3").then((m) => ({ default: m.DespesasV3 })));
+const AdminFluxoCaixa = lazy(() => import("./pages/crm-admin/v3/AdminFinancasV3").then((m) => ({ default: m.FluxoCaixaV3 })));
+const AdminInadimplencia = lazy(() => import("./pages/crm-admin/v3/AdminFinancasV3").then((m) => ({ default: m.InadimplenciaV3 })));
+const AdminForecast = lazy(() => import("./pages/crm-admin/v3/AdminFinancasV3").then((m) => ({ default: m.ForecastV3 })));
+const AdminMetas = lazy(() => import("./pages/crm-admin/v3/AdminFinancasV3").then((m) => ({ default: m.MetasV3 })));
+const AdminRelatorio = lazy(() => import("./pages/crm-admin/v3/AdminFinancasV3").then((m) => ({ default: m.RelatorioV3 })));
 const AdminTime = lazy(() => import("./pages/crm-admin/v3/AdminTimeV3"));
-const AdminSalarios = lazy(() => import("./pages/crm-admin/AdminSalarios"));
-const AdminContratacoes = lazy(() => import("./pages/crm-admin/AdminContratacoes"));
-const AdminMetas = lazy(() => import("./pages/crm-admin/AdminMetas"));
-const AdminOneOnOne = lazy(() => import("./pages/crm-admin/AdminOneOnOne"));
-const AdminPDI = lazy(() => import("./pages/crm-admin/AdminPDI"));
-const AdminCarreira = lazy(() => import("./pages/crm-admin/AdminCarreira"));
-const AdminRelatorio = lazy(() => import("./pages/crm-admin/AdminRelatorio"));
-const AdminForecast = lazy(() => import("./pages/crm-admin/AdminForecast"));
+const AdminOneOnOne = lazy(() => import("./pages/crm-admin/v3/AdminPeopleSistemaV3").then((m) => ({ default: m.OneOnOneV3 })));
+const AdminPDI = lazy(() => import("./pages/crm-admin/v3/AdminPeopleSistemaV3").then((m) => ({ default: m.PDIV3 })));
+const AdminCarreira = lazy(() => import("./pages/crm-admin/v3/AdminPeopleSistemaV3").then((m) => ({ default: m.CarreiraV3 })));
+const AdminContratacoes = lazy(() => import("./pages/crm-admin/v3/AdminPeopleSistemaV3").then((m) => ({ default: m.ContratacoesV3 })));
+const AdminSalarios = lazy(() => import("./pages/crm-admin/v3/AdminPeopleSistemaV3").then((m) => ({ default: m.SalariosV3 })));
+const AdminEasyflow = lazy(() => import("./pages/crm-admin/v3/AdminPeopleSistemaV3").then((m) => ({ default: m.EasyflowV3 })));
+const AdminWebhooks = lazy(() => import("./pages/crm-admin/v3/AdminPeopleSistemaV3").then((m) => ({ default: m.WebhooksV3 })));
 const AdminDRE = lazy(() => import("./pages/crm-admin/v3/AdminDREv3"));
-const AdminEasyflow = lazy(() => import("./pages/crm-admin/AdminEasyflow"));
-const AdminWebhooks = lazy(() => import("./pages/crm-admin/AdminWebhooks"));
-const AdminInadimplencia = lazy(() => import("./pages/crm-admin/AdminInadimplencia"));
-const CrmSuporte = lazy(() => import("./pages/crm/CrmSuporte"));
 
 const queryClient = new QueryClient();
 
