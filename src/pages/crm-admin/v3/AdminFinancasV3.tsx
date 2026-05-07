@@ -1,96 +1,121 @@
 import CrmShellV3, { Kpi, PageHero, PeriodBar, CardHead } from "@/components/crm/v3/CrmShellV3";
 import { Plus, Download, Wallet, AlertTriangle, TrendingUp, Target } from "lucide-react";
+import { useAdminDashboardKpis, useMrrHistory, useDespesasPorCategoria } from "@/hooks/useAdminDashboard";
+
+const fmtBRL = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+const fmtBRL2 = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmtPct = (v: number) => `${v.toFixed(1)}%`;
 
 /* =========================================================
-   ADMIN DASHBOARD
+   ADMIN DASHBOARD — dados reais
    ========================================================= */
 export function AdminDashboardV3() {
+  const { data: kpis, isLoading } = useAdminDashboardKpis();
+  const { data: despesasCat } = useDespesasPorCategoria();
+  const { data: mrrHist } = useMrrHistory();
+
+  const totalDespesas = (despesasCat ?? []).reduce((a, b) => a + b.total, 0);
+  const ebitda = kpis ? kpis.mrr - kpis.burnRate : 0;
+
   return (
     <CrmShellV3 mode="admin" crumbs={[{ label: "CRM" }, { label: "Admin" }, { label: "Dashboard" }]}
       topbarTools={<><button className="crm-btn crm-btn-ghost">Fechar mês</button><button className="crm-btn crm-btn-primary"><Plus size={13} /> Lançar</button></>}
     >
       <main className="crm-page">
         <PageHero
-          eyebrow="Admin · Visão geral · Abr/2026"
+          eyebrow="Admin · Visão geral · tempo real"
           title={<>Dashboard <em>administrativo</em></>}
-          sub="MRR, runway, EBITDA do mês e saúde organizacional. As views detalhadas estão nos menus específicos."
-          actions={<><PeriodBar options={["Mar/26", "Abr/26", "YTD", "2026"]} active="Abr/26" /></>}
+          sub="MRR, runway, EBITDA do mês e saúde organizacional. Atualizado a cada 60s."
+          actions={<><PeriodBar options={["Mês", "YTD", "2026"]} active="Mês" /></>}
         />
 
         <section className="crm-kpi-row" style={{ gridTemplateColumns: "repeat(6, 1fr)" }}>
-          <Kpi label="MRR" value="R$ 38.412" delta="↑ 12,4%" deltaSign="pos" deltaText="784 ativos" accent="mrr"
+          <Kpi label="MRR" value={isLoading ? "—" : fmtBRL(kpis?.mrr ?? 0)} deltaText={`${kpis?.assinantesAtivos ?? 0} ativos`} accent="mrr"
             sparkD="M0,22 L8,20 L16,21 L24,18 L32,16 L40,17 L48,14 L56,12 L64,11 L72,9 L80,8 L88,6 L100,5" />
-          <Kpi label="ARR" value="R$ 460k" delta="+ R$ 51k" deltaSign="pos"
-            sparkD="M0,24 L12,22 L24,20 L36,17 L48,15 L60,12 L72,9 L84,7 L100,4" />
-          <Kpi label="Runway" value="7,4" unit="meses" delta="+ 0,8m" deltaSign="pos" accent="warn"
-            sparkD="M0,18 L12,16 L24,17 L36,14 L48,15 L60,11 L72,12 L84,9 L100,7" />
-          <Kpi label="Burn" value="R$ 41,8k" delta="↑ 4,1%" deltaSign="neg" accent="neg"
-            sparkD="M0,16 L12,15 L24,18 L36,14 L48,12 L60,11 L72,10 L84,8 L100,6" />
-          <Kpi label="EBITDA" value="−R$ 769" delta="+ 26%" deltaSign="pos" deltaText="vs orçado"
-            sparkD="M0,20 L12,18 L24,16 L36,14 L48,12 L60,10 L72,8 L84,6 L100,4" />
-          <Kpi label="Headcount" value="9" delta="+ 1" deltaSign="pos" deltaText="3 vagas abertas"
-            sparkD="M0,22 L12,21 L24,20 L36,19 L48,18 L60,17 L72,16 L84,15 L100,14" />
+          <Kpi label="ARR" value={isLoading ? "—" : fmtBRL(kpis?.arr ?? 0)} deltaText="MRR × 12" />
+          <Kpi label="Runway" value={isLoading ? "—" : (kpis?.runway ?? 0).toFixed(1)} unit="meses" deltaText="saldo / burn" accent="warn" />
+          <Kpi label="Burn" value={isLoading ? "—" : fmtBRL(kpis?.burnRate ?? 0)} deltaText="despesas/mês" accent="neg" />
+          <Kpi label="Churn rate" value={isLoading ? "—" : fmtPct(kpis?.churnRate ?? 0)} deltaText="benchmark < 5%" />
+          <Kpi label="Headcount" value={kpis?.headcount ?? 0} deltaText={`ticket médio ${fmtBRL2(kpis?.ticketMedio ?? 0)}`} />
         </section>
 
         <section className="crm-insight">
           <div className="ico"><TrendingUp size={13} /></div>
           <div>
-            <div className="head">EBITDA está R$ 269 acima do orçado em abril.</div>
+            <div className="head">
+              {ebitda >= 0
+                ? `EBITDA positivo: ${fmtBRL(ebitda)} este mês.`
+                : `EBITDA negativo de ${fmtBRL(Math.abs(ebitda))} — receita ainda abaixo do burn.`}
+            </div>
             <div className="body">
-              Receita bruta superou em 0,7% (R$ 45,1k vs R$ 44,8k). Despesas operacionais ficaram dentro do plano (R$ 41,8k vs R$ 41,9k).
-              <strong> Default-alive em ago/26</strong> está confirmado pela projeção atual.
+              MRR atual de <strong>{fmtBRL(kpis?.mrr ?? 0)}</strong> com <strong>{kpis?.assinantesAtivos ?? 0}</strong> assinantes ativos.
+              Runway de <strong>{(kpis?.runway ?? 0).toFixed(1)} meses</strong> com burn rate de <strong>{fmtBRL(kpis?.burnRate ?? 0)}/mês</strong>.
+              {kpis?.novasReceitas ? ` ${kpis.novasReceitas} novas assinaturas este mês.` : ""}
             </div>
           </div>
         </section>
 
-        <section style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 18 }}>
-          <div className="crm-card">
-            <CardHead title="Highlights do Business Plan 2026" sub="margem-alvo 18% até dez · break-even projetado em ago" />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)" }}>
-              <BPCell lbl="Receita acum. YTD" val="R$ 178k" sub="projetado R$ 168k · + 6%" pos />
-              <BPCell lbl="EBITDA YTD" val="−R$ 8,2k" sub="projetado −R$ 12k" pos />
-              <BPCell lbl="Aporte usado" val="R$ 34k" sub="de R$ 180k disponível" />
-              <BPCell lbl="Cash burn médio" val="R$ 12k/m" sub="vs R$ 18k 2025" pos />
-              <BPCell lbl="LTV/CAC" val="3,9×" sub="healthy > 3,0" pos />
-              <BPCell lbl="Net Revenue Retention" val="112%" sub="expansion > churn" pos />
-            </div>
-          </div>
-
-          <div className="crm-card">
-            <CardHead title="Eventos de governança · próximos 30d" />
-            <div>
-              {[
-                { date: "20 abr", title: "Fechamento DRE Abr/26", who: "Matheus", st: "warn" },
-                { date: "24 abr", title: "Pagamento folha + impostos", who: "Contador", st: "green" },
-                { date: "30 abr", title: "Decisão oferta Patrícia (eng)", who: "Matheus + Júlia", st: "warn" },
-                { date: "05 mai", title: "Board call · Q1 review", who: "Founders", st: "green" },
-                { date: "10 mai", title: "Fechamento Mai/26", who: "Matheus", st: "gray" },
-                { date: "15 mai", title: "Retrospectiva trimestral", who: "Time inteiro", st: "gray" },
-              ].map((e, i) => (
-                <div key={i} style={{ display: "grid", gridTemplateColumns: "60px 1fr auto", gap: 12, padding: "12px 18px", borderBottom: "1px solid var(--crm-line-soft)", alignItems: "center" }}>
-                  <div className="crm-mono" style={{ fontSize: 11, color: "var(--crm-ink-4)" }}>{e.date}</div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--crm-ink)" }}>{e.title}</div>
-                    <div style={{ fontSize: 11.5, color: "var(--crm-ink-4)" }}>{e.who}</div>
+        {despesasCat && despesasCat.length > 0 && (
+          <section className="crm-card">
+            <CardHead title="Despesas por categoria" sub={`Total ${fmtBRL(totalDespesas)} no mês`} />
+            <div style={{ padding: "6px 20px 18px" }}>
+              {despesasCat.slice(0, 8).map((d) => {
+                const pct = totalDespesas > 0 ? (d.total / totalDespesas) * 100 : 0;
+                const cores = ["var(--crm-neg)", "#A88A33", "#6B3FA0", "var(--crm-info)", "#5A5247", "var(--crm-ink-4)", "var(--crm-green-deep)", "var(--crm-mint)"];
+                return (
+                  <div key={d.categoria} style={{ padding: "10px 0", borderBottom: "1px solid var(--crm-line-soft)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--crm-ink)" }}>{d.categoria}</div>
+                      <div className="crm-mono" style={{ fontSize: 13, fontWeight: 700, color: "var(--crm-ink)" }}>{fmtBRL(d.total)}</div>
+                    </div>
+                    <div style={{ height: 7, background: "var(--crm-surface-3)", borderRadius: 4, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${pct}%`, background: cores[despesasCat.indexOf(d) % cores.length], borderRadius: 4 }} />
+                    </div>
                   </div>
-                  <span className={`crm-tag crm-tag-${e.st}`}><span className="crm-tag-dot" />{e.st === "warn" ? "Pendente" : e.st === "green" ? "Agendado" : "Futuro"}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          </div>
-        </section>
+          </section>
+        )}
+
+        {mrrHist && mrrHist.length > 0 && (
+          <section className="crm-card">
+            <CardHead title="MRR — últimos 6 meses" sub="evolução real do MRR a partir de assinaturas ativas" />
+            <div style={{ padding: 20 }}>
+              <MrrSimpleChart data={mrrHist} />
+            </div>
+          </section>
+        )}
+
       </main>
     </CrmShellV3>
   );
 }
 
-function BPCell({ lbl, val, sub, pos }: { lbl: string; val: string; sub: string; pos?: boolean }) {
+function MrrSimpleChart({ data }: { data: { mes: string; mrr: number }[] }) {
+  if (!data || data.length === 0) return null;
+  const max = Math.max(...data.map((d) => d.mrr), 1);
+  const w = 720, h = 200;
+  const stepX = data.length > 1 ? (w - 80) / (data.length - 1) : 0;
+  const points = data.map((d, i) => `${40 + i * stepX},${20 + (1 - d.mrr / max) * (h - 50)}`);
+  const path = `M${points.join(" L")}`;
   return (
-    <div style={{ padding: "16px 18px", borderRight: "1px solid var(--crm-line-soft)", borderBottom: "1px solid var(--crm-line-soft)" }}>
-      <div style={{ fontFamily: "var(--crm-sans)", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--crm-ink-4)" }}>{lbl}</div>
-      <div style={{ fontFamily: "var(--crm-sans)", fontWeight: 700, fontSize: 22, letterSpacing: "-0.02em", color: pos ? "var(--crm-green-deep)" : "var(--crm-ink)", marginTop: 4 }}>{val}</div>
-      <div style={{ fontSize: 11, color: "var(--crm-ink-4)", marginTop: 4 }}>{sub}</div>
-    </div>
+    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height: 220 }}>
+      <g stroke="var(--crm-line-soft)" strokeWidth={1} strokeDasharray="2 3">
+        {[20, 70, 120, 170].map((y) => <line key={y} x1="40" y1={y} x2={w - 20} y2={y} />)}
+      </g>
+      <g style={{ fontFamily: "var(--crm-mono)", fontSize: 10, fill: "var(--crm-ink-4)" }}>
+        {data.map((d, i) => (
+          <text key={i} x={40 + i * stepX} y={h - 10} textAnchor="middle">{d.mes}</text>
+        ))}
+      </g>
+      <path d={`${path} L${40 + (data.length - 1) * stepX},${h - 30} L40,${h - 30} Z`} fill="#1B5E3B" fillOpacity={0.1} />
+      <path d={path} stroke="#1B5E3B" strokeWidth={2.4} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      {points.map((p, i) => {
+        const [x, y] = p.split(",").map(Number);
+        return <circle key={i} cx={x} cy={y} r={3} fill="#1B5E3B" />;
+      })}
+    </svg>
   );
 }
 

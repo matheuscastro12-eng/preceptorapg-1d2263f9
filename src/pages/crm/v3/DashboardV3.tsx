@@ -1,30 +1,50 @@
 import { useEffect, useRef } from "react";
 import CrmShellV3, { Kpi } from "@/components/crm/v3/CrmShellV3";
 import { Bell, Share2, Plus, Wallet, Users, TrendingDown, AlertTriangle, Zap, Target, Filter, LayoutGrid, Sparkles } from "lucide-react";
+import { useDashboardKpis, useHealthDistribution, useActiveChurnRisks, useRecentAutomations } from "@/hooks/useCrm";
+
+const fmtBRL = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
 export default function DashboardV3() {
+  const { data: kpis } = useDashboardKpis();
+  const { data: health } = useHealthDistribution();
+  const { data: risks } = useActiveChurnRisks({ pageSize: 5 });
+  const { data: automations } = useRecentAutomations({ pageSize: 6 });
   const heatmapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const grid = heatmapRef.current;
     if (!grid) return;
     grid.innerHTML = "";
+    // Tenta usar dados reais de health, fallback pra demo
     const total = 200;
-    const inactive = 4, risk = 15, attention = 48, healthy = 133;
     const colors = ["#EFE8D8", "#E0D5A8", "#C8C896", "#94B387", "#5C9067", "#1B5E3B"];
-    const cells: string[] = [];
-    for (let i = 0; i < inactive; i++) cells.push(colors[0]);
-    for (let i = 0; i < risk; i++) cells.push(colors[1 + (i % 2)]);
-    for (let i = 0; i < attention; i++) cells.push(colors[2 + (i % 2)]);
-    for (let i = 0; i < healthy; i++) cells.push(colors[4 + (i % 2)]);
+    let cells: string[] = [];
+
+    if (health) {
+      const totalReal = health.healthy + health.attention + health.risk + health.inactive || 1;
+      const inactive = Math.round((health.inactive / totalReal) * total);
+      const risk = Math.round((health.risk / totalReal) * total);
+      const attention = Math.round((health.attention / totalReal) * total);
+      const healthy = total - inactive - risk - attention;
+      for (let i = 0; i < inactive; i++) cells.push(colors[0]);
+      for (let i = 0; i < risk; i++) cells.push(colors[1 + (i % 2)]);
+      for (let i = 0; i < attention; i++) cells.push(colors[2 + (i % 2)]);
+      for (let i = 0; i < healthy; i++) cells.push(colors[4 + (i % 2)]);
+    } else {
+      for (let i = 0; i < 4; i++) cells.push(colors[0]);
+      for (let i = 0; i < 15; i++) cells.push(colors[1 + (i % 2)]);
+      for (let i = 0; i < 48; i++) cells.push(colors[2 + (i % 2)]);
+      for (let i = 0; i < 133; i++) cells.push(colors[4 + (i % 2)]);
+    }
     while (cells.length < total) cells.push(colors[5]);
-    cells.forEach((c) => {
+    cells.slice(0, total).forEach((c) => {
       const el = document.createElement("div");
       el.className = "crm-health-cell";
       el.style.background = c;
       grid.appendChild(el);
     });
-  }, []);
+  }, [health]);
 
   return (
     <CrmShellV3
@@ -63,60 +83,51 @@ export default function DashboardV3() {
           </div>
         </section>
 
-        {/* KPI */}
+        {/* KPI — dados reais */}
         <section className="crm-kpi-row">
           <Kpi
             label="MRR"
-            value="R$ 38.412"
+            value={kpis ? fmtBRL(kpis.mrr) : "—"}
             unit="/mês"
-            delta="↑ 12,4%"
-            deltaSign="pos"
-            deltaText="vs período anterior"
+            deltaText={`${kpis?.totalSubscribers ?? 0} ativos`}
             accent="mrr"
             sparkD="M0,22 L8,20 L16,21 L24,18 L32,16 L40,17 L48,14 L56,12 L64,11 L72,9 L80,8 L88,6 L100,5"
           />
           <Kpi
             label="Assinantes"
-            value="784"
-            unit="/ 1 000"
-            delta="+ 38"
-            deltaSign="pos"
-            deltaText="meta · 78%"
+            value={kpis?.totalSubscribers ?? "—"}
+            unit="ativos"
+            deltaText={`+${kpis?.newSubscribers30d ?? 0} em 30d`}
             sparkD="M0,24 L10,23 L22,21 L34,20 L46,17 L58,15 L72,12 L84,9 L100,7"
           />
           <Kpi
             label="Churn rate"
-            value="3,8"
+            value={kpis ? kpis.churnRate.toFixed(1) : "—"}
             unit="%"
-            delta="↓ 0,9 p.p."
-            deltaSign="pos"
-            deltaText="benchmark < 5%"
+            deltaText={`${kpis?.churnedLast30d ?? 0} em 30d`}
+            deltaSign={kpis && kpis.churnRate > 5 ? "neg" : "pos"}
             sparkD="M0,8 L12,9 L24,11 L36,10 L48,13 L60,15 L72,17 L84,19 L100,22"
           />
           <Kpi
             label="Em risco"
-            value="17"
+            value={health?.risk ?? "—"}
             unit="alunos"
-            delta="↑ 4"
-            deltaSign="neg"
-            deltaText="≥ 40% prob."
+            deltaText="probabilidade ≥ 40%"
             accent="warn"
             sparkD="M0,18 L12,17 L24,15 L36,16 L48,12 L60,10 L72,8 L84,6 L100,4"
           />
           <Kpi
-            label="Automações hoje"
-            value="312"
-            delta="+ 28%"
-            deltaSign="pos"
-            deltaText="email · push · whatsapp"
+            label="Em saúde"
+            value={health?.healthy ?? "—"}
+            unit="alunos"
+            deltaText="score ≥ 70"
             sparkD="M0,20 L8,18 L16,22 L24,15 L32,17 L40,12 L48,16 L56,10 L64,13 L72,7 L80,11 L88,5 L100,9"
           />
           <Kpi
-            label="LTV médio"
-            value="R$ 612"
-            delta="↑ R$ 41"
-            deltaSign="pos"
-            deltaText="life-time value"
+            label="Inativos"
+            value={health?.inactive ?? "—"}
+            unit="alunos"
+            deltaText="sem login 30d"
             sparkD="M0,22 L12,20 L24,21 L36,18 L48,16 L60,14 L72,11 L84,8 L100,5"
           />
         </section>
@@ -210,11 +221,26 @@ export default function DashboardV3() {
                 </tr>
               </thead>
               <tbody>
-                <ChurnRow name="Bruna Cosendey" email="bruna.cosendey@gmail.com" plano="Anual" planoTag="green" prob={81} sinal="Acessos ↓ 86% · 0 questões" ultima="há 19 dias" />
-                <ChurnRow name="Pedro Henrique Lacerda" email="pedrolacerda@hotmail.com" plano="Mensal" planoTag="gray" prob={74} sinal="Cartão recusado · 2x" ultima="há 8 dias" />
-                <ChurnRow name="Thiago Carvalho Sá" email="thiago.csa@medusp.br" plano="Bianual" planoTag="gold" prob={68} sinal="Suporte aberto há 5d" ultima="há 11 dias" warn />
-                <ChurnRow name="Marcela Tinoco Nunes" email="marcela.tinoco@unifesp.edu.br" plano="Anual" planoTag="green" prob={61} sinal="NPS 4 · feedback negativo" ultima="há 6 dias" warn />
-                <ChurnRow name="Felipe Brandão R." email="felipe.brandao@residencia.org" plano="Mensal" planoTag="gray" prob={52} sinal="Engajamento ↓ 4 sem." ultima="há 13 dias" warn />
+                {(risks?.data ?? []).slice(0, 5).map((r: any) => (
+                  <ChurnRow
+                    key={r.id ?? r.lead_id ?? r.email}
+                    name={r.name ?? r.email ?? "—"}
+                    email={r.email ?? ""}
+                    plano={r.plan_type ?? "—"}
+                    planoTag={r.plan_type === "annual" ? "green" : r.plan_type === "biannual" ? "gold" : "gray"}
+                    prob={Math.round((r.churn_probability ?? r.probability ?? 0) * 100)}
+                    sinal={r.signal ?? r.reason ?? "Engajamento baixo"}
+                    ultima={r.last_active_at ? `há ${Math.floor((Date.now() - new Date(r.last_active_at).getTime()) / 86400000)} dias` : "—"}
+                    warn={(r.churn_probability ?? 0) < 0.7}
+                  />
+                ))}
+                {(!risks || risks.data?.length === 0) && (
+                  <tr>
+                    <td colSpan={6} style={{ padding: 24, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
+                      Sem alunos em risco crítico no momento.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -228,12 +254,24 @@ export default function DashboardV3() {
               <div className="crm-card-side"><a className="crm-btn crm-btn-link">Logs →</a></div>
             </div>
             <div className="crm-automation-list">
-              <AutomationRow type="email" title="Trial expirando em 3 dias" meta="87 e-mails · open 41%" when="14:22" />
-              <AutomationRow type="email" title="WhatsApp · resgate de leads quentes" meta="42 envios · score ≥ 70 · resp. 23%" when="13:48" />
-              <AutomationRow type="push" title="Push · novas videoaulas Cardio" meta="523 dispositivos · CTR 8,1%" when="12:00" />
-              <AutomationRow type="warn" title="Alerta de churn (≥ 70%)" meta="3 alunos · acionou playbook winback-A" when="11:30" />
-              <AutomationRow type="email" title="Boas-vindas · novos signups" meta="128 e-mails · open 62%" when="10:00" />
-              <AutomationRow type="email" title="WhatsApp · cobrança amistosa" meta="11 envios · resp. 64%" when="09:15" />
+              {(automations?.data ?? []).map((a: any) => {
+                const when = a.created_at ? new Date(a.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—";
+                const type = a.channel === "email" ? "email" : a.channel === "push" ? "push" : a.severity === "warn" ? "warn" : "email";
+                return (
+                  <AutomationRow
+                    key={a.id}
+                    type={type as "email" | "push" | "warn"}
+                    title={a.name ?? a.title ?? "Automação"}
+                    meta={`${a.recipients ?? a.count ?? 0} envios · ${a.status ?? "ok"}`}
+                    when={when}
+                  />
+                );
+              })}
+              {(!automations || automations.data?.length === 0) && (
+                <div style={{ padding: 24, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
+                  Sem automações executadas recentemente.
+                </div>
+              )}
             </div>
           </div>
         </section>

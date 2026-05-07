@@ -2,7 +2,8 @@ import { useEffect, Suspense } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
 import Sidebar from "@/components/crm/Sidebar";
-import CrmLogin from "./CrmLogin";
+import CrmLogin from "./v3/LoginV3";
+import { CrmV3MarketingLayout } from "@/components/crm/v3/CrmShellV3";
 import { Loader2, ShieldX, LogOut } from "lucide-react";
 
 // Páginas que já trazem seu próprio shell (v3) — pular sidebar/wrapper escuro
@@ -62,15 +63,15 @@ export default function CrmLayout() {
     );
   }
 
-  // Páginas v3: render direto sem sidebar antigo (a página já tem seu shell)
+  // Páginas v3: shell persistente com sidebar fixa, só o main troca
   if (isV3) {
     return (
       <Suspense fallback={
-        <div className="flex items-center justify-center h-screen bg-[#F7F4EE]">
-          <Loader2 className="h-8 w-8 text-[#0F4128] animate-spin" />
+        <div className="flex items-center justify-center h-screen" style={{ background: "#F7F4EE" }}>
+          <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#0F4128" }} />
         </div>
       }>
-        <Outlet />
+        <CrmV3MarketingLayout />
       </Suspense>
     );
   }

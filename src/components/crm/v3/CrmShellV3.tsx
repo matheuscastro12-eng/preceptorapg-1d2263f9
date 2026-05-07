@@ -1,12 +1,12 @@
-import { ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
-import "@/styles/crm-design.css";
+import { ReactNode, createContext, useContext, useState, useEffect } from "react";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
 import {
-  LayoutGrid, Activity, Users, Filter, Heart, AlertTriangle, Zap, Mail,
+  LayoutGrid, Users, Filter, Heart, AlertTriangle, Zap, Mail,
   MessageSquare, Settings, Wallet, TrendingUp, Target, ListChecks,
-  CalendarDays, Trophy, Briefcase, BarChart3, LogOut, Search, Bell, Share2, Plus,
+  CalendarDays, Trophy, Briefcase, BarChart3, LogOut, Bell, Share2, Plus, Home,
 } from "lucide-react";
+import "@/styles/crm-design.css";
 
 type Mode = "marketing" | "admin";
 
@@ -16,7 +16,6 @@ interface NavItem {
   icon: typeof LayoutGrid;
   count?: string | number;
   pill?: string | number;
-  dot?: boolean;
 }
 
 const MARKETING_NAV: { label: string; items: NavItem[] }[] = [
@@ -24,25 +23,27 @@ const MARKETING_NAV: { label: string; items: NavItem[] }[] = [
     label: "Visão geral",
     items: [
       { to: "/admin/crm-mkt", label: "Dashboard", icon: LayoutGrid },
-      { to: "/admin/crm", label: "Hub", icon: Activity },
     ],
   },
   {
     label: "Marketing",
     items: [
-      { to: "/admin/crm-mkt/leads", label: "Leads", icon: Users, count: "2 481" },
+      { to: "/admin/crm-mkt/leads", label: "Leads", icon: Users },
       { to: "/admin/crm-mkt/funnel", label: "Funil & UTM", icon: Filter },
+      { to: "/admin/crm-mkt/landing-funnel", label: "Landing pages", icon: BarChart3 },
       { to: "/admin/crm-mkt/health", label: "Saúde dos alunos", icon: Heart },
-      { to: "/admin/crm-mkt/churn", label: "Risco de churn", icon: AlertTriangle, pill: 17 },
+      { to: "/admin/crm-mkt/cohorts", label: "Coortes", icon: TrendingUp },
+      { to: "/admin/crm-mkt/churn", label: "Risco de churn", icon: AlertTriangle },
       { to: "/admin/crm-mkt/automations", label: "Automações", icon: Zap },
       { to: "/admin/crm-mkt/templates-email", label: "E-mail templates", icon: Mail },
+      { to: "/admin/crm-mkt/analytics", label: "Analytics", icon: BarChart3 },
       { to: "/admin/crm-mkt/suporte", label: "Suporte", icon: MessageSquare },
     ],
   },
   {
     label: "Sistema",
     items: [
-      { to: "/admin/crm-mkt/users", label: "Configurações", icon: Settings },
+      { to: "/admin/crm-mkt/users", label: "Usuários do CRM", icon: Settings },
     ],
   },
 ];
@@ -52,46 +53,67 @@ const ADMIN_NAV: { label: string; items: NavItem[] }[] = [
     label: "Visão geral",
     items: [
       { to: "/admin/crm-admin", label: "Dashboard", icon: LayoutGrid },
+      { to: "/admin/crm-admin/relatorio", label: "Relatório executivo", icon: BarChart3 },
     ],
   },
   {
     label: "Finanças",
     items: [
       { to: "/admin/crm-admin/dre", label: "DRE & Receita", icon: Wallet },
+      { to: "/admin/crm-admin/receita", label: "Receita", icon: TrendingUp },
       { to: "/admin/crm-admin/fluxo-caixa", label: "Fluxo de caixa", icon: TrendingUp },
       { to: "/admin/crm-admin/despesas", label: "Despesas", icon: BarChart3 },
-      { to: "/admin/crm-admin/forecast", label: "Business plan", icon: Target, count: "2026" },
-      { to: "/admin/crm-admin/metas", label: "Metas", icon: Target },
+      { to: "/admin/crm-admin/inadimplencia", label: "Inadimplência", icon: AlertTriangle },
+      { to: "/admin/crm-admin/forecast", label: "Business plan", icon: Target },
+      { to: "/admin/crm-admin/metas", label: "Metas & OKRs", icon: Target },
     ],
   },
   {
     label: "People",
     items: [
-      { to: "/admin/crm-admin/time", label: "Time", icon: Users, count: "9" },
-      { to: "/admin/crm-admin/one-on-one", label: "1:1 & PDIs", icon: CalendarDays },
-      { to: "/admin/crm-admin/carreira", label: "Carreira & promoções", icon: Trophy },
-      { to: "/admin/crm-admin/contratacoes", label: "Contratações", icon: Briefcase, count: "3" },
+      { to: "/admin/crm-admin/time", label: "Time", icon: Users },
+      { to: "/admin/crm-admin/one-on-one", label: "1:1s", icon: CalendarDays },
+      { to: "/admin/crm-admin/pdi", label: "PDIs", icon: ListChecks },
+      { to: "/admin/crm-admin/carreira", label: "Carreira", icon: Trophy },
+      { to: "/admin/crm-admin/contratacoes", label: "Contratações", icon: Briefcase },
+      { to: "/admin/crm-admin/salarios", label: "Folha", icon: Wallet },
     ],
   },
   {
     label: "Sistema",
     items: [
-      { to: "/admin/crm-admin/easyflow", label: "Configurações", icon: Settings },
+      { to: "/admin/crm-admin/easyflow", label: "Integrações", icon: Settings },
+      { to: "/admin/crm-admin/webhooks", label: "Webhooks", icon: Zap },
     ],
   },
 ];
 
-interface ShellProps {
-  mode: Mode;
-  crumbs: { label: string; to?: string }[];
-  topbarTools?: ReactNode;
-  children: ReactNode;
+// Mapa de label legível por path (pra crumbs e topbar)
+function pathLabel(pathname: string): string {
+  const all = [...MARKETING_NAV, ...ADMIN_NAV].flatMap((s) => s.items);
+  return all.find((i) => i.to === pathname.replace(/\/$/, ""))?.label ?? "Página";
 }
 
-export default function CrmShellV3({ mode, crumbs, topbarTools, children }: ShellProps) {
+// ============================================
+// Context (passthrough — antiga API)
+// ============================================
+const ShellContext = createContext<{ register: (val: { topbarTools?: ReactNode }) => void } | null>(null);
+
+// ============================================
+// LAYOUTS — sidebar persistente + Outlet
+// ============================================
+export function CrmV3MarketingLayout() {
+  return <CrmV3Shell mode="marketing" />;
+}
+export function CrmV3AdminLayout() {
+  return <CrmV3Shell mode="admin" />;
+}
+
+function CrmV3Shell({ mode }: { mode: Mode }) {
   const { crmUser, logout, hasMarketingAccess, hasAdminAccess } = useCrmAuth();
   const location = useLocation();
   const nav = mode === "marketing" ? MARKETING_NAV : ADMIN_NAV;
+  const [topbarTools, setTopbarTools] = useState<ReactNode>(null);
 
   const initials = crmUser?.username
     ?.split(/[\s_.-]+/)
@@ -101,100 +123,122 @@ export default function CrmShellV3({ mode, crumbs, topbarTools, children }: Shel
     .join("")
     .toUpperCase() || "?";
 
+  const cur = location.pathname.replace(/\/$/, "");
+  const currentLabel = pathLabel(cur);
+
   return (
-    <div className="crm-v3">
-      <div className="crm-app">
-        {/* Sidebar */}
-        <aside className="crm-sidebar">
-          <div className="crm-brand">
-            <div className="crm-brand-mark">P</div>
-            <div>
-              <div className="crm-brand-name">PreceptorMED</div>
-              <div className="crm-brand-sub">crm · v3</div>
+    <ShellContext.Provider value={{ register: ({ topbarTools }) => setTopbarTools(topbarTools ?? null) }}>
+      <div className="crm-v3">
+        <div className="crm-app">
+          <aside className="crm-sidebar">
+            <div className="crm-brand">
+              <div className="crm-brand-mark">P</div>
+              <div>
+                <div className="crm-brand-name">PreceptorMED</div>
+                <div className="crm-brand-sub">crm · v3</div>
+              </div>
+            </div>
+
+            {hasMarketingAccess && hasAdminAccess && (
+              <div className="crm-mode-toggle">
+                <Link to="/admin/crm-mkt" className={mode === "marketing" ? "active" : ""}>Marketing</Link>
+                <Link to="/admin/crm-admin" className={mode === "admin" ? "active" : ""}>Admin</Link>
+              </div>
+            )}
+
+            {nav.map((section) => (
+              <div className="crm-nav-section" key={section.label}>
+                <div className="crm-nav-label">{section.label}</div>
+                {section.items.map((it) => {
+                  const Icon = it.icon;
+                  const target = it.to.replace(/\/$/, "");
+                  const isIndex = target === "/admin/crm-mkt" || target === "/admin/crm-admin";
+                  const active = isIndex
+                    ? cur === target
+                    : cur === target || cur.startsWith(target + "/");
+                  return (
+                    <Link
+                      key={it.to}
+                      to={it.to}
+                      className={`crm-nav-item ${active ? "active" : ""}`}
+                    >
+                      <Icon className="crm-nav-icon" strokeWidth={1.8} />
+                      <span style={{ flex: 1 }}>{it.label}</span>
+                      {it.count !== undefined && <span className="crm-nav-count">{it.count}</span>}
+                      {it.pill !== undefined && <span className="crm-nav-pill">{it.pill}</span>}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
+
+            <div className="crm-sidebar-foot">
+              <div className="crm-avatar">{initials}</div>
+              <div style={{ minWidth: 0, lineHeight: 1.25, flex: 1 }}>
+                <div className="crm-user-name">{crmUser?.username || "—"}</div>
+                <div className="crm-user-email">{crmUser?.role || ""}</div>
+              </div>
+              <Link to="/admin/crm" title="Ir ao hub" className="crm-btn-icon">
+                <Home />
+              </Link>
+              <button onClick={logout} title="Sair" className="crm-btn-icon">
+                <LogOut />
+              </button>
+            </div>
+          </aside>
+
+          <div className="crm-main">
+            <header className="crm-topbar">
+              <div className="crm-crumbs">
+                <span>CRM</span>
+                <span className="sep">/</span>
+                <span>{mode === "marketing" ? "Marketing" : "Admin"}</span>
+                <span className="sep">/</span>
+                <span className="now">{currentLabel}</span>
+              </div>
+              <div className="crm-topbar-tools">
+                {topbarTools}
+                <span className="crm-live">ao vivo</span>
+                <button className="crm-btn-icon" title="Notificações"><Bell /></button>
+                <button className="crm-btn-icon" title="Compartilhar"><Share2 /></button>
+              </div>
+            </header>
+            <div key={location.pathname} className="crm-page-fade">
+              <Outlet />
             </div>
           </div>
-
-          {hasMarketingAccess && hasAdminAccess && (
-            <div className="crm-mode-toggle">
-              <Link to="/admin/crm" className={mode === "marketing" ? "active" : ""}>Marketing</Link>
-              <Link to="/admin/crm-admin" className={mode === "admin" ? "active" : ""}>Admin</Link>
-            </div>
-          )}
-
-          {nav.map((section) => (
-            <div className="crm-nav-section" key={section.label}>
-              <div className="crm-nav-label">{section.label}</div>
-              {section.items.map((it) => {
-                const Icon = it.icon;
-                const cur = location.pathname.replace(/\/$/, "");
-                const target = it.to.replace(/\/$/, "");
-                const isIndex = target === "/admin/crm-mkt" || target === "/admin/crm-admin";
-                const active = isIndex
-                  ? cur === target
-                  : cur === target || cur.startsWith(target + "/");
-                return (
-                  <Link
-                    key={it.to}
-                    to={it.to}
-                    className={`crm-nav-item ${active ? "active" : ""}`}
-                  >
-                    <Icon className="crm-nav-icon" strokeWidth={1.8} />
-                    <span style={{ flex: it.count || it.pill || it.dot ? "initial" : 1 }}>{it.label}</span>
-                    {it.count !== undefined && <span className="crm-nav-count">{it.count}</span>}
-                    {it.pill !== undefined && <span className="crm-nav-pill">{it.pill}</span>}
-                    {it.dot && (
-                      <span style={{
-                        marginLeft: "auto",
-                        width: 6, height: 6, borderRadius: "50%",
-                        background: "var(--crm-gold-deep)",
-                      }} />
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
-
-          <div className="crm-sidebar-foot">
-            <div className="crm-avatar">{initials}</div>
-            <div style={{ minWidth: 0, lineHeight: 1.25 }}>
-              <div className="crm-user-name">{crmUser?.username || "—"}</div>
-              <div className="crm-user-email">{crmUser?.role || ""}</div>
-            </div>
-            <button
-              onClick={logout}
-              title="Sair"
-              className="crm-btn-icon"
-              style={{ marginLeft: "auto" }}
-            >
-              <LogOut />
-            </button>
-          </div>
-        </aside>
-
-        {/* Main */}
-        <div className="crm-main">
-          <header className="crm-topbar">
-            <div className="crm-crumbs">
-              {crumbs.map((c, i) => (
-                <span key={i} className={i === crumbs.length - 1 ? "now" : ""}>
-                  {i > 0 && <span className="sep" style={{ marginRight: 6, marginLeft: 0 }}>/</span>}
-                  {c.to ? <Link to={c.to} style={{ color: "inherit", textDecoration: "none" }}>{c.label}</Link> : c.label}
-                </span>
-              ))}
-            </div>
-            <div className="crm-topbar-tools">
-              {topbarTools}
-            </div>
-          </header>
-          {children}
         </div>
       </div>
-    </div>
+    </ShellContext.Provider>
   );
 }
 
-// helpers compartilhados
+// ============================================
+// Componente legacy CrmShellV3 — agora passthrough
+// (preserva API das páginas v3 já criadas)
+// ============================================
+interface ShellProps {
+  mode?: Mode;
+  crumbs?: { label: string; to?: string }[];
+  topbarTools?: ReactNode;
+  children: ReactNode;
+}
+
+export default function CrmShellV3({ topbarTools, children }: ShellProps) {
+  const ctx = useContext(ShellContext);
+  // Registra tools no shell pai (estável via JSON.stringify do tipo do nó)
+  useEffect(() => {
+    ctx?.register({ topbarTools });
+    return () => ctx?.register({ topbarTools: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // Retorna apenas children — o shell visual é renderizado pelos Layouts acima
+  return <>{children}</>;
+}
+
+// ============================================
+// HELPERS
+// ============================================
 export function PageHero({ eyebrow, title, sub, actions }: { eyebrow: string; title: ReactNode; sub?: string; actions?: ReactNode }) {
   return (
     <section className="crm-hero">

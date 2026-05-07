@@ -2,7 +2,8 @@ import { useEffect, Suspense } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
 import AdminSidebar from "@/components/crm-admin/AdminSidebar";
-import CrmLogin from "@/pages/crm/CrmLogin";
+import CrmLogin from "@/pages/crm/v3/LoginV3";
+import { CrmV3AdminLayout } from "@/components/crm/v3/CrmShellV3";
 import { Loader2, ShieldX, LogOut } from "lucide-react";
 
 // Páginas v3 com shell próprio — todas as rotas Admin agora são v3
@@ -69,11 +70,11 @@ export default function CrmAdminLayout() {
   if (isV3) {
     return (
       <Suspense fallback={
-        <div className="flex items-center justify-center h-screen bg-[#F7F4EE]">
-          <Loader2 className="h-8 w-8 text-[#0F4128] animate-spin" />
+        <div className="flex items-center justify-center h-screen" style={{ background: "#F7F4EE" }}>
+          <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#0F4128" }} />
         </div>
       }>
-        <Outlet />
+        <CrmV3AdminLayout />
       </Suspense>
     );
   }
