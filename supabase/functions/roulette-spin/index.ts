@@ -95,6 +95,20 @@ serve(async (req) => {
       );
     }
 
+    // ─── Valida user_id (pode estar pendente de confirmação) ──
+    // Se o user_id passado nao existir em auth.users (ex: signup ainda
+    // pendente de confirmacao por email), salvamos sem user_id pra evitar
+    // FK violation. O premio ainda fica vinculado ao email.
+    let validatedUserId: string | null = null;
+    if (user_id && typeof user_id === "string") {
+      const { data: authUser } = await supabase.auth.admin.getUserById(user_id);
+      if (authUser?.user) {
+        validatedUserId = user_id;
+      } else {
+        console.warn("roulette-spin: user_id passed but not found in auth.users:", user_id);
+      }
+    }
+
     // ─── Sorteia ───────────────────────────────────────────────
     const prize = drawPrize();
 
@@ -112,7 +126,7 @@ serve(async (req) => {
         full_name: full_name.trim(),
         faculdade: faculdade?.trim() || null,
         phone: phone?.trim() || null,
-        user_id: user_id || null,
+        user_id: validatedUserId,
         event_slug: EVENT_SLUG,
         prize: prize.key,
         prize_label: prize.label,
@@ -146,12 +160,12 @@ serve(async (req) => {
     }
 
     // ─── Mensal grátis: aplica free_access na conta ────────────
-    if (prize.key === "mensal_gratis" && user_id) {
+    if (prize.key === "mensal_gratis" && validatedUserId) {
       const accessExpiresAt = new Date(Date.now() + 30 * 86400 * 1000).toISOString();
       const { error: subErr } = await supabase
         .from("subscriptions")
         .upsert({
-          user_id,
+          user_id: validatedUserId,
           status: "active",
           plan_type: "free_access",
           access_expires_at: accessExpiresAt,
