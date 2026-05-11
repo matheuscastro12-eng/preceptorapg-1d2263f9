@@ -239,7 +239,7 @@ export function CohortsV3() {
           <CardHead title="Cohort grid" sub="cada linha é uma coorte mensal · cada coluna meses desde o cadastro" />
           <div className="crm-card-pad">
             {lista.length > 0 ? (
-              <div style={{ display: "grid", gridTemplateColumns: "140px repeat(7, 1fr)", gap: 4, fontFamily: "var(--crm-mono)", fontSize: 11 }}>
+              <div className="crm-cohort-grid" style={{ display: "grid", gridTemplateColumns: "140px repeat(7, 1fr)", gap: 4, fontFamily: "var(--crm-mono)", fontSize: 11, minWidth: 560 }}>
                 <div style={{ color: "var(--crm-ink-4)", fontSize: 10.5, padding: "6px 8px", fontWeight: 600, fontFamily: "var(--crm-sans)" }}>Coorte</div>
                 {["M0","M1","M2","M3","M4","M5","M6"].map((m) => <div key={m} style={{ color: "var(--crm-ink-4)", textTransform: "uppercase", letterSpacing: "0.05em", fontSize: 10.5, padding: "6px 8px", textAlign: "center", fontWeight: 600 }}>{m}</div>)}
                 {lista.map((row, idx) => {
@@ -403,7 +403,7 @@ export function EmailTemplatesV3() {
             <div style={{ padding: 48, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>Sem templates em crm_email_templates.</div>
           </section>
         ) : (
-          <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+          <section className="crm-mobile-stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
             <div className="crm-card">
               <CardHead title="Lista de templates" sub={`${lista.length} cadastrados`} />
               <div>
@@ -481,10 +481,17 @@ function useRealActivity() {
       const mauSet = new Set<string>();
       const featureCount: Record<string, { calls: number; users: Set<string> }> = {};
       const userCount: Record<string, { calls: number; lastUsed: string; features: Set<string> }> = {};
+      const todayUserCount: Record<string, { calls: number; lastUsed: string; features: Set<string> }> = {};
       const dailyCount: Record<string, number> = {};
 
       all.forEach((l: any) => {
-        if (l.created_at >= d1) dauSet.add(l.user_id);
+        if (l.created_at >= d1) {
+          dauSet.add(l.user_id);
+          if (!todayUserCount[l.user_id]) todayUserCount[l.user_id] = { calls: 0, lastUsed: l.created_at, features: new Set() };
+          todayUserCount[l.user_id].calls += 1;
+          if (l.created_at > todayUserCount[l.user_id].lastUsed) todayUserCount[l.user_id].lastUsed = l.created_at;
+          todayUserCount[l.user_id].features.add(l.function_name);
+        }
         if (l.created_at >= d7) wauSet.add(l.user_id);
         mauSet.add(l.user_id);
 
@@ -505,12 +512,13 @@ function useRealActivity() {
       const wau = wauSet.size;
       const mau = mauSet.size;
 
-      // Top users
+      // Top users (30d) + Today users — buscamos profiles dos dois conjuntos
       const topUserIds = Object.entries(userCount).sort((a, b) => b[1].calls - a[1].calls).slice(0, 30).map(([uid]) => uid);
+      const todayUserIds = Object.keys(todayUserCount);
+      const allUserIds = Array.from(new Set([...topUserIds, ...todayUserIds]));
 
-      // Profiles para enriquecer
-      const { data: profiles } = topUserIds.length > 0
-        ? await supabase.from("profiles").select("user_id, email, full_name").in("user_id", topUserIds)
+      const { data: profiles } = allUserIds.length > 0
+        ? await supabase.from("profiles").select("user_id, email, full_name").in("user_id", allUserIds)
         : { data: [] };
       const profMap: Record<string, any> = {};
       (profiles ?? []).forEach((p: any) => { profMap[p.user_id] = p; });
@@ -524,6 +532,18 @@ function useRealActivity() {
           name: profMap[uid]?.full_name ?? null,
           calls: info.calls,
           features: info.features.size,
+          lastUsed: info.lastUsed,
+        }));
+
+      // Usuários que chamaram IA HOJE (últimas 24h), ordenados por número de calls
+      const todayUsers = Object.entries(todayUserCount)
+        .sort((a, b) => b[1].calls - a[1].calls)
+        .map(([uid, info]) => ({
+          user_id: uid,
+          email: profMap[uid]?.email ?? "—",
+          name: profMap[uid]?.full_name ?? null,
+          calls: info.calls,
+          features: Array.from(info.features),
           lastUsed: info.lastUsed,
         }));
 
@@ -543,7 +563,7 @@ function useRealActivity() {
       }).reverse();
       const timeseries = days.map((d) => ({ day: d, calls: dailyCount[d] ?? 0 }));
 
-      return { dau, wau, mau, topUsers, topFeatures, timeseries, totalCalls: all.length };
+      return { dau, wau, mau, topUsers, todayUsers, topFeatures, timeseries, totalCalls: all.length };
     },
     refetchInterval: 60_000,
   });
@@ -622,6 +642,58 @@ export function AnalyticsV3() {
           <section className="crm-card"><div style={{ padding: 48, textAlign: "center", color: "var(--crm-ink-4)" }}><Loader2 className="animate-spin" style={{ display: "inline-block", color: "var(--crm-green-deep)" }} /></div></section>
         ) : (
           <>
+            {/* Usuários ativos HOJE — drill-down do DAU */}
+            <section className="crm-card">
+              <CardHead
+                title="Usuários ativos hoje"
+                sub={`${(act?.todayUsers ?? []).length} ${(act?.todayUsers ?? []).length === 1 ? "usuário chamou" : "usuários chamaram"} IA nas últimas 24h`}
+              />
+              {(act?.todayUsers ?? []).length > 0 ? (
+                <table className="crm-tbl">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Usuário</th>
+                      <th style={{ textAlign: "right" }}>Calls hoje</th>
+                      <th>Features usadas</th>
+                      <th>Última chamada</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(act?.todayUsers ?? []).map((u, i) => (
+                      <tr key={u.user_id}>
+                        <td className="muted crm-mono" style={{ fontSize: 11 }}>{i + 1}</td>
+                        <td>
+                          <div className="lead-name">{u.name ?? u.email}</div>
+                          {u.name && <div className="lead-email">{u.email}</div>}
+                        </td>
+                        <td className="num"><strong style={{ color: "var(--crm-gold-deep)" }}>{fmt(u.calls)}</strong></td>
+                        <td>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                            {u.features.map((f) => (
+                              <span key={f} style={{
+                                fontSize: 10,
+                                padding: "2px 6px",
+                                borderRadius: 3,
+                                background: "var(--crm-green-soft)",
+                                color: "var(--crm-green-deep)",
+                                fontFamily: "var(--crm-mono)",
+                              }}>{FEATURE_LABELS[f] ?? f}</span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="muted">{fmtRelative(u.lastUsed)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{ padding: 32, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
+                  Nenhuma chamada de IA nas últimas 24h.
+                </div>
+              )}
+            </section>
+
             {/* Daily activity */}
             <section className="crm-card">
               <CardHead title="Atividade diária · 30 dias" sub={`Total ${fmt(act?.totalCalls ?? 0)} chamadas de IA`} />

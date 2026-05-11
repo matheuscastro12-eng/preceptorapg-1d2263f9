@@ -1,13 +1,42 @@
 import { useMemo, useState } from "react";
-import { create, all } from "mathjs";
+import {
+  create,
+  evaluateDependencies,
+  roundDependencies,
+  logDependencies,
+  log10Dependencies,
+  log2Dependencies,
+  minDependencies,
+  maxDependencies,
+  absDependencies,
+  sqrtDependencies,
+  powDependencies,
+  numberDependencies,
+} from "mathjs";
 import { Sparkles, RotateCcw, AlertTriangle, BookOpen, ExternalLink } from "lucide-react";
 
-// Configura mathjs em modo SAFE (sem import dinâmico, sem eval string crua)
-const mj = create(all, {
-  // Limita precisão e desabilita features perigosas
+// Configura mathjs em modo SAFE com APENAS as deps necessárias para as
+// expressões dos calculadores médicos (log, round, min/max, etc).
+// Reduz bundle de ~600KB (importando "all") para ~80KB.
+const mj = create({
+  evaluateDependencies,
+  roundDependencies,
+  logDependencies,
+  log10Dependencies,
+  log2Dependencies,
+  minDependencies,
+  maxDependencies,
+  absDependencies,
+  sqrtDependencies,
+  powDependencies,
+  numberDependencies,
+}, {
   number: "number",
   precision: 14,
 });
+
+// Alias `toNumber` para `number` (compatibilidade com expressões legadas)
+mj.import({ toNumber: (x: any) => mj.number(x) }, { override: false, silent: true });
 
 // ────────────────────────────────────────────────────────────
 // Schema da definição (espelha o JSONB salvo em wb_calculators)
