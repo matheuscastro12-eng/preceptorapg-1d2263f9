@@ -1,28 +1,28 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Copy, Check, Gift, Sparkles, Trophy, MapPin } from "lucide-react";
+import { Loader2, Gift, Sparkles, Trophy, MapPin } from "lucide-react";
 import logoIcon from "@/assets/logo-icon.png";
 
 // ─── Setores da roleta (visual — independentes da probabilidade real do servidor) ───
 // Repetimos os prêmios pra dar a sensação de roleta com muitas casinhas.
 // O ângulo final é calculado pra cair no setor do prêmio sorteado.
 interface Sector {
-  prize: "chaveiro" | "desconto_30" | "desconto_50" | "mensal_gratis";
+  prize: "desconto_20" | "desconto_30" | "desconto_50" | "mensal_gratis";
   label: string;
   color: string;
   text: string;
 }
 const SECTORS: Sector[] = [
+  { prize: "desconto_20",   label: "20% off",       color: "#C9A84C", text: "#1A1815" },
   { prize: "desconto_30",   label: "30% off",       color: "#1B5E3B", text: "#fff" },
-  { prize: "chaveiro",      label: "Chaveiro",      color: "#C9A84C", text: "#1A1815" },
   { prize: "desconto_50",   label: "50% off",       color: "#0F4128", text: "#fff" },
-  { prize: "chaveiro",      label: "Chaveiro",      color: "#C9A84C", text: "#1A1815" },
+  { prize: "desconto_20",   label: "20% off",       color: "#C9A84C", text: "#1A1815" },
   { prize: "desconto_30",   label: "30% off",       color: "#1B5E3B", text: "#fff" },
   { prize: "mensal_gratis", label: "1 mês grátis!", color: "#7B2D8E", text: "#fff" },
-  { prize: "chaveiro",      label: "Chaveiro",      color: "#C9A84C", text: "#1A1815" },
-  { prize: "desconto_30",   label: "30% off",       color: "#1B5E3B", text: "#fff" },
+  { prize: "desconto_20",   label: "20% off",       color: "#C9A84C", text: "#1A1815" },
+  { prize: "desconto_50",   label: "50% off",       color: "#0F4128", text: "#fff" },
 ];
 
 // ─── Form state ─────────────────────────────────────────────────────
@@ -37,7 +37,7 @@ interface FormData {
 interface SpinResult {
   prize: string;
   prize_label: string;
-  coupon_code?: string | null;
+  checkout_url?: string | null;
   redemption_code: string;
   alreadySpun?: boolean;
 }
@@ -54,7 +54,6 @@ export default function SemanaItajuba() {
   const [userId, setUserId] = useState<string | null>(null);
   const [result, setResult] = useState<SpinResult | null>(null);
   const [rotation, setRotation] = useState(0);
-  const [copied, setCopied] = useState(false);
 
   // ─── Cadastro ─────────────────────────────────────────────────────
   const handleSignup = async (e: React.FormEvent) => {
@@ -175,13 +174,6 @@ export default function SemanaItajuba() {
     }
   };
 
-  const handleCopy = async (code: string) => {
-    await navigator.clipboard.writeText(code);
-    setCopied(true);
-    toast({ title: "Copiado!", description: `Código ${code} copiado.` });
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   // ─── Render ───────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-amber-50">
@@ -216,7 +208,7 @@ export default function SemanaItajuba() {
         )}
 
         {phase === "result" && result && (
-          <ResultSection result={result} copied={copied} onCopy={handleCopy} userName={form.full_name} />
+          <ResultSection result={result} userName={form.full_name} />
         )}
       </main>
 
@@ -430,50 +422,53 @@ function SpinSection({
 
 // ─── Section: Result ───────────────────────────────────────────────
 function ResultSection({
-  result, copied, onCopy, userName,
+  result, userName,
 }: {
   result: SpinResult;
-  copied: boolean;
-  onCopy: (code: string) => void;
   userName: string;
 }) {
-  const config = (() => {
+  type Config = {
+    emoji: string;
+    color: string;
+    title: string;
+    body: string;
+    cta: { label: string; href?: string; isExternal?: boolean } | null;
+  };
+
+  const config: Config = (() => {
     switch (result.prize) {
       case "mensal_gratis":
         return {
           emoji: "🏆",
           color: "from-purple-600 to-purple-900",
-          accent: "purple",
           title: "PARABÉNS! 1 mês grátis!",
-          body: "Sua assinatura mensal já foi liberada na sua conta. Entre no app e aproveite tudo sem limites!",
-          cta: { label: "Entrar na minha conta →", to: "/menu" },
+          body: "Você ganhou 1 mês completo de acesso ao PreceptorMED. Nossa equipe vai ativar manualmente na sua conta em até 24h — fique de olho no email.",
+          cta: null,
         };
       case "desconto_50":
         return {
-          emoji: "💸",
-          color: "from-emerald-700 to-emerald-900",
-          accent: "emerald",
-          title: "50% off na assinatura!",
-          body: "Use o cupom abaixo na hora de assinar — válido em qualquer plano.",
-          cta: { label: "Ir para os planos →", to: "/pricing" },
+          emoji: "🎯",
+          color: "from-emerald-800 to-emerald-950",
+          title: "50% off no plano anual!",
+          body: "O maior desconto do evento! Aproveite agora — o desconto fica disponível só pra você por tempo limitado.",
+          cta: { label: "Garantir 50% off agora →", href: result.checkout_url || undefined, isExternal: true },
         };
       case "desconto_30":
         return {
-          emoji: "💰",
-          color: "from-emerald-600 to-emerald-800",
-          accent: "emerald",
-          title: "30% off na assinatura!",
-          body: "Use o cupom abaixo na hora de assinar — válido em qualquer plano.",
-          cta: { label: "Ir para os planos →", to: "/pricing" },
+          emoji: "💸",
+          color: "from-emerald-700 to-emerald-900",
+          title: "30% off no plano anual!",
+          body: "Desconto exclusivo da Semana Médica de Itajubá. Clica abaixo pra completar a assinatura.",
+          cta: { label: "Garantir 30% off agora →", href: result.checkout_url || undefined, isExternal: true },
         };
-      default: // chaveiro
+      case "desconto_20":
+      default:
         return {
-          emoji: "🎁",
-          color: "from-amber-500 to-amber-700",
-          accent: "amber",
-          title: "Você ganhou um chaveiro!",
-          body: "Passa no estande PreceptorMED na Semana Médica pra retirar. Mostra o código abaixo pra equipe.",
-          cta: null,
+          emoji: "💰",
+          color: "from-amber-600 to-amber-800",
+          title: "20% off no plano anual!",
+          body: "Todo participante ganha algo. Aproveite seu desconto e leve PreceptorMED por 12 meses.",
+          cta: { label: "Garantir 20% off agora →", href: result.checkout_url || undefined, isExternal: true },
         };
     }
   })();
@@ -496,41 +491,26 @@ function ResultSection({
             {config.body}
           </p>
 
-          {/* Coupon code box (30/50 off) */}
-          {result.coupon_code && (
-            <div className="bg-white/10 backdrop-blur border border-white/20 rounded-xl p-4 mb-6 max-w-sm mx-auto">
-              <p className="text-[10px] uppercase tracking-widest opacity-70 mb-2">Seu cupom</p>
-              <div className="flex items-center justify-center gap-3">
-                <code className="text-2xl font-mono font-bold tracking-wide">{result.coupon_code}</code>
-                <button
-                  onClick={() => onCopy(result.coupon_code!)}
-                  className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1.5"
-                >
-                  {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                  {copied ? "Copiado" : "Copiar"}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Redemption code for chaveiro */}
-          {result.prize === "chaveiro" && (
+          {/* Mensal grátis — mostra código de referência pra equipe ativar */}
+          {result.prize === "mensal_gratis" && (
             <div className="bg-white/10 backdrop-blur border border-white/20 rounded-xl p-4 mb-6 max-w-sm mx-auto">
               <p className="text-[10px] uppercase tracking-widest opacity-70 mb-2 flex items-center justify-center gap-1.5">
-                <MapPin className="h-3 w-3" /> Código de retirada
+                <MapPin className="h-3 w-3" /> Código de referência
               </p>
               <code className="text-2xl font-mono font-bold tracking-wide uppercase">{result.redemption_code}</code>
-              <p className="text-[11px] opacity-70 mt-2">Mostra esse código no estande</p>
+              <p className="text-[11px] opacity-70 mt-2">Guarde esse código. Pode ser pedido pelo suporte.</p>
             </div>
           )}
 
-          {config.cta && (
-            <Link
-              to={config.cta.to}
-              className="inline-block bg-white text-slate-900 px-8 py-3 rounded-full font-bold text-sm shadow-lg hover:shadow-xl active:scale-95 transition-all"
+          {config.cta && config.cta.href && (
+            <a
+              href={config.cta.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-white text-slate-900 px-8 py-3.5 rounded-full font-bold text-sm shadow-lg hover:shadow-xl active:scale-95 transition-all"
             >
               {config.cta.label}
-            </Link>
+            </a>
           )}
         </div>
       </div>

@@ -10,16 +10,19 @@ const corsHeaders = {
 // Probabilidades somam 100. Mudanças aqui são server-side — usuário
 // não consegue manipular do client.
 interface PrizeConfig {
-  key: "chaveiro" | "desconto_30" | "desconto_50" | "mensal_gratis";
+  key: "desconto_20" | "desconto_30" | "desconto_50" | "mensal_gratis";
   label: string;
   weight: number;       // probabilidade em %
-  coupon?: string;      // cupom fixo (cupons que o organizador combinou)
+  checkout_url?: string; // link EasyFlow de checkout do plano anual
 }
 
 const PRIZES: PrizeConfig[] = [
-  { key: "chaveiro",       label: "Chaveiro PreceptorMED", weight: 35 },
-  { key: "desconto_30",    label: "30% off",                weight: 35, coupon: "ITAJUBA30" },
-  { key: "desconto_50",    label: "50% off",                weight: 20, coupon: "ITAJUBA50" },
+  { key: "desconto_20",    label: "20% off no plano anual", weight: 40,
+    checkout_url: "https://pay.easyflow.digital/checkouts/offer/6385c0a1-b988-4ddd-9607-ee2ec15b3846" },
+  { key: "desconto_30",    label: "30% off no plano anual", weight: 30,
+    checkout_url: "https://pay.easyflow.digital/checkouts/offer/5d0dbbfd-d06c-4252-8a29-3c51665c77c2" },
+  { key: "desconto_50",    label: "50% off no plano anual", weight: 20,
+    checkout_url: "https://pay.easyflow.digital/checkouts/offer/fc67ad17-4b71-4067-b25b-52370c6de476" },
   { key: "mensal_gratis",  label: "1 mês grátis",           weight: 10 },
 ];
 
@@ -86,7 +89,7 @@ serve(async (req) => {
           alreadySpun: true,
           prize: existing.prize,
           prize_label: existing.prize_label,
-          coupon_code: existing.coupon_code,
+          checkout_url: existing.coupon_code, // coluna reaproveitada
           redemption_code: existing.redemption_code,
           spun_at: existing.created_at,
           message: "Você já participou da roleta nesse evento.",
@@ -119,6 +122,8 @@ serve(async (req) => {
     const userAgent = req.headers.get("user-agent") || null;
 
     // ─── Insere (UNIQUE constraint previne race condition) ─────
+    // coupon_code agora guarda a URL do checkout (reaproveita a coluna pra
+    // nao precisar de outra migration). Renderizacao no frontend trata.
     const { data: spin, error: insertErr } = await supabase
       .from("roulette_spins")
       .insert({
@@ -130,7 +135,7 @@ serve(async (req) => {
         event_slug: EVENT_SLUG,
         prize: prize.key,
         prize_label: prize.label,
-        coupon_code: prize.coupon || null,
+        coupon_code: prize.checkout_url || null,
         ip,
         user_agent: userAgent,
       })
@@ -149,7 +154,11 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({
             alreadySpun: true,
-            ...existingAfterRace,
+            prize: existingAfterRace?.prize,
+            prize_label: existingAfterRace?.prize_label,
+            checkout_url: existingAfterRace?.coupon_code, // reaproveitada
+            redemption_code: existingAfterRace?.redemption_code,
+            spun_at: existingAfterRace?.created_at,
             message: "Você já participou da roleta nesse evento.",
           }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -159,37 +168,16 @@ serve(async (req) => {
       throw new Error("Falha ao registrar prêmio");
     }
 
-    // ─── Mensal grátis: aplica free_access na conta ────────────
-    if (prize.key === "mensal_gratis" && validatedUserId) {
-      const accessExpiresAt = new Date(Date.now() + 30 * 86400 * 1000).toISOString();
-      const { error: subErr } = await supabase
-        .from("subscriptions")
-        .upsert({
-          user_id: validatedUserId,
-          status: "active",
-          plan_type: "free_access",
-          access_expires_at: accessExpiresAt,
-          source: "roulette_" + EVENT_SLUG,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "user_id" });
-
-      if (subErr) {
-        console.warn("roulette-spin: failed to apply free_access:", subErr);
-      } else {
-        // Marca delivered_at imediatamente — entrega automática
-        await supabase
-          .from("roulette_spins")
-          .update({ delivered_at: new Date().toISOString() })
-          .eq("id", spin.id);
-      }
-    }
+    // NOTA: 1 mês grátis agora é ativado MANUALMENTE pelo CRM. A equipe
+    // consulta roulette_spins WHERE prize='mensal_gratis' AND delivered_at
+    // IS NULL e aplica o free_access via /admin/users.
 
     return new Response(
       JSON.stringify({
         alreadySpun: false,
         prize: prize.key,
         prize_label: prize.label,
-        coupon_code: prize.coupon || null,
+        checkout_url: prize.checkout_url || null,
         redemption_code: spin.redemption_code,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
