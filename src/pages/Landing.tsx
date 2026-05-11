@@ -1186,8 +1186,8 @@ const Landing = () => {
             <div className="space-y-4">
               <h5 className="font-bold text-xs uppercase tracking-widest text-slate-900">Legal</h5>
               <ul className="space-y-2">
-                <li><a className="text-sm text-slate-500 hover:text-slate-800 hover:translate-x-1 transition-all duration-200 block" href="#">Termos de Uso</a></li>
-                <li><a className="text-sm text-slate-500 hover:text-slate-800 hover:translate-x-1 transition-all duration-200 block" href="#">Privacidade</a></li>
+                <li><a className="text-sm text-slate-500 hover:text-slate-800 hover:translate-x-1 transition-all duration-200 block" href="/termos">Termos de Uso</a></li>
+                <li><a className="text-sm text-slate-500 hover:text-slate-800 hover:translate-x-1 transition-all duration-200 block" href="/privacidade">Privacidade</a></li>
               </ul>
             </div>
             <div className="space-y-4">

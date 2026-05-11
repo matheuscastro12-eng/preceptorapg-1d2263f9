@@ -400,9 +400,9 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
             <div className="max-w-7xl mx-auto px-6 sm:px-10 flex flex-col sm:flex-row justify-between items-center gap-4">
               <span className="text-xs text-slate-400 font-medium">© {new Date().getFullYear()} PreceptorMED</span>
               <div className="flex gap-6">
-                {['Termos de Uso', 'Privacidade', 'Suporte'].map((label) => (
-                  <button key={label} className="text-xs text-slate-400 hover:text-[#006D5B] transition-colors duration-200">{label}</button>
-                ))}
+                <a href="/termos" className="text-xs text-slate-400 hover:text-[#006D5B] transition-colors duration-200">Termos de Uso</a>
+                <a href="/privacidade" className="text-xs text-slate-400 hover:text-[#006D5B] transition-colors duration-200">Privacidade</a>
+                <a href="mailto:contato@thepreceptor.com.br" className="text-xs text-slate-400 hover:text-[#006D5B] transition-colors duration-200">Suporte</a>
               </div>
             </div>
           </footer>
