@@ -103,6 +103,9 @@ const ScribeReview = lazy(() => import("./pages/ScribeReview"));
 const ScribeAudit = lazy(() => import("./pages/ScribeAudit"));
 const ThankYou = lazy(() => import("./pages/ThankYou"));
 const SubscriptionThankYou = lazy(() => import("./pages/SubscriptionThankYou"));
+const Termos = lazy(() => import("./pages/Termos"));
+const Privacidade = lazy(() => import("./pages/Privacidade"));
+const SemanaItajuba = lazy(() => import("./pages/SemanaItajuba"));
 
 // CRM pages (lazy — admin only)
 const CrmHub = lazy(() => import("./pages/crm/v3/HubV3"));
@@ -233,6 +236,9 @@ const App = () => (
                 <Route path="/obrigado" element={<SubscriptionThankYou />} />
                 <Route path="/obrigado/:plano" element={<SubscriptionThankYou />} />
                 <Route path="/inscricao" element={<ThankYou />} />
+                <Route path="/termos" element={<Termos />} />
+                <Route path="/privacidade" element={<Privacidade />} />
+                <Route path="/semana-itajuba" element={<SemanaItajuba />} />
                 {/* Legacy redirects */}
                 <Route path="/topics" element={<Navigate to="/profile" replace />} />
                 <Route path="/evolution" element={<Navigate to="/profile" replace />} />
