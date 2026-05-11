@@ -17,10 +17,10 @@ interface PrizeConfig {
 }
 
 const PRIZES: PrizeConfig[] = [
-  { key: "chaveiro",       label: "Chaveiro PreceptorMED", weight: 45 },
+  { key: "chaveiro",       label: "Chaveiro PreceptorMED", weight: 35 },
   { key: "desconto_30",    label: "30% off",                weight: 35, coupon: "ITAJUBA30" },
-  { key: "desconto_50",    label: "50% off",                weight: 15, coupon: "ITAJUBA50" },
-  { key: "mensal_gratis",  label: "1 mês grátis",           weight: 5  },
+  { key: "desconto_50",    label: "50% off",                weight: 20, coupon: "ITAJUBA50" },
+  { key: "mensal_gratis",  label: "1 mês grátis",           weight: 10 },
 ];
 
 const EVENT_SLUG = "semana-itajuba";
