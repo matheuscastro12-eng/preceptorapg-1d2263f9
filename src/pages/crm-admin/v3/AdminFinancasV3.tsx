@@ -13,7 +13,9 @@ import { useInadimplencias, useInadimplenciaStats } from "@/hooks/useInadimplenc
 import { usePremissaAtiva, useDREData, calcularReceitas } from "@/hooks/useForecast";
 import { useOKRs } from "@/hooks/useOKRs";
 import { useRelatorios } from "@/hooks/useRelatorioInvestidor";
+import { useCreateDespesa } from "@/hooks/useDespesas";
 import { useState } from "react";
+import { X, Loader2 } from "lucide-react";
 
 const fmtBRL = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 const fmtBRL2 = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -423,6 +425,7 @@ function CashflowChart() {
 export function DespesasV3() {
   const mesAtualKey = new Date().toISOString().slice(0, 7);
   const [periodo, setPeriodo] = useState<"mes" | "tudo">("tudo");
+  const [showNew, setShowNew] = useState(false);
   const filtroMes = periodo === "mes" ? mesAtualKey : undefined;
   const { data: despesas } = useDespesas(filtroMes ? { mes: filtroMes } : undefined);
   const { data: resumo } = useDespesaResumo();
@@ -433,7 +436,7 @@ export function DespesasV3() {
       topbarTools={<>
         <PeriodBar options={["Mês atual", "Tudo"]} active={periodo === "mes" ? "Mês atual" : "Tudo"} onChange={(v) => setPeriodo(v === "Mês atual" ? "mes" : "tudo")} />
         <button className="crm-btn crm-btn-ghost"><Download size={13} /> Exportar</button>
-        <button className="crm-btn crm-btn-primary"><Plus size={13} /> Lançar despesa</button>
+        <button className="crm-btn crm-btn-primary" onClick={() => setShowNew(true)}><Plus size={13} /> Lançar despesa</button>
       </>}
     >
       <main className="crm-page">
@@ -504,7 +507,149 @@ export function DespesasV3() {
           )}
         </section>
       </main>
+      {showNew && <NovaDespesaModal onClose={() => setShowNew(false)} />}
     </CrmShellV3>
+  );
+}
+
+function NovaDespesaModal({ onClose }: { onClose: () => void }) {
+  const create = useCreateDespesa();
+  const today = new Date().toISOString().slice(0, 10);
+  const [form, setForm] = useState({
+    descricao: "",
+    categoria: "marketing",
+    valor: "",
+    data: today,
+    recorrente: false,
+    frequencia: "mensal",
+    responsavel: "",
+    observacoes: "",
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!form.descricao.trim()) { setError("Descrição obrigatória"); return; }
+    const valorNum = Number(form.valor.replace(",", "."));
+    if (!valorNum || valorNum <= 0) { setError("Valor inválido"); return; }
+    try {
+      await create.mutateAsync({
+        descricao: form.descricao.trim(),
+        categoria: form.categoria,
+        valor: valorNum,
+        data: form.data,
+        recorrente: form.recorrente,
+        frequencia: form.recorrente ? form.frequencia : "pontual",
+        responsavel: form.responsavel.trim() || null,
+        observacoes: form.observacoes.trim() || null,
+      });
+      onClose();
+    } catch (err: any) {
+      setError(err?.message ?? "Erro ao salvar");
+    }
+  };
+
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+      display: "grid", placeItems: "center", padding: 20, zIndex: 1000,
+    }}>
+      <form onClick={(e) => e.stopPropagation()} onSubmit={submit} className="crm-card" style={{
+        width: "min(560px, 100%)", maxHeight: "90vh", overflow: "auto",
+        padding: 0, background: "var(--crm-surface)",
+      }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--crm-line)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontFamily: "var(--crm-sans)", fontSize: 16, fontWeight: 700, color: "var(--crm-ink)" }}>Nova despesa</div>
+            <div className="crm-mono" style={{ fontSize: 11, color: "var(--crm-ink-4)", marginTop: 2 }}>admin_despesas</div>
+          </div>
+          <button type="button" onClick={onClose} className="crm-btn-icon"><X /></button>
+        </div>
+
+        <div style={{ padding: 20, display: "grid", gap: 14 }}>
+          <Field label="Descrição">
+            <input value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} placeholder="Ex: Google Ads · campanha cardio abril" style={inputStyle} required />
+          </Field>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <Field label="Categoria">
+              <select value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })} style={inputStyle}>
+                <option value="marketing">Marketing</option>
+                <option value="infra">Infraestrutura</option>
+                <option value="ferramentas">Ferramentas & SaaS</option>
+                <option value="salarios">Salários</option>
+                <option value="juridico">Jurídico</option>
+                <option value="outros">Outros</option>
+              </select>
+            </Field>
+            <Field label="Valor (R$)">
+              <input type="text" inputMode="decimal" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} placeholder="0,00" style={inputStyle} required />
+            </Field>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <Field label="Data">
+              <input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} style={inputStyle} required />
+            </Field>
+            <Field label="Responsável (opcional)">
+              <input value={form.responsavel} onChange={(e) => setForm({ ...form, responsavel: e.target.value })} placeholder="Matheus" style={inputStyle} />
+            </Field>
+          </div>
+
+          <Field label="">
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--crm-ink-2)" }}>
+              <input type="checkbox" checked={form.recorrente} onChange={(e) => setForm({ ...form, recorrente: e.target.checked })} />
+              Recorrente
+            </label>
+          </Field>
+
+          {form.recorrente && (
+            <Field label="Frequência">
+              <select value={form.frequencia} onChange={(e) => setForm({ ...form, frequencia: e.target.value })} style={inputStyle}>
+                <option value="mensal">Mensal</option>
+                <option value="trimestral">Trimestral</option>
+                <option value="semestral">Semestral</option>
+                <option value="anual">Anual</option>
+              </select>
+            </Field>
+          )}
+
+          <Field label="Observações (opcional)">
+            <textarea value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} placeholder="Notas adicionais…" style={{ ...inputStyle, minHeight: 60, resize: "vertical" }} />
+          </Field>
+
+          {error && <div style={{ color: "var(--crm-neg)", fontSize: 12 }}>{error}</div>}
+        </div>
+
+        <div style={{ padding: "14px 20px", borderTop: "1px solid var(--crm-line)", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button type="button" onClick={onClose} className="crm-btn crm-btn-ghost">Cancelar</button>
+          <button type="submit" className="crm-btn crm-btn-primary" disabled={create.isPending}>
+            {create.isPending ? <><Loader2 size={12} className="animate-spin" /> Salvando…</> : <><Plus size={12} /> Salvar</>}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  background: "var(--crm-surface)",
+  border: "1px solid var(--crm-line)",
+  borderRadius: 6,
+  padding: "8px 10px",
+  fontFamily: "var(--crm-text)",
+  fontSize: 13,
+  color: "var(--crm-ink)",
+};
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      {label && <div className="crm-mono" style={{ fontSize: 10.5, color: "var(--crm-ink-4)", letterSpacing: "0.05em", textTransform: "uppercase", fontWeight: 600, marginBottom: 4 }}>{label}</div>}
+      {children}
+    </div>
   );
 }
 
