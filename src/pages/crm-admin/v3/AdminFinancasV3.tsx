@@ -344,7 +344,7 @@ export function FluxoCaixaV3() {
             deltaText={`runway ${runway?.runway ?? 0} meses`} accent={deltaCaixa >= 0 ? "mrr" : "warn"} />
         </section>
 
-        <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+        <section className="crm-mobile-stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
           <div className="crm-card">
             <CardHead title="Próximos recebimentos · 30d" sub={`${(entradas ?? []).filter((e: any) => new Date(e.data) <= em30d).length} previstos`} />
             {entradas && entradas.length > 0 ? (
@@ -572,7 +572,7 @@ function NovaDespesaModal({ onClose }: { onClose: () => void }) {
             <input value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} placeholder="Ex: Google Ads · campanha cardio abril" style={inputStyle} required />
           </Field>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div className="crm-mobile-stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <Field label="Categoria">
               <select value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })} style={inputStyle}>
                 <option value="marketing">Marketing</option>
@@ -588,7 +588,7 @@ function NovaDespesaModal({ onClose }: { onClose: () => void }) {
             </Field>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div className="crm-mobile-stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <Field label="Data">
               <input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} style={inputStyle} required />
             </Field>
@@ -867,7 +867,7 @@ export function MetasV3() {
                   const krPct = kr.meta > 0 ? Math.round((kr.progresso_atual / kr.meta) * 100) : 0;
                   const st = krPct >= 70 ? "green" : krPct >= 40 ? "warn" : "red";
                   return (
-                    <div key={kr.id} style={{ display: "grid", gridTemplateColumns: "1fr 100px 80px", gap: 14, padding: "12px 20px", borderBottom: "1px solid var(--crm-line-soft)", alignItems: "center" }}>
+                    <div key={kr.id} className="crm-mobile-stack" style={{ display: "grid", gridTemplateColumns: "1fr 100px 80px", gap: 14, padding: "12px 20px", borderBottom: "1px solid var(--crm-line-soft)", alignItems: "center" }}>
                       <div style={{ fontSize: 13, color: "var(--crm-ink-2)" }}>{kr.descricao}</div>
                       <div className="crm-mono" style={{ fontSize: 12.5, color: "var(--crm-ink)", fontWeight: 600, textAlign: "right" }}>{kr.progresso_atual} / {kr.meta} {kr.unidade}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -927,7 +927,7 @@ export function RelatorioV3() {
 
             <section className="crm-card">
               <CardHead title="Sumário executivo" sub={`${meses[ultimo.mes - 1]}/${ultimo.ano}`} />
-              <div className="crm-card-pad" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 18 }}>
+              <div className="crm-card-pad crm-mobile-stack" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 18 }}>
                 <ReportSection title="🚀 O que cresceu" items={splitItems(ultimo.narrativa_positivo)} />
                 <ReportSection title="⚠️ Pontos de atenção" items={splitItems(ultimo.narrativa_negativo)} />
                 <ReportSection title="🎯 Próximos 30 dias" items={splitItems(ultimo.narrativa_proximos30)} />

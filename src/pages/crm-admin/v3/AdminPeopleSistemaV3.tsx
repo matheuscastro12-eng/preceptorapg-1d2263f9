@@ -378,7 +378,7 @@ export function EasyflowV3() {
           sub="Integrações com gateway de pagamento, e-mail, analytics e webhooks externos."
         />
 
-        <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+        <section className="crm-mobile-stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
           <IntegrationCard
             name="Asaas (Gateway)"
             status="connected"

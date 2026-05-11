@@ -717,13 +717,144 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* responsive */
+/* MOBILE — hamburger + drawer */
+.crm-v3 .crm-hamburger {
+  display: none;
+  width: 36px; height: 36px;
+  align-items: center; justify-content: center;
+  border-radius: var(--crm-radius-sm);
+  border: 1px solid var(--crm-line);
+  background: var(--crm-surface);
+  color: var(--crm-ink-2);
+  cursor: pointer;
+  margin-right: 10px;
+}
+.crm-v3 .crm-hamburger:hover { background: var(--crm-surface-2); }
+.crm-v3 .crm-sidebar-close {
+  display: none;
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 32px; height: 32px;
+  border-radius: var(--crm-radius-sm);
+  border: 1px solid var(--crm-line);
+  background: var(--crm-surface);
+  color: var(--crm-ink-2);
+  cursor: pointer;
+  align-items: center; justify-content: center;
+  z-index: 2;
+}
+.crm-v3 .crm-mobile-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(20, 18, 14, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 99;
+  animation: crm-fade-in 180ms ease-out;
+}
+
+/* responsive — tablets */
+@media (max-width: 1024px) {
+  .crm-v3 .crm-page { padding: 22px 24px 40px; }
+  .crm-v3 .crm-kpi-row { grid-template-columns: repeat(3, 1fr) !important; }
+  .crm-v3 .crm-people-grid { grid-template-columns: repeat(2, 1fr); }
+  .crm-v3 .crm-people-grid .crm-person:nth-child(3n) { border-right: 1px solid var(--crm-line); }
+  .crm-v3 .crm-people-grid .crm-person:nth-child(2n) { border-right: none; }
+}
+
+/* responsive — mobile */
 @media (max-width: 900px) {
   .crm-v3 .crm-app { grid-template-columns: 1fr; }
-  .crm-v3 .crm-sidebar { position: relative; height: auto; }
-  .crm-v3 .crm-page { padding: 18px 16px 48px; }
-  .crm-v3 .crm-kpi-row { grid-template-columns: 1fr 1fr; }
+  /* Sidebar vira drawer fora da tela por padrão */
+  .crm-v3 .crm-sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100dvh;
+    width: 78vw;
+    max-width: 300px;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 240ms cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 24px rgba(20, 18, 14, 0.18);
+  }
+  .crm-v3 .crm-sidebar.is-open { transform: translateX(0); }
+  .crm-v3 .crm-sidebar-close { display: flex; }
+  .crm-v3 .crm-mobile-backdrop { display: block; }
+  .crm-v3 .crm-hamburger { display: inline-flex; }
+  .crm-v3 .crm-page { padding: 16px 14px 40px; }
+  .crm-v3 .crm-kpi-row { grid-template-columns: 1fr 1fr !important; }
   .crm-v3 .crm-kpi { border-right: none; border-bottom: 1px solid var(--crm-line-soft); }
+  .crm-v3 .crm-kpi:nth-child(2n) { border-right: 1px solid var(--crm-line-soft); }
   .crm-v3 .crm-g-2, .crm-v3 .crm-g-23, .crm-v3 .crm-g-3 { grid-template-columns: 1fr; }
   .crm-v3 .crm-people-grid { grid-template-columns: 1fr; }
+  .crm-v3 .crm-people-grid .crm-person { border-right: none; }
+
+  /* Topbar mais compacto */
+  .crm-v3 .crm-topbar { padding: 0 12px; gap: 6px; }
+  .crm-v3 .crm-crumbs { font-size: 11px; gap: 4px; min-width: 0; flex: 1; }
+  .crm-v3 .crm-crumbs > span:not(.now):not(.sep) { display: none; }
+  .crm-v3 .crm-crumbs .sep { display: none; }
+  .crm-v3 .crm-crumbs .now {
+    font-size: 13px;
+    color: var(--crm-ink);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .crm-v3 .crm-topbar-tools { gap: 4px; }
+  .crm-v3 .crm-topbar-tools .crm-live { display: none; }
+  .crm-v3 .crm-btn-icon { width: 34px; height: 34px; }
+
+  /* Hero / títulos menores */
+  .crm-v3 .crm-hero { flex-direction: column; align-items: flex-start; gap: 10px; padding: 18px 0 14px; }
+  .crm-v3 .crm-page-title { font-size: 22px !important; line-height: 1.15; }
+  .crm-v3 .crm-page-sub { font-size: 13px; }
+
+  /* PeriodBar scroll-x */
+  .crm-v3 .crm-period-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+  .crm-v3 .crm-period-bar button { flex: 0 0 auto; }
+
+  /* Cards e tabelas: scroll horizontal nativo pra não quebrar */
+  .crm-v3 .crm-card { border-radius: var(--crm-radius-sm); }
+  .crm-v3 .crm-card-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Tabelas — scroll-x automático no card que contiver uma tabela */
+  .crm-v3 .crm-tbl { min-width: 560px; }
+  .crm-v3 .crm-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* :has() descendente — pega tabelas em qualquer nível dentro do card */
+  .crm-v3 .crm-card:has(.crm-tbl) {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Card head em mobile: empilhar título e side */
+  .crm-v3 .crm-card-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .crm-v3 .crm-card-side { width: 100%; }
+
+  /* Grids inline (gridTemplateColumns) — força coluna única quando classe presente */
+  .crm-v3 .crm-mobile-stack { grid-template-columns: 1fr !important; }
+  .crm-v3 .crm-mobile-stack-2 { grid-template-columns: 1fr 1fr !important; }
+
+  /* Esconde elemento no mobile (ex: header de tabela customizada) */
+  .crm-v3 .crm-mobile-hide { display: none !important; }
+
+  /* Wrappers que contêm cohort grid devem rolar */
+  .crm-v3 .crm-card-pad:has(.crm-cohort-grid),
+  .crm-v3 .crm-card:has(.crm-cohort-grid) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Grid horizontal com scroll-x (stage pills, chip rows) */
+  .crm-v3 .crm-mobile-scroll-x {
+    display: flex !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+  .crm-v3 .crm-mobile-scroll-x > * {
+    flex: 0 0 60%;
+    scroll-snap-align: start;
+    min-width: 140px;
+  }
 }

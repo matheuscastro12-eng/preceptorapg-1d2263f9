@@ -113,7 +113,7 @@ export default function FunnelV3() {
         </section>
 
         {/* Funil + Cohort */}
-        <section style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 18 }}>
+        <section className="crm-mobile-stack" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 18 }}>
           <div className="crm-card">
             <CardHead title="Funil completo · agregado" sub={`${fmt(agg.visitors)} visitantes → ${fmt(agg.subscribers)} assinantes pagantes`} />
             <div className="crm-card-pad">
@@ -122,7 +122,7 @@ export default function FunnelV3() {
                   {FUNNEL_ROWS.map((row) => {
                     const width = (row.num / maxNum) * 100;
                     return (
-                      <div key={row.stage} style={{
+                      <div key={row.stage} className="crm-mobile-stack" style={{
                         display: "grid",
                         gridTemplateColumns: "110px 1fr 220px",
                         gap: 18, alignItems: "center",
@@ -188,7 +188,7 @@ export default function FunnelV3() {
           <CardHead title="UTM sources · agregado por canal" sub={`${(utm ?? []).length} fontes · ${fmt((utm ?? []).reduce((s: number, u: any) => s + u.leads, 0))} leads atribuídos`} />
           {(utm ?? []).length > 0 ? (
             <>
-              <div style={{
+              <div className="crm-mobile-hide" style={{
                 display: "grid", gridTemplateColumns: "1fr 110px 110px 110px 110px",
                 gap: 16, padding: "8px 16px",
                 background: "var(--crm-surface-2)",
@@ -207,7 +207,7 @@ export default function FunnelV3() {
                 const conv = u.leads > 0 ? (u.subscribers / u.leads) * 100 : 0;
                 const avgScore = u.leads > 0 ? Math.round(u.total_score / u.leads) : 0;
                 return (
-                  <div key={u.source} style={{
+                  <div key={u.source} className="crm-mobile-stack" style={{
                     display: "grid", gridTemplateColumns: "1fr 110px 110px 110px 110px",
                     gap: 16, alignItems: "center", padding: "14px 16px",
                     borderBottom: "1px solid var(--crm-line-soft)",
@@ -267,7 +267,7 @@ function cohortColor(v: number | null): { bg: string; color: string } {
 
 function CohortGrid({ cohorts }: { cohorts: { cohort: string; total: number; values: number[] }[] }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "120px repeat(7, 1fr)", gap: 4, fontFamily: "var(--crm-mono)", fontSize: 11 }}>
+    <div className="crm-cohort-grid" style={{ display: "grid", gridTemplateColumns: "120px repeat(7, 1fr)", gap: 4, fontFamily: "var(--crm-mono)", fontSize: 11, minWidth: 560 }}>
       <div style={{ color: "var(--crm-ink-4)", fontSize: 10.5, padding: "6px 8px", fontWeight: 600, fontFamily: "var(--crm-sans)" }}>Coorte</div>
       {["M0", "M1", "M2", "M3", "M4", "M5", "M6"].map((m) => (
         <div key={m} style={{ color: "var(--crm-ink-4)", textTransform: "uppercase", letterSpacing: "0.05em", fontSize: 10.5, padding: "6px 8px", textAlign: "center", fontWeight: 600 }}>{m}</div>

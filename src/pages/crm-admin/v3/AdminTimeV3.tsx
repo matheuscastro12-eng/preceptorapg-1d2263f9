@@ -137,7 +137,7 @@ export default function AdminTimeV3() {
         </section>
 
         {/* 1:1s + Pendências */}
-        <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+        <section className="crm-mobile-stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
           <div className="crm-card">
             <CardHead title="Próximos 1:1s" sub={`${proximos.length} agendados`} />
             {proximos.length > 0 ? (
@@ -248,7 +248,7 @@ function HiringPipelineSection({ vagas, metricas }: { vagas: any[]; metricas: an
           Nenhuma vaga aberta em <code>admin_vagas</code>.
         </div>
       ) : (
-        <div style={{
+        <div className="crm-mobile-scroll-x" style={{
           display: "grid", gridTemplateColumns: "repeat(5, 1fr)",
           gap: 1, background: "var(--crm-line)",
           borderRadius: "var(--crm-radius)", overflow: "hidden",

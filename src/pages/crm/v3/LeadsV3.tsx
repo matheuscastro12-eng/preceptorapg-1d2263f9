@@ -117,7 +117,7 @@ export default function LeadsV3() {
 
         {/* Stage pills */}
         <div className="crm-card" style={{ overflow: "hidden" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
+          <div className="crm-mobile-scroll-x" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
             <StagePill label="Visitor" val={fmt(agg.visitors)} pct="crm_leads" onClick={() => setStatusFilter(undefined)} active={!statusFilter} />
             <StagePill label="Signup" val={fmt(agg.signups)} pct="status=signup" onClick={() => setStatusFilter("signup")} active={statusFilter === "signup"} />
             <StagePill label="Trial ativo" val={fmt(agg.active_trials)} pct="status=active_trial" onClick={() => setStatusFilter("active_trial")} active={statusFilter === "active_trial"} />
@@ -133,7 +133,7 @@ export default function LeadsV3() {
           )}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 18, alignItems: "flex-start" }}>
+        <div className="crm-mobile-stack" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 18, alignItems: "flex-start" }}>
           {/* Tabela */}
           <div>
             <div className="crm-card" style={{ overflow: "hidden" }}>

@@ -5,6 +5,7 @@ import {
   LayoutGrid, Users, Filter, Heart, AlertTriangle, Zap, Mail,
   MessageSquare, Settings, Wallet, TrendingUp, Target, ListChecks,
   CalendarDays, Trophy, Briefcase, BarChart3, LogOut, Bell, Share2, Plus, Home, Activity,
+  Menu, X,
 } from "lucide-react";
 import "@/styles/crm-design.css";
 
@@ -114,6 +115,21 @@ function CrmV3Shell({ mode }: { mode: Mode }) {
   const location = useLocation();
   const nav = mode === "marketing" ? MARKETING_NAV : ADMIN_NAV;
   const [topbarTools, setTopbarTools] = useState<ReactNode>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Auto-fecha drawer ao navegar
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  // Trava scroll do body quando drawer aberto
+  useEffect(() => {
+    if (mobileOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = prev; };
+    }
+  }, [mobileOpen]);
 
   const initials = crmUser?.username
     ?.split(/[\s_.-]+/)
@@ -129,8 +145,23 @@ function CrmV3Shell({ mode }: { mode: Mode }) {
   return (
     <ShellContext.Provider value={{ register: ({ topbarTools }) => setTopbarTools(topbarTools ?? null) }}>
       <div className="crm-v3">
+        {/* Backdrop mobile */}
+        {mobileOpen && (
+          <div
+            className="crm-mobile-backdrop"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden
+          />
+        )}
         <div className="crm-app">
-          <aside className="crm-sidebar">
+          <aside className={`crm-sidebar ${mobileOpen ? "is-open" : ""}`}>
+            <button
+              className="crm-sidebar-close"
+              onClick={() => setMobileOpen(false)}
+              aria-label="Fechar menu"
+            >
+              <X size={18} />
+            </button>
             <div className="crm-brand">
               <div className="crm-brand-mark">P</div>
               <div>
@@ -189,6 +220,13 @@ function CrmV3Shell({ mode }: { mode: Mode }) {
 
           <div className="crm-main">
             <header className="crm-topbar">
+              <button
+                className="crm-hamburger"
+                onClick={() => setMobileOpen(true)}
+                aria-label="Abrir menu"
+              >
+                <Menu size={20} />
+              </button>
               <div className="crm-crumbs">
                 <span>CRM</span>
                 <span className="sep">/</span>
@@ -203,7 +241,9 @@ function CrmV3Shell({ mode }: { mode: Mode }) {
                 <button className="crm-btn-icon" title="Compartilhar"><Share2 /></button>
               </div>
             </header>
-            <div key={location.pathname} className="crm-page-fade">
+            {/* Sem key={pathname} — causa unmount/remount do Outlet e flash de tela.
+                Fade controlado por CSS no primeiro paint apenas. */}
+            <div className="crm-page-fade">
               <Outlet />
             </div>
           </div>
