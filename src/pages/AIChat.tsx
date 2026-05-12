@@ -28,6 +28,14 @@ interface ChatConversation {
   updated_at: string;
 }
 
+export interface PubMedArticleMeta {
+  pmid: string;
+  title: string;
+  journal: string;
+  year: string;
+}
+export type PubMedMap = Record<string, PubMedArticleMeta>;
+
 const SUGGESTIONS = [
   'Explique a fisiopatologia da insuficiência cardíaca congestiva',
   'Quais são os mecanismos de ação dos beta-bloqueadores?',
@@ -43,6 +51,7 @@ const AIChat = () => {
   const { toast } = useToast();
   const { isSubscriber, remainingPrompts, hasReachedLimit, dailyLimit, usedToday, incrementUsage, loading: demoLoading } = useDemoLimit();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [pubmedMaps, setPubmedMaps] = useState<Record<string, PubMedMap>>({});
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -225,6 +234,14 @@ const AIChat = () => {
           if (jsonStr === '[DONE]') break;
           try {
             const parsed = JSON.parse(jsonStr);
+            if (parsed.type === 'pubmed_meta' && Array.isArray(parsed.articles)) {
+              const map: PubMedMap = {};
+              for (const a of parsed.articles as PubMedArticleMeta[]) {
+                if (a.pmid) map[a.pmid] = a;
+              }
+              setPubmedMaps(prev => ({ ...prev, [assistantId]: map }));
+              continue;
+            }
             const content = parsed.choices?.[0]?.delta?.content;
             if (content) {
               assistantContent += content;
@@ -498,7 +515,7 @@ const AIChat = () => {
                         )}
                         {m.content && (
                           <div id={`msg-${m.id}`} className="prose prose-sm max-w-none text-[13.5px] leading-relaxed text-[#3E4945] prose-headings:font-['Manrope'] prose-headings:text-[#191C1D] prose-headings:tracking-[-0.01em] prose-strong:text-[#191C1D] prose-a:text-[#005344] prose-a:font-semibold prose-a:no-underline hover:prose-a:underline">
-                            <MarkdownRenderer content={m.content} isTyping={isStreaming && m.id === messages[messages.length - 1]?.id} />
+                            <MarkdownRenderer content={m.content} isTyping={isStreaming && m.id === messages[messages.length - 1]?.id} pubmedMap={pubmedMaps[m.id]} />
                           </div>
                         )}
                         {m.content && !(isStreaming && m.id === messages[messages.length - 1]?.id) && (

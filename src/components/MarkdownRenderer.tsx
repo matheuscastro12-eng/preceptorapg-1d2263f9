@@ -2,11 +2,19 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+export interface PubMedArticleMeta {
+  pmid: string;
+  title: string;
+  journal?: string;
+  year?: string;
+}
+
 interface MarkdownRendererProps {
   content: string;
   className?: string;
   isTyping?: boolean;
   variant?: 'default' | 'rich';
+  pubmedMap?: Record<string, PubMedArticleMeta>;
 }
 
 /* ── helpers for rich variant ── */
@@ -244,18 +252,25 @@ const richComponents: Record<string, React.ComponentType<any>> = {
 
 // Transforma referencias PMID em links clicaveis pro PubMed.
 // Converte tanto [PMID: 12345] quanto (PMID: 12345) em links markdown.
-function linkifyPubMed(text: string): string {
+// Se pubmedMap tiver o titulo do artigo, adiciona como title= no link
+// (tooltip nativo no hover, deixando o usuario ver o artigo antes de clicar).
+function linkifyPubMed(text: string, map?: Record<string, PubMedArticleMeta>): string {
+  const titleFor = (pmid: string): string => {
+    const meta = map?.[pmid];
+    if (!meta) return '';
+    const yearJournal = [meta.journal, meta.year].filter(Boolean).join(', ');
+    // Escape aspas duplas pra nao quebrar o link markdown
+    const raw = yearJournal ? `${meta.title} — ${yearJournal}` : meta.title;
+    return ` "${raw.replace(/"/g, "'")}"`;
+  };
   return text
-    // Padrao inline com colchetes: [PMID: 12345] -> [PMID: 12345](https://pubmed.ncbi.nlm.nih.gov/12345/)
     .replace(
       /\[PMID:\s*(\d+)\]/g,
-      (_m, pmid) => `[PMID: ${pmid}](https://pubmed.ncbi.nlm.nih.gov/${pmid}/)`
+      (_m, pmid) => `[PMID: ${pmid}](https://pubmed.ncbi.nlm.nih.gov/${pmid}/${titleFor(pmid)})`
     )
-    // Padrao na lista de referencias: (PMID: 12345) -> ([PMID: 12345](https://pubmed.ncbi.nlm.nih.gov/12345/))
-    // Evita duplicar se ja estiver dentro de um link
     .replace(
       /\(PMID:\s*(\d+)\)(?!\])/g,
-      (_m, pmid) => `([PMID: ${pmid}](https://pubmed.ncbi.nlm.nih.gov/${pmid}/))`
+      (_m, pmid) => `([PMID: ${pmid}](https://pubmed.ncbi.nlm.nih.gov/${pmid}/${titleFor(pmid)}))`
     );
 }
 
@@ -298,11 +313,11 @@ function fixMarkdownTables(text: string): string {
   return result.join('\n');
 }
 
-const MarkdownRenderer = ({ content, className = '', isTyping = false, variant = 'default' }: MarkdownRendererProps) => {
+const MarkdownRenderer = ({ content, className = '', isTyping = false, variant = 'default', pubmedMap }: MarkdownRendererProps) => {
   const components = variant === 'rich' ? richComponents : defaultComponents;
 
   // Pre-process content: transformar PMIDs em links + fix tabelas
-  const linked = linkifyPubMed(content);
+  const linked = linkifyPubMed(content, pubmedMap);
   const processedContent = isTyping ? linked : fixMarkdownTables(linked);
 
   return (
