@@ -22,6 +22,13 @@ import { useStudyPlanContext, useAutoCompleteActivity } from '@/hooks/useStudyPl
 
 type ViewMode = 'interactive' | 'document';
 
+export interface AttachedArticle {
+  name: string;
+  mimeType: string;
+  data: string; // base64 sem prefixo data:
+  sizeKB: number;
+}
+
 const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
   <span
     className={`material-symbols-outlined ${className}`}
@@ -100,6 +107,8 @@ const Dashboard = () => {
     prevencao: true,
   };
   const [secoes, setSecoes] = useState<Record<string, boolean>>(DEFAULT_SECOES);
+  // Artigos PDF anexados pelo estudante como fonte preferencial
+  const [artigos, setArtigos] = useState<AttachedArticle[]>([]);
   // ID do fechamento salvo (para anotações — marca-texto/comentários)
   const [fechamentoId, setFechamentoId] = useState<string | null>(null);
 
@@ -163,7 +172,7 @@ const Dashboard = () => {
   }> => {
     const response = await fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-fechamento`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ tema, objetivos, modo, secoes }) }
+      { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ tema, objetivos, modo, secoes, artigos: artigos.map(a => ({ name: a.name, mimeType: a.mimeType, data: a.data })) }) }
     );
     if (!response.ok) {
       const e = await response.json().catch(() => ({}));
@@ -799,6 +808,8 @@ const Dashboard = () => {
                   setModo={setModo}
                   secoes={secoes}
                   setSecoes={setSecoes}
+                  artigos={artigos}
+                  setArtigos={setArtigos}
                   generating={generating}
                   hasStartedReceiving={hasStartedReceiving}
                   isComplete={isComplete}

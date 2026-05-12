@@ -1,6 +1,9 @@
+import { useRef, useState } from 'react';
 import GenerationProgress from '@/components/GenerationProgress';
 import type { GenerationMode } from './ModeToggle';
-import { Loader2, Sparkles, ArrowRight } from 'lucide-react';
+import type { AttachedArticle } from '@/pages/Dashboard';
+import { Loader2, Sparkles, ArrowRight, FileText, Paperclip, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface InputPanelProps {
   tema: string;
@@ -11,6 +14,8 @@ interface InputPanelProps {
   setModo: (value: GenerationMode) => void;
   secoes: Record<string, boolean>;
   setSecoes: (value: Record<string, boolean>) => void;
+  artigos: AttachedArticle[];
+  setArtigos: (value: AttachedArticle[]) => void;
   generating: boolean;
   hasStartedReceiving: boolean;
   isComplete: boolean;
@@ -18,6 +23,22 @@ interface InputPanelProps {
   canGenerate?: boolean;
   cooldown?: boolean;
 }
+
+const MAX_ARTIGOS = 3;
+const MAX_ARTIGO_SIZE_MB = 5;
+
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Strip "data:application/pdf;base64," prefix
+      const base64 = result.includes(',') ? result.split(',')[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 
 const MAX_TEMA_LENGTH = 500;
 const MAX_OBJETIVOS_LENGTH = 2000;
@@ -55,12 +76,77 @@ const SECTION_GROUPS: {
 const InputPanel = ({
   tema, setTema, objetivos, setObjetivos,
   modo, setModo, secoes, setSecoes,
+  artigos, setArtigos,
   generating, hasStartedReceiving,
   isComplete, onGenerate, canGenerate = true, cooldown = false,
 }: InputPanelProps) => {
   if (modo !== 'fechamento') {
     setModo('fechamento');
   }
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
+
+  const handleFilesSelected = async (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    const remaining = MAX_ARTIGOS - artigos.length;
+    if (remaining <= 0) {
+      toast({
+        title: 'Limite atingido',
+        description: `Máximo de ${MAX_ARTIGOS} artigos por geração.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    const filesToProcess = Array.from(fileList).slice(0, remaining);
+    setUploading(true);
+    try {
+      const novos: AttachedArticle[] = [];
+      for (const file of filesToProcess) {
+        if (file.type !== 'application/pdf') {
+          toast({
+            title: 'Tipo não suportado',
+            description: `"${file.name}" não é PDF. Apenas arquivos .pdf são aceitos.`,
+            variant: 'destructive',
+          });
+          continue;
+        }
+        if (file.size > MAX_ARTIGO_SIZE_MB * 1024 * 1024) {
+          toast({
+            title: 'Arquivo muito grande',
+            description: `"${file.name}" passa de ${MAX_ARTIGO_SIZE_MB}MB.`,
+            variant: 'destructive',
+          });
+          continue;
+        }
+        const data = await fileToBase64(file);
+        novos.push({
+          name: file.name,
+          mimeType: file.type,
+          data,
+          sizeKB: Math.round(file.size / 1024),
+        });
+      }
+      if (novos.length > 0) {
+        setArtigos([...artigos, ...novos]);
+      }
+    } catch (e) {
+      console.error('Erro ao ler arquivo:', e);
+      toast({
+        title: 'Erro ao processar arquivo',
+        description: 'Tente novamente ou use um PDF diferente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const removeArtigo = (idx: number) => {
+    setArtigos(artigos.filter((_, i) => i !== idx));
+  };
 
   const objetivosCount = objetivos
     .split('\n')
@@ -170,6 +256,101 @@ const InputPanel = ({
             Cada linha vira uma seção própria com o{' '}
             <strong className="text-[#005344]">texto exato</strong> que você
             escreveu como cabeçalho.
+          </p>
+        </section>
+
+        {/* ── ②.5 ARTIGOS DE REFERÊNCIA ── */}
+        <section>
+          <div className="flex items-baseline justify-between mb-2">
+            <label className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a5568] inline-flex items-center gap-2">
+              ②.5 Artigos de referência
+              <span className="text-[9.5px] font-medium normal-case tracking-normal text-[#94a3b8]">
+                opcional · até {MAX_ARTIGOS} PDFs, {MAX_ARTIGO_SIZE_MB}MB cada
+              </span>
+            </label>
+            {artigos.length > 0 && (
+              <span className="text-[10.5px] font-bold text-[#005344] inline-flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#005344]" />
+                {artigos.length}/{MAX_ARTIGOS} anexado{artigos.length === 1 ? '' : 's'}
+              </span>
+            )}
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            multiple
+            className="hidden"
+            onChange={(e) => handleFilesSelected(e.target.files)}
+            disabled={generating || uploading || artigos.length >= MAX_ARTIGOS}
+          />
+
+          {artigos.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={generating || uploading}
+              className="w-full px-4 py-4 bg-slate-50/60 border-2 border-dashed border-slate-200 rounded-xl text-[#4a5568] hover:border-[#005344] hover:bg-white hover:text-[#005344] outline-none focus:border-[#005344] focus:ring-4 focus:ring-[#005344]/06 transition-all text-[13px] font-medium inline-flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Processando…
+                </>
+              ) : (
+                <>
+                  <Paperclip className="w-4 h-4" />
+                  Anexar artigo (PDF)
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="space-y-1.5">
+              {artigos.map((a, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2.5 px-3 py-2 bg-white border border-slate-200 rounded-lg"
+                >
+                  <FileText className="w-4 h-4 text-[#005344] flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12.5px] font-semibold text-[#191C1D] truncate">
+                      {a.name}
+                    </div>
+                    <div className="text-[10.5px] text-[#94a3b8] font-mono">
+                      {a.sizeKB < 1024 ? `${a.sizeKB} KB` : `${(a.sizeKB / 1024).toFixed(1)} MB`}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeArtigo(i)}
+                    disabled={generating}
+                    className="p-1 rounded hover:bg-slate-100 text-[#94a3b8] hover:text-red-600 transition-colors disabled:opacity-40"
+                    aria-label={`Remover ${a.name}`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+              {artigos.length < MAX_ARTIGOS && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={generating || uploading}
+                  className="w-full px-3 py-2 border border-dashed border-slate-200 rounded-lg text-[11.5px] font-semibold text-[#4a5568] hover:border-[#005344] hover:text-[#005344] inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {uploading ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processando…</>
+                  ) : (
+                    <><Paperclip className="w-3.5 h-3.5" /> Adicionar outro</>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+          <p className="text-[11px] text-[#4a5568] mt-1.5 leading-relaxed">
+            Os PDFs viram <strong className="text-[#005344]">fonte preferencial</strong> do
+            resumo. O modelo cita o nome do arquivo quando usar uma informação dele.
           </p>
         </section>
 
