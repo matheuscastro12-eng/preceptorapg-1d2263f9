@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoPreceptor from '@/assets/logo-preceptor.png';
 import { getEasyflowLink } from '@/utils/easyflow';
+import { validateEmail } from '@/utils/emailValidation';
 
 const Auth = () => {
   const { user, loading: authLoading, signIn, signUp } = useAuth();
@@ -71,6 +72,23 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Valida email antes de chamar Supabase Auth — reduz bounce rate
+    // (typos como gnail.com, dominios descartaveis, formato invalido).
+    const emailCheck = validateEmail(signupEmail);
+    if (!emailCheck.valid) {
+      toast({
+        title: 'Email invalido',
+        description: emailCheck.error ?? 'Verifique o email digitado.',
+        variant: 'destructive',
+      });
+      if (emailCheck.suggestion) {
+        // Sugere a correcao no proprio campo (user pode aceitar com 1 clique)
+        setSignupEmail(emailCheck.suggestion);
+      }
+      return;
+    }
+
     if (signupPassword !== signupConfirmPassword) {
       toast({ title: 'Erro', description: 'As senhas não coincidem', variant: 'destructive' });
       return;
@@ -81,7 +99,7 @@ const Auth = () => {
     }
     setLoading(true);
     const { error } = await signUp(
-      signupEmail,
+      signupEmail.trim().toLowerCase(),
       signupPassword,
       signupName,
       '',
@@ -101,8 +119,18 @@ const Auth = () => {
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    const emailCheck = validateEmail(forgotEmail);
+    if (!emailCheck.valid) {
+      toast({
+        title: 'Email invalido',
+        description: emailCheck.error ?? 'Verifique o email digitado.',
+        variant: 'destructive',
+      });
+      if (emailCheck.suggestion) setForgotEmail(emailCheck.suggestion);
+      return;
+    }
     setForgotLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim().toLowerCase(), {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     if (error) {
