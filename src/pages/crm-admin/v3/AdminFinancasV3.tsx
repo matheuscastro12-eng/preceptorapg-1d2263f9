@@ -540,7 +540,9 @@ function NovaDespesaModal({ onClose }: { onClose: () => void }) {
         valor: valorNum,
         data: form.data,
         recorrente: form.recorrente,
-        frequencia: form.recorrente ? form.frequencia : "pontual",
+        // DB enum despesa_frequencia: 'mensal' | 'anual' | 'unico'.
+        // UI mostra "pontual" mas valor salvo deve ser 'unico'.
+        frequencia: form.recorrente ? form.frequencia : "unico",
         responsavel: form.responsavel.trim() || null,
         observacoes: form.observacoes.trim() || null,
       });
