@@ -12,3 +12,10 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /menu
+Disallow: /dashboard
+Disallow: /subscription
+Disallow: /obrigado
+
+Sitemap: https://thepreceptor.com.br/sitemap.xml
