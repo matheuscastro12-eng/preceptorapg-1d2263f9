@@ -268,10 +268,13 @@ const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
                   {fechamento.tema}
                 </h3>
 
-                {/* Preview (só mostra se espaço suficiente) */}
-                <p className="text-[11.5px] text-brand-ink-2/80 leading-[1.5] line-clamp-2 flex-1">
-                  {fechamento.resultado.replace(/[#*`>-]/g, '').slice(0, 140).trim()}…
-                </p>
+                {/* Preview — usa objetivos (curto, no DB sem custo) em vez de resultado
+                    (que agora e lazy-loaded e nao vem na listagem) */}
+                {fechamento.objetivos && fechamento.objetivos.trim() && (
+                  <p className="text-[11.5px] text-brand-ink-2/80 leading-[1.5] line-clamp-2 flex-1">
+                    {fechamento.objetivos.replace(/\n+/g, ' • ').slice(0, 140).trim()}
+                  </p>
+                )}
 
                 {/* Footer com data */}
                 <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
