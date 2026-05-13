@@ -62,6 +62,7 @@ const dashboardTourSteps: TourStep[] = [
   { target: '[data-tour="objetivos-input"]', title: 'Objetivos (Opcional)', description: 'Liste objetivos específicos ou deixe em branco para o PreceptorMED sugerir.', placement: 'right' },
   { target: '[data-tour="mode-toggle"]',   title: 'Tipo de Conteúdo',     description: 'Escolha entre Resumo (conteúdo focado) ou Seminário (apresentação completa).', placement: 'right' },
   { target: '[data-tour="generate-btn"]',  title: 'Gerar Conteúdo',       description: 'Clique para iniciar. O conteúdo aparecerá em tempo real no painel ao lado.', placement: 'right' },
+  { target: '[data-tour="highlight-tip"]', title: 'Grifar e anotar',      description: 'Depois que o resumo for gerado, selecione qualquer trecho com o mouse para abrir a paleta de cores. Você pode marcar pontos importantes ou adicionar anotações pessoais — tudo fica salvo automaticamente.', placement: 'top' },
 ];
 
 interface RecentItem {
@@ -542,11 +543,11 @@ const Dashboard = () => {
 
                   {/* Dica de marca-texto */}
                   {isComplete && resultado && fechamentoId && (
-                    <div className="flex items-start gap-2 px-3 py-2.5 bg-brand-gold/10 border border-brand-gold/30 rounded-lg">
+                    <div data-tour="highlight-tip" className="flex items-start gap-2 px-3 py-2.5 bg-brand-gold/10 border border-brand-gold/30 rounded-lg">
                       <span className="material-symbols-outlined text-brand-gold text-[18px] mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>ink_highlighter</span>
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-brand-ink">Selecione um trecho para marcar ou comentar</p>
-                        <p className="text-[11px] text-brand-ink-2 leading-snug">Arraste o mouse sobre qualquer texto para destacar em cores ou adicionar uma anotação pessoal.</p>
+                        <p className="text-xs font-semibold text-brand-ink">Selecione um trecho para grifar ou comentar</p>
+                        <p className="text-[11px] text-brand-ink-2 leading-snug">Arraste o mouse sobre qualquer texto pra abrir a paleta de cores. Pra adicionar uma anotação pessoal, clique em "Comentar". Suas marcações ficam salvas e reaparecem quando você reabrir o resumo na Biblioteca.</p>
                       </div>
                     </div>
                   )}
@@ -742,6 +743,26 @@ const Dashboard = () => {
                   <div className="mt-6">
                     <SeminarActions resultado={resultado} tema={tema} />
                   </div>
+                )}
+
+                {/* Dica de marca-texto (document view) */}
+                {isComplete && resultado && fechamentoId && (
+                  <div className="flex items-start gap-2 px-3 py-2.5 bg-brand-gold/10 border border-brand-gold/30 rounded-lg mt-4 max-w-4xl mx-auto">
+                    <span className="material-symbols-outlined text-brand-gold text-[18px] mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>ink_highlighter</span>
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-brand-ink">Selecione um trecho para grifar ou comentar</p>
+                      <p className="text-[11px] text-brand-ink-2 leading-snug">Arraste o mouse sobre qualquer texto para destacar em cores ou adicionar uma anotação. Suas marcações ficam salvas e aparecem quando você reabrir o resumo na Biblioteca.</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Annotation layer — marca-texto em modo documento */}
+                {isComplete && resultado && user && (
+                  <AnnotationLayer
+                    fechamentoId={fechamentoId}
+                    containerRef={docRef}
+                    userId={user.id}
+                  />
                 )}
               </div>
             )}

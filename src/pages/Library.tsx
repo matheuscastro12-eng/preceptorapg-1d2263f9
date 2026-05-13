@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { ArrowLeft, Sparkles, Download, Loader2, Play, Layers, Network } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import type { Fechamento } from '@/components/FechamentoLibrary';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import ContextChat from '@/components/ContextChat';
+import AnnotationLayer from '@/components/dashboard/AnnotationLayer';
 import { useToast } from '@/hooks/use-toast';
 import { exportToPDF } from '@/utils/pdfExport';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +25,7 @@ const Library = () => {
   const [exporting, setExporting] = useState(false);
   const [generatingFlashcards, setGeneratingFlashcards] = useState(false);
   const [showMindMap, setShowMindMap] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   if (!user) return <Navigate to="/auth" replace />;
 
@@ -118,13 +120,31 @@ const Library = () => {
               </div>
             ) : (
               <ScrollArea className="h-full">
-                <div id="fechamento-content" className="mx-auto px-6 sm:px-12 py-8 max-w-4xl">
+                <div id="fechamento-content" ref={contentRef} className="mx-auto px-6 sm:px-12 py-8 max-w-4xl">
                   <h1 className="text-2xl font-bold text-emerald-900 mb-6" style={{ fontFamily: 'var(--font-display)' }}>
                     {selectedFechamento.tema}
                   </h1>
                   <div className="prose prose-sm max-w-none prose-headings:font-headline prose-headings:text-emerald-900">
                     <MarkdownRenderer content={selectedFechamento.resultado} />
                   </div>
+
+                  {/* Dica de marca-texto */}
+                  <div className="flex items-start gap-2 px-3 py-2.5 bg-brand-gold/10 border border-brand-gold/30 rounded-lg mt-6">
+                    <span className="material-symbols-outlined text-brand-gold text-[18px] mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>ink_highlighter</span>
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-brand-ink">Selecione um trecho para grifar ou comentar</p>
+                      <p className="text-[11px] text-brand-ink-2 leading-snug">Arraste o mouse sobre qualquer texto pra abrir a paleta de cores. Suas anotações ficam salvas e aparecem sempre que você reabrir este resumo.</p>
+                    </div>
+                  </div>
+
+                  {/* Annotation layer — marca-texto */}
+                  {user && (
+                    <AnnotationLayer
+                      fechamentoId={selectedFechamento.id}
+                      containerRef={contentRef}
+                      userId={user.id}
+                    />
+                  )}
                 </div>
               </ScrollArea>
             )}
