@@ -49,7 +49,7 @@ const Library = () => {
   const [exporting, setExporting] = useState(false);
   const [generatingFlashcards, setGeneratingFlashcards] = useState(false);
   const [showMindMap, setShowMindMap] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLElement>(null);
 
   if (!user) return <Navigate to="/auth" replace />;
 
@@ -144,13 +144,13 @@ const Library = () => {
               </div>
             ) : (
               <ScrollArea className="h-full">
-                <div id="fechamento-content" ref={contentRef} className="mx-auto px-4 sm:px-6 py-8 max-w-4xl">
+                <div id="fechamento-content" className="mx-auto px-4 sm:px-6 py-8 max-w-4xl">
                   {(() => {
                     const isSeminario = selectedFechamento.tipo === 'caso_clinico' || /seminari/i.test(selectedFechamento.resultado);
                     const readingTime = Math.max(1, Math.ceil(selectedFechamento.resultado.split(/\s+/).length / 200));
                     const sections = splitIntoSections(selectedFechamento.resultado);
                     return (
-                      <article className="pmed-summary animate-fade-up">
+                      <article ref={contentRef} className="pmed-summary animate-fade-up">
                         <header className="pmed-summary__head">
                           <p className="pmed-eyebrow">
                             {isSeminario ? 'Roteiro de seminário' : 'Resumo da biblioteca'}
