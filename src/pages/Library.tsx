@@ -46,12 +46,39 @@ const Library = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedFechamento, setSelectedFechamento] = useState<Fechamento | null>(null);
+  const [loadingResultado, setLoadingResultado] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [generatingFlashcards, setGeneratingFlashcards] = useState(false);
   const [showMindMap, setShowMindMap] = useState(false);
   const contentRef = useRef<HTMLElement>(null);
 
   if (!user) return <Navigate to="/auth" replace />;
+
+  // Lazy-load do resultado: o grid nao traz o campo (50KB+ por linha).
+  // Quando o usuario clica num card, busca so esse 1 resultado.
+  const handleSelect = async (f: Fechamento) => {
+    if (f.resultado) {
+      setSelectedFechamento(f);
+      return;
+    }
+    setSelectedFechamento(f);
+    setLoadingResultado(true);
+    try {
+      const { data, error } = await supabase
+        .from('fechamentos')
+        .select('resultado')
+        .eq('id', f.id)
+        .single();
+      if (error) throw error;
+      setSelectedFechamento({ ...f, resultado: data.resultado });
+    } catch (e) {
+      console.error('Erro ao carregar resumo:', e);
+      toast({ title: 'Erro', description: 'Nao foi possivel carregar o resumo.', variant: 'destructive' });
+      setSelectedFechamento(null);
+    } finally {
+      setLoadingResultado(false);
+    }
+  };
 
   const handleExportPDF = async () => {
     if (!selectedFechamento) return;
@@ -72,7 +99,7 @@ const Library = () => {
   };
 
   const handleGenerateFlashcards = async () => {
-    if (!selectedFechamento) return;
+    if (!selectedFechamento || !selectedFechamento.resultado) return;
     setGeneratingFlashcards(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -136,7 +163,11 @@ const Library = () => {
         {/* Content */}
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 min-w-0">
-            {showMindMap ? (
+            {loadingResultado || !selectedFechamento.resultado ? (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : showMindMap ? (
               <div className="h-full p-4">
                 <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
                   <MindMapView content={selectedFechamento.resultado} topic={selectedFechamento.tema} />
@@ -146,9 +177,10 @@ const Library = () => {
               <ScrollArea className="h-full">
                 <div id="fechamento-content" className="mx-auto px-4 sm:px-6 py-8 max-w-4xl">
                   {(() => {
-                    const isSeminario = selectedFechamento.tipo === 'caso_clinico' || /seminari/i.test(selectedFechamento.resultado);
-                    const readingTime = Math.max(1, Math.ceil(selectedFechamento.resultado.split(/\s+/).length / 200));
-                    const sections = splitIntoSections(selectedFechamento.resultado);
+                    const resultado = selectedFechamento.resultado!;
+                    const isSeminario = selectedFechamento.tipo === 'caso_clinico' || /seminari/i.test(resultado);
+                    const readingTime = Math.max(1, Math.ceil(resultado.split(/\s+/).length / 200));
+                    const sections = splitIntoSections(resultado);
                     return (
                       <article ref={contentRef} className="pmed-summary animate-fade-up">
                         <header className="pmed-summary__head">
@@ -180,7 +212,7 @@ const Library = () => {
 
                         <div className="pmed-summary__body">
                           {sections.length <= 1 ? (
-                            <MarkdownRenderer content={selectedFechamento.resultado} />
+                            <MarkdownRenderer content={resultado} />
                           ) : (
                             sections.map((section, i) => (
                               <MarkdownRenderer key={i} content={section.content} />
@@ -232,7 +264,7 @@ const Library = () => {
               </ScrollArea>
             )}
           </div>
-          {!showMindMap && <ContextChat context={selectedFechamento.resultado} contextLabel="resumo" />}
+          {!showMindMap && selectedFechamento.resultado && <ContextChat context={selectedFechamento.resultado} contextLabel="resumo" />}
         </div>
       </DashboardLayout>
     );
@@ -248,7 +280,7 @@ const Library = () => {
           </h1>
           <p className="text-sm text-slate-500 mt-1">Todos os seus resumos, provas e casos clínicos salvos.</p>
         </div>
-        <FechamentoLibrary onSelect={setSelectedFechamento} />
+        <FechamentoLibrary onSelect={handleSelect} />
       </div>
     </DashboardLayout>
   );

@@ -30,7 +30,8 @@ export interface Fechamento {
   id: string;
   tema: string;
   objetivos: string | null;
-  resultado: string;
+  /** Pode vir undefined da listagem (lazy-load on demand pra acelerar grid) */
+  resultado?: string;
   favorito: boolean;
   created_at: string;
   tipo: 'fechamento' | 'prova' | 'caso_clinico';
@@ -57,9 +58,11 @@ const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
 
   const fetchFechamentos = async () => {
     try {
+      // OTIMIZACAO: nao buscar 'resultado' (50KB+ por linha) na listagem.
+      // Lazy-load quando o usuario clicar num card (em Library.tsx).
       const { data, error } = await supabase
         .from('fechamentos')
-        .select('*')
+        .select('id, tema, objetivos, favorito, created_at, tipo, exam_config')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -73,7 +76,7 @@ const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
             ? { quantidade: Number(config.quantidade), nivel: String(config.nivel), simulationMode: Boolean(config.simulationMode) }
             : null;
 
-        return { id: item.id, tema: item.tema, objetivos: item.objetivos, resultado: item.resultado, favorito: item.favorito, created_at: item.created_at, tipo, exam_config: examConfig };
+        return { id: item.id, tema: item.tema, objetivos: item.objetivos, favorito: item.favorito, created_at: item.created_at, tipo, exam_config: examConfig };
       });
 
       setFechamentos(normalized);
