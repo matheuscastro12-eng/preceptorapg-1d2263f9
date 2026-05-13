@@ -198,21 +198,48 @@ serve(async (req) => {
       return json({ received: true, action: "skipped_no_email" });
     }
 
+    // ── Ofertas/checkouts especificos que sabemos serem ANUAIS (forca deteccao
+    // determinante, sem depender de como o painel EasyFlow nomeou o produto).
+    // Atualmente: 3 ofertas da roleta da Semana Medica de Itajuba (50/30/20% off).
+    // Manter sincronizado com supabase/functions/roulette-spin/index.ts
+    const ROLETA_ANNUAL_OFFER_IDS = new Set([
+      "6385c0a1-b988-4ddd-9607-ee2ec15b3846", // 50% off
+      "5d0dbbfd-d06c-4252-8a29-3c51665c77c2", // 30% off
+      "fc67ad17-4b71-4067-b25b-52370c6de476", // 20% off
+    ]);
+
     // ── Detect plan from subscription periodicity / product name / description ──
     const detectPlan = (): string => {
-      // Subscription events have periodicity
+      // 0. Match deterministico por offer/checkout id — busca o UUID em qualquer
+      // campo do payload pra cobrir variacoes de schema da EasyFlow
+      // (offer.id, checkout.id, offerId, items[].offer.id, etc.)
+      try {
+        const payloadStr = JSON.stringify(payload);
+        for (const id of ROLETA_ANNUAL_OFFER_IDS) {
+          if (payloadStr.includes(id)) {
+            console.log(`[EasyFlow] detectPlan: roleta annual offer detected (${id}) -> annual`);
+            return "annual";
+          }
+        }
+      } catch { /* ignore */ }
+
+      // 1. Subscription events have periodicity
       const period = (payload.periodicity || "").toLowerCase();
       if (period === "annualy" || period === "annually" || period === "yearly") return "annual";
       if (period === "biannualy" || period === "biannually") return "biannual";
       if (period === "monthly") return "monthly";
       if (period === "quarterly") return "quarterly";
 
-      // Order events — combina nome + descricao + offer.name pra pegar "Cobranca comum / Assinatura anual"
+      // 2. Order events — combina nome + descricao + offer.name pra pegar "Cobranca comum / Assinatura anual"
       const haystack = [
         payload.items?.[0]?.product?.name,
         payload.items?.[0]?.product?.description,
         payload.items?.[0]?.offer?.name,
         payload.items?.[0]?.offer?.description,
+        payload.offer?.name,
+        payload.offer?.description,
+        payload.product?.name,
+        payload.product?.description,
         payload.name,
         payload.description,
       ].filter(Boolean).join(" ").toLowerCase();
