@@ -215,7 +215,7 @@ const Pricing = () => {
             <h4 className="text-[11px] font-bold text-slate-400 text-center mb-5 uppercase tracking-widest">O que está incluso em todos os planos</h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[
-                'Resumos com IA ilimitados',
+                'Resumos com PreceptorMED ilimitados',
                 'Simulados estilo residência',
                 'Chat acadêmico sem limites',
                 'Biblioteca pessoal completa',

@@ -226,7 +226,7 @@ export default function SupportWidget() {
                 <p className="font-bold text-sm font-['Manrope']">Suporte PreceptorMED</p>
                 <p className="text-[11px] text-white/70 flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-green-400 inline-block" />
-                  Assistente de IA online
+                  Assistente PreceptorMED online
                 </p>
               </div>
             </div>

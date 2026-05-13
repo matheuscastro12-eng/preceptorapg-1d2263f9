@@ -103,31 +103,36 @@ const Admin = () => {
   const deleteUser = async (userId: string) => {
     setActionLoading(userId);
     try {
-      // Delete related data first
-      await supabase.from('subscriptions').delete().eq('user_id', userId);
-      await supabase.from('user_roles').delete().eq('user_id', userId);
-      await supabase.from('profiles').delete().eq('user_id', userId);
+      // Chama edge function delete-user — service role roda no servidor,
+      // nunca exposta no frontend. A função já cuida do cleanup de CRM,
+      // subscriptions, profiles e do auth.admin.deleteUser.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Sessão expirada — faça login novamente');
 
-      // Delete auth user via Edge Function or admin API
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/admin/users/${userId}`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`,
         {
-          method: 'DELETE',
+          method: 'POST',
           headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY}`,
-            'apikey': import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
           },
+          body: JSON.stringify({ user_id: userId }),
         }
       );
 
-      if (!response.ok) throw new Error('Falha ao excluir usuário do auth');
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+        throw new Error(err.error || `HTTP ${response.status}`);
+      }
 
       toast({ title: 'Usuário excluído', description: 'O usuário foi removido permanentemente.' });
       setConfirmDelete(null);
       fetchUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
-      toast({ title: 'Erro', description: 'Não foi possível excluir o usuário.', variant: 'destructive' });
+      const msg = error instanceof Error ? error.message : 'Não foi possível excluir o usuário.';
+      toast({ title: 'Erro', description: msg, variant: 'destructive' });
     } finally {
       setActionLoading(null);
     }
@@ -844,7 +849,7 @@ const EnamedPopulator = () => {
           Popular Banco ENAMED
         </CardTitle>
         <CardDescription>
-          Gera 50 questões por área (250 total) usando IA no padrão INEP/Revalida. Processo leva ~15-20 minutos.
+          Gera 50 questões por área (250 total) usando PreceptorMED no padrão INEP/Revalida. Processo leva ~15-20 minutos.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

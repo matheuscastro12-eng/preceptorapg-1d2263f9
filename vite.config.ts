@@ -18,20 +18,29 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    // Sourcemap em prod: facilita debug de TDZ/circular import minificado.
+    // Os .map files nao sao baixados pelo browser por default — so quando
+    // o DevTools abre — entao nao impacta load time pros usuarios.
+    sourcemap: true,
     rollupOptions: {
       output: {
+        // IMPORTANTE: so colocamos em manualChunks libs usadas no first paint
+        // (Landing/Auth/MainMenu). Forcar lib pesada num vendor-chunk
+        // separado faz o Vite injetar <link rel="modulepreload"> dela na
+        // index.html, mesmo que ela so seja necessaria numa rota lazy.
+        // Era o caso de jspdf/html2canvas/recharts/framer-motion antes —
+        // ~1.2MB baixado a toa no primeiro acesso a landing.
+        //
+        // Agora cada lib pesada eh embutida no chunk lazy que a importa
+        // (Dashboard puxa jspdf, AdminDashboard puxa recharts, etc) e so
+        // baixa quando o user navega pra essa rota.
         manualChunks: {
-          // Vendor chunks
           "vendor-react": ["react", "react-dom", "react-router-dom"],
           "vendor-query": ["@tanstack/react-query"],
-          "vendor-charts": ["recharts"],
-          "vendor-motion": ["framer-motion"],
           "vendor-supabase": ["@supabase/supabase-js"],
-          // PDF/export libs (heavy, rarely used)
-          "vendor-pdf": ["jspdf", "html2canvas"],
         },
       },
     },
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 800,
   },
 }));

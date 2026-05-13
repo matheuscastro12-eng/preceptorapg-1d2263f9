@@ -30,16 +30,24 @@ Você está em um **chat**, não em um fechamento de PBL. Responda **proporciona
 - Se o estudante perguntar algo ambíguo, esclareça antes de responder.
 - Escreva como médico conversando com estudante, não como livro texto.
 
-# EVIDÊNCIA — PUBMED (OBRIGATÓRIO)
-Em TODA resposta substantiva, você **DEVE** citar ao menos 1 artigo do PubMed fornecido no contexto da mensagem do usuário. Os artigos chegam após a pergunta, no formato [1] [2] [3] com PMID.
+# EVIDÊNCIA — PUBMED (CRÍTICO — LEIA COM ATENÇÃO)
 
-Regras de citação:
-1. **Citação inline**: ao fazer uma afirmação baseada em um artigo, insira a referência no formato **[PMID: XXXXX]** ao final da frase. Ex: "iSGLT2 reduzem progressão da DRC em diabéticos [PMID: 32970396]."
-2. **Lista de referências no final**: sempre termine a resposta com uma seção separada por \`---\` e um bloco \`**Referências PubMed**\` listando os artigos citados no formato: \`1. Autor et al. Título. Revista. Ano. (PMID: XXXXX)\`
-3. **Só cite o que leu**: se os artigos recuperados não forem relevantes, diga isso explicitamente ("Os artigos indexados para este termo não respondem diretamente à sua pergunta") e responda com base no conhecimento padrão, ainda assim terminando com a lista dos artigos recuperados para transparência.
-4. **Traduza títulos** dos artigos citados para o português na lista final (mantendo o original entre parênteses se quiser).
+**REGRA DE OURO — NUNCA VIOLE**: Você só pode citar PMIDs que aparecem **EXPLICITAMENTE** no bloco \`ARTIGOS DO PUBMED ENCONTRADOS\` anexado à mensagem do usuário. Inventar, adivinhar, ou lembrar PMIDs do seu treinamento é **PROIBIDO**. Um PMID inventado é considerado uma falha grave (informação falsa ao estudante).
 
-Exceções (pode responder SEM citação): saudação, pedido de esclarecimento, resposta conversacional curta do tipo "sim, exatamente" / "entendi sua dúvida, pode reformular?".
+Como proceder:
+
+1. **Se o bloco \`ARTIGOS DO PUBMED ENCONTRADOS\` existir**:
+   - Leia os abstracts fornecidos.
+   - **Use esses artigos como base das citações** — mesmo que não sejam perfeitos, são a única fonte válida de PMID nesta resposta.
+   - Cite pelo menos 1–2 deles inline no formato \`[PMID: XXXXX]\` ao final da frase.
+   - Se um artigo não bater exatamente com a pergunta mas tocar no tema, você pode usá-lo para contextualizar um ponto tangente (ex: "Em pacientes com DRC, a hipertensão é o fator modificável mais impactante [PMID: XXXXX], e no nosso caso...").
+   - Termine a resposta com \`---\` seguido de \`**Referências PubMed**\` e a lista no formato:
+     \`1. Autor et al. Título traduzido em português. Revista. Ano. (PMID: XXXXX)\`
+
+2. **Se NÃO houver bloco \`ARTIGOS DO PUBMED ENCONTRADOS\`** (pergunta conversacional curta, saudação, etc.):
+   - Responda sem citações, sem lista de referências.
+
+3. **REGRA ABSOLUTA**: Nunca escreva a string \`PMID:\` seguida de um número que não esteja explicitamente na lista fornecida. PMIDs não vêm da sua memória — só do bloco \`ARTIGOS DO PUBMED ENCONTRADOS\`. Se precisar mencionar evidência sem PMID específico disponível, escreva em termos gerais ("estudos randomizados mostram...", "diretrizes SBC recomendam...") sem número.
 
 # ESCOPO E LIMITES
 - Responda apenas sobre medicina baseada em evidências e ciências biomédicas.
@@ -52,32 +60,72 @@ const MAX_MESSAGES = 50;
 
 // ── PubMed E-utilities (free, no API key needed) ──
 
-/** Extract medical keywords from the user's message for PubMed search */
-function extractSearchTerms(message: string): string {
-  // Remove common Portuguese filler words and keep medical terms
-  const stopwords = new Set([
-    "o", "a", "os", "as", "um", "uma", "uns", "umas", "de", "do", "da", "dos", "das",
-    "em", "no", "na", "nos", "nas", "por", "para", "com", "sem", "sobre", "entre",
-    "que", "qual", "quais", "como", "quando", "onde", "porque", "por que",
-    "é", "são", "está", "estão", "foi", "foram", "ser", "ter", "haver",
-    "me", "se", "te", "nos", "lhe", "eu", "ele", "ela", "nós", "eles", "elas",
-    "esse", "essa", "este", "esta", "isso", "isto", "aquilo",
-    "e", "ou", "mas", "porém", "pois", "nem", "não", "sim",
-    "mais", "muito", "bem", "também", "já", "ainda", "só", "apenas",
-    "pode", "podem", "poderia", "quero", "preciso", "gostaria",
-    "explique", "descreva", "fale", "conte", "diga", "cite", "liste",
-    "quero", "saber", "entender", "compreender", "aprender",
-  ]);
+/**
+ * Use Gemini Flash Lite to extract 3–5 English MeSH/PubMed search terms
+ * from a Portuguese medical question. Falls back to naive extraction on error.
+ */
+async function extractEnglishSearchTerms(message: string, apiKey: string): Promise<string> {
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{
+          role: "user",
+          parts: [{ text: `You are a medical research librarian. From the Portuguese medical question below, build a precise PubMed query using 2–4 CLINICAL English MeSH terms joined by AND. The terms MUST be specific clinical medicine vocabulary (diseases, drugs, mechanisms, anatomy), NEVER generic words like "water", "treatment", "management", "study", "disease" alone.
 
+Format: term1 AND term2 AND term3
+Return ONLY the query, no explanation, no quotes, no preamble.
+
+Examples:
+- "fisiopatologia da insuficiência cardíaca" → heart failure AND pathophysiology AND ventricular remodeling
+- "tratamento da hipertensão" → hypertension AND antihypertensive agents AND guidelines
+- "mecanismo dos iSGLT2" → SGLT2 inhibitors AND mechanism of action AND diabetes mellitus
+
+Question: ${message.slice(0, 400)}` }],
+        }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 200 },
+      }),
+    });
+    if (!resp.ok) return naiveExtract(message);
+    const data = await resp.json();
+    let terms = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+    // Sanitize: drop quotes, punctuation, explanatory prefixes, newlines
+    terms = terms
+      .replace(/^["'`]+|["'`]+$/g, "")
+      .replace(/^(search terms?|keywords?|mesh terms?|terms?)[:\-\s]+/i, "")
+      .replace(/[,;.!?]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    console.log("PubMed English terms:", terms);
+    return terms || naiveExtract(message);
+  } catch (e) {
+    console.error("Term extraction error:", e);
+    return naiveExtract(message);
+  }
+}
+
+/** Fallback: strip Portuguese stopwords and return remaining tokens */
+function naiveExtract(message: string): string {
+  const stopwords = new Set([
+    "o","a","os","as","um","uma","uns","umas","de","do","da","dos","das",
+    "em","no","na","nos","nas","por","para","com","sem","sobre","entre",
+    "que","qual","quais","como","quando","onde","porque",
+    "é","são","está","estão","foi","foram","ser","ter","haver",
+    "me","se","te","nos","lhe","eu","ele","ela","nós","eles","elas",
+    "esse","essa","este","esta","isso","isto","aquilo",
+    "e","ou","mas","porém","pois","nem","não","sim",
+    "mais","muito","bem","também","já","ainda","só","apenas",
+    "pode","podem","poderia","quero","preciso","gostaria",
+    "explique","descreva","fale","conte","diga","cite","liste","saber","entender",
+  ]);
   const words = message
     .toLowerCase()
     .replace(/[^\w\sáéíóúâêôãõçü-]/g, " ")
     .split(/\s+/)
     .filter(w => w.length > 2 && !stopwords.has(w));
-
-  // Take the most relevant terms (max 5 for a focused search)
-  const terms = words.slice(0, 6).join(" ");
-  return terms || message.slice(0, 100);
+  return words.slice(0, 6).join(" ") || message.slice(0, 100);
 }
 
 interface PubMedArticle {
@@ -92,14 +140,41 @@ interface PubMedArticle {
 /** Search PubMed and fetch article details */
 async function searchPubMed(query: string, maxResults = 5): Promise<PubMedArticle[]> {
   try {
-    // Step 1: Search for PMIDs
-    const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=${maxResults}&sort=relevance&retmode=json&datetype=pdat&mindate=2019&maxdate=2026`;
+    // Sanitize: PubMed accepts free-text; strip control chars & excessive whitespace
+    const cleanQuery = query.replace(/["']/g, "").replace(/\s+/g, " ").trim();
+
+    // Prefer recent articles (last 10 years) with abstracts
+    const currentYear = new Date().getFullYear();
+    const minYear = currentYear - 10;
+    const filteredQuery = `(${cleanQuery}) AND hasabstract[Filter] AND ("${minYear}"[PDAT] : "${currentYear}"[PDAT])`;
+    const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(filteredQuery)}&retmax=${maxResults}&sort=relevance&retmode=json`;
+    console.log("PubMed URL:", searchUrl);
     const searchResp = await fetch(searchUrl);
     if (!searchResp.ok) return [];
 
     const searchData = await searchResp.json();
-    const pmids: string[] = searchData.esearchresult?.idlist ?? [];
-    if (pmids.length === 0) return [];
+    let pmids: string[] = searchData.esearchresult?.idlist ?? [];
+
+    // Fallback 1: relax to last 20 years (keeps hasabstract, drops strict window)
+    if (pmids.length === 0) {
+      const relaxedQuery = `(${cleanQuery}) AND hasabstract[Filter] AND ("${currentYear - 20}"[PDAT] : "${currentYear}"[PDAT])`;
+      const relaxedUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(relaxedQuery)}&retmax=${maxResults}&sort=relevance&retmode=json`;
+      const relaxedResp = await fetch(relaxedUrl);
+      if (relaxedResp.ok) {
+        const relaxedData = await relaxedResp.json();
+        pmids = relaxedData.esearchresult?.idlist ?? [];
+      }
+    }
+
+    // Fallback 2: drop all filters as last resort
+    if (pmids.length === 0) {
+      const bareUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(cleanQuery)}&retmax=${maxResults}&sort=relevance&retmode=json`;
+      const bareResp = await fetch(bareUrl);
+      if (!bareResp.ok) return [];
+      const bareData = await bareResp.json();
+      pmids = bareData.esearchresult?.idlist ?? [];
+      if (pmids.length === 0) return [];
+    }
 
     // Step 2: Fetch article details
     const fetchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${pmids.join(",")}&rettype=xml&retmode=xml`;
@@ -115,18 +190,27 @@ async function searchPubMed(query: string, maxResults = 5): Promise<PubMedArticl
     for (const block of articleBlocks) {
       const pmid = extractXml(block, "PMID") || "";
       const title = extractXml(block, "ArticleTitle") || "Untitled";
-      const abstract = extractXml(block, "AbstractText") || "";
-      const journal = extractXml(block, "Title") || extractXml(block, "ISOAbbreviation") || "";
+
+      // Abstracts are often split into Labeled sections. Concatenate ALL of them.
+      const abstractMatches = [...block.matchAll(/<AbstractText(?:\s+Label="([^"]+)")?[^>]*>([\s\S]*?)<\/AbstractText>/g)];
+      const abstract = abstractMatches.length > 0
+        ? abstractMatches.map(m => (m[1] ? `${m[1]}: ${cleanXml(m[2])}` : cleanXml(m[2]))).join(" ")
+        : "";
+
+      // Journal: prefer ISOAbbreviation when present
+      const journal = extractXml(block, "ISOAbbreviation") || extractInsideJournal(block) || "";
       const year = extractXml(block, "Year") || "";
 
-      // Extract authors
+      // Authors
       const authorMatches = block.match(/<LastName>([^<]+)<\/LastName>/g) ?? [];
       const authorNames = authorMatches.slice(0, 3).map(m => m.replace(/<\/?LastName>/g, ""));
       const authors = authorNames.length > 0
         ? authorNames.join(", ") + (authorMatches.length > 3 ? " et al." : "")
         : "Unknown";
 
-      articles.push({ pmid, title: cleanXml(title), authors, journal: cleanXml(journal), year, abstract: cleanXml(abstract) });
+      if (pmid) {
+        articles.push({ pmid, title: cleanXml(title), authors, journal: cleanXml(journal), year, abstract });
+      }
     }
 
     return articles;
@@ -134,6 +218,14 @@ async function searchPubMed(query: string, maxResults = 5): Promise<PubMedArticl
     console.error("PubMed search error:", e);
     return [];
   }
+}
+
+/** Get journal title from inside the <Journal> block specifically */
+function extractInsideJournal(block: string): string | null {
+  const journalMatch = block.match(/<Journal>([\s\S]*?)<\/Journal>/);
+  if (!journalMatch) return null;
+  const titleMatch = journalMatch[1].match(/<Title>([\s\S]*?)<\/Title>/);
+  return titleMatch?.[1]?.trim() ?? null;
 }
 
 function extractXml(xml: string, tag: string): string | null {
@@ -259,6 +351,8 @@ serve(async (req) => {
       );
     }
 
+    const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
+
     // Get the last user message for PubMed search
     const lastUserMessage = [...messages].reverse().find((m: any) => m.role === "user")?.content ?? "";
 
@@ -269,10 +363,11 @@ serve(async (req) => {
     // Always search PubMed for substantive questions (citation is mandatory per prompt)
     let pubmedContext = "";
     let pubmedArticles: PubMedArticle[] = [];
+    let debugTerms = "";
     if (needsSearch) {
-      const searchTerms = extractSearchTerms(trimmed);
-      console.log("PubMed search terms:", searchTerms);
-      pubmedArticles = await searchPubMed(searchTerms, 5);
+      debugTerms = await extractEnglishSearchTerms(trimmed, GOOGLE_AI_API_KEY ?? "");
+      console.log("PubMed search terms:", debugTerms);
+      pubmedArticles = await searchPubMed(debugTerms, 5);
       pubmedContext = formatArticlesForPrompt(pubmedArticles);
       console.log(`PubMed found ${pubmedArticles.length} articles`);
     }
@@ -292,8 +387,6 @@ serve(async (req) => {
         sanitizedMessages[lastIdx].parts[0].text += pubmedContext;
       }
     }
-
-    const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
     if (!GOOGLE_AI_API_KEY) {
       throw new Error("GOOGLE_AI_API_KEY is not configured");
     }
@@ -368,7 +461,13 @@ serve(async (req) => {
     });
 
     return new Response(response.body!.pipeThrough(transformStream), {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "X-Pubmed-Terms": encodeURIComponent(debugTerms || ""),
+        "X-Pubmed-Count": String(pubmedArticles.length),
+        "Access-Control-Expose-Headers": "X-Pubmed-Terms, X-Pubmed-Count",
+      },
     });
   } catch (e) {
     console.error("ai-chat error:", e);

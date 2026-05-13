@@ -8,6 +8,8 @@ import { useState } from "react";
 import { supabase } from "@/lib/crm/supabase";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import MetricCard from "@/components/crm/MetricCard";
+// Removido temporariamente — investigando crash do CRM
+// import OnlineUsersWidget from "@/components/crm/OnlineUsersWidget";
 import PageHeader from "@/components/crm-admin/PageHeader";
 import { useAdminDashboardKpis, useMrrHistory, useDespesasPorCategoria } from "@/hooks/useAdminDashboard";
 import { useOneOnOneAlerts } from "@/hooks/useOneOnOne";
@@ -130,6 +132,9 @@ export default function AdminDashboard() {
         <PageHeader title="Dashboard Administrativo" subtitle="Visao consolidada de Financas & People" showPeriodFilter />
         <RevenueIntelligence />
       </div>
+
+      {/* Online ao vivo — temporariamente desabilitado, investigando crash */}
+      {/* <OnlineUsersWidget /> */}
 
       {/* KPI Bar — clicar abre drill-down, passar mouse mostra tooltip */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">

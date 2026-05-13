@@ -158,7 +158,7 @@ const Subscription = () => {
                       Benefícios inclusos
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {['Fechamentos ilimitados', 'Simulados com IA', 'Biblioteca pessoal', 'Exportação PDF'].map((b) => (
+                      {['Fechamentos ilimitados', 'Simulados com PreceptorMED', 'Biblioteca pessoal', 'Exportação PDF'].map((b) => (
                         <div key={b} className="flex items-center gap-2 text-sm text-foreground">
                           <CheckCircle2 className="h-4 w-4 text-primary" />
                           {b}

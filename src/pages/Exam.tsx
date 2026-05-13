@@ -18,15 +18,6 @@ import MarkdownRenderer from '@/components/MarkdownRenderer';
 import OnboardingTour, { type TourStep } from '@/components/OnboardingTour';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 
-const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
-  <span
-    className={`material-symbols-outlined ${className}`}
-    style={{ fontVariationSettings: fill ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" : undefined }}
-  >
-    {name}
-  </span>
-);
-
 const examTourSteps: TourStep[] = [
   {
     target: '[data-tour="content-selector"]',
@@ -43,7 +34,7 @@ const examTourSteps: TourStep[] = [
   {
     target: '[data-tour="generate-exam-btn"]',
     title: 'Gerar Prova',
-    description: 'Clique para a IA elaborar as questões no modo simulação.',
+    description: 'Clique para o PreceptorMED elaborar as questões no modo simulação.',
     placement: 'right',
   },
 ];
@@ -215,8 +206,6 @@ const Exam = () => {
   };
 
   const isProva = config.practiceMode === 'prova';
-  const modeLabel = lockedMode === 'caso_clinico' ? 'Casos Clínicos' : 'Simulados';
-
   return (
     <DashboardLayout mainClassName="pb-4 px-4 sm:px-6">
       <OnboardingTour steps={examTourSteps} tourKey="exam" />
@@ -291,7 +280,7 @@ const Exam = () => {
                       <p className="text-xs text-slate-400">
                         {hasStartedReceiving
                           ? 'Recebendo conteúdo — as questões aparecerão automaticamente.'
-                          : 'Conectando com a IA, aguarde um momento.'}
+                          : 'Conectando com o PreceptorMED, aguarde um momento.'}
                       </p>
                     </div>
                   </div>
@@ -314,26 +303,7 @@ const Exam = () => {
           </div>
         ) : (
           /* ── Config Page ── */
-          <div className="px-2 sm:px-4 py-6 sm:py-12 relative">
-            {/* Background orbs */}
-            <div className="absolute -top-16 -right-16 w-64 h-64 bg-[#9df3dc]/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute top-60 -left-20 w-48 h-48 bg-[#006D5B]/6 rounded-full blur-3xl pointer-events-none animate-float" />
-
-            {/* Header */}
-            <div className="mb-8 sm:mb-12 relative z-10 animate-fade-up">
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#c8eade] text-[#4c6a62] text-xs font-bold mb-4">
-                <MI name="shutter_speed" className="text-[14px]" />
-                SIMULAÇÕES
-              </span>
-              <h2 className="font-['Manrope'] text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#191c1d] tracking-tight mb-3">
-                {modeLabel} com IA
-              </h2>
-              <p className="text-sm sm:text-base text-[#3e4945] max-w-2xl leading-relaxed">
-                Configure e gere questões personalizadas baseadas nos seus resumos da biblioteca.
-                Nossa IA analisa seu progresso para criar o desafio ideal.
-              </p>
-            </div>
-
+          <div className="py-4 sm:py-8">
             <ExamConfigPanel
               selectedIds={selectedIds}
               onSelectionChange={setSelectedIds}

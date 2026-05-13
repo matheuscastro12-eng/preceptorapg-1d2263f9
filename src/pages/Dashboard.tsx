@@ -18,6 +18,7 @@ import type { GenerationMode } from '@/components/dashboard/ModeToggle';
 import OnboardingTour, { type TourStep } from '@/components/OnboardingTour';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Loader2, ArrowLeft, Save, Copy, Download, GraduationCap, BookOpen, Sparkles } from 'lucide-react';
+import { useStudyPlanContext, useAutoCompleteActivity } from '@/hooks/useStudyPlanContext';
 
 type ViewMode = 'interactive' | 'document';
 
@@ -58,7 +59,7 @@ function splitIntoSections(markdown: string): { title: string; content: string }
 
 const dashboardTourSteps: TourStep[] = [
   { target: '[data-tour="tema-input"]',    title: 'Tema do Resumo',       description: 'Digite o tema central. Use os chips de sugestão ou escreva livremente.', placement: 'right' },
-  { target: '[data-tour="objetivos-input"]', title: 'Objetivos (Opcional)', description: 'Liste objetivos específicos ou deixe em branco para a IA sugerir.', placement: 'right' },
+  { target: '[data-tour="objetivos-input"]', title: 'Objetivos (Opcional)', description: 'Liste objetivos específicos ou deixe em branco para o PreceptorMED sugerir.', placement: 'right' },
   { target: '[data-tour="mode-toggle"]',   title: 'Tipo de Conteúdo',     description: 'Escolha entre Resumo (conteúdo focado) ou Seminário (apresentação completa).', placement: 'right' },
   { target: '[data-tour="generate-btn"]',  title: 'Gerar Conteúdo',       description: 'Clique para iniciar. O conteúdo aparecerá em tempo real no painel ao lado.', placement: 'right' },
 ];
@@ -100,6 +101,14 @@ const Dashboard = () => {
   const [secoes, setSecoes] = useState<Record<string, boolean>>(DEFAULT_SECOES);
   // ID do fechamento salvo (para anotações — marca-texto/comentários)
   const [fechamentoId, setFechamentoId] = useState<string | null>(null);
+
+  // Cronograma context: se a página foi aberta via "começar atividade" no plano
+  const planCtx = useStudyPlanContext();
+  // Pré-preenche o tema vindo do plano UMA vez ao montar
+  useEffect(() => {
+    if (planCtx.isFromPlan && planCtx.tema && !tema) setTema(planCtx.tema);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planCtx.isFromPlan]);
   const [resultado, setResultado] = useState('');
   const [generating, setGenerating] = useState(false);
   const [hasStartedReceiving, setHasStartedReceiving] = useState(false);
@@ -117,6 +126,13 @@ const Dashboard = () => {
     // Only auto-show result when generation starts streaming (not when resetting)
     if (hasStartedReceiving && !showResult && generating) setShowResult(true);
   }, [hasStartedReceiving, showResult, generating]);
+
+  // Auto-marca atividade do cronograma como concluída quando o fechamento termina
+  useAutoCompleteActivity(
+    isComplete && !!fechamentoId,
+    { planDay: planCtx.planDay, actIdx: planCtx.actIdx },
+    fechamentoId,
+  );
 
   // Fetch recent items for sidebar
   useEffect(() => {
@@ -255,7 +271,7 @@ const Dashboard = () => {
         // Erro mid-stream do Gemini (quota/key/etc) — surfaca a mensagem
         // traduzida que o backend ja preparou.
         toast({
-          title: finishMeta.error_code === 429 ? 'Quota da IA esgotada' : 'Erro do provedor de IA',
+          title: finishMeta.error_code === 429 ? 'Quota do PreceptorMED esgotada' : 'Erro do provedor PreceptorMED',
           description: finishMeta.message ?? 'Erro desconhecido do Gemini. Cheque os logs.',
           variant: 'destructive',
         });
@@ -476,7 +492,7 @@ const Dashboard = () => {
                         </span>
                         <span>
                           <span className="material-symbols-outlined">auto_awesome</span>
-                          Gerado por IA
+                          Gerado por PreceptorMED
                         </span>
                       </div>
                     </header>
@@ -680,7 +696,7 @@ const Dashboard = () => {
                       </span>
                       <span>
                         <span className="material-symbols-outlined">auto_awesome</span>
-                        Gerado por IA
+                        Gerado por PreceptorMED
                       </span>
                     </div>
                   </header>
@@ -746,29 +762,13 @@ const Dashboard = () => {
           </>
         ) : (
           /* ══════════════════════════════════════════════
-             INPUT FORM STATE
+             INPUT FORM STATE — layout editorial
              ══════════════════════════════════════════════ */
           <div className="animate-fade-up">
-            {/* Header compacto */}
-            <div className="mb-6 flex items-center justify-between gap-4">
+            {/* Grid principal: form (mais largo) + sidebar lateral */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 lg:gap-6">
+              {/* Form */}
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-1 h-6 bg-brand-primary rounded-full" />
-                  <h2 className="text-xl sm:text-2xl font-bold text-brand-ink tracking-tight">Estudo com IA</h2>
-                </div>
-                <p className="text-sm text-brand-ink-2 ml-3">
-                  Gere resumos de PBL em segundos com fisiopatologia em cascata e terminologia técnica.
-                </p>
-              </div>
-              <span className="hidden sm:inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-primary/10 text-brand-primary-dark text-xs font-semibold">
-                <Sparkles className="h-3 w-3" /> ~20s de geração
-              </span>
-            </div>
-
-            {/* Grid: Form + Sidebar */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
-              {/* Form + Preview */}
-              <div className="space-y-5">
                 <InputPanel
                   tema={tema}
                   setTema={setTema}
@@ -787,82 +787,83 @@ const Dashboard = () => {
                 />
               </div>
 
-              {/* Sidebar */}
-              <div className="hidden lg:flex flex-col gap-4">
-                {/* Pérola Clínica */}
-                <div className="relative overflow-hidden p-6 rounded-2xl text-white group hover:-translate-y-0.5 transition-all duration-500"
-                  style={{ background: 'linear-gradient(145deg, #005344 0%, #007a63 50%, #005344 100%)' }}>
-                  <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-all duration-700" />
-                  <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-[#9df3dc]/8 rounded-full blur-2xl" />
-                  <div className="relative z-10">
-                    <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center mb-4 group-hover:bg-white/25 group-hover:scale-105 transition-all">
-                      <MI name="diamond" fill className="text-[20px]" />
-                    </div>
-                    <h3 className="font-['Manrope'] font-bold text-base mb-3">Pérola Clínica</h3>
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-[9px] uppercase font-bold text-[#9df3dc] tracking-widest mb-0.5">Dica</p>
-                        <p className="text-[13px] text-white/80 leading-relaxed">
-                          Quanto mais específico o objetivo, melhor a IA estrutura as diretrizes mais recentes.
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] uppercase font-bold text-[#9df3dc] tracking-widest mb-0.5">Prova</p>
-                        <p className="text-[13px] text-white/80 leading-relaxed">
-                          Use o chat do Preceptor para extrair pontos que mais caem em provas.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
+              {/* Sidebar — Recentes + dica + chat link */}
+              <aside className="hidden lg:flex flex-col gap-4">
                 {/* Recentes */}
-                <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
+                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-[0_1px_2px_rgba(25,28,29,0.04)]">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-['Manrope'] font-bold text-sm text-[#191c1d]">Recentes</h3>
-                    <button onClick={() => navigate('/library')} className="text-[10px] font-semibold text-[#006D5B] hover:underline">Ver todos</button>
+                    <h3 className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a5568] inline-flex items-center gap-2">
+                      <span className="w-4 h-px bg-[#C9A84C]" />
+                      Recentes
+                    </h3>
+                    <button
+                      onClick={() => navigate('/library')}
+                      className="text-[10px] font-semibold text-[#005344] hover:underline"
+                    >
+                      Ver tudo
+                    </button>
                   </div>
                   {recentItems.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       {recentItems.map((item) => (
                         <button
                           key={item.id}
                           onClick={() => navigate('/library')}
-                          className="flex items-center gap-3 group w-full text-left p-2 -mx-2 rounded-xl hover:bg-[#f8f9fa] transition-all"
+                          className="w-full text-left p-2 -mx-1 rounded-lg hover:bg-slate-50 transition-colors group"
                         >
-                          <div className="w-9 h-9 rounded-lg bg-[#f3f4f5] flex items-center justify-center text-[#005344] group-hover:bg-[#005344] group-hover:text-white transition-all flex-shrink-0">
-                            <MI name="description" className="text-[16px]" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-semibold text-[#191c1d] truncate">{item.tema}</p>
-                            <p className="text-[9px] text-[#6e7975]">{formatRelativeDate(item.created_at)}</p>
-                          </div>
+                          <p className="text-[13px] font-semibold text-[#191C1D] leading-snug truncate group-hover:text-[#005344]">
+                            {item.tema}
+                          </p>
+                          <p className="text-[10.5px] text-[#94a3b8] mt-0.5 font-mono">
+                            {formatRelativeDate(item.created_at)}
+                          </p>
                         </button>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-4">
-                      <MI name="auto_awesome" fill className="text-[28px] text-[#006D5B]/15 block mx-auto mb-1" />
-                      <p className="text-[11px] text-[#6e7975]">Gere seu primeiro resumo!</p>
+                    <div className="py-4 text-center">
+                      <p className="text-[11px] text-[#94a3b8] leading-relaxed">
+                        Seus fechamentos recentes aparecem aqui.
+                      </p>
                     </div>
                   )}
                 </div>
 
-                {/* Quick action */}
+                {/* Tip card editorial */}
+                <div className="rounded-2xl border border-[#C9A84C]/30 bg-gradient-to-br from-[#C9A84C]/8 to-[#005344]/5 p-5">
+                  <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#8a6f26] inline-flex items-center gap-2 mb-3">
+                    <Sparkles className="w-3 h-3" />
+                    Pérola
+                  </p>
+                  <p className="text-[13px] text-[#191C1D] leading-relaxed">
+                    Objetivos em <strong>linguagem técnica</strong> guiam o PreceptorMED a
+                    estruturar diretrizes em vez de enciclopédia. Ex: prefira{' '}
+                    <em>"Critérios de Framingham"</em> a <em>"como diagnosticar IC"</em>.
+                  </p>
+                </div>
+
+                {/* Chat link */}
                 <button
                   onClick={() => navigate('/ai-chat')}
-                  className="flex items-center gap-3 p-4 rounded-2xl bg-white border border-slate-100 hover:border-[#006D5B]/20 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group"
+                  className="flex items-center gap-3 p-4 rounded-2xl bg-white border border-slate-200 hover:border-[#005344]/30 hover:shadow-[0_4px_12px_-4px_rgba(0,109,91,0.12)] transition-all group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-[#006D5B]/8 flex items-center justify-center group-hover:bg-[#006D5B]/15 transition-all">
-                    <MI name="chat_bubble" fill className="text-[20px] text-[#006D5B]" />
+                  <div className="w-9 h-9 rounded-xl bg-[#005344]/8 flex items-center justify-center group-hover:bg-[#005344]/15 transition-all">
+                    <MI name="chat_bubble" fill className="text-[18px] text-[#005344]" />
                   </div>
                   <div className="text-left flex-1">
-                    <p className="text-sm font-bold text-[#191c1d] group-hover:text-[#005344] transition-colors">Preceptor Chat</p>
-                    <p className="text-[10px] text-[#6e7975]">Tire dúvidas com IA</p>
+                    <p className="text-[13px] font-bold text-[#191C1D] group-hover:text-[#005344] transition-colors">
+                      Preceptor Chat
+                    </p>
+                    <p className="text-[10.5px] text-[#94a3b8]">
+                      Tirar dúvida sem gerar resumo
+                    </p>
                   </div>
-                  <MI name="arrow_forward" className="text-[16px] text-slate-300 group-hover:text-[#006D5B] group-hover:translate-x-1 transition-all" />
+                  <MI
+                    name="arrow_forward"
+                    className="text-[16px] text-slate-300 group-hover:text-[#005344] group-hover:translate-x-1 transition-all"
+                  />
                 </button>
-              </div>
+              </aside>
             </div>
           </div>
         )}

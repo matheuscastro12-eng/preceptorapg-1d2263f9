@@ -98,7 +98,7 @@ export default function ThankYou() {
               {
                 day: 'Hoje',
                 title: 'Gere seu primeiro fechamento de PBL',
-                desc: 'Cole um caso clínico ou tema e veja a IA entregar um resumo denso em minutos. É o carro-chefe do app.',
+                desc: 'Cole um caso clínico ou tema e veja o PreceptorMED entregar um resumo denso em minutos. É o carro-chefe do app.',
                 icon: BookOpen,
                 action: () => navigate('/dashboard'),
                 cta: 'Gerar agora',

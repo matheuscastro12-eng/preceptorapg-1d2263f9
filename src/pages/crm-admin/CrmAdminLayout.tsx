@@ -1,12 +1,36 @@
 import { useEffect, Suspense } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
 import AdminSidebar from "@/components/crm-admin/AdminSidebar";
-import CrmLogin from "@/pages/crm/CrmLogin";
+import CrmLogin from "@/pages/crm/v3/LoginV3";
+import { CrmV3AdminLayout } from "@/components/crm/v3/CrmShellV3";
 import { Loader2, ShieldX, LogOut } from "lucide-react";
+
+// Páginas v3 com shell próprio — todas as rotas Admin agora são v3
+const V3_PAGES = new Set([
+  "/admin/crm-admin",
+  "/admin/crm-admin/receita",
+  "/admin/crm-admin/despesas",
+  "/admin/crm-admin/fluxo-caixa",
+  "/admin/crm-admin/inadimplencia",
+  "/admin/crm-admin/forecast",
+  "/admin/crm-admin/metas",
+  "/admin/crm-admin/relatorio",
+  "/admin/crm-admin/dre",
+  "/admin/crm-admin/time",
+  "/admin/crm-admin/one-on-one",
+  "/admin/crm-admin/pdi",
+  "/admin/crm-admin/carreira",
+  "/admin/crm-admin/contratacoes",
+  "/admin/crm-admin/salarios",
+  "/admin/crm-admin/easyflow",
+  "/admin/crm-admin/webhooks",
+]);
 
 export default function CrmAdminLayout() {
   const { crmUser, loading, hasAdminAccess, logout } = useCrmAuth();
+  const location = useLocation();
+  const isV3 = V3_PAGES.has(location.pathname.replace(/\/$/, ""));
 
   useEffect(() => {
     document.title = "PM CRM";
@@ -40,6 +64,18 @@ export default function CrmAdminLayout() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  if (isV3) {
+    return (
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-screen" style={{ background: "#F7F4EE" }}>
+          <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#0F4128" }} />
+        </div>
+      }>
+        <CrmV3AdminLayout />
+      </Suspense>
     );
   }
 

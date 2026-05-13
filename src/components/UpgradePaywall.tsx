@@ -5,18 +5,29 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { getEasyflowLink } from '@/utils/easyflow';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Lock, Crown, Brain, GraduationCap, BookOpen, Download, 
-  Sparkles, ArrowRight, Loader2, Check, Zap, MessageSquare 
+import {
+  Lock, Crown, Brain, GraduationCap, BookOpen, Download,
+  Sparkles, ArrowRight, Loader2, Check, Zap, MessageSquare,
+  Mic, Mail
 } from 'lucide-react';
 
 interface UpgradePaywallProps {
-  variant?: 'chat-limit' | 'feature-locked' | 'banner';
+  variant?: 'chat-limit' | 'feature-locked' | 'banner' | 'beta-only';
   remainingPrompts?: number;
   dailyLimit?: number;
+  /** Pra variant 'beta-only': nome do modulo (ex: 'Scribe Clínico') */
+  betaModule?: string;
+  /** Pra variant 'beta-only': email pra solicitar acesso */
+  betaContactEmail?: string;
 }
 
-const UpgradePaywall = ({ variant = 'chat-limit', remainingPrompts = 0, dailyLimit = 2 }: UpgradePaywallProps) => {
+const UpgradePaywall = ({
+  variant = 'chat-limit',
+  remainingPrompts = 0,
+  dailyLimit = 2,
+  betaModule = 'este módulo',
+  betaContactEmail = 'suporte@thepreceptor.com.br',
+}: UpgradePaywallProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -49,6 +60,47 @@ const UpgradePaywall = ({ variant = 'chat-limit', remainingPrompts = 0, dailyLim
     );
   }
 
+  if (variant === 'beta-only') {
+    const subject = encodeURIComponent(`Solicitação de acesso ao beta — ${betaModule}`);
+    const body = encodeURIComponent(
+      `Olá,\n\nGostaria de solicitar acesso ao beta do ${betaModule} no PreceptorMED.\n\nMeu CRM: \nMinha especialidade: \nVolume estimado de uso: \n\nObrigado.`,
+    );
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="rounded-2xl border-2 border-[#C9A84C]/40 bg-gradient-to-br from-[#C9A84C]/8 to-[#005344]/5 p-8 text-center max-w-lg mx-auto"
+      >
+        <div className="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-br from-[#005344]/15 to-[#C9A84C]/15 items-center justify-center mb-4">
+          <Mic className="w-7 h-7 text-[#005344]" />
+        </div>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#C9A84C]/15 text-[#8a6f26] text-[10.5px] font-bold uppercase tracking-[0.16em] mb-3">
+          <Sparkles className="w-3 h-3" />
+          Beta fechado
+        </div>
+        <h3 className="font-['Manrope'] font-bold text-xl text-[#191C1D] tracking-[-0.01em] mb-2">
+          {betaModule} está em fase beta
+        </h3>
+        <p className="text-sm text-[#4a5568] leading-relaxed mb-5 max-w-sm mx-auto">
+          Estamos liberando acesso pra um grupo selecionado de médicos e
+          residentes pra refinar a experiência antes do lançamento geral.
+          Solicite seu convite — analisamos cada pedido manualmente.
+        </p>
+        <a
+          href={`mailto:${betaContactEmail}?subject=${subject}&body=${body}`}
+          className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-gradient-to-br from-[#003D32] via-[#005344] to-[#006D5B] text-white font-bold text-sm font-['Manrope'] shadow-[0_8px_24px_-8px_rgba(0,109,91,0.45)] hover:shadow-[0_12px_28px_-6px_rgba(0,109,91,0.55)] transition-shadow"
+        >
+          <Mail className="w-4 h-4" />
+          Solicitar convite
+          <ArrowRight className="w-4 h-4 opacity-70" />
+        </a>
+        <p className="text-[11px] text-[#94a3b8] mt-4">
+          Resposta em até 48h úteis · {betaContactEmail}
+        </p>
+      </motion.div>
+    );
+  }
+
   if (variant === 'feature-locked') {
     return (
       <motion.div
@@ -71,7 +123,7 @@ const UpgradePaywall = ({ variant = 'chat-limit', remainingPrompts = 0, dailyLim
 
   // chat-limit variant (full paywall after limit reached)
   const benefits = [
-    { icon: Brain, text: 'Fechamentos ilimitados com IA' },
+    { icon: Brain, text: 'Fechamentos ilimitados com PreceptorMED' },
     { icon: GraduationCap, text: 'Simulados estilo residência' },
     { icon: MessageSquare, text: 'Chat acadêmico sem limites' },
     { icon: BookOpen, text: 'Biblioteca pessoal completa' },

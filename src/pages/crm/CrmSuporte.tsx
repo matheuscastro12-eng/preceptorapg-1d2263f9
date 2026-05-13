@@ -223,7 +223,7 @@ export default function CrmSuporte() {
     <div className="p-4 md:p-6 space-y-5 md:space-y-6">
       <div>
         <h1 className="text-xl md:text-2xl font-bold text-white">Suporte &amp; Feedback</h1>
-        <p className="text-xs md:text-sm text-gray-500 mt-0.5">NPS, CSAT, feedbacks e resumo de IA dos pedidos dos usuários</p>
+        <p className="text-xs md:text-sm text-gray-500 mt-0.5">NPS, CSAT, feedbacks e resumo do PreceptorMED dos pedidos dos usuários</p>
       </div>
 
       {/* Period filter */}
@@ -309,7 +309,7 @@ export default function CrmSuporte() {
         {/* Atendimentos */}
         <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-gray-500 uppercase tracking-wider">Atendimentos IA</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wider">Atendimentos PreceptorMED</p>
             <MessageCircle className="w-4 h-4 text-[#C9A84C]" />
           </div>
           <p className="text-3xl font-bold text-white">
@@ -317,7 +317,7 @@ export default function CrmSuporte() {
           </p>
           <p className="text-[10px] text-gray-600 mt-2">
             {csatMetrics.total > 0
-              ? `${Math.round((csatMetrics.resolved / csatMetrics.total) * 100)}% resolvidos pela IA`
+              ? `${Math.round((csatMetrics.resolved / csatMetrics.total) * 100)}% resolvidos pelo PreceptorMED`
               : "sem atendimentos no período"}
           </p>
         </div>
@@ -335,7 +335,7 @@ export default function CrmSuporte() {
                 Resumo Inteligente dos Feedbacks
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                Análise gerada por IA (Gemini) dos temas mais pedidos
+                Análise gerada por PreceptorMED (Gemini) dos temas mais pedidos
               </p>
             </div>
           </div>
@@ -383,7 +383,7 @@ export default function CrmSuporte() {
           <div className="text-center py-10 text-gray-500 text-sm">
             {feedbacks.length === 0
               ? "Nenhum feedback no período selecionado."
-              : `Clique em "Gerar resumo" para analisar os ${feedbacks.length} feedbacks com IA.`}
+              : `Clique em "Gerar resumo" para analisar os ${feedbacks.length} feedbacks com PreceptorMED.`}
           </div>
         )}
 
@@ -685,7 +685,7 @@ export default function CrmSuporte() {
       <div className="bg-[#C9A84C]/5 border border-[#C9A84C]/20 rounded-xl p-4 flex items-start gap-3">
         <Mail className="w-4 h-4 text-[#C9A84C] shrink-0 mt-0.5" />
         <div className="text-xs text-gray-400 leading-relaxed">
-          Quando a IA não resolve um problema, o usuário é direcionado para{" "}
+          Quando o PreceptorMED não resolve um problema, o usuário é direcionado para{" "}
           <strong className="text-[#C9A84C]">matheus@ospreceptores.com</strong>. Casos escalados
           aparecem acima com o badge <span className="text-amber-400">↑ escalado</span>.
         </div>

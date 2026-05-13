@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Menu, X, Loader2 } from 'lucide-react';
 import SupportWidget from '@/components/support/SupportWidget';
 import NpsModal from '@/components/support/NpsModal';
+import { usePresenceTracking } from '@/hooks/usePresenceTracking';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -41,7 +42,9 @@ const sidebarNavGroups: NavGroup[] = [
     label: 'Estudo',
     items: [
       { icon: 'dashboard', label: 'Início', path: '/menu' },
-      { icon: 'auto_awesome', label: 'Estudo com IA', path: '/dashboard' },
+      { icon: 'event_note', label: 'Cronograma', path: '/cronograma', matchPaths: ['/cronograma'] },
+      { icon: 'medical_information', label: 'Casos clínicos', path: '/casos-clinicos', matchPaths: ['/casos-clinicos'] },
+      { icon: 'auto_awesome', label: 'Estudo com PreceptorMED', path: '/dashboard' },
     ],
   },
   {
@@ -49,14 +52,22 @@ const sidebarNavGroups: NavGroup[] = [
     items: [
       {
         icon: 'shutter_speed', label: 'Simulações', path: '/exam',
-        matchPaths: ['/exam', '/enamed', '/flashcards'],
+        matchPaths: ['/exam', '/enamed', '/flashcards', '/provas'],
         children: [
           { icon: 'assignment', label: 'Simulação Normal', path: '/exam' },
           { icon: 'history_edu', label: 'ENAMED', path: '/enamed' },
           { icon: 'target', label: 'Simulado por Área', path: '/enamed?area=true', matchPaths: ['/enamed?area'] },
+          { icon: 'upload_file', label: 'Provas Importadas', path: '/provas', matchPaths: ['/provas'] },
           { icon: 'style', label: 'Flashcards', path: '/flashcards' },
         ],
       },
+    ],
+  },
+  {
+    label: 'Clínica',
+    items: [
+      { icon: 'menu_book', label: 'PreceptorBook', path: '/whitebook', matchPaths: ['/whitebook'] },
+      { icon: 'mic', label: 'Scribe Clínico', path: '/scribe', matchPaths: ['/scribe'] },
     ],
   },
   {
@@ -72,6 +83,8 @@ const sidebarNavGroups: NavGroup[] = [
 const sidebarNavItems: NavItem[] = sidebarNavGroups.flatMap(g => g.items);
 
 const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayoutProps) => {
+  // Liga rastreio de presenca pra contar usuarios online no CRM em tempo real.
+  usePresenceTracking();
   const { user, signOut } = useAuth();
   const { hasAccess, loading: subLoading } = useSubscription();
   const { isAdmin } = useAdmin();
@@ -280,7 +293,7 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
             <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-brand-gold/15 blur-2xl pointer-events-none" />
             <div className="relative">
               <p className="text-xs font-bold text-brand-gold mb-1">✦ Desbloqueie tudo</p>
-              <p className="text-[11px] text-white/80 mb-3 leading-relaxed">Resumos ilimitados, simulados IA, biblioteca pessoal.</p>
+              <p className="text-[11px] text-white/80 mb-3 leading-relaxed">Resumos ilimitados, simulados PreceptorMED, biblioteca pessoal.</p>
               <button
                 onClick={() => navigate('/pricing')}
                 className="w-full text-xs font-semibold text-brand-primary-darker bg-brand-gold py-2 rounded-lg hover:bg-brand-gold/90 transition-colors"
@@ -387,9 +400,9 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
             <div className="max-w-7xl mx-auto px-6 sm:px-10 flex flex-col sm:flex-row justify-between items-center gap-4">
               <span className="text-xs text-slate-400 font-medium">© {new Date().getFullYear()} PreceptorMED</span>
               <div className="flex gap-6">
-                {['Termos de Uso', 'Privacidade', 'Suporte'].map((label) => (
-                  <button key={label} className="text-xs text-slate-400 hover:text-[#006D5B] transition-colors duration-200">{label}</button>
-                ))}
+                <a href="/termos" className="text-xs text-slate-400 hover:text-[#006D5B] transition-colors duration-200">Termos de Uso</a>
+                <a href="/privacidade" className="text-xs text-slate-400 hover:text-[#006D5B] transition-colors duration-200">Privacidade</a>
+                <a href="mailto:contato@thepreceptor.com.br" className="text-xs text-slate-400 hover:text-[#006D5B] transition-colors duration-200">Suporte</a>
               </div>
             </div>
           </footer>

@@ -2,12 +2,26 @@ import { useState } from "react";
 import { Sparkles, Loader2, RefreshCw, X, Clock } from "lucide-react";
 import { supabase } from "@/lib/crm/supabase";
 import { toast } from "sonner";
+import DOMPurify from "dompurify";
 
 const API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/revenue-intelligence`;
 
-// Renderer simples de markdown — converte cabecalhos, listas, bold
+// Escapa HTML do conteúdo cru antes de aplicar markdown — previne XSS
+// caso a resposta da IA contenha tags HTML/JS maliciosas.
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Renderer simples de markdown — converte cabecalhos, listas, bold.
+// Aplica DOMPurify ao final como camada extra de defesa contra XSS.
 function renderMarkdown(md: string): string {
-  return md
+  const escaped = escapeHtml(md);
+  const html = escaped
     .replace(/^## (.+)$/gm, '<h3 class="text-base font-bold text-white mt-5 mb-2 font-[Manrope]">$1</h3>')
     .replace(/^### (.+)$/gm, '<h4 class="text-sm font-semibold text-white mt-3 mb-1.5">$1</h4>')
     .replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
@@ -17,6 +31,10 @@ function renderMarkdown(md: string): string {
       if (p.trim().length === 0) return "";
       return `<p class="text-sm text-gray-300 leading-relaxed mb-2">${p.replace(/\n/g, "<br/>")}</p>`;
     }).join("\n");
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ["h3", "h4", "p", "strong", "li", "ul", "br", "span"],
+    ALLOWED_ATTR: ["class"],
+  });
 }
 
 export default function RevenueIntelligence() {
@@ -66,7 +84,7 @@ export default function RevenueIntelligence() {
         className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-500 hover:to-blue-500 transition-all shadow-lg shadow-purple-900/30"
       >
         <Sparkles className="w-3.5 h-3.5" />
-        Analisar com IA
+        Analisar com PreceptorMED
       </button>
 
       {open && (

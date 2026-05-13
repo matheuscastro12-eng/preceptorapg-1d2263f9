@@ -1,12 +1,32 @@
 import { useEffect, Suspense } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useCrmAuth } from "@/contexts/CrmAuthContext";
 import Sidebar from "@/components/crm/Sidebar";
-import CrmLogin from "./CrmLogin";
+import CrmLogin from "./v3/LoginV3";
+import { CrmV3MarketingLayout } from "@/components/crm/v3/CrmShellV3";
 import { Loader2, ShieldX, LogOut } from "lucide-react";
+
+// Páginas que já trazem seu próprio shell (v3) — pular sidebar/wrapper escuro
+// Todas as rotas Marketing agora são v3
+const V3_PAGES = new Set([
+  "/admin/crm-mkt",
+  "/admin/crm-mkt/leads",
+  "/admin/crm-mkt/funnel",
+  "/admin/crm-mkt/landing-funnel",
+  "/admin/crm-mkt/health",
+  "/admin/crm-mkt/churn",
+  "/admin/crm-mkt/automations",
+  "/admin/crm-mkt/templates-email",
+  "/admin/crm-mkt/cohorts",
+  "/admin/crm-mkt/users",
+  "/admin/crm-mkt/analytics",
+  "/admin/crm-mkt/suporte",
+]);
 
 export default function CrmLayout() {
   const { crmUser, loading, hasMarketingAccess, logout } = useCrmAuth();
+  const location = useLocation();
+  const isV3 = V3_PAGES.has(location.pathname.replace(/\/$/, ""));
 
   useEffect(() => {
     document.title = "PM CRM";
@@ -40,6 +60,19 @@ export default function CrmLayout() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  // Páginas v3: shell persistente com sidebar fixa, só o main troca
+  if (isV3) {
+    return (
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-screen" style={{ background: "#F7F4EE" }}>
+          <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#0F4128" }} />
+        </div>
+      }>
+        <CrmV3MarketingLayout />
+      </Suspense>
     );
   }
 

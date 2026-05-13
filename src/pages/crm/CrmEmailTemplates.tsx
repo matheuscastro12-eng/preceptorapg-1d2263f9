@@ -86,12 +86,33 @@ export default function CrmEmailTemplates() {
 
   useEffect(() => { load(); }, []);
 
+  // Memo precisa vir ANTES dos useEffects que o usam nas deps,
+  // senao TDZ no primeiro render ("Cannot access 'current' before initialization").
+  const current = useMemo(
+    () => templates.find((t) => t.trigger_name === selected) ?? null,
+    [templates, selected]
+  );
+
   // Re-fetcha quando a aba volta a ter foco — evita ver versao stale
   // quando outro admin editou enquanto voce estava em outra janela.
+  // CRITICO: NAO recarrega se o user tem mudancas nao salvas no editor,
+  // senao perde tudo (acontecia ao abrir popup de "inserir link", o
+  // browser perde foco da janela e ao voltar resetava o draft).
   useEffect(() => {
-    const onFocus = () => load();
+    const isDirty = () =>
+      !!current &&
+      (draft.subject !== current.subject ||
+        draft.preview !== (current.preview ?? "") ||
+        draft.body_html !== current.body_html ||
+        draft.auto_send !== (current.auto_send ?? false));
+    const onFocus = () => {
+      if (isDirty()) return;
+      load();
+    };
     const onVisibility = () => {
-      if (document.visibilityState === "visible") load();
+      if (document.visibilityState !== "visible") return;
+      if (isDirty()) return;
+      load();
     };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibility);
@@ -99,7 +120,8 @@ export default function CrmEmailTemplates() {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, draft]);
 
   const saveBrand = async () => {
     setBrandSaving(true);
@@ -125,22 +147,24 @@ export default function CrmEmailTemplates() {
     setBrandSaving(false);
   };
 
-  const current = useMemo(
-    () => templates.find((t) => t.trigger_name === selected) ?? null,
-    [templates, selected]
-  );
-
+  // Hidrata o draft apenas quando o user MUDA de template selecionado
+  // (clica em outro template na sidebar). Antes essa dep era [current],
+  // que mudava de referencia toda vez que `templates` re-armava (apos
+  // load() em focus, save, etc), e isso sobrescrevia o que o user
+  // estava digitando — o famoso "reset" no meio da edicao.
   useEffect(() => {
-    if (current) {
+    const tpl = templates.find((t) => t.trigger_name === selected);
+    if (tpl) {
       setDraft({
-        subject: current.subject,
-        preview: current.preview ?? "",
-        body_html: current.body_html,
-        auto_send: current.auto_send ?? false,
+        subject: tpl.subject,
+        preview: tpl.preview ?? "",
+        body_html: tpl.body_html,
+        auto_send: tpl.auto_send ?? false,
       });
       setSaved(false);
     }
-  }, [current]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
 
   const createTemplate = async () => {
     const key = createDraft.trigger_name.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");

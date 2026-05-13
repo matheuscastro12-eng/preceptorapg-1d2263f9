@@ -95,13 +95,19 @@ export function useDespesaResumo() {
   });
 }
 
-export function useDespesasPorCategoria() {
+export function useDespesasPorCategoria(filters?: { mes?: string }) {
   return useQuery({
-    queryKey: ["crm-admin", "despesas-por-categoria"],
+    queryKey: ["crm-admin", "despesas-por-categoria", filters],
     queryFn: async () => {
-      const { data } = await supabase.from("admin_despesas").select("categoria, valor");
+      let q = supabase.from("admin_despesas").select("categoria, valor, data");
+      if (filters?.mes) {
+        const [y, m] = filters.mes.split("-").map(Number);
+        const nextMonth = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`;
+        q = q.gte("data", `${filters.mes}-01`).lt("data", nextMonth);
+      }
+      const { data } = await q;
       const map: Record<string, number> = {};
-      (data ?? []).forEach((d) => { map[d.categoria] = (map[d.categoria] ?? 0) + Number(d.valor); });
+      (data ?? []).forEach((d: any) => { map[d.categoria] = (map[d.categoria] ?? 0) + Number(d.valor); });
       return Object.entries(map)
         .map(([categoria, total]) => ({ categoria, total: Math.round(total * 100) / 100 }))
         .sort((a, b) => b.total - a.total);
