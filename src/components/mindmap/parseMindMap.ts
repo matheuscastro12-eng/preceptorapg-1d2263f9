@@ -51,12 +51,14 @@ export interface StudyCard {
 
 /* ─── Categorizacao ──────────────────────────────────────────── */
 
+// Padrões de prefixo (sem \b final) — em português os stems quase sempre
+// têm sufixo (-ia, -mento, -ção, -ões, ...) e um \b final cortaria o match.
 const CATEGORY_PATTERNS: Array<{ cat: SectionCategory; re: RegExp }> = [
-  { cat: 'bases', re: /\b(anatomia|histologia|fisiologia|embriologia|biolog|bioquimic|molecul|morfofuncion|patologi|histopatolog)\b/i },
-  { cat: 'epidemio', re: /\b(epidemiolog|incidenc|prevalenc|mortalidad|estatisti)\b/i },
-  { cat: 'clinica', re: /\b(manifest|sintoma|sinais|quadro|clinic|sindrome|fisiopatolog|cascata|mecanism|patogen|etiolog|diagnostic|exame|imagem|laboratoria|criterio|classificacao|nosologia|achado)\b/i },
-  { cat: 'tratamento', re: /\b(tratament|terapeutic|manejo|conduta|farmaco|medicament|cirurgi|intervenc|posolog|dose|indicac|contraindicac)\b/i },
-  { cat: 'prognostico', re: /\b(prognost|complicac|evolu|sobrevid|recidiv|prevenc|profilax|sequel)\b/i },
+  { cat: 'bases', re: /\b(anatomi|histologi|fisiologi(?!a do diagn)|embriolog|biolog|bioqu[ií]mic|molecul|morfofuncion|histopatolog)/i },
+  { cat: 'epidemio', re: /\b(epidemiolog|incid[eê]nci|preval[eê]nci|mortalidad|estat[ií]stic)/i },
+  { cat: 'clinica', re: /\b(manifesta|sintoma|sinais|quadro|cl[ií]nic|s[ií]ndrome|fisiopatolog|cascata|mecanism|patog[eê]n|etiolog|diagn[oó]stic|exame|imagem|laborator|crit[eé]rio|classifica|nosologi|achado|patologi)/i },
+  { cat: 'tratamento', re: /\b(tratament|terap[eê]utic|manejo|conduta|f[aá]rmaco|farmacol[oó]gic|medicament|cir[uú]rgic|intervenc|interven[çc][aã]o|posolog|dose|indica[çc]|contraindic|monitora)/i },
+  { cat: 'prognostico', re: /\b(progn[oó]stic|complica[çc]|evolu[çc]|sobrevid|recidiv|preven[çc]|profilax|sequela|rastrea)/i },
 ];
 
 function classifySection(title: string): SectionCategory {
