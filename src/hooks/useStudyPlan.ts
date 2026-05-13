@@ -160,8 +160,21 @@ export async function createStudyPlan(input: {
 }): Promise<{ plan_id: string; total_dias: number; topicos_normalizados: string[] }> {
   const { data, error } = await supabase.functions.invoke("generate-study-plan", { body: input });
   if (error) {
-    const msg = error.message ?? "Erro ao gerar plano";
-    throw new Error(msg);
+    // supabase.functions.invoke retorna error.message = "Edge Function returned
+    // a non-2xx status code" pra qualquer non-2xx, mascarando o erro real.
+    // O body real esta em error.context (Response). Extrair pra mostrar ao user.
+    let realMsg = "";
+    try {
+      const ctx = (error as { context?: Response | { json?: () => Promise<unknown> } }).context;
+      if (ctx && typeof (ctx as Response).json === "function") {
+        const body = await (ctx as Response).json();
+        const bodyTyped = body as { error?: string; message?: string };
+        realMsg = bodyTyped?.error ?? bodyTyped?.message ?? "";
+      }
+    } catch {
+      // ignore — fica com a mensagem generica abaixo
+    }
+    throw new Error(realMsg || error.message || "Erro ao gerar plano");
   }
   if (!data?.success) {
     throw new Error(data?.error ?? "Falha desconhecida");
