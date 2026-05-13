@@ -498,21 +498,31 @@ function VisualNode({ card, expanded, onToggle, isFirst: _isFirst }: {
             </span>
           </div>
 
-          {/* Pontos-chave (preview) */}
+          {/* Pontos-chave — colapsado mostra so o titulo (1 linha),
+              expandido mostra titulo + descricao completa sem clamp. */}
           {previewPoints.length > 0 && (
-            <ul className="space-y-1 mb-1.5">
-              {previewPoints.map((p, i) => (
-                <li key={i} className="text-[10.5px] leading-snug text-[#3E4945] flex gap-1.5">
-                  <span
-                    className="shrink-0 mt-[5px] h-1 w-1 rounded-full"
-                    style={{ background: t.color, opacity: 0.7 }}
-                    aria-hidden
-                  />
-                  <span className="line-clamp-2">
-                    <strong className="text-[#191C1D] font-semibold">{p.title}</strong>
-                  </span>
-                </li>
-              ))}
+            <ul className={expanded ? 'space-y-2 mb-2' : 'space-y-1 mb-1.5'}>
+              {previewPoints.map((p, i) => {
+                const hasDescription = expanded && p.text && p.text !== p.title;
+                return (
+                  <li
+                    key={i}
+                    className={`flex gap-1.5 ${expanded ? 'text-[11.5px] leading-relaxed text-[#3E4945]' : 'text-[10.5px] leading-snug text-[#3E4945]'}`}
+                  >
+                    <span
+                      className="shrink-0 mt-[6px] h-1 w-1 rounded-full"
+                      style={{ background: t.color, opacity: 0.7 }}
+                      aria-hidden
+                    />
+                    <span className={expanded ? '' : 'line-clamp-1'}>
+                      <strong className="text-[#191C1D] font-semibold">{p.title}</strong>
+                      {hasDescription && (
+                        <span className="text-[#4a5568]"> — {p.text}</span>
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
 
@@ -761,8 +771,8 @@ function FullCard({ card, expanded, onToggle }: { card: StudyCard; expanded: boo
                 />
                 <span>
                   <strong className="text-[#191C1D] font-semibold">{p.title}</strong>
-                  {p.text !== p.title && p.text.length > p.title.length && (
-                    <span className="text-[#4a5568]"> — {p.text.slice(p.title.length).replace(/^[:\-—\s]+/, '')}</span>
+                  {p.text && p.text !== p.title && (
+                    <span className="text-[#4a5568]"> — {p.text}</span>
                   )}
                 </span>
               </li>

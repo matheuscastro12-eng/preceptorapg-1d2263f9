@@ -82,10 +82,44 @@ function clean(s: string): string {
     .trim();
 }
 
+// Limites generosos pra que o card expandido caiba a frase inteira na maioria
+// dos casos. Acima disso ainda corta, mas e raro.
+const MAX_TITLE_LEN = 160;
+const MAX_TEXT_LEN = 600;
+
+/** Divide um bullet "plano" em titulo + descricao se houver ":" ou "—". */
+function splitPlainBullet(s: string): { title: string; text: string } {
+  // Aceita "Termo: descricao" / "Termo - descricao" / "Termo — descricao"
+  // Titulo precisa ser curto (<= 60 chars) pra evitar virar uma frase inteira.
+  const m = s.match(/^([^:—–\-]{2,60})\s*[:—–-]\s+(.+)/);
+  if (m) {
+    const title = m[1].trim();
+    const text = m[2].trim();
+    // Se o "titulo" terminar com palavra solta tipo verbo+preposicao, prefere
+    // manter a frase inteira. Heuristica: titulo nao pode acabar em " de", " da", etc.
+    if (!/\s(de|da|do|das|dos|em|no|na|por|para|com|sem|a|o)$/i.test(title)) {
+      return { title, text };
+    }
+  }
+  return { title: s, text: s };
+}
+
 function extractKeyPoints(text: string, max = MAX_KEYPOINTS): KeyPoint[] {
   const points: KeyPoint[] = [];
   const seen = new Set<string>();
   const lines = text.split('\n');
+
+  const push = (title: string, text: string) => {
+    const t = title.trim();
+    if (!t) return;
+    const key = t.toLowerCase().slice(0, 60);
+    if (seen.has(key)) return;
+    seen.add(key);
+    points.push({
+      title: t.slice(0, MAX_TITLE_LEN),
+      text: text.trim().slice(0, MAX_TEXT_LEN),
+    });
+  };
 
   for (const raw of lines) {
     if (points.length >= max) break;
@@ -95,59 +129,35 @@ function extractKeyPoints(text: string, max = MAX_KEYPOINTS): KeyPoint[] {
     // bullet com **negrito:**
     const bulletBold = line.match(/^[-*]\s+\*\*([^*]+?)\*\*\s*[:\-—]\s*(.+)/);
     if (bulletBold) {
-      const title = clean(bulletBold[1]);
-      const text = clean(bulletBold[2]);
-      const key = title.toLowerCase();
-      if (title && !seen.has(key)) {
-        points.push({ title: title.slice(0, 80), text: text.slice(0, 220) });
-        seen.add(key);
-      }
+      push(clean(bulletBold[1]), clean(bulletBold[2]));
       continue;
     }
-    // bullet simples
+    // bullet simples — tenta detectar "Termo: descricao"
     const bullet = line.match(/^[-*]\s+(.+)/);
     if (bullet) {
       const t = clean(bullet[1]);
-      const key = t.toLowerCase().slice(0, 40);
-      if (t && !seen.has(key)) {
-        points.push({ title: t.slice(0, 80), text: t.slice(0, 220) });
-        seen.add(key);
-      }
+      const { title, text } = splitPlainBullet(t);
+      push(title, text);
       continue;
     }
     // numerada com **negrito:**
     const numBold = line.match(/^\d+\.\s+\*\*([^*]+?)\*\*\s*[:\-—]\s*(.+)/);
     if (numBold) {
-      const title = clean(numBold[1]);
-      const text = clean(numBold[2]);
-      const key = title.toLowerCase();
-      if (title && !seen.has(key)) {
-        points.push({ title: title.slice(0, 80), text: text.slice(0, 220) });
-        seen.add(key);
-      }
+      push(clean(numBold[1]), clean(numBold[2]));
       continue;
     }
-    // numerada simples
+    // numerada simples — tenta dividir tambem
     const num = line.match(/^\d+\.\s+(.+)/);
     if (num) {
       const t = clean(num[1]);
-      const key = t.toLowerCase().slice(0, 40);
-      if (t && !seen.has(key)) {
-        points.push({ title: t.slice(0, 80), text: t.slice(0, 220) });
-        seen.add(key);
-      }
+      const { title, text } = splitPlainBullet(t);
+      push(title, text);
       continue;
     }
-    // **Negrito:** texto no inicio da linha (subheading inline)
+    // **Negrito:** texto no inicio da linha
     const inlineBold = line.match(/^\*\*([^*]+?)\*\*\s*[:\-—]\s*(.+)/);
     if (inlineBold) {
-      const title = clean(inlineBold[1]);
-      const text = clean(inlineBold[2]);
-      const key = title.toLowerCase();
-      if (title && !seen.has(key)) {
-        points.push({ title: title.slice(0, 80), text: text.slice(0, 220) });
-        seen.add(key);
-      }
+      push(clean(inlineBold[1]), clean(inlineBold[2]));
       continue;
     }
   }
