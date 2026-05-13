@@ -203,9 +203,9 @@ serve(async (req) => {
     // Atualmente: 3 ofertas da roleta da Semana Medica de Itajuba (50/30/20% off).
     // Manter sincronizado com supabase/functions/roulette-spin/index.ts
     const ROLETA_ANNUAL_OFFER_IDS = new Set([
-      "6385c0a1-b988-4ddd-9607-ee2ec15b3846", // 50% off
-      "5d0dbbfd-d06c-4252-8a29-3c51665c77c2", // 30% off
-      "fc67ad17-4b71-4067-b25b-52370c6de476", // 20% off
+      "6385c0a1-b988-4ddd-9607-ee2ec15b3846", // 20% off anual
+      "5d0dbbfd-d06c-4252-8a29-3c51665c77c2", // 30% off anual
+      "fc67ad17-4b71-4067-b25b-52370c6de476", // 50% off anual
     ]);
 
     // ── Detect plan from subscription periodicity / product name / description ──
