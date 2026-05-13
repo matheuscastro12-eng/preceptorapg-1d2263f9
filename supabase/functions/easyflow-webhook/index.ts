@@ -467,6 +467,81 @@ serve(async (req) => {
           .eq("id", resolvedPendingCheckoutId);
       }
 
+      // ── Lanca a receita em admin_receitas pro admin CRM financeiro ──
+      // Dedup por payment_id (unique partial index). Se o mesmo paymentId chegar
+      // via order.paid e depois payment.paid, so o primeiro entra.
+      try {
+        // Extrai valueInCents do evento certo
+        let valueInCents = 0;
+        let paymentId: string | null = null;
+        let orderId: string | null = null;
+        let paidAt: string | null = null;
+        if (event === "order.paid" || event === "order.created") {
+          orderId = payload.id ?? null;
+          paymentId = payload.payments?.[0]?.id ?? null;
+          valueInCents = Array.isArray(payload.items)
+            ? payload.items.reduce((s: number, it: any) => s + (it.valueInCents ?? 0), 0)
+            : (payload.valueInCents ?? 0);
+          paidAt = payload.paidAt ?? null;
+        } else if (event === "payment.paid") {
+          paymentId = payload.id ?? null;
+          valueInCents = payload.valuePaidInCents ?? payload.valueInCents ?? 0;
+        } else if (event === "subscriptionrecurrence.paid") {
+          paymentId = payload.paymentId ?? payload.id ?? null;
+          valueInCents = payload.valueInCents ?? payload.valuePaidInCents ?? 0;
+        } else if (event === "subscription.created" || event === "subscription.activated") {
+          // Esses eventos nao tem cobranca propria — pulam admin_receitas.
+          paymentId = null;
+        }
+
+        if (paymentId && valueInCents > 0) {
+          // Mapeia plano EN -> enum portugues do admin_receitas
+          const planoMap: Record<string, "mensal" | "anual" | "bianual" | null> = {
+            monthly: "mensal",
+            annual: "anual",
+            biannual: "bianual",
+            quarterly: null, // sem enum equivalente, pula
+            free_access: null,
+            none: null,
+          };
+          const planoAdmin = planoMap[plan];
+          if (planoAdmin) {
+            const dataInicio = (paidAt ? new Date(paidAt) : new Date()).toISOString().slice(0, 10);
+            // Calcula data_renovacao baseada no plano
+            const renov = new Date(paidAt ?? now);
+            if (planoAdmin === "mensal") renov.setMonth(renov.getMonth() + 1);
+            else if (planoAdmin === "anual") renov.setFullYear(renov.getFullYear() + 1);
+            else if (planoAdmin === "bianual") renov.setMonth(renov.getMonth() + 6);
+
+            const valorReais = valueInCents / 100;
+            const { error: receitaErr } = await supabase.from("admin_receitas").insert({
+              produto: "preceptormed",
+              plano: planoAdmin,
+              valor: valorReais,
+              data_inicio: dataInicio,
+              data_renovacao: renov.toISOString().slice(0, 10),
+              status: "ativo",
+              origem: "easyflow",
+              usuario_id: profile.user_id,
+              payment_id: paymentId,
+              order_id: orderId,
+              event_type: event,
+              observacoes: `Webhook ${event} — ${email}`,
+            });
+            if (receitaErr) {
+              // Conflito (23505) = dedup esperado. Outros erros logam.
+              if (!receitaErr.message.includes("admin_receitas_payment_id_uq")) {
+                console.warn(`[EasyFlow] admin_receitas insert falhou: ${receitaErr.message}`);
+              }
+            } else {
+              console.log(`[EasyFlow] 💰 admin_receitas: R$${valorReais.toFixed(2)} (${planoAdmin}) ${email}`);
+            }
+          }
+        }
+      } catch (revErr) {
+        console.warn("[EasyFlow] admin_receitas exception:", revErr);
+      }
+
       console.log(`[EasyFlow] ✅ Activated: ${email} -> ${plan}`);
       await markProcessed();
       return json({ received: true, action: "activated", email, plan });
@@ -495,6 +570,15 @@ serve(async (req) => {
         await supabase.from("crm_leads")
           .update({ status: "churned", churned_at: new Date().toISOString() })
           .eq("user_id", profile.user_id);
+
+        // Marca receita correspondente como cancelada no admin financeiro
+        const cancelPaymentId = payload.id ?? payload.paymentId ?? null;
+        const cancelOrderId = payload.id ?? null;
+        if (cancelPaymentId) {
+          await supabase.from("admin_receitas")
+            .update({ status: "cancelado", updated_at: new Date().toISOString() })
+            .or(`payment_id.eq.${cancelPaymentId},order_id.eq.${cancelOrderId}`);
+        }
 
         console.log(`[EasyFlow] ❌ Cancelled/Expired: ${email}`);
       }
