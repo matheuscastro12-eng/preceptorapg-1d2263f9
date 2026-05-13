@@ -17,6 +17,30 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 
 const MindMapView = lazy(() => import('@/components/mindmap/MindMapView'));
 
+/** Split markdown into sections by ## headings (mesma logica do Dashboard) */
+function splitIntoSections(markdown: string): { title: string; content: string }[] {
+  const sections: { title: string; content: string }[] = [];
+  const parts = markdown.split(/(?=^## )/m);
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const headingMatch = trimmed.match(/^## (.+)/);
+    if (headingMatch) {
+      sections.push({ title: headingMatch[1].trim(), content: trimmed });
+    } else if (trimmed.length > 20) {
+      sections.push({ title: '', content: trimmed });
+    }
+  }
+  return sections;
+}
+
+const formatDate = (iso: string): string => {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch { return ''; }
+};
+
 const Library = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -120,13 +144,72 @@ const Library = () => {
               </div>
             ) : (
               <ScrollArea className="h-full">
-                <div id="fechamento-content" ref={contentRef} className="mx-auto px-6 sm:px-12 py-8 max-w-4xl">
-                  <h1 className="text-2xl font-bold text-emerald-900 mb-6" style={{ fontFamily: 'var(--font-display)' }}>
-                    {selectedFechamento.tema}
-                  </h1>
-                  <div className="prose prose-sm max-w-none prose-headings:font-headline prose-headings:text-emerald-900">
-                    <MarkdownRenderer content={selectedFechamento.resultado} />
-                  </div>
+                <div id="fechamento-content" ref={contentRef} className="mx-auto px-4 sm:px-6 py-8 max-w-4xl">
+                  {(() => {
+                    const isSeminario = selectedFechamento.tipo === 'caso_clinico' || /seminari/i.test(selectedFechamento.resultado);
+                    const readingTime = Math.max(1, Math.ceil(selectedFechamento.resultado.split(/\s+/).length / 200));
+                    const sections = splitIntoSections(selectedFechamento.resultado);
+                    return (
+                      <article className="pmed-summary animate-fade-up">
+                        <header className="pmed-summary__head">
+                          <p className="pmed-eyebrow">
+                            {isSeminario ? 'Roteiro de seminário' : 'Resumo da biblioteca'}
+                          </p>
+                          <h1 className="pmed-editorial-title" style={{ fontSize: 'clamp(22px, 3vw, 30px)' }}>
+                            {selectedFechamento.tema}
+                          </h1>
+                          <div className="pmed-summary__meta">
+                            <span>
+                              <span className="material-symbols-outlined">schedule</span>
+                              {readingTime} min de leitura
+                            </span>
+                            <span>
+                              <span className="material-symbols-outlined">calendar_today</span>
+                              {formatDate(selectedFechamento.created_at)}
+                            </span>
+                            <span>
+                              <span className="material-symbols-outlined">category</span>
+                              {isSeminario ? 'Seminário acadêmico' : 'Fechamento de PBL'}
+                            </span>
+                            <span>
+                              <span className="material-symbols-outlined">auto_awesome</span>
+                              Gerado por PreceptorMED
+                            </span>
+                          </div>
+                        </header>
+
+                        <div className="pmed-summary__body">
+                          {sections.length <= 1 ? (
+                            <MarkdownRenderer content={selectedFechamento.resultado} />
+                          ) : (
+                            sections.map((section, i) => (
+                              <MarkdownRenderer key={i} content={section.content} />
+                            ))
+                          )}
+                        </div>
+
+                        <footer className="pmed-summary__foot">
+                          <div className="flex gap-2 flex-wrap">
+                            <span className="pmed-ref-chip">
+                              <span className="material-symbols-outlined">menu_book</span>
+                              Harrison
+                            </span>
+                            <span className="pmed-ref-chip">
+                              <span className="material-symbols-outlined">menu_book</span>
+                              Guyton
+                            </span>
+                            <span className="pmed-ref-chip">
+                              <span className="material-symbols-outlined">menu_book</span>
+                              UpToDate
+                            </span>
+                          </div>
+                          <span style={{ color: 'rgb(var(--brand-primary-dark))', fontWeight: 600 }}>
+                            Exporte em PDF acima ↑
+                          </span>
+                        </footer>
+                      </article>
+                    );
+                  })()}
 
                   {/* Dica de marca-texto */}
                   <div className="flex items-start gap-2 px-3 py-2.5 bg-brand-gold/10 border border-brand-gold/30 rounded-lg mt-6">
