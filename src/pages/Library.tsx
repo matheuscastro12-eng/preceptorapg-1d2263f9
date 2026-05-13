@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Download, Loader2, Play, Layers, Network } from 'lucide-react';
+import { ArrowLeft, Sparkles, Download, Loader2, Play, Layers, Network, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import FechamentoLibrary from '@/components/FechamentoLibrary';
@@ -138,12 +138,6 @@ const Library = () => {
           </div>
           <div className="flex items-center gap-1.5">
             {isResumo && (
-              <Button variant={showMindMap ? 'default' : 'outline'} size="sm" onClick={() => setShowMindMap(!showMindMap)} className="gap-1.5 text-xs h-8">
-                <Network className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Mapa Mental</span>
-              </Button>
-            )}
-            {isResumo && (
               <Button variant="outline" size="sm" onClick={handleGenerateFlashcards} disabled={generatingFlashcards} className="gap-1.5 text-xs h-8">
                 {generatingFlashcards ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Layers className="h-3.5 w-3.5" />}
                 <span className="hidden sm:inline">{generatingFlashcards ? 'Gerando...' : 'Flashcards'}</span>
@@ -159,6 +153,48 @@ const Library = () => {
             </Button>
           </div>
         </div>
+
+        {/* View switcher — destaque editorial pro Mapa Mental */}
+        {isResumo && selectedFechamento.resultado && (
+          <div className="shrink-0 border-b border-slate-100 bg-gradient-to-b from-white to-slate-50/60 px-4 sm:px-6 py-3">
+            <div className="max-w-4xl mx-auto flex justify-center">
+              <div role="tablist" aria-label="Modo de visualização" className="inline-flex p-1 rounded-2xl bg-slate-100/80 backdrop-blur-sm gap-1 shadow-inner ring-1 ring-slate-200/50">
+                <button
+                  role="tab"
+                  aria-selected={!showMindMap}
+                  onClick={() => setShowMindMap(false)}
+                  className={`inline-flex items-center gap-2 h-10 px-4 sm:px-5 rounded-xl text-[13px] font-bold transition-all duration-200 ${
+                    !showMindMap
+                      ? 'bg-white text-[#191C1D] shadow-[0_2px_8px_-2px_rgba(0,0,0,0.12)]'
+                      : 'text-[#4a5568] hover:text-[#191C1D]'
+                  }`}
+                >
+                  <BookOpen className="h-4 w-4" strokeWidth={2.2} />
+                  <span>Leitura</span>
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={showMindMap}
+                  onClick={() => setShowMindMap(true)}
+                  className={`relative inline-flex items-center gap-2 h-10 px-4 sm:px-5 rounded-xl text-[13px] font-bold transition-all duration-200 ${
+                    showMindMap
+                      ? 'bg-gradient-to-br from-[#003D32] via-[#005344] to-[#006D5B] text-white shadow-[0_6px_18px_-4px_rgba(0,77,68,0.45)] ring-1 ring-[#C9A84C]/60'
+                      : 'text-[#005344] hover:bg-white/70'
+                  }`}
+                >
+                  <Network className={`h-4 w-4 ${showMindMap ? 'text-[#C9A84C]' : ''}`} strokeWidth={2.2} />
+                  <span>Mapa Mental</span>
+                  {!showMindMap && (
+                    <span className="ml-0.5 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8.5px] font-bold uppercase tracking-[0.1em] bg-gradient-to-r from-[#C9A84C] to-[#B8932E] text-white shadow-[0_2px_6px_-2px_rgba(201,168,76,0.5)]">
+                      <Sparkles className="h-2 w-2" strokeWidth={3} />
+                      Novo
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 flex overflow-hidden">
