@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Trash2, User, Copy, FileDown, Check, BookOpen } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Send, Trash2, User, Copy, FileDown, Check, BookOpen, MessageSquare, Plus, History, MoreHorizontal } from 'lucide-react';
 import logoIcon from '@/assets/logo-icon.png';
 import { useToast } from '@/hooks/use-toast';
 import { exportToPDF } from '@/utils/pdfExport';
@@ -19,6 +20,12 @@ interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+}
+
+interface ChatConversation {
+  id: string;
+  title: string;
+  updated_at: string;
 }
 
 const SUGGESTIONS = [
@@ -39,9 +46,68 @@ const AIChat = () => {
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<ChatConversation[]>([]);
+  const [currentConvId, setCurrentConvId] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [loadingConv, setLoadingConv] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Carrega lista de conversas do usuario
+  const refreshConversations = useCallback(async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('chat_conversations')
+      .select('id, title, updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(50);
+    if (!error && data) setConversations(data as ChatConversation[]);
+  }, [user]);
+
+  useEffect(() => { refreshConversations(); }, [refreshConversations]);
+
+  // Carrega mensagens de uma conversa
+  const loadConversation = async (convId: string) => {
+    if (isStreaming) abortRef.current?.abort();
+    setLoadingConv(true);
+    setHistoryOpen(false);
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('id, role, content')
+        .eq('conversation_id', convId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      setMessages((data ?? []) as ChatMessage[]);
+      setCurrentConvId(convId);
+    } catch (e) {
+      console.error('Erro ao carregar conversa:', e);
+      toast({ title: 'Erro', description: 'Nao foi possivel carregar a conversa.', variant: 'destructive' });
+    } finally {
+      setLoadingConv(false);
+    }
+  };
+
+  const startNewConversation = () => {
+    if (isStreaming) abortRef.current?.abort();
+    setMessages([]);
+    setCurrentConvId(null);
+    setIsStreaming(false);
+    setHistoryOpen(false);
+  };
+
+  const deleteConversation = async (convId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('Excluir esta conversa? Esta acao nao pode ser desfeita.')) return;
+    const { error } = await supabase.from('chat_conversations').delete().eq('id', convId);
+    if (error) {
+      toast({ title: 'Erro', description: 'Nao foi possivel excluir.', variant: 'destructive' });
+      return;
+    }
+    setConversations(prev => prev.filter(c => c.id !== convId));
+    if (currentConvId === convId) startNewConversation();
+  };
 
   const stripMarkdown = (md: string) =>
     md.replace(/#{1,6}\s?/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/`(.+?)`/g, '$1').replace(/---/g, '').replace(/- /g, '• ').trim();
@@ -73,6 +139,7 @@ const AIChat = () => {
 
   const streamChat = async (userMessage: string) => {
     if (!isSubscriber && hasReachedLimit) return;
+    if (!user) return;
 
     const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: userMessage };
     const assistantId = crypto.randomUUID();
@@ -86,6 +153,30 @@ const AIChat = () => {
     }
 
     const allMessages = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
+
+    // Cria conversa no DB se for a 1a mensagem desta sessao
+    let convId = currentConvId;
+    if (!convId) {
+      const title = userMessage.slice(0, 80).trim() || 'Nova conversa';
+      const { data: newConv, error: convErr } = await supabase
+        .from('chat_conversations')
+        .insert({ user_id: user.id, title })
+        .select('id')
+        .single();
+      if (convErr) {
+        console.error('Erro ao criar conversa:', convErr);
+      } else if (newConv) {
+        convId = newConv.id;
+        setCurrentConvId(convId);
+      }
+    }
+
+    // Salva mensagem do usuario (nao bloqueia stream se falhar)
+    if (convId) {
+      supabase.from('chat_messages')
+        .insert({ conversation_id: convId, role: 'user', content: userMessage })
+        .then(({ error }) => { if (error) console.error('save user msg:', error); });
+    }
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -144,6 +235,12 @@ const AIChat = () => {
           } catch { /* partial json */ }
         }
       }
+      // Stream terminou — persiste resposta completa
+      if (convId && assistantContent.trim()) {
+        await supabase.from('chat_messages')
+          .insert({ conversation_id: convId, role: 'assistant', content: assistantContent });
+        refreshConversations();
+      }
     } catch (e: unknown) {
       if (e instanceof Error && e.name === 'AbortError') return;
       const message = e instanceof Error ? e.message : 'Erro ao processar sua pergunta. Tente novamente.';
@@ -171,11 +268,7 @@ const AIChat = () => {
   };
 
   const clearChat = () => {
-    if (isStreaming) {
-      abortRef.current?.abort();
-    }
-    setMessages([]);
-    setIsStreaming(false);
+    startNewConversation();
   };
 
   if (authLoading || demoLoading) return <PageSkeleton variant="menu" />;
@@ -190,28 +283,112 @@ const AIChat = () => {
         {/* Ribbon top — verde + ouro */}
         <div className="h-[3px] bg-gradient-to-r from-[#003D32] via-[#005344] via-[#006D5B] to-[#C9A84C]" />
         <div className="flex items-center justify-between px-4 sm:px-8 py-3.5">
-          <div className="flex items-center gap-3">
-            <img src={logoIcon} alt="PreceptorMED" className="h-8 w-8" />
-            <div>
+          <div className="flex items-center gap-3 min-w-0">
+            <img src={logoIcon} alt="PreceptorMED" className="h-8 w-8 shrink-0" />
+            <div className="min-w-0">
               <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2 leading-none">
                 <span className="w-5 h-px bg-[#C9A84C]" />
                 Preceptor virtual
               </p>
-              <span className="block font-['Manrope'] font-bold text-[15px] tracking-[-0.01em] text-[#191C1D] mt-1 leading-none">
-                PreceptorMED <em className="not-italic font-medium text-[#8a6f26]">Chat</em>
+              <span className="block font-['Manrope'] font-bold text-[15px] tracking-[-0.01em] text-[#191C1D] mt-1 leading-none truncate">
+                {currentConvId && messages.length > 0
+                  ? (conversations.find(c => c.id === currentConvId)?.title || 'Conversa')
+                  : <>PreceptorMED <em className="not-italic font-medium text-[#8a6f26]">Chat</em></>}
               </span>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearChat}
-            className="text-[#4a5568] hover:text-red-600 gap-1.5 text-xs font-semibold"
-            disabled={isEmpty && !isStreaming}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Limpar conversa</span>
-          </Button>
+          <div className="flex items-center gap-1 shrink-0">
+            <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-[#4a5568] hover:text-[#005344] gap-1.5 text-xs font-semibold"
+                  title="Ver historico de conversas"
+                >
+                  <History className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Histórico</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[320px] sm:w-[380px] p-0 flex flex-col">
+                <div className="h-[3px] bg-gradient-to-r from-[#003D32] via-[#005344] via-[#006D5B] to-[#C9A84C]" />
+                <div className="px-5 py-4 border-b border-slate-100">
+                  <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2">
+                    <span className="w-5 h-px bg-[#C9A84C]" />
+                    Histórico
+                  </p>
+                  <h2 className="font-['Manrope'] font-bold text-[18px] tracking-[-0.01em] text-[#191C1D] mt-1">
+                    Suas conversas
+                  </h2>
+                  <button
+                    onClick={startNewConversation}
+                    className="mt-3 w-full h-10 rounded-xl text-white text-[13px] font-bold inline-flex items-center justify-center gap-2 transition-all"
+                    style={{
+                      background: 'linear-gradient(135deg, #003D32 0%, #005344 50%, #006D5B 100%)',
+                      boxShadow: '0 4px 12px -4px rgba(0,109,91,0.4)',
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Nova conversa
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto px-3 py-3">
+                  {conversations.length === 0 ? (
+                    <div className="text-center py-12 px-4">
+                      <MessageSquare className="h-10 w-10 mx-auto mb-3 text-[#94a3b8] opacity-50" strokeWidth={1.2} />
+                      <p className="text-[12.5px] text-[#4a5568] font-medium">Nenhuma conversa ainda</p>
+                      <p className="text-[11px] text-[#94a3b8] mt-1">Suas perguntas ficam salvas aqui.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {conversations.map(c => {
+                        const active = c.id === currentConvId;
+                        return (
+                          <button
+                            key={c.id}
+                            onClick={() => loadConversation(c.id)}
+                            className={`group w-full text-left px-3 py-2.5 rounded-lg transition-all border ${
+                              active
+                                ? 'bg-[#005344]/05 border-[#005344]/30'
+                                : 'bg-white border-transparent hover:bg-slate-50 hover:border-slate-200'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className={`text-[12.5px] font-semibold truncate ${active ? 'text-[#005344]' : 'text-[#191C1D]'}`}>
+                                  {c.title}
+                                </p>
+                                <p className="text-[10.5px] text-[#94a3b8] font-mono mt-0.5">
+                                  {new Date(c.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              </div>
+                              <button
+                                onClick={(e) => deleteConversation(c.id, e)}
+                                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 text-[#94a3b8] hover:text-red-600 transition-all"
+                                aria-label="Excluir conversa"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={startNewConversation}
+              className="text-[#4a5568] hover:text-[#005344] gap-1.5 text-xs font-semibold"
+              title="Iniciar nova conversa"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Nova</span>
+            </Button>
+          </div>
         </div>
       </div>
 
