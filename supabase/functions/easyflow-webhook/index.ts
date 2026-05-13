@@ -45,11 +45,31 @@ serve(async (req) => {
 
     console.log(`[EasyFlow] Event: ${event}`);
 
-    // Save raw event for audit (tabela agora existe)
-    const { error: auditErr } = await supabase
+    // Save raw event for audit. CAPTURA O ID inserido pra atualizacoes
+    // subsequentes — UPDATE com .order().limit() no PostgREST e SILENCIOSAMENTE
+    // ignorado, o que fazia toda nova falha sobrescrever error_message de
+    // TODAS as linhas anteriores com mesmo provider+event_type. Bug grave.
+    const { data: auditRow, error: auditErr } = await supabase
       .from("webhook_events")
-      .insert({ provider: "easyflow", event_type: event || "unknown", payload: body });
+      .insert({ provider: "easyflow", event_type: event || "unknown", payload: body })
+      .select("id")
+      .single();
     if (auditErr) console.warn("[EasyFlow] webhook_events insert failed:", auditErr.message);
+    const auditId: string | null = auditRow?.id ?? null;
+
+    // Helpers — atualizam APENAS a linha deste webhook (por id), nunca por filtros
+    const markFailed = async (msg: string) => {
+      if (!auditId) return;
+      await supabase.from("webhook_events")
+        .update({ processed: false, error_message: msg })
+        .eq("id", auditId);
+    };
+    const markProcessed = async () => {
+      if (!auditId) return;
+      await supabase.from("webhook_events")
+        .update({ processed: true, error_message: null })
+        .eq("id", auditId);
+    };
 
     // ── Extract email (different locations for Order vs Subscription vs Payment) ──
     // Order events: payload.buyer.email
@@ -181,20 +201,14 @@ serve(async (req) => {
         const holderName = payload.creditCard?.holderName || "desconhecido";
         const paymentMethod = payload.paymentMethod || "desconhecido";
         console.error(`[EasyFlow] ${event} sem email e fallbacks falharam. method=${paymentMethod} holderName=${holderName}`);
-        await supabase.from("webhook_events").update({
-          processed: false,
-          error_message: `no_email_all_fallbacks_failed: method=${paymentMethod} holderName=${holderName} paymentId=${payload.id}`,
-        }).eq("provider", "easyflow").eq("event_type", event).order("created_at", { ascending: false }).limit(1);
+        await markFailed(`no_email_all_fallbacks_failed: method=${paymentMethod} holderName=${holderName} paymentId=${payload.id}`);
         return json({ received: true, action: "skipped_no_email_fallbacks_failed", holderName, paymentMethod });
       }
     }
 
     if (!email && !fallbackUserId) {
       console.log("[EasyFlow] No email found, skipping");
-      await supabase.from("webhook_events").update({
-        processed: false,
-        error_message: "no_email_in_payload",
-      }).eq("provider", "easyflow").eq("event_type", event).order("created_at", { ascending: false }).limit(1);
+      await markFailed("no_email_in_payload");
       return json({ received: true, action: "skipped_no_email" });
     }
 
@@ -288,10 +302,7 @@ serve(async (req) => {
       const profile = await findUser();
       if (!profile) {
         console.error(`[EasyFlow] User NOT FOUND: ${email} — criar conta antes ou revisar payload`);
-        await supabase.from("webhook_events").update({
-          processed: false,
-          error_message: `user_not_found: ${email}`,
-        }).eq("provider", "easyflow").eq("event_type", event).order("created_at", { ascending: false }).limit(1);
+        await markFailed(`user_not_found: ${email}`);
         return json({ received: true, action: "user_not_found", email }, 200);
       }
 
@@ -336,10 +347,7 @@ serve(async (req) => {
       }
       if (subErr) {
         console.error(`[EasyFlow] FAILED to upsert subscription for ${email}:`, subErr.message);
-        await supabase.from("webhook_events").update({
-          processed: false,
-          error_message: `subscription_upsert_failed: ${subErr.message}`,
-        }).eq("provider", "easyflow").eq("event_type", event).order("created_at", { ascending: false }).limit(1);
+        await markFailed(`subscription_upsert_failed: ${subErr.message}`);
         return json({ received: true, action: "error", error: subErr.message }, 500);
       }
 
@@ -380,6 +388,7 @@ serve(async (req) => {
         .eq("status", "em_cobranca");
 
       console.log(`[EasyFlow] ✅ Activated: ${email} -> ${plan}`);
+      await markProcessed();
       return json({ received: true, action: "activated", email, plan });
     }
 
