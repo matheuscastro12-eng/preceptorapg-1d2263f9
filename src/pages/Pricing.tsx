@@ -39,8 +39,8 @@ const Pricing = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const handleSubscribe = (planType: 'monthly' | 'annual' | 'biannual') => {
-    const link = getEasyflowLink(planType, user?.email ?? undefined);
+  const handleSubscribe = async (planType: 'monthly' | 'annual' | 'biannual') => {
+    const link = await getEasyflowLink(planType, user?.email ?? undefined, user?.id, 'pricing');
     if (link) {
       // Redirect direto no mesmo tab — window.open e bloqueado por popup blockers
       window.location.href = link;

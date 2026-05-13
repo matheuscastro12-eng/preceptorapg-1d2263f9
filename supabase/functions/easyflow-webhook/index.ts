@@ -88,12 +88,85 @@ serve(async (req) => {
 
     // ── Fallbacks pra payment.paid sem email ──
     // Ordem por confiabilidade:
+    //   0. external_id no payload -> pending_checkouts (registrado ANTES do redirect,
+    //      resolve o caso "aluna paga com cartao do pai" — usuario logado clica
+    //      Pagar, registramos a intencao, EasyFlow forward o id pelo webhook)
     //   1. ID do pagamento → subscription existente (exato, instantaneo)
     //   2. EasyFlow API /sales/filter pelo payment ID (autoritativo, traz email real)
     //   3. holderName → profiles.full_name (heuristica, exige match UNICO + signup recente)
     //   4. holderName → auth.users (heuristica, mesma protecao)
     let fallbackUserId: string | null = null;
-    if (!email && (event === "payment.paid" || event === "subscriptionrecurrence.paid")) {
+    let resolvedPendingCheckoutId: string | null = null;
+
+    // ── Fallback 0: external_id apontando pra pending_checkouts ──
+    // EasyFlow nao tem documentacao publica sobre forwarding de query params
+    // como metadata. Hedge: tenta varios caminhos comuns no payload.
+    if (!email && (event === "payment.paid" || event === "subscriptionrecurrence.paid" || event === "order.paid")) {
+      const candidates = [
+        payload.external_id, payload.externalId,
+        payload.metadata?.external_id, payload.metadata?.user_id,
+        payload.customField1, payload.custom_field_1,
+        payload.referenceId, payload.reference_id,
+        body.external_id, body.externalId, body.metadata?.external_id,
+      ].filter(Boolean) as string[];
+
+      // Tambem varre o payload string a procura de UUID v4 (pode estar em
+      // qualquer campo nao mapeado pela EasyFlow)
+      const uuidRe = /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi;
+      const payloadStr = JSON.stringify(body);
+      const allUuids = Array.from(payloadStr.matchAll(uuidRe)).map(m => m[0].toLowerCase());
+
+      const tried = new Set<string>();
+      for (const candidate of [...candidates, ...allUuids]) {
+        if (tried.has(candidate)) continue;
+        tried.add(candidate);
+        const { data: pc } = await supabase
+          .from("pending_checkouts")
+          .select("id,user_id")
+          .eq("id", candidate)
+          .is("linked_at", null)
+          .maybeSingle();
+        if (pc) {
+          fallbackUserId = pc.user_id;
+          resolvedPendingCheckoutId = pc.id;
+          console.log(`[EasyFlow] Fallback 0 (external_id -> pending_checkouts): ${candidate} -> user ${fallbackUserId}`);
+          break;
+        }
+      }
+    }
+
+    // ── Fallback 0b: best-effort match por offer_id + janela temporal ──
+    // Quando o external_id nao chegou no payload, mas SO tem 1 checkout
+    // pendente recente da mesma oferta, e quase certo que e essa pessoa.
+    if (!email && !fallbackUserId && (event === "payment.paid" || event === "subscriptionrecurrence.paid")) {
+      const payloadStr = JSON.stringify(body);
+      const offerMatch = payloadStr.match(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i);
+      if (offerMatch) {
+        const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        const { data: candidates } = await supabase
+          .from("pending_checkouts")
+          .select("id,user_id,offer_id,created_at")
+          .gte("created_at", cutoff)
+          .is("linked_at", null)
+          .order("created_at", { ascending: false })
+          .limit(20);
+        // procura um cujo offer_id apareca no payload
+        const match = candidates?.find(c => c.offer_id && payloadStr.includes(c.offer_id));
+        if (match) {
+          // exige unico match na ultima hora pra reduzir risco de troca
+          const sameOffer = candidates!.filter(c => c.offer_id === match.offer_id);
+          if (sameOffer.length === 1) {
+            fallbackUserId = match.user_id;
+            resolvedPendingCheckoutId = match.id;
+            console.log(`[EasyFlow] Fallback 0b (offer_id + unico checkout pendente): ${match.offer_id} -> user ${fallbackUserId}`);
+          } else {
+            console.warn(`[EasyFlow] Fallback 0b ABORTADO: ${sameOffer.length} checkouts pendentes pra mesma oferta na ultima hora`);
+          }
+        }
+      }
+    }
+
+    if (!email && (event === "payment.paid" || event === "subscriptionrecurrence.paid") && !fallbackUserId) {
       console.log(`[EasyFlow] No email in ${event} payload, trying fallbacks...`);
 
       // ── Fallback 1: ID do pagamento -> subscription existente ──
@@ -386,6 +459,13 @@ serve(async (req) => {
         .update({ status: "resolvido", updated_at: now })
         .eq("user_id", profile.user_id)
         .eq("status", "em_cobranca");
+
+      // Marca pending_checkout como resolvido (se foi por Fallback 0/0b)
+      if (resolvedPendingCheckoutId) {
+        await supabase.from("pending_checkouts")
+          .update({ linked_at: new Date().toISOString(), payment_id: payload.id ?? null })
+          .eq("id", resolvedPendingCheckoutId);
+      }
 
       console.log(`[EasyFlow] ✅ Activated: ${email} -> ${plan}`);
       await markProcessed();

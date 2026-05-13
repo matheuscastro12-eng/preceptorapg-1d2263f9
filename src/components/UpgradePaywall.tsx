@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { getEasyflowLink } from '@/utils/easyflow';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Lock, Crown, Brain, GraduationCap, BookOpen, Download,
   Sparkles, ArrowRight, Loader2, Check, Zap, MessageSquare,
@@ -30,10 +31,11 @@ const UpgradePaywall = ({
 }: UpgradePaywallProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  const handleSubscribe = (planType: 'monthly' | 'annual') => {
-    const link = getEasyflowLink(planType);
+  const handleSubscribe = async (planType: 'monthly' | 'annual') => {
+    const link = await getEasyflowLink(planType, user?.email ?? undefined, user?.id, 'paywall');
     if (link) window.open(link, '_blank');
   };
 
