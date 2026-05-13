@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { parseMindMap, type StudyCard, type SectionCategory } from './parseMindMap';
 import {
   ChevronDown, ChevronRight, BookOpen, Search,
@@ -113,12 +113,6 @@ export default function MindMapView({ content, topic }: MindMapViewProps) {
         {/* ─── Toggle de modo ─── */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <ModeToggle mode={mode} setMode={setMode} />
-          {mode === 'visual' && activeCategories.length > 3 && (
-            <p className="text-[10px] text-[#94a3b8] inline-flex items-center gap-1">
-              <span className="material-symbols-outlined text-[12px]">swipe</span>
-              Arraste lateralmente para ver todas as ramificações
-            </p>
-          )}
         </div>
 
         {/* ─── Corpo ─── */}
@@ -303,6 +297,31 @@ function VisualMode({ topic, byCategory, activeCategories, expanded, toggle }: {
   toggle: (id: string) => void;
 }) {
   const cols = activeCategories.length;
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  // Estado de overflow horizontal: se overflowLeft/Right === true, mostra
+  // gradiente + setinha indicando que ha mais conteudo pra rolar.
+  const [overflow, setOverflow] = useState({ left: false, right: false });
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => {
+      setOverflow({
+        left: el.scrollLeft > 4,
+        right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4,
+      });
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    if (el.firstElementChild) ro.observe(el.firstElementChild);
+    return () => {
+      el.removeEventListener('scroll', update);
+      ro.disconnect();
+    };
+  }, [cols]);
+
   if (cols === 0) return null;
 
   // Largura mínima do container — garante que cards não fiquem esmagados.
@@ -311,8 +330,28 @@ function VisualMode({ topic, byCategory, activeCategories, expanded, toggle }: {
   const minWidth = Math.max(640, cols * minColWidth);
 
   return (
-    <div className="overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6 pb-2">
-      <div style={{ minWidth: `${minWidth}px` }} className="relative">
+    <div className="relative">
+      {/* Indicador esquerdo */}
+      {overflow.left && (
+        <div className="absolute left-0 top-0 bottom-2 w-12 pointer-events-none z-20 bg-gradient-to-r from-[#f3f6f4] to-transparent" aria-hidden />
+      )}
+      {/* Indicador direito + chevron animado */}
+      {overflow.right && (
+        <>
+          <div className="absolute right-0 top-0 bottom-2 w-12 pointer-events-none z-20 bg-gradient-to-l from-[#f3f6f4] to-transparent" aria-hidden />
+          <button
+            type="button"
+            onClick={() => scrollRef.current?.scrollBy({ left: 280, behavior: 'smooth' })}
+            className="absolute right-1 top-1/2 -translate-y-1/2 z-30 inline-flex items-center justify-center w-8 h-8 rounded-full bg-white border border-slate-200 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.15)] text-[#005344] hover:bg-slate-50 hover:scale-105 transition-all animate-pulse"
+            aria-label="Ver mais ramificações à direita"
+          >
+            <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
+          </button>
+        </>
+      )}
+
+      <div ref={scrollRef} className="overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6 pb-2">
+        <div style={{ minWidth: `${minWidth}px` }} className="relative">
 
         {/* Topic Hub — centralizado horizontalmente */}
         <div className="flex justify-center relative z-10">
@@ -388,6 +427,7 @@ function VisualMode({ topic, byCategory, activeCategories, expanded, toggle }: {
             />
           ))}
         </div>
+      </div>
       </div>
     </div>
   );
