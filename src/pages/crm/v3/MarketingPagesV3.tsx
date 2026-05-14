@@ -458,6 +458,39 @@ export function EmailTemplatesV3() {
 /* =========================================================
    ATIVIDADE / ANALYTICS — dados reais de generation_logs + user_progression
    ========================================================= */
+/* ─── Estimativa de custo da IA ──────────────────────────────────
+ * Sem token logs por chamada, estimamos custo medio por function_name
+ * baseado em tokens medios observados (input + output) × precos da
+ * Gemini 2.5 Flash (junho/2026: $0.30/1M input, $2.50/1M output).
+ * Multiplicado por USD_BRL pra mostrar em reais.
+ */
+const USD_BRL = 5.5;
+const GEMINI_FLASH_IN_PER_1M = 0.30;
+const GEMINI_FLASH_OUT_PER_1M = 2.50;
+
+// Tokens medios por funcao (estimado por inspecao dos prompts/outputs)
+const AVG_TOKENS: Record<string, { in: number; out: number }> = {
+  "generate-fechamento": { in: 5500, out: 12000 },
+  "generate-exam":       { in: 3500, out: 5500 },
+  "generate-enamed":     { in: 4000, out: 6500 },
+  "generate-flashcards": { in: 2500, out: 3000 },
+  "scientific-mentor":   { in: 3500, out: 5500 },
+  "ai-chat":             { in: 3500, out: 1500 },
+  "support-chat":        { in: 2000, out: 1500 },
+};
+const FALLBACK_TOKENS = { in: 2000, out: 2000 };
+
+/** Custo estimado em USD de uma chamada da funcao */
+function estimateCostUsd(functionName: string): number {
+  const t = AVG_TOKENS[functionName] ?? FALLBACK_TOKENS;
+  return (t.in * GEMINI_FLASH_IN_PER_1M + t.out * GEMINI_FLASH_OUT_PER_1M) / 1_000_000;
+}
+
+/** Custo estimado em BRL (USD × cambio) */
+function estimateCostBrl(functionName: string): number {
+  return estimateCostUsd(functionName) * USD_BRL;
+}
+
 function useRealActivity() {
   return useQuery({
     queryKey: ["crm", "real-activity"],
@@ -653,6 +686,29 @@ export function AnalyticsV3() {
   const stickiness = (act?.mau ?? 0) > 0 ? Math.round(((act?.dau ?? 0) / (act?.mau ?? 1)) * 100) : 0;
   const maxDay = Math.max(1, ...((act?.timeseries ?? []).map((d) => d.calls)));
 
+  // ── Custo estimado de IA ──
+  const costStats = useMemo(() => {
+    const features = act?.topFeatures ?? [];
+    let totalUsd = 0;
+    const byFunction = features.map(f => {
+      const usd = estimateCostUsd(f.name) * f.calls;
+      totalUsd += usd;
+      return {
+        name: f.name,
+        calls: f.calls,
+        users: f.users,
+        usd,
+        brl: usd * USD_BRL,
+        unitBrl: estimateCostBrl(f.name),
+      };
+    }).sort((a, b) => b.usd - a.usd);
+    const totalBrl = totalUsd * USD_BRL;
+    const totalCalls = features.reduce((s, f) => s + f.calls, 0);
+    const avgPerCallBrl = totalCalls > 0 ? totalBrl / totalCalls : 0;
+    const costPerDauBrl = (act?.dau ?? 0) > 0 ? totalBrl / (act?.dau ?? 1) : 0;
+    return { totalUsd, totalBrl, byFunction, avgPerCallBrl, costPerDauBrl, totalCalls };
+  }, [act?.topFeatures, act?.dau]);
+
   return (
     <CrmShellV3 mode="marketing" crumbs={[{ label: "CRM" }, { label: "Marketing" }, { label: "Atividade" }]}>
       <main className="crm-page">
@@ -668,6 +724,32 @@ export function AnalyticsV3() {
           <Kpi label="MAU" value={fmt(act?.mau ?? 0)} deltaText="últimos 30 dias" />
           <Kpi label="Stickiness" value={`${stickiness}%`} deltaText="DAU / MAU" accent="warn" />
           <Kpi label="Calls IA / 30d" value={fmt(act?.totalCalls ?? 0)} deltaText="generation_logs" />
+        </section>
+
+        {/* ── KPIs de custo de IA ── */}
+        <section className="crm-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+          <Kpi
+            label="Custo IA · 30d"
+            value={`R$ ${costStats.totalBrl.toFixed(2)}`}
+            deltaText={`~US$ ${costStats.totalUsd.toFixed(2)} · estimado`}
+            accent="neg"
+          />
+          <Kpi
+            label="Custo médio / chamada"
+            value={`R$ ${costStats.avgPerCallBrl.toFixed(3)}`}
+            deltaText={`${fmt(costStats.totalCalls)} chamadas`}
+          />
+          <Kpi
+            label="Custo / DAU"
+            value={`R$ ${costStats.costPerDauBrl.toFixed(2)}`}
+            deltaText="por usuário ativo hoje"
+          />
+          <Kpi
+            label="Projeção 30d"
+            value={`R$ ${(costStats.totalBrl).toFixed(2)}`}
+            deltaText={`Anualizado: R$ ${(costStats.totalBrl * 12).toFixed(0)}`}
+            accent="warn"
+          />
         </section>
 
         {isLoading ? (
@@ -812,6 +894,58 @@ export function AnalyticsV3() {
               ) : (
                 <div style={{ padding: 32, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>Sem chamadas em generation_logs.</div>
               )}
+            </section>
+
+            {/* Custos de IA · breakdown por feature */}
+            <section className="crm-card">
+              <CardHead
+                title="Custo estimado de IA · 30d"
+                sub={`Baseado em tokens médios por chamada × preços Gemini 2.5 Flash · câmbio USD ${USD_BRL.toFixed(2)} BRL`}
+              />
+              {costStats.byFunction.length > 0 ? (
+                <table className="crm-tbl">
+                  <thead>
+                    <tr>
+                      <th>Feature</th>
+                      <th style={{ textAlign: "right" }}>Chamadas</th>
+                      <th style={{ textAlign: "right" }}>Usuários</th>
+                      <th style={{ textAlign: "right" }}>Custo unitário</th>
+                      <th style={{ textAlign: "right" }}>Custo total</th>
+                      <th style={{ textAlign: "right" }}>% do total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {costStats.byFunction.map((f) => {
+                      const pct = costStats.totalBrl > 0 ? (f.brl / costStats.totalBrl) * 100 : 0;
+                      return (
+                        <tr key={f.name}>
+                          <td>{FEATURE_LABELS[f.name] ?? f.name}</td>
+                          <td className="num">{fmt(f.calls)}</td>
+                          <td className="num muted">{f.users}</td>
+                          <td className="num muted">R$ {f.unitBrl.toFixed(3)}</td>
+                          <td className="num"><strong style={{ color: "var(--crm-green-deep)" }}>R$ {f.brl.toFixed(2)}</strong></td>
+                          <td className="num muted">{pct.toFixed(1)}%</td>
+                        </tr>
+                      );
+                    })}
+                    <tr style={{ borderTop: "2px solid var(--crm-border)", fontWeight: 700 }}>
+                      <td>Total</td>
+                      <td className="num">{fmt(costStats.totalCalls)}</td>
+                      <td></td>
+                      <td className="num muted">R$ {costStats.avgPerCallBrl.toFixed(3)} médio</td>
+                      <td className="num" style={{ color: "var(--crm-green-deep)" }}>R$ {costStats.totalBrl.toFixed(2)}</td>
+                      <td className="num">100%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{ padding: 32, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
+                  Sem chamadas em <code>generation_logs</code> nos últimos 30d.
+                </div>
+              )}
+              <div style={{ padding: "12px 20px", fontSize: 11, color: "var(--crm-ink-4)", borderTop: "1px solid var(--crm-border)", lineHeight: 1.5 }}>
+                ⚠️ <strong>Estimativa</strong> — sem token logs por chamada, usamos médias por function_name (5500 in + 12000 out pra fechamento, 3500 + 1500 pra chat, etc.). Para custo exato, ative o Cloud Billing do Gemini ou logue <code>usageMetadata.totalTokenCount</code> por chamada nas edge functions.
+              </div>
             </section>
 
             {/* Streaks */}
