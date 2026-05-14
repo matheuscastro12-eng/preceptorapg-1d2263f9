@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import CrmShellV3, { Kpi, PageHero, PeriodBar, CardHead } from "@/components/crm/v3/CrmShellV3";
 import {
   Plus, Download, Send, Activity, Edit3, Eye, Gift, UserX, Loader2,
@@ -613,10 +613,42 @@ function fmtRelative(iso: string): string {
   return `há ${Math.floor(diff / 86400000)} dias`;
 }
 
+type TopUserSortKey = "index" | "user" | "calls" | "features" | "lastUsed";
+
 export function AnalyticsV3() {
   const { data: act, isLoading } = useRealActivity();
   const { data: streaks } = useStreakLeaders();
   const { data: utm } = useUtmBreakdown();
+
+  // Ordenacao da tabela "Top usuarios ativos" — click na <th> ordena, click denovo inverte
+  const [topUsersSort, setTopUsersSort] = useState<{ key: TopUserSortKey; dir: "asc" | "desc" }>({ key: "calls", dir: "desc" });
+  const toggleTopUsersSort = (key: TopUserSortKey) => {
+    setTopUsersSort(prev => prev.key === key
+      ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+      : { key, dir: key === "user" ? "asc" : "desc" });
+  };
+  const sortedTopUsers = useMemo(() => {
+    const list = act?.topUsers ?? [];
+    if (list.length === 0) return list;
+    const dirMul = topUsersSort.dir === "asc" ? 1 : -1;
+    const getKey = (u: any, key: TopUserSortKey) => {
+      switch (key) {
+        case "user": return (u.name ?? u.email ?? "").toLowerCase();
+        case "calls": return Number(u.calls ?? 0);
+        case "features": return Number(u.features ?? 0);
+        case "lastUsed": return new Date(u.lastUsed ?? 0).getTime();
+        default: return 0;
+      }
+    };
+    if (topUsersSort.key === "index") return [...list]; // ordem natural
+    return [...list].sort((a, b) => {
+      const av = getKey(a, topUsersSort.key);
+      const bv = getKey(b, topUsersSort.key);
+      if (av < bv) return -1 * dirMul;
+      if (av > bv) return  1 * dirMul;
+      return 0;
+    });
+  }, [act?.topUsers, topUsersSort]);
 
   const stickiness = (act?.mau ?? 0) > 0 ? Math.round(((act?.dau ?? 0) / (act?.mau ?? 1)) * 100) : 0;
   const maxDay = Math.max(1, ...((act?.timeseries ?? []).map((d) => d.calls)));
@@ -724,12 +756,20 @@ export function AnalyticsV3() {
 
             {/* Top users */}
             <section className="crm-card">
-              <CardHead title="Top usuários ativos · 30d" sub={`Ordenados por chamadas de IA · top ${(act?.topUsers ?? []).length}`} />
-              {(act?.topUsers ?? []).length > 0 ? (
+              <CardHead title="Top usuários ativos · 30d" sub={`Clique no cabeçalho para ordenar · top ${(act?.topUsers ?? []).length}`} />
+              {sortedTopUsers.length > 0 ? (
                 <table className="crm-tbl">
-                  <thead><tr><th>#</th><th>Usuário</th><th style={{ textAlign: "right" }}>Calls IA</th><th style={{ textAlign: "right" }}>Features</th><th>Última atividade</th></tr></thead>
+                  <thead>
+                    <tr>
+                      <SortableTh label="#" sortKey="index" align="left" current={topUsersSort} onToggle={toggleTopUsersSort} />
+                      <SortableTh label="Usuário" sortKey="user" align="left" current={topUsersSort} onToggle={toggleTopUsersSort} />
+                      <SortableTh label="Calls IA" sortKey="calls" align="right" current={topUsersSort} onToggle={toggleTopUsersSort} />
+                      <SortableTh label="Features" sortKey="features" align="right" current={topUsersSort} onToggle={toggleTopUsersSort} />
+                      <SortableTh label="Última atividade" sortKey="lastUsed" align="left" current={topUsersSort} onToggle={toggleTopUsersSort} />
+                    </tr>
+                  </thead>
                   <tbody>
-                    {(act?.topUsers ?? []).map((u, i) => (
+                    {sortedTopUsers.map((u, i) => (
                       <tr key={u.user_id}>
                         <td className="muted crm-mono" style={{ fontSize: 11 }}>{i + 1}</td>
                         <td>
@@ -1323,3 +1363,38 @@ function days(rows: any[]) {
 
 // Suprime warnings de imports não usados (usados em variantes condicionais)
 void Activity; void PLAN_TAG; void PLAN_LABEL;
+
+// ── Cabeçalho de tabela clicavel pra ordenar ──
+// Generico em <K extends string>. Reaproveitavel em qualquer tabela com sortKey.
+function SortableTh<K extends string>({
+  label, sortKey, align = "left", current, onToggle,
+}: {
+  label: string;
+  sortKey: K;
+  align?: "left" | "right";
+  current: { key: K; dir: "asc" | "desc" };
+  onToggle: (key: K) => void;
+}) {
+  const active = current.key === sortKey;
+  const arrow = active ? (current.dir === "asc" ? "▲" : "▼") : "";
+  return (
+    <th
+      onClick={() => onToggle(sortKey)}
+      style={{
+        cursor: "pointer",
+        userSelect: "none",
+        textAlign: align,
+        color: active ? "var(--crm-green-deep)" : undefined,
+        whiteSpace: "nowrap",
+      }}
+      title={`Ordenar por ${label}`}
+    >
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+        {label}
+        <span style={{ fontSize: 9, opacity: active ? 1 : 0.25, transition: "opacity .15s" }}>
+          {arrow || "▼"}
+        </span>
+      </span>
+    </th>
+  );
+}
