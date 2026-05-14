@@ -335,10 +335,31 @@ const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = 
                         <EyeOff className="h-3 w-3" /> Ocultar
                       </button>
                     </div>
-                    {currentQ.explanation && (
+
+                    {/* Texto da alternativa correta — sempre visivel */}
+                    {(() => {
+                      const correctAlt = currentQ.alternatives.find(a => a.letter === currentQ.correctAnswer);
+                      if (!correctAlt) return null;
+                      return (
+                        <div className="mb-3 p-3 rounded-lg bg-[#005344]/04 border border-[#005344]/15">
+                          <p className="text-[12px] leading-relaxed text-[#003D32]">
+                            <strong className="font-bold">Alternativa correta:</strong>{' '}
+                            <span className="font-semibold">{correctAlt.letter})</span>{' '}
+                            {correctAlt.text}
+                          </p>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Explicação (se existir) ou fallback */}
+                    {currentQ.explanation && currentQ.explanation.trim() ? (
                       <div className="prose prose-sm max-w-none text-[12.5px] leading-relaxed text-[#3E4945] prose-strong:text-[#191C1D] prose-headings:font-['Manrope']">
                         <MarkdownRenderer content={currentQ.explanation} />
                       </div>
+                    ) : (
+                      <p className="text-[11.5px] text-[#94a3b8] italic leading-relaxed">
+                        Explicação detalhada ainda não disponível para esta questão. Use o chat lateral pra discutir o raciocínio.
+                      </p>
                     )}
                   </div>
                 </div>
