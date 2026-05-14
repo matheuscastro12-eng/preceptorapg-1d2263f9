@@ -12,6 +12,20 @@ export interface ExamConfig {
   practiceMode: PracticeMode;
 }
 
+export interface ExamPdf {
+  name: string;
+  mimeType: string;
+  data: string; // base64
+  sizeKB: number;
+}
+
+export interface ExamGenerateOptions {
+  /** Materias/temas livres (modo "topicos") — alternativa a conteudo da biblioteca */
+  materias?: string[];
+  /** PDFs anexados como fonte primaria */
+  pdfs?: ExamPdf[];
+}
+
 export const useExamGenerator = () => {
   const { toast } = useToast();
   const [resultado, setResultado] = useState('');
@@ -20,11 +34,13 @@ export const useExamGenerator = () => {
   const [isComplete, setIsComplete] = useState(false);
   const [currentConfig, setCurrentConfig] = useState<ExamConfig | null>(null);
 
-  const generate = useCallback(async (conteudo: string, config: ExamConfig) => {
-    if (!conteudo.trim()) {
+  const generate = useCallback(async (conteudo: string, config: ExamConfig, opts: ExamGenerateOptions = {}) => {
+    const hasMaterias = (opts.materias?.length ?? 0) > 0;
+    const hasPdfs = (opts.pdfs?.length ?? 0) > 0;
+    if (!conteudo.trim() && !hasMaterias && !hasPdfs) {
       toast({
         title: 'Conteúdo obrigatório',
-        description: 'Selecione pelo menos um resumo ou seminário da biblioteca.',
+        description: 'Selecione um resumo da biblioteca, ou digite matérias/anexe um PDF.',
         variant: 'destructive',
       });
       return;
@@ -55,6 +71,8 @@ export const useExamGenerator = () => {
             quantidade: config.quantidade,
             nivel: config.nivel,
             modo: config.practiceMode,
+            materias: opts.materias,
+            pdfs: opts.pdfs?.map(p => ({ name: p.name, mimeType: p.mimeType, data: p.data })),
           }),
         }
       );

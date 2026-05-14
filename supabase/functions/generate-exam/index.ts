@@ -302,17 +302,60 @@ serve(async (req) => {
 
     // Parse and validate input
     const body = await req.json();
-    const { conteudo, quantidade, nivel, modo = "prova" } = body;
+    const { conteudo, quantidade, nivel, modo = "prova", materias: rawMaterias, pdfs: rawPdfs } = body;
 
-    if (!conteudo || typeof conteudo !== "string" || !conteudo.trim()) {
+    // Modo "topicos livres": user fornece lista de materias OU PDFs em vez de
+    // conteudo da biblioteca. Aceita 1 ou ambos.
+    const materias: string[] = Array.isArray(rawMaterias)
+      ? rawMaterias.filter((m: unknown) => typeof m === "string" && m.trim()).map((m: string) => m.trim()).slice(0, 30)
+      : [];
+
+    interface AttachedPdf { name: string; mimeType: string; data: string }
+    const MAX_PDFS = 3;
+    const MAX_PDF_BASE64 = 7_000_000;
+    const pdfs: AttachedPdf[] = [];
+    if (Array.isArray(rawPdfs) && rawPdfs.length > 0) {
+      if (rawPdfs.length > MAX_PDFS) {
+        return new Response(
+          JSON.stringify({ error: `Maximo ${MAX_PDFS} PDFs por simulado` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      for (const p of rawPdfs) {
+        if (!p || typeof p !== "object") continue;
+        if (p.mimeType !== "application/pdf") {
+          return new Response(
+            JSON.stringify({ error: `Apenas PDF: ${p.mimeType}` }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        if (!p.data || p.data.length > MAX_PDF_BASE64) {
+          return new Response(
+            JSON.stringify({ error: "PDF invalido ou maior que 5MB" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        pdfs.push({ name: String(p.name ?? "").slice(0, 200), mimeType: p.mimeType, data: p.data });
+      }
+    }
+
+    const hasCustomInputs = materias.length > 0 || pdfs.length > 0;
+    if (!hasCustomInputs && (!conteudo || typeof conteudo !== "string" || !conteudo.trim())) {
       return new Response(
-        JSON.stringify({ error: "Conteúdo é obrigatório" }),
+        JSON.stringify({ error: "Conteúdo é obrigatório (envie matérias, PDFs ou texto base)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Smart truncation: keep headings + key content from each topic
-    let sanitizedConteudo = conteudo;
+    // Smart truncation: keep headings + key content from each topic.
+    // Quando user enviou apenas materias/PDFs (sem texto base), construimos
+    // um placeholder textual a partir das materias — Gemini ainda usa os PDFs
+    // anexados como fonte primaria.
+    let sanitizedConteudo: string = typeof conteudo === "string" && conteudo.trim()
+      ? conteudo
+      : materias.length > 0
+        ? `O estudante quer ser avaliado nos seguintes temas/materias:\n\n${materias.map((m, i) => `${i + 1}. ${m}`).join("\n")}\n\nElabore questoes cobrindo CADA um desses temas com profundidade tecnica adequada ao nivel solicitado. Distribua as questoes proporcionalmente entre os temas — nao deixe nenhum tema sem cobertura.`
+        : "Use os PDFs anexados como fonte unica do conteudo. Elabore questoes baseadas no que esta neles.";
     if (conteudo.length > MAX_CONTENT_LENGTH) {
       // Split by topic separator and extract key content from each
       const topics = conteudo.split(/\n---\n|\n#{2}\s/);
@@ -396,6 +439,27 @@ ${sanitizedConteudo}
 - NÃO pare antes de completar a questão ${numQuestions}`;
     }
 
+    // Anexa PDFs como inlineData parts (Gemini multimodal) — fonte preferencial
+    // sobre conhecimento geral. Bloco de instrucao injetado no prompt do user.
+    const attachmentParts = pdfs.map(p => ({
+      inlineData: { mimeType: p.mimeType, data: p.data },
+    }));
+
+    let finalUserPrompt = userPrompt;
+    if (pdfs.length > 0) {
+      finalUserPrompt += `
+
+# ARQUIVOS ANEXADOS PELO ESTUDANTE (FONTE PREFERENCIAL)
+
+O estudante anexou ${pdfs.length} PDF(s) a esta solicitacao:
+${pdfs.map((p, i) => `${i + 1}. "${p.name}"`).join("\n")}
+
+Regras:
+1. Use o conteudo dos PDFs como **base principal** das questoes. Quando o PDF contiver tema relevante, elabore questoes a partir dele.
+2. Mantenha o nivel de dificuldade (${sanitizedNivel === "basico" ? "Ciclo Basico" : "Residencia/Internato"}) e a quantidade exata de questoes.
+3. As materias/temas fornecidos pelo estudante (se houver) ainda devem ser cobertos — combine PDFs + materias na elaboracao.`;
+    }
+
     // Call Google Gemini API with SSE streaming
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GOOGLE_AI_API_KEY}`;
 
@@ -405,7 +469,7 @@ ${sanitizedConteudo}
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemPrompt }] },
         contents: [
-          { role: "user", parts: [{ text: userPrompt }] },
+          { role: "user", parts: [...attachmentParts, { text: finalUserPrompt }] },
         ],
         generationConfig: {
           temperature: 0.7,
