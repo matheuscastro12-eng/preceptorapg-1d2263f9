@@ -191,6 +191,24 @@ const EnamedBankSimulation = ({ questions, onFinish, onExit, loading }: EnamedBa
           {/* Enunciado */}
           <div className="text-sm leading-relaxed whitespace-pre-wrap">{currentQ.enunciado}</div>
 
+          {/* Imagem do enunciado (ECG / RX / tabela / fluxograma) */}
+          {currentQ.imagem_url && (
+            <figure className="mt-4 rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-50">
+              <a href={currentQ.imagem_url} target="_blank" rel="noopener noreferrer" className="block group">
+                <img
+                  src={currentQ.imagem_url}
+                  alt={`Imagem da questão ${currentQ.numero}`}
+                  loading="lazy"
+                  className="w-full h-auto max-h-[600px] object-contain transition-opacity group-hover:opacity-90"
+                />
+                <figcaption className="px-3 py-2 text-[11px] text-[#94a3b8] font-medium border-t border-slate-200 inline-flex items-center gap-1.5 w-full">
+                  <span className="material-symbols-outlined text-[14px]">image</span>
+                  Imagem da prova original — clique para abrir em tamanho real
+                </figcaption>
+              </a>
+            </figure>
+          )}
+
           {/* Alternatives */}
           <div className="space-y-2">
             {alternatives.map((alt) => {

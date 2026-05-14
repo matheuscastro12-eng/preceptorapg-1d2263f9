@@ -22,6 +22,8 @@ export interface EnamedQuestion {
   anulada: boolean;
   /** 'enamed' | 'revalida' — fonte da questao no banco oficial INEP */
   source?: string;
+  /** URL publica da imagem (ECG, RX, tabela, etc) quando a questao tem figura no enunciado */
+  imagem_url?: string | null;
 }
 
 /** Label da prova de origem pra mostrar no UI ("ENAMED 2025" | "Revalida 2024.2" etc) */
