@@ -20,6 +20,19 @@ export interface EnamedQuestion {
   explicacao: string | null;
   ano: number;
   anulada: boolean;
+  /** 'enamed' | 'revalida' — fonte da questao no banco oficial INEP */
+  source?: string;
+}
+
+/** Label da prova de origem pra mostrar no UI ("ENAMED 2025" | "Revalida 2024.2" etc) */
+export function sourceLabel(source: string | undefined, ano: number): string {
+  const s = (source ?? 'enamed').toLowerCase();
+  if (s === 'revalida') {
+    // 2024 = 2024.2, 2025 = 2025.1 — convencao do nosso ingest
+    const edicao = ano === 2024 ? '2024.2' : ano === 2025 ? '2025.1' : String(ano);
+    return `Revalida ${edicao}`;
+  }
+  return `ENAMED ${ano}`;
 }
 
 export const AREA_LABELS: Record<string, string> = {

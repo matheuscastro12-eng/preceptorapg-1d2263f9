@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, RotateCcw, Trophy, Eye, EyeOff, Loader2 } from 'lucide-react';
 import type { EnamedQuestion } from '@/hooks/useEnamedBank';
-import { AREA_LABELS } from '@/hooks/useEnamedBank';
+import { AREA_LABELS, sourceLabel } from '@/hooks/useEnamedBank';
 
 interface EnamedBankSimulationProps {
   questions: EnamedQuestion[];
@@ -178,7 +178,11 @@ const EnamedBankSimulation = ({ questions, onFinish, onExit, loading }: EnamedBa
                 Tema oculto
               </span>
             )}
-            <span className="text-xs text-muted-foreground">ENAMED {currentQ.ano}</span>
+            <span className="text-[10.5px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-md" style={{
+              background: (currentQ as any).source === 'revalida' ? 'rgba(201,168,76,0.12)' : 'rgba(0,109,91,0.08)',
+              color: (currentQ as any).source === 'revalida' ? '#8a6f26' : '#005344',
+              border: `1px solid ${(currentQ as any).source === 'revalida' ? 'rgba(201,168,76,0.3)' : 'rgba(0,109,91,0.2)'}`,
+            }}>{sourceLabel((currentQ as any).source, currentQ.ano)}</span>
             {currentQ.anulada && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/20 text-destructive font-medium">ANULADA</span>
             )}
