@@ -49,6 +49,9 @@ const Enamed = () => {
   const [mode, setMode] = useState<EnamedMode>(searchParams.get('area') === 'true' ? 'ia_area' : 'menu');
   const [selectedArea, setSelectedArea] = useState<EnamedArea | null>(null);
   const [source, setSource] = useState<EnamedSource>('banco');
+  // Filtro do banco: ENAMED INEP, Revalida ou ambos. A banca eh a mesma
+  // (INEP/MEC) — Revalida usa o mesmo padrao tecnico.
+  const [bankSource, setBankSource] = useState<'all' | 'enamed' | 'revalida'>('all');
 
   // Sync mode with URL params when navigating between ENAMED and Simulado por Área
   useEffect(() => {
@@ -97,7 +100,9 @@ const Enamed = () => {
     setMode(m);
     setSelectedArea(area || null);
 
-    const opts: { area?: EnamedArea; limit?: number; shuffle?: boolean } = {};
+    const opts: { area?: EnamedArea; limit?: number; shuffle?: boolean; source?: 'all' | 'enamed' | 'revalida' } = {
+      source: bankSource,
+    };
     if (m === 'revisao') { opts.shuffle = true; opts.limit = 20; }
     await fetchQuestions(opts);
   };
@@ -203,13 +208,42 @@ const Enamed = () => {
 
                 {/* ── Banco oficial INEP ── */}
                 <section>
-                  <div className="flex items-baseline justify-between mb-3">
+                  <div className="flex items-baseline justify-between mb-3 flex-wrap gap-2">
                     <label className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a5568] inline-flex items-center gap-2">
                       ② Banco oficial INEP
                       <span className="text-[9.5px] font-medium normal-case tracking-normal text-[#94a3b8]">
                         questões reais com gabarito comentado
                       </span>
                     </label>
+
+                    {/* Toggle ENAMED / Revalida / Ambos */}
+                    <div className="inline-flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-lg">
+                      {([
+                        { v: 'all',      label: 'Ambos' },
+                        { v: 'enamed',   label: 'ENAMED' },
+                        { v: 'revalida', label: 'Revalida' },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.v}
+                          onClick={() => setBankSource(opt.v)}
+                          className={`px-3 h-7 rounded-md text-[11px] font-bold transition-all ${
+                            bankSource === opt.v
+                              ? 'bg-white text-[#005344] shadow-[0_1px_3px_rgba(0,83,68,0.15)]'
+                              : 'text-[#4a5568] hover:text-[#191C1D]'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Nota explicativa */}
+                  <div className="mb-3 px-3 py-2 rounded-lg bg-[#C9A84C]/08 border border-[#C9A84C]/25 flex items-start gap-2">
+                    <span className="material-symbols-outlined text-[#8a6f26] text-[16px] mt-0.5">info</span>
+                    <p className="text-[11.5px] leading-snug text-[#4a5568]">
+                      <strong className="text-[#191C1D]">ENAMED e Revalida</strong> são organizados pela <strong>mesma banca (INEP/MEC)</strong> com o mesmo padrão técnico. As duas provas testam o mesmo conjunto de competências clínicas — por isso usar as questões em conjunto amplia muito sua base de estudo sem perder qualidade.
+                    </p>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button

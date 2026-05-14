@@ -434,19 +434,58 @@ function ProgressHeader({
 
 function LoadingState({ eyebrow, title, hint, compact }: { eyebrow: string; title: string; hint: string; compact?: boolean }) {
   return (
-    <div className={`flex-1 flex flex-col items-center justify-center text-center ${compact ? 'py-8' : 'py-16'} space-y-3`}>
-      <div className="relative">
-        <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-[#003D32] to-[#006D5B] flex items-center justify-center shadow-[0_8px_24px_-8px_rgba(0,109,91,0.5)]">
-          <Loader2 className="h-5 w-5 text-white animate-spin" />
+    <div className={`flex-1 w-full flex items-center justify-center ${compact ? 'py-6' : 'py-10'}`}>
+      <div className="w-full max-w-2xl mx-auto relative overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        {/* Ribbon top */}
+        <div className="h-[3px] bg-gradient-to-r from-[#003D32] via-[#005344] via-50% to-[#C9A84C]" />
+
+        {/* Decoração SVG ao fundo */}
+        <svg
+          className="absolute right-0 top-0 h-full pointer-events-none opacity-[0.06]"
+          width="280" height="100%" viewBox="0 0 280 200" preserveAspectRatio="xMaxYMid slice"
+        >
+          <defs>
+            <pattern id="loading-dots" width="16" height="16" patternUnits="userSpaceOnUse">
+              <circle cx="8" cy="8" r="0.7" fill="#005344" />
+            </pattern>
+          </defs>
+          <rect width="280" height="200" fill="url(#loading-dots)" />
+          <circle cx="220" cy="100" r="55" fill="none" stroke="#005344" strokeWidth="1" />
+          <circle cx="220" cy="100" r="38" fill="none" stroke="#005344" strokeWidth="0.7" strokeDasharray="3 3" />
+          <circle cx="220" cy="100" r="22" fill="none" stroke="#C9A84C" strokeWidth="1" />
+        </svg>
+
+        <div className="relative flex items-center gap-5 px-6 sm:px-8 py-6 sm:py-8">
+          {/* Loader cube */}
+          <div className="shrink-0 relative">
+            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#003D32] to-[#006D5B] flex items-center justify-center shadow-[0_10px_24px_-10px_rgba(0,109,91,0.55)]">
+              <Loader2 className="h-6 w-6 text-white animate-spin" />
+            </div>
+            <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-[#C9A84C] ring-2 ring-white animate-pulse" />
+          </div>
+
+          {/* Texto */}
+          <div className="min-w-0 flex-1">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2 mb-1.5">
+              <span className="w-5 h-px bg-[#C9A84C]" />
+              {eyebrow}
+            </p>
+            <p className="font-['Manrope'] font-bold text-[18px] sm:text-[20px] text-[#191C1D] tracking-[-0.015em] leading-tight">{title}</p>
+            <p className="text-[12.5px] text-[#4a5568] mt-1 leading-snug">{hint}</p>
+          </div>
         </div>
-        <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-[#C9A84C] ring-2 ring-white animate-pulse" />
+
+        {/* Animação de pontos progressivos no rodapé */}
+        <div className="px-6 sm:px-8 pb-5 flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#005344] animate-[wave_1.2s_ease-in-out_infinite]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[#005344] animate-[wave_1.2s_ease-in-out_0.2s_infinite]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[#005344] animate-[wave_1.2s_ease-in-out_0.4s_infinite]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[#C9A84C]/60 animate-[wave_1.2s_ease-in-out_0.6s_infinite]" />
+          <span className="ml-2 text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#94a3b8]">
+            Streaming
+          </span>
+        </div>
       </div>
-      <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2">
-        <span className="w-5 h-px bg-[#C9A84C]" />
-        {eyebrow}
-      </p>
-      <p className="font-['Manrope'] font-bold text-[16px] text-[#191C1D] tracking-[-0.01em] leading-tight">{title}</p>
-      <p className="text-[12px] text-[#4a5568] max-w-[36ch]">{hint}</p>
     </div>
   );
 }

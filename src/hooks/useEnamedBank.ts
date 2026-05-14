@@ -4,6 +4,9 @@ import { useToast } from '@/hooks/use-toast';
 
 export type EnamedArea = 'clinica_medica' | 'cirurgia' | 'ginecologia_obstetricia' | 'pediatria' | 'saude_coletiva';
 
+/** Origem da questao: o banco oficial INEP (ENAMED) ou Revalida (mesma banca, prova diferente) */
+export type QuestionSource = 'all' | 'enamed' | 'revalida';
+
 export interface EnamedQuestion {
   id: string;
   numero: number;
@@ -32,7 +35,7 @@ export const useEnamedBank = () => {
   const [questions, setQuestions] = useState<EnamedQuestion[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchQuestions = useCallback(async (opts?: { area?: EnamedArea; limit?: number; shuffle?: boolean }) => {
+  const fetchQuestions = useCallback(async (opts?: { area?: EnamedArea; limit?: number; shuffle?: boolean; source?: QuestionSource }) => {
     setLoading(true);
     try {
       let query = supabase
@@ -42,6 +45,9 @@ export const useEnamedBank = () => {
 
       if (opts?.area) {
         query = query.eq('area', opts.area);
+      }
+      if (opts?.source && opts.source !== 'all') {
+        query = query.eq('source', opts.source);
       }
 
       const { data, error } = await query.order('numero', { ascending: true });
