@@ -293,6 +293,87 @@ const Enamed = () => {
                       ))}
                     </div>
                   </div>
+
+                  {/* CTA contextual — aparece dinamicamente conforme bankSource muda */}
+                  {(() => {
+                    const cfg = bankSource === 'revalida'
+                      ? {
+                          eyebrow: 'Revalida selecionado',
+                          title: 'Iniciar simulado Revalida',
+                          desc: `${bankStats.revalida} questões oficiais das edições 2024.2 e 2025.1. Padrão real da prova, com gabarito e cronômetro.`,
+                          ribbon: 'from-[#8a6f26] to-[#C9A84C]',
+                          accent: '#8a6f26',
+                        }
+                      : bankSource === 'enamed'
+                        ? {
+                            eyebrow: 'ENAMED selecionado',
+                            title: 'Iniciar simulado ENAMED',
+                            desc: `${bankStats.enamed} questões oficiais do banco INEP. Padrão real da prova, com gabarito e cronômetro.`,
+                            ribbon: 'from-[#003D32] to-[#005344]',
+                            accent: '#005344',
+                          }
+                        : {
+                            eyebrow: 'Banco completo selecionado',
+                            title: 'Iniciar simulado com ambos os bancos',
+                            desc: `${bankStats.total} questões combinadas ENAMED + Revalida. Maior cobertura possível.`,
+                            ribbon: 'from-[#005344] to-[#C9A84C]',
+                            accent: '#005344',
+                          };
+                    return (
+                      <div
+                        key={bankSource}
+                        className="relative rounded-xl border-2 overflow-hidden mb-3 animate-fade-up"
+                        style={{ borderColor: `${cfg.accent}30`, background: `linear-gradient(135deg, ${cfg.accent}06, ${cfg.accent}02)` }}
+                      >
+                        <div className={`h-1 bg-gradient-to-r ${cfg.ribbon}`} />
+                        <div className="p-4 sm:p-5 flex items-center gap-4">
+                          <div className="shrink-0 hidden sm:block">
+                            <div className="h-12 w-12 rounded-xl flex items-center justify-center text-white shadow-[0_4px_12px_-4px_rgba(0,0,0,0.2)]"
+                                 style={{ background: `linear-gradient(135deg, ${cfg.accent}, ${cfg.accent}dd)` }}>
+                              <MI name="play_arrow" fill className="text-[22px]" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] inline-flex items-center gap-2 mb-1" style={{ color: cfg.accent }}>
+                              <span className="w-4 h-px" style={{ background: cfg.accent }} />
+                              {cfg.eyebrow}
+                            </p>
+                            <h4 className="font-['Manrope'] font-bold text-[14px] sm:text-[15px] text-[#191C1D] tracking-[-0.01em] leading-tight">
+                              {cfg.title}
+                            </h4>
+                            <p className="text-[11.5px] text-[#4a5568] mt-1 leading-snug">
+                              {cfg.desc}
+                            </p>
+                          </div>
+                          <div className="shrink-0 flex items-center gap-2">
+                            <button
+                              onClick={() => startBankMode('revisao')}
+                              className="hidden sm:inline-flex h-10 px-3 rounded-lg text-[11.5px] font-bold border-2 transition-all"
+                              style={{
+                                borderColor: `${cfg.accent}40`,
+                                color: cfg.accent,
+                                background: 'white',
+                              }}
+                            >
+                              Só 20
+                            </button>
+                            <button
+                              onClick={() => startBankMode('completo')}
+                              className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-['Manrope'] text-[12px] font-bold text-white transition-all group relative overflow-hidden"
+                              style={{
+                                background: `linear-gradient(135deg, ${cfg.accent}, ${cfg.accent}cc)`,
+                                boxShadow: `0 4px 14px -4px ${cfg.accent}80`,
+                              }}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                              <span className="relative">Iniciar agora</span>
+                              <MI name="arrow_forward" className="text-[16px] relative group-hover:translate-x-0.5 transition-transform" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button
                       onClick={() => startBankMode('completo')}
