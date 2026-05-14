@@ -3,9 +3,17 @@ import { supabase } from "@/lib/crm/supabase";
 
 export interface FluxoCaixa {
   id: string;
+  /** Saldo efetivo HOJE = baseline manual + receitas - despesas desde baseline */
   saldo_atual: number;
+  /** Saldo manual (snapshot que o user lancou) — antes de aplicar mov. automaticos */
+  saldo_baseline: number;
+  /** Data do snapshot manual */
   data_atualizacao: string;
   observacoes: string | null;
+  /** Total de receitas realizadas desde a data do baseline */
+  receitas_realizadas: number;
+  /** Total de despesas realizadas desde a data do baseline */
+  despesas_realizadas: number;
 }
 
 export interface ProjecaoDia {
@@ -13,6 +21,16 @@ export interface ProjecaoDia {
   saldo: number;
 }
 
+/**
+ * Saldo de caixa *efetivo* HOJE. Antes era so o snapshot manual em
+ * admin_fluxo_caixa.saldo_atual — agora aplicamos automaticamente:
+ *   + receitas (admin_receitas) com data_inicio >= baseline e status=ativo
+ *   - despesas (admin_despesas) com data >= baseline
+ *
+ * Resultado: cadastrar despesa OU receber pagamento EasyFlow ja altera o
+ * saldo sem precisar editar manualmente. O baseline serve apenas pra
+ * estabelecer um ponto de partida (saldo do banco no dia X).
+ */
 export function useFluxoCaixa() {
   return useQuery({
     queryKey: ["crm-admin", "fluxo-caixa"],
@@ -24,7 +42,37 @@ export function useFluxoCaixa() {
         .limit(1)
         .single();
       if (error && error.code !== "PGRST116") throw error;
-      return data ? { ...data, saldo_atual: Number(data.saldo_atual) } as FluxoCaixa : null;
+      if (!data) return null;
+
+      const baseline = Number(data.saldo_atual);
+      const baselineDate = (data.data_atualizacao ?? "").slice(0, 10);
+
+      // Receitas realizadas desde o baseline (data_inicio >= baseline)
+      const { data: receitas } = await supabase
+        .from("admin_receitas")
+        .select("valor")
+        .gte("data_inicio", baselineDate)
+        .eq("status", "ativo");
+      const receitasTotal = (receitas ?? []).reduce((s, r) => s + Number(r.valor), 0);
+
+      // Despesas realizadas desde o baseline (data >= baseline)
+      const { data: despesas } = await supabase
+        .from("admin_despesas")
+        .select("valor")
+        .gte("data", baselineDate);
+      const despesasTotal = (despesas ?? []).reduce((s, d) => s + Number(d.valor), 0);
+
+      const saldoEfetivo = baseline + receitasTotal - despesasTotal;
+
+      return {
+        id: data.id,
+        saldo_atual: Math.round(saldoEfetivo * 100) / 100,
+        saldo_baseline: baseline,
+        data_atualizacao: data.data_atualizacao,
+        observacoes: data.observacoes,
+        receitas_realizadas: Math.round(receitasTotal * 100) / 100,
+        despesas_realizadas: Math.round(despesasTotal * 100) / 100,
+      } as FluxoCaixa;
     },
   });
 }

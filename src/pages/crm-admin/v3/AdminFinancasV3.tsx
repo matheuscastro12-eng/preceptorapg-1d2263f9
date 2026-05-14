@@ -335,9 +335,16 @@ export function FluxoCaixaV3() {
         />
 
         <section className="crm-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
-          <Kpi label="Saldo total" value={fluxo ? fmtBRL(fluxo.saldo_atual) : "—"}
-            deltaText={fluxo?.data_atualizacao ? `atualizado ${new Date(fluxo.data_atualizacao).toLocaleDateString("pt-BR")}` : "sem dado"}
-            accent="mrr" />
+          <Kpi
+            label="Saldo total"
+            value={fluxo ? fmtBRL(fluxo.saldo_atual) : "—"}
+            deltaText={
+              fluxo
+                ? `baseline ${fmtBRL(fluxo.saldo_baseline)} ${fluxo.data_atualizacao ? "de " + new Date(fluxo.data_atualizacao).toLocaleDateString("pt-BR") : ""} · +${fmtBRL(fluxo.receitas_realizadas)} entrou · −${fmtBRL(fluxo.despesas_realizadas)} saiu`
+                : "sem dado"
+            }
+            accent="mrr"
+          />
           <Kpi label="A receber 30d" value={fmtBRL(aReceber)} deltaText={`${(entradas ?? []).filter((e: any) => new Date(e.data) <= em30d).length} previstos`} />
           <Kpi label="A pagar 30d" value={fmtBRL(aPagar)} deltaText={`${(saidas ?? []).filter((s: any) => new Date(s.data) <= em30d).length} previstos`} accent="neg" />
           <Kpi label="Δ caixa 30d" value={`${deltaCaixa >= 0 ? "+" : "−"}${fmtBRL(Math.abs(deltaCaixa))}`}
