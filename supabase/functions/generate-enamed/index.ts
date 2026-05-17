@@ -61,6 +61,24 @@ Você é um elaborador SÊNIOR de questões para o ENAMED (Exame Nacional de Ava
 # DISTRIBUIÇÃO
 {{distribuicao}}
 
+# REGRA CRÍTICA DE CONSISTÊNCIA DO GABARITO (feedback recorrente de alunos)
+Erro grave atual: a letra do **Gabarito** às vezes NÃO corresponde à alternativa
+que realmente contém a resposta correta. Isso destrói a confiança do aluno.
+
+PROCESSO OBRIGATÓRIO para CADA questão (siga nesta ordem):
+1. Decida primeiro QUAL É a conduta/resposta clinicamente correta (o conteúdo).
+2. Escreva as 4 alternativas A–D. Coloque a resposta correta em UMA delas.
+3. Olhe EXATAMENTE em qual letra (A/B/C/D) você escreveu a resposta correta.
+4. O campo **Gabarito** DEVE ser essa letra — confira o texto, não a posição.
+5. No campo "Resposta correta", copie o texto da alternativa do gabarito PALAVRA
+   POR PALAVRA. Se o texto que você copiou não for a conduta correta que você
+   decidiu no passo 1, VOCÊ ERROU A LETRA — corrija o **Gabarito** antes de seguir.
+6. O **Comentário** deve justificar exatamente essa alternativa. Se o comentário
+   defende uma conduta diferente da alternativa do gabarito, há inconsistência —
+   corrija a letra.
+
+NUNCA gere uma questão onde gabarito, texto transcrito e comentário discordem.
+
 # FORMATO DE SAÍDA OBRIGATÓRIO
 
 ---
@@ -79,6 +97,8 @@ Você é um elaborador SÊNIOR de questões para o ENAMED (Exame Nacional de Ava
 <summary>📋 Gabarito e Comentário</summary>
 
 **Gabarito: [LETRA]**
+
+**Resposta correta (transcreva PALAVRA POR PALAVRA o texto da alternativa [LETRA] exatamente como escrita acima):** [texto idêntico da alternativa correta]
 
 **Comentário:**
 [Explicação detalhada e aprofundada do raciocínio clínico, citando guidelines específicos, explicando por que este cenário exige esta conduta específica]

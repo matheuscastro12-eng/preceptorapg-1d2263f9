@@ -1,5 +1,6 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { examStorageKey, loadExamProgress, saveExamProgress, clearExamProgress, type SavedExamProgress } from '@/lib/examProgress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import PostSimulationFeedback from '@/components/exam/PostSimulationFeedback';
@@ -89,10 +90,45 @@ function parseQuestions(markdown: string): ParsedQuestion[] {
 const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = true }: SimulationViewProps) => {
   const navigate = useNavigate();
   const questions = useMemo(() => parseQuestions(resultado), [resultado]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+
+  // Chave de persistência baseada no conteúdo da prova
+  const storageKey = useMemo(() => examStorageKey(resultado), [resultado]);
+  const restored = useRef<SavedExamProgress | null>(loadExamProgress(storageKey));
+  const [restoredBanner, setRestoredBanner] = useState(
+    !!restored.current && (restored.current.currentIndex > 0 || Object.keys(restored.current.answers).length > 0),
+  );
+
+  const [currentIndex, setCurrentIndex] = useState(restored.current?.currentIndex ?? 0);
+  const [answers, setAnswers] = useState<Record<number, string>>(restored.current?.answers ?? {});
   const [showResults, setShowResults] = useState(false);
-  const [revealedQuestions, setRevealedQuestions] = useState<Set<number>>(new Set());
+  const [revealedQuestions, setRevealedQuestions] = useState<Set<number>>(
+    new Set(restored.current?.revealed ?? []),
+  );
+
+  // Auto-save: persiste a cada mudança enquanto a prova não terminou
+  useEffect(() => {
+    if (showResults) return;
+    if (currentIndex === 0 && Object.keys(answers).length === 0) return;
+    saveExamProgress(storageKey, {
+      currentIndex,
+      answers,
+      revealed: Array.from(revealedQuestions),
+    });
+  }, [currentIndex, answers, revealedQuestions, showResults, storageKey]);
+
+  // Limpa o progresso salvo quando a prova termina (resultado já contabilizado)
+  useEffect(() => {
+    if (showResults) clearExamProgress(storageKey);
+  }, [showResults, storageKey]);
+
+  // Clamp defensivo: currentIndex restaurado não pode passar do total de
+  // questões já parseadas (evita currentQ undefined -> crash). Enquanto a
+  // prova ainda gera (stream), isWaitingForQuestion cobre o caso normal.
+  useEffect(() => {
+    if (!isGenerating && questions.length > 0 && currentIndex > questions.length - 1) {
+      setCurrentIndex(questions.length - 1);
+    }
+  }, [isGenerating, questions.length, currentIndex]);
 
   const currentQ = questions[currentIndex];
   const totalQuestions = questions.length;
@@ -121,7 +157,9 @@ const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = 
     setAnswers({});
     setShowResults(false);
     setRevealedQuestions(new Set());
-  }, []);
+    setRestoredBanner(false);
+    clearExamProgress(storageKey);
+  }, [storageKey]);
 
   const score = useMemo(() => {
     if (!showResults) return { correct: 0, total: 0, percentage: 0 };
@@ -227,6 +265,25 @@ const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = 
 
       <ScrollArea className="flex-1 min-h-0">
         <article className="space-y-5 pr-2 pb-4">
+          {/* Banner de progresso restaurado */}
+          {restoredBanner && (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-[#006D5B]/20 bg-[#006D5B]/5 px-4 py-3">
+              <div className="flex items-center gap-2 text-sm text-[#005344]">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>
+                  Progresso restaurado — você voltou para a questão {currentIndex + 1}
+                  {Object.keys(answers).length > 0 && ` (${Object.keys(answers).length} respondida${Object.keys(answers).length > 1 ? 's' : ''})`}.
+                </span>
+              </div>
+              <button
+                onClick={() => setRestoredBanner(false)}
+                className="text-xs font-semibold text-[#006D5B] hover:underline shrink-0"
+              >
+                OK
+              </button>
+            </div>
+          )}
+
           {/* Tags */}
           {(currentQ.type || currentQ.tema) && (
             <div className="flex items-center gap-1.5 flex-wrap">
