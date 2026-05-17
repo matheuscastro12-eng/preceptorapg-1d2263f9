@@ -8,7 +8,7 @@ import { usePromocoesTrimestrais } from "@/hooks/useCarreira";
 import { useMembros } from "@/hooks/useTime";
 import { useReceitas, useReceitaResumo, useReceitaPorPlano } from "@/hooks/useReceitas";
 import { useDespesas, useDespesaResumo, useDespesasPorCategoria } from "@/hooks/useDespesas";
-import { useFluxoCaixa, useRunway, useEntradasPrevistas, useSaidasPrevistas } from "@/hooks/useFluxoCaixa";
+import { useFluxoCaixa, useRunway, useEntradasPrevistas, useSaidasPrevistas, useAportes, useCreateAporte, useDeleteAporte } from "@/hooks/useFluxoCaixa";
 import { useInadimplencias, useInadimplenciaStats } from "@/hooks/useInadimplencia";
 import { usePremissaAtiva, useDREData, calcularReceitas } from "@/hooks/useForecast";
 import { useOKRs } from "@/hooks/useOKRs";
@@ -20,6 +20,31 @@ import { X, Loader2 } from "lucide-react";
 const fmtBRL = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 const fmtBRL2 = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtPct = (v: number) => `${v.toFixed(1)}%`;
+
+// Formata data SEM conversão de fuso. new Date("2026-05-08") parseia como
+// UTC meia-noite e toLocaleDateString (Brasil UTC-3) joga pro dia anterior.
+// Aqui tratamos a string YYYY-MM-DD diretamente.
+const fmtData = (d?: string | null): string => {
+  if (!d) return "—";
+  const datePart = String(d).slice(0, 10); // pega só YYYY-MM-DD (ignora hora)
+  const m = datePart.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) {
+    // fallback pra timestamps completos
+    const dt = new Date(d);
+    return isNaN(dt.getTime()) ? "—" : dt.toLocaleDateString("pt-BR");
+  }
+  return `${m[3]}/${m[2]}/${m[1]}`;
+};
+
+// Data local de hoje em YYYY-MM-DD (sem UTC). toISOString() usa UTC e à noite
+// no Brasil retorna o dia seguinte — usamos componentes locais.
+const hojeLocal = (): string => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const da = String(d.getDate()).padStart(2, "0");
+  return `${y}-${mo}-${da}`;
+};
 
 const CATEGORIA_LABELS: Record<string, string> = {
   infra: "Infraestrutura",
@@ -280,7 +305,7 @@ export function ReceitaV3() {
               <tbody>
                 {receitas.slice(0, 30).map((r) => (
                   <tr key={r.id}>
-                    <td className="muted crm-mono" style={{ fontSize: 12 }}>{r.data_inicio?.slice(0, 10) ?? "—"}</td>
+                    <td className="muted crm-mono" style={{ fontSize: 12 }}>{fmtData(r.data_inicio)}</td>
                     <td className="lead-name">{r.produto}</td>
                     <td className="muted">{r.plano}</td>
                     <td className="num">{fmtBRL2(r.valor)}</td>
@@ -317,12 +342,15 @@ export function FluxoCaixaV3() {
   const { data: runway } = useRunway();
   const { data: entradas } = useEntradasPrevistas();
   const { data: saidas } = useSaidasPrevistas();
+  const { data: aportes } = useAportes();
+  const [showAporte, setShowAporte] = useState(false);
 
   const hoje = new Date();
   const em30d = new Date(hoje.getTime() + 30 * 86400000);
   const aReceber = (entradas ?? []).filter((e: any) => new Date(e.data) <= em30d).reduce((s: number, e: any) => s + e.valor, 0);
   const aPagar = (saidas ?? []).filter((s: any) => new Date(s.data) <= em30d).reduce((s: number, e: any) => s + e.valor, 0);
   const deltaCaixa = aReceber - aPagar;
+  const fx = fluxo as any; // saldo_base + total_aportes
 
   return (
     <CrmShellV3 mode="admin" crumbs={[{ label: "CRM" }, { label: "Admin" }, { label: "Fluxo de caixa" }]}>
@@ -331,12 +359,21 @@ export function FluxoCaixaV3() {
           eyebrow="Admin · Cash Flow"
           title={<>Fluxo <em>de caixa</em></>}
           sub="Saldo bancário, recebíveis previstos e contas a pagar (90 dias)."
-          actions={<><button className="crm-btn crm-btn-ghost"><Download size={13} /> CSV</button></>}
+          actions={
+            <>
+              <button className="crm-btn crm-btn-primary" onClick={() => setShowAporte(true)}>
+                <Plus size={13} /> Registrar aporte
+              </button>
+              <button className="crm-btn crm-btn-ghost"><Download size={13} /> CSV</button>
+            </>
+          }
         />
+
+        {showAporte && <AporteModal onClose={() => setShowAporte(false)} />}
 
         <section className="crm-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
           <Kpi label="Saldo total" value={fluxo ? fmtBRL(fluxo.saldo_atual) : "—"}
-            deltaText={fluxo?.data_atualizacao ? `atualizado ${new Date(fluxo.data_atualizacao).toLocaleDateString("pt-BR")}` : "sem dado"}
+            deltaText={fx?.total_aportes > 0 ? `inclui ${fmtBRL(fx.total_aportes)} de aportes` : (fluxo?.data_atualizacao ? `atualizado ${fmtData(fluxo.data_atualizacao)}` : "sem dado")}
             accent="mrr" />
           <Kpi label="A receber 30d" value={fmtBRL(aReceber)} deltaText={`${(entradas ?? []).filter((e: any) => new Date(e.data) <= em30d).length} previstos`} />
           <Kpi label="A pagar 30d" value={fmtBRL(aPagar)} deltaText={`${(saidas ?? []).filter((s: any) => new Date(s.data) <= em30d).length} previstos`} accent="neg" />
@@ -354,7 +391,7 @@ export function FluxoCaixaV3() {
                   {entradas.filter((e: any) => new Date(e.data) <= em30d).slice(0, 10).map((r: any) => (
                     <tr key={r.id}>
                       <td className="lead-name">{r.descricao}</td>
-                      <td className="muted crm-mono" style={{ fontSize: 12 }}>{new Date(r.data).toLocaleDateString("pt-BR")}</td>
+                      <td className="muted crm-mono" style={{ fontSize: 12 }}>{fmtData(r.data)}</td>
                       <td className="num" style={{ color: "var(--crm-green-deep)", fontWeight: 700 }}>{fmtBRL2(r.valor)}</td>
                     </tr>
                   ))}
@@ -375,7 +412,7 @@ export function FluxoCaixaV3() {
                     <tr key={r.id + r.data}>
                       <td className="lead-name">{r.descricao}</td>
                       <td><span className="crm-tag crm-tag-gray"><span className="crm-tag-dot" />{r.categoria}</span></td>
-                      <td className="muted crm-mono" style={{ fontSize: 12 }}>{new Date(r.data).toLocaleDateString("pt-BR")}</td>
+                      <td className="muted crm-mono" style={{ fontSize: 12 }}>{fmtData(r.data)}</td>
                       <td className="num" style={{ color: "var(--crm-neg)", fontWeight: 700 }}>{fmtBRL2(r.valor)}</td>
                     </tr>
                   ))}
@@ -386,8 +423,153 @@ export function FluxoCaixaV3() {
             )}
           </div>
         </section>
+
+        {/* Aportes & Investimentos */}
+        <section className="crm-card">
+          <CardHead
+            title="Aportes & investimentos"
+            sub={`${(aportes ?? []).length} lançamentos · ${fmtBRL2((aportes ?? []).reduce((s, a) => s + a.valor, 0))} somados ao caixa`}
+            side={<button className="crm-btn crm-btn-ghost" onClick={() => setShowAporte(true)}><Plus size={13} /> Novo aporte</button>}
+          />
+          {(aportes ?? []).length > 0 ? (
+            <table className="crm-tbl">
+              <thead><tr><th>Descrição</th><th>Tipo</th><th>Data</th><th style={{ textAlign: "right" }}>Valor</th><th></th></tr></thead>
+              <tbody>
+                {(aportes ?? []).map((a) => <AporteRow key={a.id} aporte={a} />)}
+              </tbody>
+            </table>
+          ) : (
+            <div style={{ padding: 32, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
+              Nenhum aporte registrado. Use "Registrar aporte" pra lançar investimento, captação ou empréstimo — entra direto no saldo.
+            </div>
+          )}
+        </section>
       </main>
     </CrmShellV3>
+  );
+}
+
+const APORTE_TIPO_LABEL: Record<string, string> = {
+  investimento: "Investimento",
+  emprestimo: "Empréstimo",
+  captacao: "Captação",
+  reembolso: "Reembolso",
+  outro: "Outro",
+};
+
+function AporteRow({ aporte }: { aporte: any }) {
+  const del = useDeleteAporte();
+  return (
+    <tr>
+      <td className="lead-name">{aporte.descricao}{aporte.responsavel ? <div className="lead-email">{aporte.responsavel}</div> : null}</td>
+      <td><span className="crm-tag crm-tag-green"><span className="crm-tag-dot" />{APORTE_TIPO_LABEL[aporte.tipo] ?? aporte.tipo}</span></td>
+      <td className="muted crm-mono" style={{ fontSize: 12 }}>{fmtData(aporte.data)}</td>
+      <td className="num" style={{ color: "var(--crm-green-deep)", fontWeight: 700 }}>+{fmtBRL2(aporte.valor)}</td>
+      <td style={{ textAlign: "right" }}>
+        <button
+          className="crm-btn-icon"
+          title="Remover aporte"
+          onClick={() => { if (confirm(`Remover o aporte "${aporte.descricao}"?`)) del.mutate(aporte.id); }}
+          disabled={del.isPending}
+        >
+          <X size={14} />
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+function AporteModal({ onClose }: { onClose: () => void }) {
+  const create = useCreateAporte();
+  const [form, setForm] = useState({
+    descricao: "",
+    valor: "",
+    data: hojeLocal(),
+    tipo: "investimento",
+    responsavel: "",
+    observacoes: "",
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!form.descricao.trim()) { setError("Descrição obrigatória"); return; }
+    const valorNum = Number(form.valor.replace(/\./g, "").replace(",", "."));
+    if (!valorNum || valorNum <= 0) { setError("Valor inválido"); return; }
+    try {
+      await create.mutateAsync({
+        descricao: form.descricao.trim(),
+        valor: valorNum,
+        data: form.data,
+        tipo: form.tipo as any,
+        responsavel: form.responsavel.trim() || null,
+        observacoes: form.observacoes.trim() || null,
+      });
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao salvar aporte");
+    }
+  };
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", padding: 20, zIndex: 1000 }}>
+      <form onClick={(e) => e.stopPropagation()} onSubmit={submit} className="crm-card" style={{ width: "min(520px, 100%)", maxHeight: "90vh", overflow: "auto", padding: 0, background: "var(--crm-surface)" }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--crm-line)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontFamily: "var(--crm-sans)", fontSize: 16, fontWeight: 700, color: "var(--crm-ink)" }}>Registrar aporte / investimento</div>
+            <div className="crm-mono" style={{ fontSize: 11, color: "var(--crm-ink-4)", marginTop: 2 }}>entra direto no saldo do caixa</div>
+          </div>
+          <button type="button" onClick={onClose} className="crm-btn-icon"><X /></button>
+        </div>
+
+        <div style={{ padding: 20, display: "grid", gap: 14 }}>
+          <Field label="Descrição">
+            <input value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} placeholder="Ex: Aporte dos sócios · maio" style={inputStyle} required />
+          </Field>
+
+          <div className="crm-mobile-stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <Field label="Tipo">
+              <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} style={inputStyle}>
+                <option value="investimento">Investimento</option>
+                <option value="captacao">Captação</option>
+                <option value="emprestimo">Empréstimo</option>
+                <option value="reembolso">Reembolso</option>
+                <option value="outro">Outro</option>
+              </select>
+            </Field>
+            <Field label="Valor (R$)">
+              <input type="text" inputMode="decimal" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} placeholder="0,00" style={inputStyle} required />
+            </Field>
+          </div>
+
+          <div className="crm-mobile-stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <Field label="Data">
+              <input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} style={inputStyle} required />
+            </Field>
+            <Field label="Responsável (opcional)">
+              <input value={form.responsavel} onChange={(e) => setForm({ ...form, responsavel: e.target.value })} placeholder="Matheus" style={inputStyle} />
+            </Field>
+          </div>
+
+          <Field label="Observações (opcional)">
+            <textarea value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} rows={2} style={{ ...inputStyle, resize: "vertical" }} />
+          </Field>
+
+          {error && (
+            <div style={{ fontSize: 12, color: "var(--crm-neg)", background: "var(--crm-neg-soft)", padding: "8px 10px", borderRadius: 6 }}>{error}</div>
+          )}
+        </div>
+
+        <div style={{ padding: "14px 20px", borderTop: "1px solid var(--crm-line)", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button type="button" onClick={onClose} className="crm-btn crm-btn-ghost">Cancelar</button>
+          <button type="submit" disabled={create.isPending} className="crm-btn crm-btn-primary" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {create.isPending && <Loader2 size={13} className="animate-spin" />}
+            {create.isPending ? "Salvando..." : "Salvar aporte"}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -486,7 +668,7 @@ export function DespesasV3() {
               <tbody>
                 {despesas.map((d) => (
                   <tr key={d.id}>
-                    <td className="muted crm-mono" style={{ fontSize: 12 }}>{new Date(d.data).toLocaleDateString("pt-BR")}</td>
+                    <td className="muted crm-mono" style={{ fontSize: 12 }}>{fmtData(d.data)}</td>
                     <td className="lead-name">{d.descricao}</td>
                     <td>
                       <span className={`crm-tag crm-tag-${d.categoria === "salarios" ? "red" : d.categoria === "marketing" ? "gold" : d.categoria === "infra" ? "blue" : d.categoria === "juridico" ? "warn" : "gray"}`}>
@@ -514,7 +696,7 @@ export function DespesasV3() {
 
 function NovaDespesaModal({ onClose }: { onClose: () => void }) {
   const create = useCreateDespesa();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = hojeLocal();
   const [form, setForm] = useState({
     descricao: "",
     categoria: "marketing",

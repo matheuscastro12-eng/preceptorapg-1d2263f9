@@ -63,9 +63,10 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_ANON_KEY") ?? "",
     { global: { headers: { Authorization: authHeader } } },
   );
-  const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
-  const userId = claimsData?.claims?.sub;
-  if (claimsError || !userId) {
+  const { data: { user }, error: authError } = await userClient.auth.getUser(token);
+  const userId = user?.id;
+  if (authError || !userId) {
+    console.error("explain-question auth error:", authError?.message);
     return new Response(JSON.stringify({ error: "Token invalido" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

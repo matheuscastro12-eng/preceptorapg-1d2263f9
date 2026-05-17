@@ -225,10 +225,13 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_ANON_KEY") ?? "",
     { global: { headers: { Authorization: authHeader } } },
   );
-  const { data: claimsData, error: claimsError } = await userClient.auth
-    .getClaims(token);
-  const userId = claimsData?.claims?.sub;
-  if (claimsError || !userId) {
+  // getUser(token) valida no servidor de auth — mais confiavel que
+  // getClaims (que exige a chave de assinatura JWT local e falhava
+  // com "Token invalido" mesmo com token valido).
+  const { data: { user }, error: authError } = await userClient.auth.getUser(token);
+  const userId = user?.id;
+  if (authError || !userId) {
+    console.error("ingest-prova auth error:", authError?.message);
     return new Response(JSON.stringify({ error: "Token invalido" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

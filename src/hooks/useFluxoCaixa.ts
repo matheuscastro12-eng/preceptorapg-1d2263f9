@@ -13,6 +13,64 @@ export interface ProjecaoDia {
   saldo: number;
 }
 
+export interface Aporte {
+  id: string;
+  descricao: string;
+  valor: number;
+  data: string;
+  tipo: "investimento" | "emprestimo" | "captacao" | "reembolso" | "outro";
+  responsavel: string | null;
+  observacoes: string | null;
+  created_at: string;
+}
+
+export interface AporteInsert {
+  descricao: string;
+  valor: number;
+  data: string;
+  tipo?: Aporte["tipo"];
+  responsavel?: string | null;
+  observacoes?: string | null;
+}
+
+export function useAportes() {
+  return useQuery({
+    queryKey: ["crm-admin", "aportes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_aportes")
+        .select("*")
+        .order("data", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map((a) => ({ ...a, valor: Number(a.valor) })) as Aporte[];
+    },
+  });
+}
+
+export function useCreateAporte() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (a: AporteInsert) => {
+      const { data, error } = await supabase.from("admin_aportes").insert(a).select().single();
+      if (error) throw error;
+      return data;
+    },
+    // Invalida fluxo-caixa, aportes e runway pra refletir o aporte no caixa
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["crm-admin"] }); },
+  });
+}
+
+export function useDeleteAporte() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("admin_aportes").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["crm-admin"] }); },
+  });
+}
+
 export function useFluxoCaixa() {
   return useQuery({
     queryKey: ["crm-admin", "fluxo-caixa"],
@@ -24,7 +82,22 @@ export function useFluxoCaixa() {
         .limit(1)
         .single();
       if (error && error.code !== "PGRST116") throw error;
-      return data ? { ...data, saldo_atual: Number(data.saldo_atual) } as FluxoCaixa : null;
+
+      // Soma aportes ao saldo base — investimentos/captacoes entram no caixa
+      const { data: aportes } = await supabase
+        .from("admin_aportes")
+        .select("valor");
+      const totalAportes = (aportes ?? []).reduce((s, a) => s + Number(a.valor), 0);
+
+      const saldoBase = data ? Number(data.saldo_atual) : 0;
+      return {
+        id: data?.id ?? "virtual",
+        saldo_atual: saldoBase + totalAportes,
+        saldo_base: saldoBase,
+        total_aportes: totalAportes,
+        data_atualizacao: data?.data_atualizacao ?? new Date().toISOString(),
+        observacoes: data?.observacoes ?? null,
+      } as FluxoCaixa & { saldo_base: number; total_aportes: number };
     },
   });
 }
@@ -48,15 +121,17 @@ export function useRunway() {
   return useQuery({
     queryKey: ["crm-admin", "runway"],
     queryFn: async () => {
-      // Saldo atual
+      // Saldo atual = snapshot manual + aportes acumulados
       const { data: fluxo } = await supabase
         .from("admin_fluxo_caixa")
         .select("saldo_atual")
         .order("data_atualizacao", { ascending: false })
         .limit(1)
         .single();
+      const { data: aportes } = await supabase.from("admin_aportes").select("valor");
+      const totalAportes = (aportes ?? []).reduce((s, a) => s + Number(a.valor), 0);
 
-      const saldo = Number(fluxo?.saldo_atual ?? 0);
+      const saldo = Number(fluxo?.saldo_atual ?? 0) + totalAportes;
 
       // Burn medio dos ultimos 3 meses
       const now = new Date();

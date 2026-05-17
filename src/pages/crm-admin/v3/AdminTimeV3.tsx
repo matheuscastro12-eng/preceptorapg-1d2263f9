@@ -1,7 +1,7 @@
 import CrmShellV3, { Kpi, PageHero, CardHead } from "@/components/crm/v3/CrmShellV3";
-import { Plus } from "lucide-react";
+import { Plus, X, Loader2 } from "lucide-react";
 import { useMembros } from "@/hooks/useTime";
-import { useOneOnOnes, useOneOnOneAlerts } from "@/hooks/useOneOnOne";
+import { useOneOnOnes, useOneOnOneAlerts, useCreateOneOnOne } from "@/hooks/useOneOnOne";
 import { useVagas, useContratacaoMetricas, useCandidatosByVaga } from "@/hooks/useContratacoes";
 import { useFolhaConsolidada } from "@/hooks/useSalarios";
 import { useState } from "react";
@@ -61,6 +61,7 @@ export default function AdminTimeV3() {
     .slice(0, 8);
 
   const vagasAbertas = (vagas ?? []).filter((v: any) => v.status !== "encerrada");
+  const [showOneOnOne, setShowOneOnOne] = useState(false);
 
   return (
     <CrmShellV3
@@ -69,7 +70,9 @@ export default function AdminTimeV3() {
       topbarTools={
         <>
           <button className="crm-btn crm-btn-ghost">Org chart</button>
-          <button className="crm-btn crm-btn-primary"><Plus size={13} /> Agendar 1:1</button>
+          <button className="crm-btn crm-btn-primary" onClick={() => setShowOneOnOne(true)}>
+            <Plus size={13} /> Agendar 1:1
+          </button>
         </>
       }
     >
@@ -205,7 +208,167 @@ export default function AdminTimeV3() {
         {/* Hiring Pipeline */}
         <HiringPipelineSection vagas={vagasAbertas} metricas={metricas} />
       </main>
+
+      {showOneOnOne && (
+        <OneOnOneModal
+          membros={ativos}
+          onClose={() => setShowOneOnOne(false)}
+        />
+      )}
     </CrmShellV3>
+  );
+}
+
+// ─── Modal: Agendar / Registrar 1:1 ────────────────────────────────
+const ooInputStyle: React.CSSProperties = {
+  width: "100%",
+  background: "var(--crm-surface)",
+  border: "1px solid var(--crm-line)",
+  borderRadius: 6,
+  padding: "8px 10px",
+  fontFamily: "var(--crm-text)",
+  fontSize: 13,
+  color: "var(--crm-ink)",
+};
+
+function OOField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      {label && (
+        <div className="crm-mono" style={{ fontSize: 10.5, color: "var(--crm-ink-4)", letterSpacing: "0.05em", textTransform: "uppercase", fontWeight: 600, marginBottom: 4 }}>
+          {label}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
+function hojeISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function OneOnOneModal({ membros, onClose }: { membros: any[]; onClose: () => void }) {
+  const create = useCreateOneOnOne();
+  const founders = membros.filter((m) => m.vinculo === "socio" || m.vinculo === "founder");
+  const [form, setForm] = useState({
+    membro_id: membros[0]?.id ?? "",
+    lider_id: founders[0]?.id ?? "",
+    data: hojeISO(),
+    duracao: "30",
+    humor: "3",
+    topicos: "",
+    observacoes_confidenciais: "",
+    proxima_data: "",
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!form.membro_id) { setError("Selecione o membro"); return; }
+    try {
+      await create.mutateAsync({
+        membro_id: form.membro_id,
+        lider_id: form.lider_id || null,
+        data: form.data,
+        duracao: Number(form.duracao) || 30,
+        humor: Number(form.humor) || 3,
+        topicos: form.topicos.split("\n").map((t) => t.trim()).filter(Boolean),
+        compromissos: [],
+        observacoes_confidenciais: form.observacoes_confidenciais.trim() || null,
+        proxima_data: form.proxima_data || null,
+      });
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao salvar 1:1");
+    }
+  };
+
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+      display: "grid", placeItems: "center", padding: 20, zIndex: 1000,
+    }}>
+      <form onClick={(e) => e.stopPropagation()} onSubmit={submit} className="crm-card" style={{
+        width: "min(560px, 100%)", maxHeight: "90vh", overflow: "auto",
+        padding: 0, background: "var(--crm-surface)",
+      }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--crm-line)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontFamily: "var(--crm-sans)", fontSize: 16, fontWeight: 700, color: "var(--crm-ink)" }}>Registrar / agendar 1:1</div>
+            <div className="crm-mono" style={{ fontSize: 11, color: "var(--crm-ink-4)", marginTop: 2 }}>admin_one_on_ones</div>
+          </div>
+          <button type="button" onClick={onClose} className="crm-btn-icon"><X /></button>
+        </div>
+
+        <div style={{ padding: 20, display: "grid", gap: 14 }}>
+          <div className="crm-mobile-stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <OOField label="Membro">
+              <select value={form.membro_id} onChange={(e) => setForm({ ...form, membro_id: e.target.value })} style={ooInputStyle} required>
+                <option value="">— selecione —</option>
+                {membros.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
+              </select>
+            </OOField>
+            <OOField label="Líder (quem conduz)">
+              <select value={form.lider_id} onChange={(e) => setForm({ ...form, lider_id: e.target.value })} style={ooInputStyle}>
+                <option value="">— opcional —</option>
+                {membros.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
+              </select>
+            </OOField>
+          </div>
+
+          <div className="crm-mobile-stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+            <OOField label="Data do 1:1">
+              <input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} style={ooInputStyle} required />
+            </OOField>
+            <OOField label="Duração (min)">
+              <input type="number" min="5" value={form.duracao} onChange={(e) => setForm({ ...form, duracao: e.target.value })} style={ooInputStyle} />
+            </OOField>
+            <OOField label="Humor (1-5)">
+              <select value={form.humor} onChange={(e) => setForm({ ...form, humor: e.target.value })} style={ooInputStyle}>
+                <option value="1">😟 1 — Baixo</option>
+                <option value="2">😕 2</option>
+                <option value="3">😐 3 — Neutro</option>
+                <option value="4">🙂 4</option>
+                <option value="5">😄 5 — Ótimo</option>
+              </select>
+            </OOField>
+          </div>
+
+          <OOField label="Próximo 1:1 (agendar)">
+            <input type="date" value={form.proxima_data} onChange={(e) => setForm({ ...form, proxima_data: e.target.value })} style={ooInputStyle} />
+          </OOField>
+
+          <OOField label="Tópicos discutidos (um por linha)">
+            <textarea value={form.topicos} onChange={(e) => setForm({ ...form, topicos: e.target.value })}
+              rows={3} style={{ ...ooInputStyle, resize: "vertical" }}
+              placeholder={"Carga de trabalho\nFeedback do último sprint\nObjetivos do trimestre"} />
+          </OOField>
+
+          <OOField label="Observações confidenciais (opcional)">
+            <textarea value={form.observacoes_confidenciais} onChange={(e) => setForm({ ...form, observacoes_confidenciais: e.target.value })}
+              rows={2} style={{ ...ooInputStyle, resize: "vertical" }}
+              placeholder="Visível só para liderança" />
+          </OOField>
+
+          {error && (
+            <div style={{ fontSize: 12, color: "var(--crm-neg)", background: "var(--crm-neg-soft)", padding: "8px 10px", borderRadius: 6 }}>
+              {error}
+            </div>
+          )}
+        </div>
+
+        <div style={{ padding: "14px 20px", borderTop: "1px solid var(--crm-line)", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button type="button" onClick={onClose} className="crm-btn crm-btn-ghost">Cancelar</button>
+          <button type="submit" disabled={create.isPending} className="crm-btn crm-btn-primary" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {create.isPending && <Loader2 size={13} className="animate-spin" />}
+            {create.isPending ? "Salvando..." : "Salvar 1:1"}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 

@@ -17,24 +17,26 @@ export interface OneOnOne {
 
 export interface OneOnOneInsert {
   membro_id: string;
-  lider_id: string;
+  lider_id?: string | null;
   data: string;
   duracao?: number;
   humor?: number;
   topicos?: string[];
   compromissos?: OneOnOne["compromissos"];
-  observacoes_confidenciais?: string;
-  proxima_data?: string;
+  observacoes_confidenciais?: string | null;
+  proxima_data?: string | null;
 }
 
 export function useOneOnOnes(membroId?: string) {
   return useQuery({
-    queryKey: ["crm-admin", "one-on-ones", membroId],
-    enabled: !!membroId,
+    queryKey: ["crm-admin", "one-on-ones", membroId ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("admin_one_on_ones").select("*")
-        .eq("membro_id", membroId!).order("data", { ascending: false });
+      // Sem membroId: retorna TODOS os 1:1s (usado na pagina Time pra
+      // listar "Proximos 1:1s" e calcular pendencias). Antes a query
+      // ficava desabilitada e a lista vinha sempre vazia.
+      let q = supabase.from("admin_one_on_ones").select("*").order("data", { ascending: false });
+      if (membroId) q = q.eq("membro_id", membroId);
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as OneOnOne[];
     },
