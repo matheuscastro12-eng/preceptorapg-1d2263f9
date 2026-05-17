@@ -342,7 +342,9 @@ export function FluxoCaixaV3() {
   const { data: runway } = useRunway();
   const { data: entradas } = useEntradasPrevistas();
   const { data: saidas } = useSaidasPrevistas();
-  const { data: realizadas } = useEntradasRealizadas(30);
+  const [periodoReal, setPeriodoReal] = useState<"30d" | "90d" | "Tudo">("30d");
+  const diasReal = periodoReal === "30d" ? 30 : periodoReal === "90d" ? 90 : 0;
+  const { data: realizadas } = useEntradasRealizadas(diasReal);
   const { data: aportes } = useAportes();
   const [showAporte, setShowAporte] = useState(false);
 
@@ -392,8 +394,9 @@ export function FluxoCaixaV3() {
         {/* Recebimentos REALIZADOS — dinheiro que entrou (mensal + anual). */}
         <section className="crm-card">
           <CardHead
-            title="Recebimentos realizados · 30d"
+            title={`Recebimentos realizados · ${periodoReal === "Tudo" ? "histórico" : periodoReal}`}
             sub={`${(realizadas ?? []).length} pagamentos · ${fmtBRL2((realizadas ?? []).reduce((s, r) => s + r.valor, 0))} entrou (mensal + anual)`}
+            side={<PeriodBar options={["30d", "90d", "Tudo"]} active={periodoReal} onChange={(v) => setPeriodoReal(v as any)} />}
           />
           {(realizadas ?? []).length > 0 ? (
             <table className="crm-tbl">

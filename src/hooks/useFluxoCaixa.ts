@@ -235,16 +235,20 @@ export function useEntradasPrevistas() {
  * pagamentos anuais "sumirem": eles entram aqui no dia do pagamento, em vez
  * de so aparecerem como renovacao daqui 1 ano em "Proximos recebimentos".
  */
+// dias = 0 => sem filtro de data (todos, reconcilia com a pagina Receita)
 export function useEntradasRealizadas(dias = 30) {
   return useQuery({
     queryKey: ["crm-admin", "entradas-realizadas", dias],
     queryFn: async () => {
-      const desde = new Date(Date.now() - dias * 86400000).toISOString().slice(0, 10);
-      const { data } = await supabase
+      let q = supabase
         .from("admin_receitas")
         .select("id, produto, plano, valor, data_inicio, origem, event_type, observacoes")
-        .gte("data_inicio", desde)
         .order("data_inicio", { ascending: false });
+      if (dias > 0) {
+        const desde = new Date(Date.now() - dias * 86400000).toISOString().slice(0, 10);
+        q = q.gte("data_inicio", desde);
+      }
+      const { data } = await q;
 
       return (data ?? []).map((r) => ({
         id: r.id,
