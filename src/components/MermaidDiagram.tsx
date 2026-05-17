@@ -144,10 +144,14 @@ function colorizeFlowchart(src: string): string {
     else mids.push(id);
   });
 
+  // Gradiente clínico de gravidade:
+  //  azul   = fator desencadeante / causa-raiz (ponto de partida)
+  //  verde  = mecanismo fisiopatológico (processo)
+  //  vermelho = complicação / desfecho grave (gravidade)
   const lines: string[] = [
-    'classDef cmRoot fill:#1B5E3B,stroke:#0F4128,stroke-width:2px,color:#FFFFFF,font-weight:600;',
+    'classDef cmRoot fill:#1A4D8C,stroke:#123A6B,stroke-width:2px,color:#FFFFFF,font-weight:600;',
     'classDef cmMid fill:#CDE6D4,stroke:#1B5E3B,stroke-width:1.5px,color:#0A2E1C;',
-    'classDef cmLeaf fill:#F3E2B8,stroke:#A88A33,stroke-width:2px,color:#5C3F00,font-weight:600;',
+    'classDef cmLeaf fill:#F4D3CC,stroke:#B6452C,stroke-width:2px,color:#7A2A18,font-weight:600;',
   ];
   if (roots.length) lines.push(`class ${roots.join(',')} cmRoot;`);
   if (mids.length) lines.push(`class ${mids.join(',')} cmMid;`);
