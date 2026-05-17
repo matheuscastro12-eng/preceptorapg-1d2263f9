@@ -1,6 +1,24 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+
+// mermaid é pesado (~500KB) — só carrega quando há diagrama no conteúdo
+const MermaidDiagram = lazy(() => import('@/components/MermaidDiagram'));
+
+/** Detecta bloco ```mermaid``` e renderiza como SVG; senão, code inline. */
+function renderCodeNode(props: any, inlineClass: string): React.ReactNode {
+  const { className, children } = props;
+  const lang = /language-(\w+)/.exec(className || '')?.[1];
+  if (lang === 'mermaid') {
+    const src = String(Array.isArray(children) ? children.join('') : children ?? '');
+    return (
+      <Suspense fallback={<div className="my-5 rounded-lg border border-slate-200 bg-slate-50 py-10 text-center text-sm text-slate-400">Carregando diagrama…</div>}>
+        <MermaidDiagram code={src} />
+      </Suspense>
+    );
+  }
+  return <code className={inlineClass}>{children}</code>;
+}
 
 export interface PubMedArticleMeta {
   pmid: string;
@@ -128,9 +146,14 @@ const defaultComponents: Record<string, React.ComponentType<any>> = {
       </a>
     );
   },
-  code: ({ children }: any) => (
-    <code className="rounded-md bg-secondary px-2 py-1 text-sm font-mono text-primary">{children}</code>
-  ),
+  code: (props: any) => renderCodeNode(props, "rounded-md bg-secondary px-2 py-1 text-sm font-mono text-primary"),
+  pre: ({ children }: any) => {
+    // Se o conteúdo é um diagrama mermaid, não envolve em <pre> (já vem como bloco)
+    const child: any = Array.isArray(children) ? children[0] : children;
+    const cls = child?.props?.className || '';
+    if (/language-mermaid/.test(cls)) return <>{children}</>;
+    return <pre className="my-5 overflow-x-auto rounded-lg border border-border bg-secondary/40 p-4 text-sm">{children}</pre>;
+  },
   hr: () => <hr className="my-8 border-border/30" />,
   table: ({ children }: any) => (
     <div className="my-6 overflow-x-auto rounded-lg border border-border -mx-1">
@@ -227,9 +250,13 @@ const richComponents: Record<string, React.ComponentType<any>> = {
       </a>
     );
   },
-  code: ({ children }: any) => (
-    <code className="rounded-md bg-[#f3f4f5] px-2 py-1 text-sm font-mono text-[#006D5B]">{children}</code>
-  ),
+  code: (props: any) => renderCodeNode(props, "rounded-md bg-[#f3f4f5] px-2 py-1 text-sm font-mono text-[#006D5B]"),
+  pre: ({ children }: any) => {
+    const child: any = Array.isArray(children) ? children[0] : children;
+    const cls = child?.props?.className || '';
+    if (/language-mermaid/.test(cls)) return <>{children}</>;
+    return <pre className="my-5 overflow-x-auto rounded-lg border border-slate-200 bg-[#f3f4f5] p-4 text-sm">{children}</pre>;
+  },
   hr: () => <hr className="my-10 border-slate-200/60" />,
   table: ({ children }: any) => (
     <div className="my-6 overflow-x-auto rounded-xl border border-slate-200/60 bg-white shadow-sm">

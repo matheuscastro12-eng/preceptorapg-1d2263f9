@@ -304,6 +304,44 @@ Os sintomas cardinais são:
 - Use cabeçalhos de 2/3/4 cerquilhas para seções principais, subseções e categorias.
 - Seja EXTENSO e DETALHADO.
 
+## DIAGRAMAS MERMAID (deixe o resumo mais ilustrável)
+Sempre que houver um PROCESSO, CASCATA, ALGORITMO, CLASSIFICAÇÃO ou LINHA DO TEMPO,
+inclua um diagrama Mermaid logo após explicar o conceito em texto. Isso torna o
+resumo muito mais palatável. Regras:
+
+- Use bloco de código com a linguagem \`mermaid\` (três crases + a palavra mermaid).
+- Tipos que você DEVE usar quando couber:
+  - **Cascata fisiopatológica / mecanismo** → \`flowchart TD\` (cima→baixo).
+  - **Algoritmo diagnóstico / conduta** → \`flowchart TD\` com decisões em losango \`{...}\`.
+  - **Classificação / taxonomia** → \`flowchart LR\` ou \`mindmap\`.
+  - **Evolução temporal da doença / história natural** → \`timeline\`.
+- Mantenha cada diagrama ENXUTO: 5 a 12 nós. Diagramas gigantes não renderizam bem.
+- Texto dos nós SEM acentos problemáticos dentro de \`[]\`; prefira frases curtas.
+  Use aspas se o rótulo tiver parêntese: \`A["IC (insuficiencia cardiaca)"]\`.
+- NÃO invente relações causais — o diagrama deve refletir exatamente o que você
+  escreveu no texto. O diagrama complementa, não substitui a explicação escrita.
+- 1 a 3 diagramas por resumo é o ideal. Não force diagrama onde não agrega.
+
+### Exemplo de cascata fisiopatológica
+\`\`\`mermaid
+flowchart TD
+  A["Lesao endotelial"] --> B["Ativacao plaquetaria"]
+  B --> C["Cascata de coagulacao"]
+  C --> D["Trombo intraluminal"]
+  D --> E["Isquemia tecidual"]
+  E --> F["Necrose / infarto"]
+\`\`\`
+
+### Exemplo de algoritmo diagnóstico
+\`\`\`mermaid
+flowchart TD
+  S["Dor toracica aguda"] --> Q{"ECG com supra de ST?"}
+  Q -->|Sim| IAM["IAMCSST - reperfusao imediata"]
+  Q -->|Nao| T{"Troponina elevada?"}
+  T -->|Sim| NSTEMI["IAMSSST"]
+  T -->|Nao| AI["Angina instavel / outras causas"]
+\`\`\`
+
 ## Rigor Científico
 - Cite números quando disponíveis (sensibilidade, especificidade, valores de referência)
 - Mencione níveis de evidência quando relevante
