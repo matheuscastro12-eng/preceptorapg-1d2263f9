@@ -18,16 +18,24 @@ function loadMermaid() {
         securityLevel: 'strict', // sanitiza — bloqueia script/HTML injetado
         theme: 'base',
         themeVariables: {
-          primaryColor: '#E5EFE7',
+          primaryColor: '#CDE6D4',          // verde mais saturado (não cinza)
           primaryTextColor: '#0A2E1C',
           primaryBorderColor: '#1B5E3B',
-          lineColor: '#5A5247',
-          secondaryColor: '#F6EFD8',
-          tertiaryColor: '#FBF8F2',
+          lineColor: '#1B5E3B',             // setas verde forte, não marrom-cinza
+          secondaryColor: '#F3E2B8',        // ouro
+          secondaryBorderColor: '#A88A33',
+          secondaryTextColor: '#5C3F00',
+          tertiaryColor: '#EAF3EC',
+          tertiaryBorderColor: '#1B5E3B',
+          mainBkg: '#CDE6D4',
+          clusterBkg: '#F7F4EE',
+          clusterBorder: '#D7CFBC',
+          titleColor: '#0F4128',
+          edgeLabelBackground: '#FBF8F2',
           fontFamily: "'Manrope', system-ui, sans-serif",
           fontSize: '14px',
         },
-        flowchart: { curve: 'basis', htmlLabels: true, padding: 12 },
+        flowchart: { curve: 'basis', htmlLabels: true, padding: 14 },
       });
       return mod;
     });
@@ -79,7 +87,73 @@ function normalizeMermaid(raw: string): string {
   s = s.replace(/(^|\s)([A-Za-z0-9_]+)\(([^)\n]*)\)/g,
     (m, pre, id, label) => needsQuote(label) ? `${pre}${id}(${wrap(label)})` : m);
 
-  return s;
+  return colorizeFlowchart(s);
+}
+
+/**
+ * Dá cor semântica a flowcharts/graphs (estavam monocromáticos/"cinza"):
+ *  - causa-raiz (nós sem seta de entrada) → verde escuro forte
+ *  - desfechos finais (nós sem seta de saída) → ouro/âmbar
+ *  - intermediários → verde tint
+ * Só roda se a IA NÃO tiver colocado classDef/style próprios.
+ */
+function colorizeFlowchart(src: string): string {
+  if (!/^\s*(flowchart|graph)\s/im.test(src)) return src;
+  if (/\b(classDef|class\s+[A-Za-z0-9_,]+\s+\w|style\s+[A-Za-z0-9_]+\s)/.test(src)) return src;
+
+  const ARROW = /\s(?:--+>|===*>|-\.->|--+|===*|-\.-)\s*(?:\|[^|]*\|\s*)?/;
+  const idOf = (token: string): string | null => {
+    const t = token.trim();
+    const m = t.match(/^([A-Za-z0-9_]+)/);
+    return m ? m[1] : null;
+  };
+  const refs = (side: string): string[] =>
+    side.split('&').map(idOf).filter((x): x is string => !!x);
+
+  const all = new Set<string>();
+  const hasIn = new Set<string>();
+  const hasOut = new Set<string>();
+
+  for (const rawLine of src.split('\n')) {
+    const line = rawLine.trim();
+    if (!line || /^(flowchart|graph|subgraph|end|classDef|class |style |%%)/.test(line)) continue;
+    if (!ARROW.test(line)) {
+      const single = idOf(line);
+      if (single) all.add(single);
+      continue;
+    }
+    const parts = line.split(ARROW).filter(Boolean);
+    for (let i = 0; i < parts.length; i++) {
+      const ids = refs(parts[i]);
+      ids.forEach((id) => all.add(id));
+      if (i > 0) ids.forEach((id) => hasIn.add(id));
+      if (i < parts.length - 1) ids.forEach((id) => hasOut.add(id));
+    }
+  }
+
+  if (all.size < 3) return src; // diagrama pequeno demais pra valer a pena
+
+  const roots: string[] = [];
+  const leaves: string[] = [];
+  const mids: string[] = [];
+  all.forEach((id) => {
+    const inn = hasIn.has(id);
+    const out = hasOut.has(id);
+    if (!inn && out) roots.push(id);
+    else if (inn && !out) leaves.push(id);
+    else mids.push(id);
+  });
+
+  const lines: string[] = [
+    'classDef cmRoot fill:#1B5E3B,stroke:#0F4128,stroke-width:2px,color:#FFFFFF,font-weight:600;',
+    'classDef cmMid fill:#CDE6D4,stroke:#1B5E3B,stroke-width:1.5px,color:#0A2E1C;',
+    'classDef cmLeaf fill:#F3E2B8,stroke:#A88A33,stroke-width:2px,color:#5C3F00,font-weight:600;',
+  ];
+  if (roots.length) lines.push(`class ${roots.join(',')} cmRoot;`);
+  if (mids.length) lines.push(`class ${mids.join(',')} cmMid;`);
+  if (leaves.length) lines.push(`class ${leaves.join(',')} cmLeaf;`);
+
+  return src.replace(/\s*$/, '') + '\n' + lines.join('\n') + '\n';
 }
 
 interface MermaidDiagramProps {
