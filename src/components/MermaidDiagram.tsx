@@ -37,6 +37,51 @@ function loadMermaid() {
 
 let idCounter = 0;
 
+/**
+ * Normaliza a saída da IA pra sintaxe Mermaid válida. A IA frequentemente:
+ *  - usa setas tipográficas (⟶ → ⇒ –>) em vez de "-->"
+ *  - deixa parênteses/colchetes dentro de [labels] sem aspas (quebra o parser)
+ *  - encapsula com **negrito** ou aspas curvas
+ * Isso torna o render resiliente sem depender 100% do prompt.
+ */
+function normalizeMermaid(raw: string): string {
+  let s = raw.trim();
+
+  // 1. Setas tipográficas -> sintaxe mermaid
+  s = s
+    .replace(/\s*[⟶→⇒➝➔➜⟹]\s*/g, ' --> ')
+    .replace(/\s*[–—]>\s*/g, ' --> ')   // en/em dash + >
+    .replace(/\s*-\s+->\s*/g, ' --> ')   // "- ->"
+    .replace(/\s*==+>\s*/g, ' ==> ')
+    .replace(/\s*\.\.+>\s*/g, ' -.-> ');
+
+  // 2. Aspas curvas -> retas
+  s = s.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
+
+  // 3. Remove **negrito**/`crase` que a IA às vezes coloca
+  s = s.replace(/\*\*/g, '').replace(/`/g, '');
+
+  // 4. Auto-aspas em labels de nós que contenham caractere problemático
+  //    (parêntese, dois-pontos, vírgula, /, %, etc) e ainda não estejam
+  //    entre aspas. Trata cada tipo de nó pelo seu fechamento natural:
+  //      ID[retangulo]  ID(arredondado)  ID{losango}
+  const wrap = (label: string) => `"${label.trim().replace(/"/g, "'")}"`;
+  const needsQuote = (l: string) =>
+    !/^\s*".*"\s*$/.test(l) && /[()[\]{}:;/%&|<>#]/.test(l);
+
+  // ID[ ... ]  (até o primeiro ] — labels não costumam conter ])
+  s = s.replace(/(^|\s)([A-Za-z0-9_]+)\[([^\]\n]*)\]/g,
+    (m, pre, id, label) => needsQuote(label) ? `${pre}${id}[${wrap(label)}]` : m);
+  // ID{ ... }
+  s = s.replace(/(^|\s)([A-Za-z0-9_]+)\{([^}\n]*)\}/g,
+    (m, pre, id, label) => needsQuote(label) ? `${pre}${id}{${wrap(label)}}` : m);
+  // ID( ... )  (apenas 1 nível — losango/estádio)
+  s = s.replace(/(^|\s)([A-Za-z0-9_]+)\(([^)\n]*)\)/g,
+    (m, pre, id, label) => needsQuote(label) ? `${pre}${id}(${wrap(label)})` : m);
+
+  return s;
+}
+
 interface MermaidDiagramProps {
   code: string;
 }
@@ -48,19 +93,22 @@ export default function MermaidDiagram({ code }: MermaidDiagramProps) {
 
   useEffect(() => {
     let cancelled = false;
-    const src = (code || '').trim();
-    if (!src) { setFailed(true); return; }
+    const cleaned = normalizeMermaid(code || '');
+    if (!cleaned) { setFailed(true); return; }
 
     loadMermaid()
       .then(async (mod) => {
-        try {
-          // parse valida a sintaxe antes de renderizar (não joga no DOM se quebrar)
-          await mod.default.parse(src);
-          const { svg } = await mod.default.render(idRef.current, src);
-          if (!cancelled) { setSvg(svg); setFailed(false); }
-        } catch {
-          if (!cancelled) setFailed(true);
+        // Tenta a versão normalizada; se falhar, tenta o código cru como
+        // ultimo recurso (caso a normalização tenha estragado algo válido).
+        for (const candidate of [cleaned, (code || '').trim()]) {
+          try {
+            await mod.default.parse(candidate);
+            const { svg } = await mod.default.render(idRef.current, candidate);
+            if (!cancelled) { setSvg(svg); setFailed(false); }
+            return;
+          } catch { /* tenta o próximo candidato */ }
         }
+        if (!cancelled) setFailed(true);
       })
       .catch(() => { if (!cancelled) setFailed(true); });
 
