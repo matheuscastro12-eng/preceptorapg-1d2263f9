@@ -246,37 +246,56 @@ serve(async (req) => {
       .replace(/{{distribuicao}}/g, distribuicao)
       .replace(/{{ano}}/g, "2025/2026");
 
-    let userPrompt = `Gere EXATAMENTE ${numQuestions} questões no estilo ENAMED 2025/2026.`;
-    if (sanitizedArea) {
-      userPrompt += ` Todas da área de ${AREAS_MAP[sanitizedArea]}.`;
+    const refContent = (conteudo_extra && typeof conteudo_extra === "string" && conteudo_extra.trim())
+      ? conteudo_extra.trim().slice(0, MAX_CONTENT_LENGTH)
+      : "";
+
+    // ── GERAÇÃO EM LOTES ──────────────────────────────────────────────
+    // Gerar 90 questões numa única chamada fazia o modelo perder coerência
+    // na cauda (ex: questão 65 com enunciado de neuro mas comentário de
+    // SIBO — casos clínicos misturados). Lotes pequenos mantêm cada
+    // questão internamente consistente. Chamadas sequenciais, output
+    // concatenado num único stream pro frontend (UX inalterada).
+    const BATCH_SIZE = 12;
+    const batches: { start: number; count: number }[] = [];
+    for (let s = 1; s <= numQuestions; s += BATCH_SIZE) {
+      batches.push({ start: s, count: Math.min(BATCH_SIZE, numQuestions - s + 1) });
     }
-    if (conteudo_extra && typeof conteudo_extra === "string" && conteudo_extra.trim()) {
-      const sanitized = conteudo_extra.trim().slice(0, MAX_CONTENT_LENGTH);
-      userPrompt += `\n\nConteúdo de referência para basear as questões:\n${sanitized}`;
-    }
-    userPrompt += `\n\n⚠️ Gere TODAS as ${numQuestions} questões. NÃO pare antes. Cada questão DEVE ter 4 alternativas (A-D) e gabarito comentado.`;
 
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GOOGLE_AI_API_KEY}`;
 
-    const response = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [
-          { role: "user", parts: [{ text: userPrompt }] },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 65536,
-        },
-      }),
-    });
+    function batchUserPrompt(start: number, count: number): string {
+      const end = start + count - 1;
+      let p = `Gere as questões de número ${start} a ${end} (EXATAMENTE ${count} questões nesta resposta) no estilo ENAMED 2025/2026.`;
+      p += ` Numere-as começando em "## Questão ${start}" e terminando em "## Questão ${end}".`;
+      if (sanitizedArea) p += ` Todas da área de ${AREAS_MAP[sanitizedArea]}.`;
+      else p += ` ${distribuicao}`;
+      if (refContent) p += `\n\nConteúdo de referência para basear as questões:\n${refContent}`;
+      p += `\n\n⚠️ REGRA CRÍTICA: cada questão deve ser 100% autocontida — o enunciado, as 4 alternativas, o gabarito e TODO o comentário devem tratar do MESMO caso clínico. NUNCA misture o caso de uma questão com o comentário de outra. Gere as ${count} questões completas, não pare antes.`;
+      return p;
+    }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Gemini API error:", response.status, errorText);
-      if (response.status === 429) {
+    async function fetchBatch(start: number, count: number): Promise<Response> {
+      return await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: "user", parts: [{ text: batchUserPrompt(start, count) }] }],
+          generationConfig: {
+            temperature: 0.55, // menor = menos drift entre casos clínicos
+            maxOutputTokens: 32000,
+          },
+        }),
+      });
+    }
+
+    // Valida o 1º lote antes de abrir o stream (pra retornar erro HTTP limpo)
+    const first = await fetchBatch(batches[0].start, batches[0].count);
+    if (!first.ok) {
+      const errorText = await first.text();
+      console.error("Gemini API error:", first.status, errorText);
+      if (first.status === 429) {
         return new Response(
           JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns minutos." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -288,34 +307,72 @@ serve(async (req) => {
       );
     }
 
-    const transformStream = new TransformStream({
-      transform(chunk, controller) {
-        const text = new TextDecoder().decode(chunk);
-        const lines = text.split("\n");
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const jsonStr = line.slice(6).trim();
-          if (!jsonStr) continue;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (content) {
-              const openAiChunk = { choices: [{ delta: { content } }] };
-              controller.enqueue(
-                new TextEncoder().encode(`data: ${JSON.stringify(openAiChunk)}\n\n`)
-              );
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    function pumpInto(controller: ReadableStreamDefaultController, resp: Response): Promise<void> {
+      return new Promise(async (resolve) => {
+        const reader = resp.body?.getReader();
+        if (!reader) return resolve();
+        let buf = "";
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
+            let nl: number;
+            while ((nl = buf.indexOf("\n")) !== -1) {
+              const line = buf.slice(0, nl);
+              buf = buf.slice(nl + 1);
+              if (!line.startsWith("data: ")) continue;
+              const jsonStr = line.slice(6).trim();
+              if (!jsonStr) continue;
+              try {
+                const parsed = JSON.parse(jsonStr);
+                const content = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (content) {
+                  controller.enqueue(encoder.encode(
+                    `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`
+                  ));
+                }
+              } catch { /* ignore partial */ }
             }
-          } catch {
-            // Ignore
           }
+        } catch (e) {
+          console.error("pumpInto error:", e);
         }
-      },
-      flush(controller) {
-        controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"));
+        resolve();
+      });
+    }
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          await pumpInto(controller, first);
+          for (let i = 1; i < batches.length; i++) {
+            // Separador entre lotes garante que o parser não cole a última
+            // questão de um lote com a primeira do próximo.
+            controller.enqueue(encoder.encode(
+              `data: ${JSON.stringify({ choices: [{ delta: { content: "\n\n---\n\n" } }] })}\n\n`
+            ));
+            let resp: Response | null = null;
+            for (let attempt = 0; attempt < 2 && !resp; attempt++) {
+              const r = await fetchBatch(batches[i].start, batches[i].count);
+              if (r.ok) resp = r;
+              else { console.error("batch", i, "status", r.status); await new Promise((x) => setTimeout(x, 1500)); }
+            }
+            if (resp) await pumpInto(controller, resp);
+          }
+        } catch (e) {
+          console.error("enamed stream error:", e);
+        } finally {
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+        }
       },
     });
 
-    return new Response(response.body!.pipeThrough(transformStream), {
+    return new Response(stream, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
