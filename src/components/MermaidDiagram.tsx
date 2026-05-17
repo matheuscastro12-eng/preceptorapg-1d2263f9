@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { Maximize2, X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
 /**
  * Renderiza um bloco ```mermaid``` como SVG.
@@ -167,6 +168,7 @@ interface MermaidDiagramProps {
 export default function MermaidDiagram({ code }: MermaidDiagramProps) {
   const [svg, setSvg] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const idRef = useRef(`mmd-${++idCounter}-${Date.now()}`);
 
   useEffect(() => {
@@ -214,10 +216,124 @@ export default function MermaidDiagram({ code }: MermaidDiagramProps) {
   }
 
   return (
+    <>
+      <div className="my-6 rounded-lg border border-slate-200 bg-white">
+        <div className="flex items-center justify-between border-b border-slate-100 px-3 py-1.5">
+          <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+            Diagrama
+          </span>
+          <button
+            onClick={() => setExpanded(true)}
+            className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-[#005344] hover:bg-[#006D5B]/10 transition-colors"
+            title="Ampliar diagrama"
+          >
+            <Maximize2 className="h-3.5 w-3.5" />
+            Ampliar
+          </button>
+        </div>
+        <div
+          className="mermaid-diagram flex cursor-zoom-in justify-center overflow-x-auto p-4"
+          onClick={() => setExpanded(true)}
+          title="Clique para ampliar"
+          // eslint-disable-next-line react/no-danger -- svg vem do mermaid com securityLevel:'strict' (sanitizado)
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
+      </div>
+
+      {expanded && (
+        <MermaidLightbox svg={svg} onClose={() => setExpanded(false)} />
+      )}
+    </>
+  );
+}
+
+/* ─── Lightbox com zoom + pan ─── */
+function MermaidLightbox({ svg, onClose }: { svg: string; onClose: () => void }) {
+  const [scale, setScale] = useState(1);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
+
+  const reset = useCallback(() => { setScale(1); setPos({ x: 0, y: 0 }); }, []);
+  const zoom = useCallback((delta: number) => {
+    setScale((s) => Math.min(5, Math.max(0.4, +(s + delta).toFixed(2))));
+  }, []);
+
+  // Esc fecha, +/- controla zoom; trava scroll do body
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      else if (e.key === '+' || e.key === '=') zoom(0.25);
+      else if (e.key === '-') zoom(-0.25);
+      else if (e.key === '0') reset();
+    };
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose, zoom, reset]);
+
+  const onWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    zoom(e.deltaY < 0 ? 0.15 : -0.15);
+  };
+  const onPointerDown = (e: React.PointerEvent) => {
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    dragRef.current = { x: e.clientX, y: e.clientY, px: pos.x, py: pos.y };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    setPos({
+      x: dragRef.current.px + (e.clientX - dragRef.current.x),
+      y: dragRef.current.py + (e.clientY - dragRef.current.y),
+    });
+  };
+  const onPointerUp = () => { dragRef.current = null; };
+
+  return (
     <div
-      className="mermaid-diagram my-6 flex justify-center overflow-x-auto rounded-lg border border-slate-200 bg-white p-4"
-      // eslint-disable-next-line react/no-danger -- svg vem do mermaid com securityLevel:'strict' (sanitizado)
-      dangerouslySetInnerHTML={{ __html: svg }}
-    />
+      className="fixed inset-0 z-[1000] flex flex-col bg-slate-900/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      {/* Toolbar */}
+      <div
+        className="flex items-center justify-between px-4 py-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="text-sm font-medium text-white/80">Diagrama — arraste para mover, scroll para zoom</span>
+        <div className="flex items-center gap-1.5">
+          <button onClick={() => zoom(-0.25)} className="rounded-md bg-white/10 p-2 text-white hover:bg-white/20" title="Diminuir (-)"><ZoomOut className="h-4 w-4" /></button>
+          <span className="min-w-[3rem] text-center text-sm font-mono text-white/70">{Math.round(scale * 100)}%</span>
+          <button onClick={() => zoom(0.25)} className="rounded-md bg-white/10 p-2 text-white hover:bg-white/20" title="Aumentar (+)"><ZoomIn className="h-4 w-4" /></button>
+          <button onClick={reset} className="rounded-md bg-white/10 p-2 text-white hover:bg-white/20" title="Resetar (0)"><RotateCcw className="h-4 w-4" /></button>
+          <button onClick={onClose} className="ml-2 rounded-md bg-white/10 p-2 text-white hover:bg-white/20" title="Fechar (Esc)"><X className="h-4 w-4" /></button>
+        </div>
+      </div>
+
+      {/* Canvas */}
+      <div
+        className="relative flex-1 touch-none overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+        onWheel={onWheel}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerLeave={onPointerUp}
+        style={{ cursor: dragRef.current ? 'grabbing' : 'grab' }}
+      >
+        <div
+          className="absolute left-1/2 top-1/2 [&_svg]:max-w-none"
+          style={{
+            transform: `translate(-50%, -50%) translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
+            transformOrigin: 'center center',
+            transition: dragRef.current ? 'none' : 'transform 0.08s ease-out',
+          }}
+          // eslint-disable-next-line react/no-danger -- svg sanitizado (securityLevel:strict)
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
+      </div>
+    </div>
   );
 }
