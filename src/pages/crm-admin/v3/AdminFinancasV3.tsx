@@ -8,7 +8,7 @@ import { usePromocoesTrimestrais } from "@/hooks/useCarreira";
 import { useMembros } from "@/hooks/useTime";
 import { useReceitas, useReceitaResumo, useReceitaPorPlano } from "@/hooks/useReceitas";
 import { useDespesas, useDespesaResumo, useDespesasPorCategoria } from "@/hooks/useDespesas";
-import { useFluxoCaixa, useRunway, useEntradasPrevistas, useSaidasPrevistas, useAportes, useCreateAporte, useDeleteAporte } from "@/hooks/useFluxoCaixa";
+import { useFluxoCaixa, useRunway, useEntradasPrevistas, useSaidasPrevistas, useEntradasRealizadas, useAportes, useCreateAporte, useDeleteAporte } from "@/hooks/useFluxoCaixa";
 import { useInadimplencias, useInadimplenciaStats } from "@/hooks/useInadimplencia";
 import { usePremissaAtiva, useDREData, calcularReceitas } from "@/hooks/useForecast";
 import { useOKRs } from "@/hooks/useOKRs";
@@ -342,6 +342,7 @@ export function FluxoCaixaV3() {
   const { data: runway } = useRunway();
   const { data: entradas } = useEntradasPrevistas();
   const { data: saidas } = useSaidasPrevistas();
+  const { data: realizadas } = useEntradasRealizadas(30);
   const { data: aportes } = useAportes();
   const [showAporte, setShowAporte] = useState(false);
 
@@ -388,9 +389,37 @@ export function FluxoCaixaV3() {
             deltaText={`runway ${runway?.runway ?? 0} meses`} accent={deltaCaixa >= 0 ? "mrr" : "warn"} />
         </section>
 
+        {/* Recebimentos REALIZADOS — dinheiro que entrou (mensal + anual). */}
+        <section className="crm-card">
+          <CardHead
+            title="Recebimentos realizados · 30d"
+            sub={`${(realizadas ?? []).length} pagamentos · ${fmtBRL2((realizadas ?? []).reduce((s, r) => s + r.valor, 0))} entrou (mensal + anual)`}
+          />
+          {(realizadas ?? []).length > 0 ? (
+            <table className="crm-tbl">
+              <thead><tr><th>Descrição</th><th>Plano</th><th>Origem</th><th>Data</th><th style={{ textAlign: "right" }}>Valor</th></tr></thead>
+              <tbody>
+                {(realizadas ?? []).slice(0, 20).map((r: any) => (
+                  <tr key={r.id}>
+                    <td className="lead-name">{r.descricao}</td>
+                    <td><span className={`crm-tag ${r.plano === "anual" || r.plano === "bianual" ? "crm-tag-green" : "crm-tag-gray"}`}><span className="crm-tag-dot" />{r.plano}</span></td>
+                    <td className="muted" style={{ fontSize: 12 }}>{r.origem}</td>
+                    <td className="muted crm-mono" style={{ fontSize: 12 }}>{fmtData(r.data)}</td>
+                    <td className="num" style={{ color: "var(--crm-green-deep)", fontWeight: 700 }}>{fmtBRL2(r.valor)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div style={{ padding: 32, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
+              Nenhum recebimento nos últimos 30 dias.
+            </div>
+          )}
+        </section>
+
         <section className="crm-mobile-stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
           <div className="crm-card">
-            <CardHead title="Próximos recebimentos · 30d" sub={`${(entradas ?? []).filter((e: any) => new Date(e.data) <= em30d).length} previstos`} />
+            <CardHead title="Próximos recebimentos · renovações 30d" sub={`${(entradas ?? []).filter((e: any) => new Date(e.data) <= em30d).length} renovações previstas`} />
             {entradas && entradas.length > 0 ? (
               <table className="crm-tbl">
                 <thead><tr><th>Descrição</th><th>Data</th><th style={{ textAlign: "right" }}>Valor</th></tr></thead>

@@ -229,6 +229,36 @@ export function useEntradasPrevistas() {
   });
 }
 
+/**
+ * Recebimentos REALIZADOS — dinheiro que efetivamente entrou (admin_receitas
+ * por data_inicio recente), independente de plano. Resolve a confusao de
+ * pagamentos anuais "sumirem": eles entram aqui no dia do pagamento, em vez
+ * de so aparecerem como renovacao daqui 1 ano em "Proximos recebimentos".
+ */
+export function useEntradasRealizadas(dias = 30) {
+  return useQuery({
+    queryKey: ["crm-admin", "entradas-realizadas", dias],
+    queryFn: async () => {
+      const desde = new Date(Date.now() - dias * 86400000).toISOString().slice(0, 10);
+      const { data } = await supabase
+        .from("admin_receitas")
+        .select("id, produto, plano, valor, data_inicio, origem, event_type, observacoes")
+        .gte("data_inicio", desde)
+        .order("data_inicio", { ascending: false });
+
+      return (data ?? []).map((r) => ({
+        id: r.id,
+        descricao: `${r.produto === "preceptormed" ? "PreceptorMED" : r.produto === "preceptorenem" ? "PreceptorENEM" : r.produto} · ${r.plano}`,
+        plano: r.plano,
+        valor: Number(r.valor),
+        data: r.data_inicio,
+        origem: r.origem,
+        obs: r.observacoes,
+      }));
+    },
+  });
+}
+
 export function useSaidasPrevistas() {
   return useQuery({
     queryKey: ["crm-admin", "saidas-previstas"],
