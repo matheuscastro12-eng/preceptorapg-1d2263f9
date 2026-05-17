@@ -185,7 +185,11 @@ Responda APENAS o JSON estruturado conforme o schema.`;
 
     const userPrompt = `Dias com fases já definidas (${total} dias):\n${JSON.stringify(skeleton)}\n\nTópicos do estudante: ${body.topicos_input}\nHoras por dia: ${horas}h`;
 
-    const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+    // gemini-2.0-flash: sem "thinking" (que no 2.5-flash consumia os
+    // maxOutputTokens antes de emitir o JSON, truncando a resposta e
+    // quebrando o JSON.parse -> "Falha ao gerar plano"). 2.0-flash lida
+    // muito bem com responseSchema/JSON estruturado e output grande.
+    const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
 
     let lastErr: string | null = null;
     let parsed: { topicos_normalizados: string[]; distribuicao: DiaIA[] } | null = null;
@@ -202,7 +206,7 @@ Responda APENAS o JSON estruturado conforme o schema.`;
               temperature: 0.6,
               responseMimeType: "application/json",
               responseSchema: planSchema,
-              maxOutputTokens: 16000,
+              maxOutputTokens: 32000,
             },
           }),
         });
@@ -217,20 +221,38 @@ Responda APENAS o JSON estruturado conforme o schema.`;
         }
 
         const out = await res.json();
-        const text = out?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const finishReason = out?.candidates?.[0]?.finishReason;
+        let text = out?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!text) {
-          lastErr = "Resposta vazia da IA";
+          lastErr = `Resposta vazia da IA (finishReason=${finishReason ?? "?"})`;
+          console.warn("[generate-study-plan]", lastErr, JSON.stringify(out?.candidates?.[0] ?? out).slice(0, 500));
           continue;
         }
-        parsed = JSON.parse(text);
+        // Resiliencia: remove fences markdown se o modelo encapsular o JSON
+        text = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+        if (finishReason === "MAX_TOKENS") {
+          // JSON provavelmente truncado — registra e tenta de novo
+          lastErr = "Resposta truncada (MAX_TOKENS)";
+          console.warn("[generate-study-plan] MAX_TOKENS — JSON truncado, retry");
+          continue;
+        }
+        try {
+          parsed = JSON.parse(text);
+        } catch (pe) {
+          lastErr = `JSON invalido: ${String(pe)} — inicio: ${text.slice(0, 200)}`;
+          console.warn("[generate-study-plan]", lastErr);
+          continue;
+        }
         break;
       } catch (e) {
         lastErr = String(e);
+        console.warn("[generate-study-plan] attempt", attempt, "erro:", lastErr);
         await new Promise((r) => setTimeout(r, [1000, 3000, 9000][attempt] ?? 3000));
       }
     }
 
     if (!parsed || !parsed.distribuicao || parsed.distribuicao.length === 0) {
+      console.error("[generate-study-plan] falha final:", lastErr);
       return jsonErr(502, `Falha ao gerar plano: ${lastErr ?? "desconhecido"}`);
     }
 
