@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, RotateCcw, Trophy, Eye, EyeOff, Loader2 } from 'lucide-react';
 import type { EnamedQuestion } from '@/hooks/useEnamedBank';
-import { AREA_LABELS } from '@/hooks/useEnamedBank';
+import { AREA_LABELS, sourceLabel } from '@/hooks/useEnamedBank';
 
 interface EnamedBankSimulationProps {
   questions: EnamedQuestion[];
@@ -178,7 +178,11 @@ const EnamedBankSimulation = ({ questions, onFinish, onExit, loading }: EnamedBa
                 Tema oculto
               </span>
             )}
-            <span className="text-xs text-muted-foreground">ENAMED {currentQ.ano}</span>
+            <span className="text-[10.5px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-md" style={{
+              background: (currentQ as any).source === 'revalida' ? 'rgba(201,168,76,0.12)' : 'rgba(0,109,91,0.08)',
+              color: (currentQ as any).source === 'revalida' ? '#8a6f26' : '#005344',
+              border: `1px solid ${(currentQ as any).source === 'revalida' ? 'rgba(201,168,76,0.3)' : 'rgba(0,109,91,0.2)'}`,
+            }}>{sourceLabel((currentQ as any).source, currentQ.ano)}</span>
             {currentQ.anulada && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/20 text-destructive font-medium">ANULADA</span>
             )}
@@ -186,6 +190,24 @@ const EnamedBankSimulation = ({ questions, onFinish, onExit, loading }: EnamedBa
 
           {/* Enunciado */}
           <div className="text-sm leading-relaxed whitespace-pre-wrap">{currentQ.enunciado}</div>
+
+          {/* Imagem do enunciado (ECG / RX / tabela / fluxograma) */}
+          {currentQ.imagem_url && (
+            <figure className="mt-4 rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-50">
+              <a href={currentQ.imagem_url} target="_blank" rel="noopener noreferrer" className="block group">
+                <img
+                  src={currentQ.imagem_url}
+                  alt={`Imagem da questão ${currentQ.numero}`}
+                  loading="lazy"
+                  className="w-full h-auto max-h-[600px] object-contain transition-opacity group-hover:opacity-90"
+                />
+                <figcaption className="px-3 py-2 text-[11px] text-[#94a3b8] font-medium border-t border-slate-200 inline-flex items-center gap-1.5 w-full">
+                  <span className="material-symbols-outlined text-[14px]">image</span>
+                  Imagem da prova original — clique para abrir em tamanho real
+                </figcaption>
+              </a>
+            </figure>
+          )}
 
           {/* Alternatives */}
           <div className="space-y-2">

@@ -538,7 +538,45 @@ serve(async (req) => {
 
     // Parse and validate input
     const body = await req.json();
-    const { tema, objetivos, modo = "fechamento", secoes = {} } = body;
+    const { tema, objetivos, modo = "fechamento", secoes = {}, artigos: rawArtigos } = body;
+
+    // Validate artigos (artigos anexados pelo estudante — PDFs)
+    interface AttachedArticle {
+      name: string;
+      mimeType: string;
+      data: string;
+    }
+    const MAX_ARTIGOS = 3;
+    const MAX_BASE64_LEN = 7_000_000; // ~5MB binary
+    const ALLOWED_MIMES = new Set(["application/pdf"]);
+    const artigos: AttachedArticle[] = [];
+    if (Array.isArray(rawArtigos) && rawArtigos.length > 0) {
+      if (rawArtigos.length > MAX_ARTIGOS) {
+        return new Response(
+          JSON.stringify({ error: `Maximo ${MAX_ARTIGOS} artigos por geracao` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      for (const a of rawArtigos) {
+        if (!a || typeof a !== "object") continue;
+        const name = typeof a.name === "string" ? a.name.slice(0, 200) : "";
+        const mimeType = typeof a.mimeType === "string" ? a.mimeType : "";
+        const data = typeof a.data === "string" ? a.data : "";
+        if (!ALLOWED_MIMES.has(mimeType)) {
+          return new Response(
+            JSON.stringify({ error: `Tipo de arquivo nao suportado: ${mimeType}. Apenas PDF.` }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        if (!data || data.length > MAX_BASE64_LEN) {
+          return new Response(
+            JSON.stringify({ error: "Arquivo invalido ou maior que 5MB" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        artigos.push({ name, mimeType, data });
+      }
+    }
     
     // Validate tema
     if (!tema || typeof tema !== "string" || !tema.trim()) {
@@ -696,6 +734,23 @@ Regras:
       }
     }
 
+    // Bloco de artigos anexados pelo estudante
+    if (artigos.length > 0) {
+      userPrompt += `
+
+# ARTIGOS ANEXADOS PELO ESTUDANTE (FONTE PREFERENCIAL)
+
+O estudante anexou ${artigos.length} arquivo${artigos.length === 1 ? "" : "s"} PDF a esta solicitacao:
+${artigos.map((a, i) => `${i + 1}. "${a.name}"`).join("\n")}
+
+Voce esta recebendo o conteudo desses PDFs como anexo a esta mensagem (alem do texto). Regras de uso:
+1. **Use os artigos como fonte preferencial** para o conteudo do resumo. Quando o artigo contiver dado direto sobre o tema/objetivos (mecanismo, valor, criterio, conduta, estatistica), priorize-o sobre conhecimento geral do seu treinamento.
+2. **Cite explicitamente quando usar**: ao usar uma informacao especifica de um arquivo, sinalize com \`[ref: NomeDoArquivo]\` ao final da frase. Ex: "A mortalidade hospitalar foi de 23% [ref: Smith2024.pdf]".
+3. **Discrepancias**: se um artigo anexado contradiz o conhecimento padrao (livro-texto, diretriz brasileira), sinalize a divergencia explicitamente em vez de ignorar. Ex: "O artigo anexado relata X, divergindo da diretriz da SBC que recomenda Y."
+4. **Cobertura**: nao limite o resumo apenas ao que os arquivos cobrem. Se o tema/objetivos exigem assuntos nao tratados nos PDFs, complete com conhecimento padrao (mantendo a regra de ouro: sem inventar numeros).
+5. **Profundidade**: as regras de profundidade tecnica e estrutura por tipo de tema continuam valendo integralmente.`;
+    }
+
     // Chain-of-thought preamble
     userPrompt += `
 
@@ -733,16 +788,26 @@ Agora gere o resumo completo dentro do escopo identificado.`;
       usageMetadata: unknown;
     };
 
+    // Build inline PDF parts uma vez. Anexamos apenas na primeira passada
+    // (continuacoes nao precisam reenviar — modelo continua a partir do texto).
+    const attachmentParts = artigos.map(a => ({
+      inlineData: { mimeType: a.mimeType, data: a.data },
+    }));
+
     /** Faz UMA call Gemini com retry; se 503 persistir após retries com
      * o modelo primário (flash), troca pra fallback (pro) e tenta de novo. */
     async function streamOnce(
       promptText: string,
       controller: ReadableStreamDefaultController,
       encoder: TextEncoder,
+      includeAttachments: boolean = false,
     ): Promise<StreamResult> {
+      const parts = includeAttachments
+        ? [...attachmentParts, { text: promptText }]
+        : [{ text: promptText }];
       const requestBody = JSON.stringify({
         systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: promptText }] }],
+        contents: [{ role: "user", parts }],
         generationConfig: {
           temperature: 0.7,
           maxOutputTokens: 65536,
@@ -887,8 +952,8 @@ Agora gere o resumo completo dentro do escopo identificado.`;
         let continuationsUsed = 0;
 
         try {
-          // PASSADA 1: prompt original
-          const r1 = await streamOnce(userPrompt, wrappedController, encoder);
+          // PASSADA 1: prompt original + PDFs anexados (se houver)
+          const r1 = await streamOnce(userPrompt, wrappedController, encoder, true);
           totalCharsAll += r1.totalChars;
           lastFinishReason = r1.finishReason;
           lastUpstreamError = r1.upstreamError;

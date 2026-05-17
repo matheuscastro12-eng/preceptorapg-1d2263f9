@@ -40,3 +40,4 @@ create_report.py
 *.xlsx
 .~lock.*
 .claude/worktrees/
+revalida/

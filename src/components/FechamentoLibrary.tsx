@@ -30,7 +30,8 @@ export interface Fechamento {
   id: string;
   tema: string;
   objetivos: string | null;
-  resultado: string;
+  /** Pode vir undefined da listagem (lazy-load on demand pra acelerar grid) */
+  resultado?: string;
   favorito: boolean;
   created_at: string;
   tipo: 'fechamento' | 'prova' | 'caso_clinico';
@@ -57,9 +58,11 @@ const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
 
   const fetchFechamentos = async () => {
     try {
+      // OTIMIZACAO: nao buscar 'resultado' (50KB+ por linha) na listagem.
+      // Lazy-load quando o usuario clicar num card (em Library.tsx).
       const { data, error } = await supabase
         .from('fechamentos')
-        .select('*')
+        .select('id, tema, objetivos, favorito, created_at, tipo, exam_config')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -73,7 +76,7 @@ const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
             ? { quantidade: Number(config.quantidade), nivel: String(config.nivel), simulationMode: Boolean(config.simulationMode) }
             : null;
 
-        return { id: item.id, tema: item.tema, objetivos: item.objetivos, resultado: item.resultado, favorito: item.favorito, created_at: item.created_at, tipo, exam_config: examConfig };
+        return { id: item.id, tema: item.tema, objetivos: item.objetivos, favorito: item.favorito, created_at: item.created_at, tipo, exam_config: examConfig };
       });
 
       setFechamentos(normalized);
@@ -265,10 +268,13 @@ const FechamentoLibrary = ({ onSelect }: FechamentoLibraryProps) => {
                   {fechamento.tema}
                 </h3>
 
-                {/* Preview (só mostra se espaço suficiente) */}
-                <p className="text-[11.5px] text-brand-ink-2/80 leading-[1.5] line-clamp-2 flex-1">
-                  {fechamento.resultado.replace(/[#*`>-]/g, '').slice(0, 140).trim()}…
-                </p>
+                {/* Preview — usa objetivos (curto, no DB sem custo) em vez de resultado
+                    (que agora e lazy-loaded e nao vem na listagem) */}
+                {fechamento.objetivos && fechamento.objetivos.trim() && (
+                  <p className="text-[11.5px] text-brand-ink-2/80 leading-[1.5] line-clamp-2 flex-1">
+                    {fechamento.objetivos.replace(/\n+/g, ' • ').slice(0, 140).trim()}
+                  </p>
+                )}
 
                 {/* Footer com data */}
                 <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">

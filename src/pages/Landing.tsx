@@ -44,14 +44,14 @@ const Landing = () => {
     return null;
   }
 
-  const handleSubscribe = (planType: 'monthly' | 'annual' | 'biannual') => {
+  const handleSubscribe = async (planType: 'monthly' | 'annual' | 'biannual') => {
     trackConversion(`subscribe-${planType}`);
     if (!user) {
       // Not logged in — send to signup first, then checkout opens after
       navigate(`/auth?tab=signup&plan=${planType}`);
       return;
     }
-    const link = getEasyflowLink(planType, user.email ?? undefined);
+    const link = await getEasyflowLink(planType, user.email ?? undefined, user.id, 'landing');
     if (link) {
       window.open(link, '_blank');
     } else {

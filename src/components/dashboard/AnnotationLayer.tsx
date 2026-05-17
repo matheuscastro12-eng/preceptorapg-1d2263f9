@@ -132,9 +132,12 @@ const AnnotationLayer = ({ fechamentoId, containerRef, userId }: Props) => {
       const selectionStart = getCharOffsetWithinContainer(container, range.startContainer, range.startOffset);
       const occurrenceIndex = countOccurrencesBefore(fullText, text, selectionStart);
 
+      // Toolbar usa position: fixed (viewport-relative) — NAO somar window.scrollY/X
+      // porque getBoundingClientRect ja retorna em coords de viewport. Somar o scroll
+      // faz o toolbar desaparecer pra fora da tela quando o usuario esta scrollado.
       setToolbar({
-        x: rect.left + rect.width / 2 + window.scrollX,
-        y: rect.top + window.scrollY - 8,
+        x: rect.left + rect.width / 2,
+        y: rect.top - 8,
         selectedText: text,
         occurrenceIndex,
       });
@@ -160,10 +163,11 @@ const AnnotationLayer = ({ fechamentoId, containerRef, userId }: Props) => {
       const ann = annotations.find(a => a.id === id);
       if (!ann) return;
       const rect = mark.getBoundingClientRect();
+      // Tooltip tb usa position: fixed — viewport coords, sem somar scroll
       setActiveTooltip({
         annotation: ann,
-        x: rect.left + rect.width / 2 + window.scrollX,
-        y: rect.bottom + window.scrollY + 8,
+        x: rect.left + rect.width / 2,
+        y: rect.bottom + 8,
       });
     };
 

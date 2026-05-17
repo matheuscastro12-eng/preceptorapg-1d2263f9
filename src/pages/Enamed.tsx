@@ -49,6 +49,9 @@ const Enamed = () => {
   const [mode, setMode] = useState<EnamedMode>(searchParams.get('area') === 'true' ? 'ia_area' : 'menu');
   const [selectedArea, setSelectedArea] = useState<EnamedArea | null>(null);
   const [source, setSource] = useState<EnamedSource>('banco');
+  // Filtro do banco: ENAMED INEP, Revalida ou ambos. A banca eh a mesma
+  // (INEP/MEC) — Revalida usa o mesmo padrao tecnico.
+  const [bankSource, setBankSource] = useState<'all' | 'enamed' | 'revalida'>('all');
 
   // Sync mode with URL params when navigating between ENAMED and Simulado por Área
   useEffect(() => {
@@ -57,6 +60,40 @@ const Enamed = () => {
     if (!isArea && mode === 'ia_area' && !generating) setMode('menu');
   }, [searchParams]);
   const [userStats, setUserStats] = useState({ avg: 0, trend: 0, simCount: 0, topArea: '' });
+  const [bankStats, setBankStats] = useState({ total: 0, enamed: 0, revalida: 0 });
+  const [recentAttempts, setRecentAttempts] = useState<Array<{ percentage: number; correct: number; total: number; created_at: string; modo: string }>>([]);
+
+  // Conta questoes disponiveis por fonte (banco oficial INEP + Revalida)
+  useEffect(() => {
+    (async () => {
+      const { count: total } = await supabase.from('enamed_questions').select('*', { count: 'exact', head: true }).eq('anulada', false);
+      const { count: revalida } = await supabase.from('enamed_questions').select('*', { count: 'exact', head: true }).eq('anulada', false).eq('source', 'revalida');
+      setBankStats({
+        total: total ?? 0,
+        revalida: revalida ?? 0,
+        enamed: (total ?? 0) - (revalida ?? 0),
+      });
+    })();
+  }, []);
+
+  // Ultimos simulados realizados
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from('enamed_attempts')
+        .select('percentage, correct_answers, total_questions, created_at, modo')
+        .order('created_at', { ascending: false })
+        .limit(3);
+      setRecentAttempts((data ?? []).map(a => ({
+        percentage: Number(a.percentage),
+        correct: a.correct_answers,
+        total: a.total_questions,
+        created_at: a.created_at,
+        modo: a.modo,
+      })));
+    })();
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -97,7 +134,9 @@ const Enamed = () => {
     setMode(m);
     setSelectedArea(area || null);
 
-    const opts: { area?: EnamedArea; limit?: number; shuffle?: boolean } = {};
+    const opts: { area?: EnamedArea; limit?: number; shuffle?: boolean; source?: 'all' | 'enamed' | 'revalida' } = {
+      source: bankSource,
+    };
     if (m === 'revisao') { opts.shuffle = true; opts.limit = 20; }
     await fetchQuestions(opts);
   };
@@ -139,78 +178,202 @@ const Enamed = () => {
     <DashboardLayout mainClassName="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto">
       <div className="w-full">
 
-        {/* ═══════════════════════ MENU ═══════════════════════ */}
+        {/* ═══════════════════════ MENU (2-col layout) ═══════════════════════ */}
         {mode === 'menu' && (
-          <div className="max-w-5xl mx-auto">
-            <div className="relative bg-white rounded-3xl border border-slate-200 shadow-[0_1px_2px_rgba(25,28,29,0.04)] overflow-hidden">
-              {/* Top accent — verde + ouro */}
-              <div className="h-1 bg-gradient-to-r from-[#003D32] via-[#005344] via-[#006D5B] to-[#C9A84C]" />
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 lg:gap-6">
 
-              <div className="px-5 sm:px-8 md:px-12 py-7 sm:py-9 md:py-12 space-y-9">
-                {/* Header editorial */}
-                <header>
-                  <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2.5 mb-3">
-                    <span className="w-6 h-px bg-[#C9A84C]" />
-                    Central ENAMED
-                  </p>
-                  <h1 className="font-['Manrope'] font-bold text-[28px] sm:text-[34px] tracking-[-0.025em] leading-[1.05] text-[#191C1D]">
-                    Prepare-se para o<br />
-                    Exame{' '}
-                    <em className="not-italic font-medium text-[#8a6f26]">
-                      Nacional de Médicos
-                    </em>
-                    .
-                  </h1>
-                  <p className="text-sm text-[#4a5568] mt-3 max-w-[52ch] leading-relaxed">
-                    Banco oficial INEP, simulado completo cronometrado e questões inéditas
-                    geradas por PreceptorMED — tudo num só lugar.
-                  </p>
-                </header>
+            {/* ─── COLUNA PRINCIPAL ─── */}
+            <div className="xl:col-span-8">
+              <div className="relative bg-white rounded-3xl border border-slate-200 shadow-[0_1px_2px_rgba(25,28,29,0.04)] overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-[#003D32] via-[#005344] via-[#006D5B] to-[#C9A84C]" />
 
-                {/* ── Desempenho ── */}
-                <section>
-                  <div className="flex items-baseline justify-between mb-3">
-                    <label className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a5568]">
-                      ① Seu desempenho
-                    </label>
-                    {userStats.simCount > 0 && (
-                      <span className={`text-[10.5px] font-bold inline-flex items-center gap-1.5 ${userStats.trend >= 0 ? 'text-[#005344]' : 'text-red-500'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${userStats.trend >= 0 ? 'bg-[#005344]' : 'bg-red-500'}`} />
-                        {userStats.trend >= 0 ? '+' : ''}{userStats.trend}% vs anterior
-                      </span>
-                    )}
-                  </div>
-                  <div className="bg-slate-50/60 border-2 border-slate-200 rounded-xl px-5 py-5">
-                    {userStats.simCount > 0 ? (
-                      <>
-                        <div className="flex items-end justify-between mb-3">
-                          <div>
-                            <p className="font-['Manrope'] text-[40px] font-black text-[#005344] tabular-nums leading-none">
-                              {userStats.avg}<span className="text-[20px] text-[#94a3b8]">%</span>
-                            </p>
-                            <p className="text-[11px] text-[#94a3b8] mt-1">acerto médio · {userStats.simCount} simulado{userStats.simCount === 1 ? '' : 's'}</p>
-                          </div>
+                <div className="px-5 sm:px-8 md:px-10 py-7 sm:py-9 space-y-9">
+                  {/* Header editorial */}
+                  <header>
+                    <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2.5 mb-3">
+                      <span className="w-6 h-px bg-[#C9A84C]" />
+                      Central de Provas · Médico
+                    </p>
+                    <h1 className="font-['Manrope'] font-bold text-[28px] sm:text-[34px] tracking-[-0.025em] leading-[1.05] text-[#191C1D]">
+                      Prepare-se para{' '}
+                      <em className="not-italic font-medium text-[#8a6f26]">
+                        ENAMED + Revalida
+                      </em>
+                      .
+                    </h1>
+                    <p className="text-sm text-[#4a5568] mt-3 max-w-[52ch] leading-relaxed">
+                      Banco oficial INEP/MEC — {bankStats.total} questões reais com gabarito comentado, simulado cronometrado e questões inéditas geradas por PreceptorMED.
+                    </p>
+                  </header>
+
+                  {/* ── DESTAQUE: ENAMED + Revalida = mesma banca ── */}
+                  <div className="relative overflow-hidden rounded-2xl border-2 border-[#C9A84C]/30 bg-gradient-to-br from-[#C9A84C]/12 via-[#C9A84C]/06 to-transparent">
+                    <div className="absolute right-0 top-0 h-full pointer-events-none opacity-[0.08]">
+                      <svg width="180" height="100%" viewBox="0 0 180 200" preserveAspectRatio="xMaxYMid slice">
+                        <defs>
+                          <pattern id="bk-dots" width="14" height="14" patternUnits="userSpaceOnUse">
+                            <circle cx="7" cy="7" r="0.7" fill="#8a6f26" />
+                          </pattern>
+                        </defs>
+                        <rect width="180" height="200" fill="url(#bk-dots)" />
+                        <circle cx="130" cy="100" r="50" fill="none" stroke="#8a6f26" strokeWidth="1" />
+                        <circle cx="130" cy="100" r="32" fill="none" stroke="#8a6f26" strokeWidth="0.6" strokeDasharray="3 3" />
+                      </svg>
+                    </div>
+                    <div className="relative p-5 sm:p-6">
+                      <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#8a6f26] inline-flex items-center gap-2 mb-2">
+                        <span className="w-5 h-px bg-[#8a6f26]" />
+                        Por que estudar ambos juntos
+                      </p>
+                      <h3 className="font-['Manrope'] font-bold text-[16px] sm:text-[18px] text-[#191C1D] tracking-[-0.01em] leading-tight mb-2">
+                        ENAMED e Revalida: <em className="not-italic font-medium text-[#8a6f26]">mesma banca, mesmo padrão técnico</em>.
+                      </h3>
+                      <p className="text-[12.5px] leading-relaxed text-[#3E4945] max-w-[58ch]">
+                        Ambas são organizadas pelo <strong className="text-[#191C1D]">INEP/MEC</strong> e cobram o mesmo conjunto de competências clínicas — fisiopatologia, raciocínio diagnóstico, conduta baseada em diretrizes brasileiras. Usar os {bankStats.total} itens juntos multiplica seu treino sem perder qualidade.
+                      </p>
+                      <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t border-[#C9A84C]/20">
+                        <div className="inline-flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-[#005344]" />
+                          <span className="text-[12.5px] text-[#3E4945]">
+                            <strong className="text-[#191C1D]">{bankStats.enamed}</strong> ENAMED
+                          </span>
                         </div>
-                        <div className="h-1.5 w-full bg-white rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-[#005344] to-[#C9A84C] rounded-full transition-all duration-700" style={{ width: `${userStats.avg}%` }} />
+                        <span className="text-[#94a3b8]">+</span>
+                        <div className="inline-flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-[#C9A84C]" />
+                          <span className="text-[12.5px] text-[#3E4945]">
+                            <strong className="text-[#191C1D]">{bankStats.revalida}</strong> Revalida
+                          </span>
                         </div>
-                      </>
-                    ) : (
-                      <p className="text-sm text-[#4a5568]">Faça seu primeiro simulado para ver estatísticas aqui.</p>
-                    )}
+                        <span className="text-[#94a3b8]">=</span>
+                        <div className="inline-flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-gradient-to-r from-[#005344] to-[#C9A84C]" />
+                          <span className="text-[12.5px] text-[#3E4945]">
+                            <strong className="text-[#191C1D]">{bankStats.total}</strong> questões INEP
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </section>
 
-                {/* ── Banco oficial INEP ── */}
+                  {/* ── Banco oficial INEP ── */}
                 <section>
-                  <div className="flex items-baseline justify-between mb-3">
-                    <label className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a5568] inline-flex items-center gap-2">
+                  <div className="mb-3">
+                    <label className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a5568] inline-flex items-center gap-2 mb-3">
                       ② Banco oficial INEP
                       <span className="text-[9.5px] font-medium normal-case tracking-normal text-[#94a3b8]">
                         questões reais com gabarito comentado
                       </span>
                     </label>
+
+                    {/* Toggle MAIOR + destacado */}
+                    <div className="grid grid-cols-3 gap-2 mb-2">
+                      {([
+                        { v: 'all',      label: 'Ambos',     count: bankStats.total,    chipColor: 'from-[#005344] to-[#C9A84C]' },
+                        { v: 'enamed',   label: 'ENAMED',    count: bankStats.enamed,   chipColor: 'from-[#003D32] to-[#005344]' },
+                        { v: 'revalida', label: 'Revalida',  count: bankStats.revalida, chipColor: 'from-[#8a6f26] to-[#C9A84C]' },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.v}
+                          onClick={() => setBankSource(opt.v)}
+                          className={`relative p-3 rounded-xl border-2 transition-all text-left ${
+                            bankSource === opt.v
+                              ? 'border-[#005344] bg-[#005344]/04 shadow-[0_2px_8px_-4px_rgba(0,83,68,0.25)]'
+                              : 'border-slate-200 bg-white hover:border-slate-300'
+                          }`}
+                        >
+                          <div className={`h-1 w-8 rounded-full bg-gradient-to-r ${opt.chipColor} mb-2`} />
+                          <p className={`text-[12px] font-['Manrope'] font-bold ${bankSource === opt.v ? 'text-[#005344]' : 'text-[#191C1D]'}`}>
+                            {opt.label}
+                          </p>
+                          <p className="text-[10.5px] text-[#94a3b8] mt-0.5 font-mono tabular-nums">
+                            {opt.count} questões
+                          </p>
+                        </button>
+                      ))}
+                    </div>
                   </div>
+
+                  {/* CTA contextual — aparece dinamicamente conforme bankSource muda */}
+                  {(() => {
+                    const cfg = bankSource === 'revalida'
+                      ? {
+                          eyebrow: 'Revalida selecionado',
+                          title: 'Iniciar simulado Revalida',
+                          desc: `${bankStats.revalida} questões oficiais das edições 2024.2 e 2025.1. Padrão real da prova, com gabarito e cronômetro.`,
+                          ribbon: 'from-[#8a6f26] to-[#C9A84C]',
+                          accent: '#8a6f26',
+                        }
+                      : bankSource === 'enamed'
+                        ? {
+                            eyebrow: 'ENAMED selecionado',
+                            title: 'Iniciar simulado ENAMED',
+                            desc: `${bankStats.enamed} questões oficiais do banco INEP. Padrão real da prova, com gabarito e cronômetro.`,
+                            ribbon: 'from-[#003D32] to-[#005344]',
+                            accent: '#005344',
+                          }
+                        : {
+                            eyebrow: 'Banco completo selecionado',
+                            title: 'Iniciar simulado com ambos os bancos',
+                            desc: `${bankStats.total} questões combinadas ENAMED + Revalida. Maior cobertura possível.`,
+                            ribbon: 'from-[#005344] to-[#C9A84C]',
+                            accent: '#005344',
+                          };
+                    return (
+                      <div
+                        key={bankSource}
+                        className="relative rounded-xl border-2 overflow-hidden mb-3 animate-fade-up"
+                        style={{ borderColor: `${cfg.accent}30`, background: `linear-gradient(135deg, ${cfg.accent}06, ${cfg.accent}02)` }}
+                      >
+                        <div className={`h-1 bg-gradient-to-r ${cfg.ribbon}`} />
+                        <div className="p-4 sm:p-5 flex items-center gap-4">
+                          <div className="shrink-0 hidden sm:block">
+                            <div className="h-12 w-12 rounded-xl flex items-center justify-center text-white shadow-[0_4px_12px_-4px_rgba(0,0,0,0.2)]"
+                                 style={{ background: `linear-gradient(135deg, ${cfg.accent}, ${cfg.accent}dd)` }}>
+                              <MI name="play_arrow" fill className="text-[22px]" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] inline-flex items-center gap-2 mb-1" style={{ color: cfg.accent }}>
+                              <span className="w-4 h-px" style={{ background: cfg.accent }} />
+                              {cfg.eyebrow}
+                            </p>
+                            <h4 className="font-['Manrope'] font-bold text-[14px] sm:text-[15px] text-[#191C1D] tracking-[-0.01em] leading-tight">
+                              {cfg.title}
+                            </h4>
+                            <p className="text-[11.5px] text-[#4a5568] mt-1 leading-snug">
+                              {cfg.desc}
+                            </p>
+                          </div>
+                          <div className="shrink-0 flex items-center gap-2">
+                            <button
+                              onClick={() => startBankMode('revisao')}
+                              className="hidden sm:inline-flex h-10 px-3 rounded-lg text-[11.5px] font-bold border-2 transition-all"
+                              style={{
+                                borderColor: `${cfg.accent}40`,
+                                color: cfg.accent,
+                                background: 'white',
+                              }}
+                            >
+                              Só 20
+                            </button>
+                            <button
+                              onClick={() => startBankMode('completo')}
+                              className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-['Manrope'] text-[12px] font-bold text-white transition-all group relative overflow-hidden"
+                              style={{
+                                background: `linear-gradient(135deg, ${cfg.accent}, ${cfg.accent}cc)`,
+                                boxShadow: `0 4px 14px -4px ${cfg.accent}80`,
+                              }}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                              <span className="relative">Iniciar agora</span>
+                              <MI name="arrow_forward" className="text-[16px] relative group-hover:translate-x-0.5 transition-transform" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button
                       onClick={() => startBankMode('completo')}
@@ -317,6 +480,122 @@ const Enamed = () => {
                 </section>
               </div>
             </div>
+            </div>{/* fim coluna principal */}
+
+            {/* ─── SIDEBAR ─── */}
+            <aside className="xl:col-span-4 space-y-5">
+              {/* Card desempenho */}
+              <div className="relative bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-[#003D32] via-[#005344] to-[#C9A84C]" />
+                <div className="px-5 py-5">
+                  <div className="flex items-baseline justify-between mb-3">
+                    <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-[#005344] inline-flex items-center gap-2">
+                      <span className="w-5 h-px bg-[#C9A84C]" />
+                      Seu desempenho
+                    </p>
+                    {userStats.simCount > 0 && (
+                      <span className={`text-[10.5px] font-bold ${userStats.trend >= 0 ? 'text-[#005344]' : 'text-red-500'}`}>
+                        {userStats.trend >= 0 ? '↑' : '↓'} {Math.abs(userStats.trend)}%
+                      </span>
+                    )}
+                  </div>
+                  {userStats.simCount > 0 ? (
+                    <>
+                      <p className="font-['Manrope'] text-[42px] font-black text-[#005344] tabular-nums leading-none">
+                        {userStats.avg}<span className="text-[20px] text-[#94a3b8]">%</span>
+                      </p>
+                      <p className="text-[11px] text-[#94a3b8] mt-1.5">acerto médio · {userStats.simCount} simulado{userStats.simCount === 1 ? '' : 's'}</p>
+                      <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-3">
+                        <div className="h-full bg-gradient-to-r from-[#005344] to-[#C9A84C] rounded-full transition-all duration-700" style={{ width: `${userStats.avg}%` }} />
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-[12.5px] text-[#4a5568] leading-relaxed">
+                      Faça seu primeiro simulado pra desbloquear estatísticas, evolução por área e recomendações.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Card histórico recente */}
+              <div className="relative bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                <div className="px-5 py-5">
+                  <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-[#005344] inline-flex items-center gap-2 mb-3">
+                    <span className="w-5 h-px bg-[#C9A84C]" />
+                    Últimos simulados
+                  </p>
+                  {recentAttempts.length === 0 ? (
+                    <p className="text-[12px] text-[#94a3b8] leading-relaxed">
+                      Nenhum simulado realizado ainda.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {recentAttempts.map((a, i) => {
+                        const dt = new Date(a.created_at);
+                        const dataFmt = dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+                        const modoLabel = a.modo === 'completo' ? 'Completo' : a.modo === 'revisao' ? 'Revisão' : a.modo;
+                        return (
+                          <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50/60 transition-colors">
+                            <div className="shrink-0 h-9 w-9 rounded-lg bg-gradient-to-br from-[#005344] to-[#006D5B] text-white flex items-center justify-center font-['Manrope'] font-bold text-[11px] tabular-nums">
+                              {Math.round(a.percentage)}%
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[12.5px] font-['Manrope'] font-bold text-[#191C1D] leading-tight">
+                                {modoLabel}
+                              </p>
+                              <p className="text-[10.5px] text-[#94a3b8] mt-0.5">
+                                {a.correct}/{a.total} · {dataFmt}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Card guia: como funciona */}
+              <div className="relative rounded-2xl overflow-hidden border-2 border-[#005344]/15"
+                   style={{ background: 'linear-gradient(135deg, rgba(0,109,91,0.04), rgba(201,168,76,0.04))' }}>
+                <div className="px-5 py-5">
+                  <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-[#005344] inline-flex items-center gap-2 mb-3">
+                    <span className="w-5 h-px bg-[#C9A84C]" />
+                    Como estudar
+                  </p>
+                  <ol className="space-y-2.5 text-[12px] leading-relaxed text-[#3E4945]">
+                    <li className="flex gap-2.5">
+                      <span className="shrink-0 h-5 w-5 rounded-full bg-[#005344] text-white text-[10px] font-bold flex items-center justify-center">1</span>
+                      <span><strong className="text-[#191C1D]">Revisão rápida</strong> de 20 questões pra aquecer e identificar gaps.</span>
+                    </li>
+                    <li className="flex gap-2.5">
+                      <span className="shrink-0 h-5 w-5 rounded-full bg-[#005344] text-white text-[10px] font-bold flex items-center justify-center">2</span>
+                      <span><strong className="text-[#191C1D]">Simulado completo</strong> 1x por semana, cronometrado, sem interrupção.</span>
+                    </li>
+                    <li className="flex gap-2.5">
+                      <span className="shrink-0 h-5 w-5 rounded-full bg-[#005344] text-white text-[10px] font-bold flex items-center justify-center">3</span>
+                      <span><strong className="text-[#191C1D]">Estudo por área</strong> nos temas com menor acerto pra fechar lacunas.</span>
+                    </li>
+                    <li className="flex gap-2.5">
+                      <span className="shrink-0 h-5 w-5 rounded-full bg-[#C9A84C] text-white text-[10px] font-bold flex items-center justify-center">4</span>
+                      <span><strong className="text-[#191C1D]">Inéditas PreceptorMED</strong> nos dias em que terminar o banco — Gemini gera novos cenários no padrão INEP.</span>
+                    </li>
+                  </ol>
+                </div>
+              </div>
+
+              {/* Card info banca compacto */}
+              <div className="relative bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                <div className="px-5 py-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#94a3b8] mb-2">
+                    Banca avaliadora
+                  </p>
+                  <p className="text-[12.5px] text-[#3E4945] leading-relaxed">
+                    <strong className="text-[#191C1D]">INEP / MEC</strong> elabora <strong className="text-[#005344]">ENAMED</strong> e <strong className="text-[#8a6f26]">Revalida</strong>. As provas seguem o mesmo padrão técnico — fontes oficiais brasileiras (SUS, SBC, SBP, FEBRASGO), competências da DCN Medicina.
+                  </p>
+                </div>
+              </div>
+            </aside>
           </div>
         )}
 

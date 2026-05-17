@@ -166,6 +166,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/login" element={<Navigate to="/auth" replace />} />
                 <Route path="/welcome" element={<Navigate to="/inscricao" replace />} />
                 <Route path="/menu" element={<MainMenu />} />
                 <Route path="/dashboard" element={<Dashboard />} />

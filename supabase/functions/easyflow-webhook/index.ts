@@ -45,11 +45,31 @@ serve(async (req) => {
 
     console.log(`[EasyFlow] Event: ${event}`);
 
-    // Save raw event for audit (tabela agora existe)
-    const { error: auditErr } = await supabase
+    // Save raw event for audit. CAPTURA O ID inserido pra atualizacoes
+    // subsequentes — UPDATE com .order().limit() no PostgREST e SILENCIOSAMENTE
+    // ignorado, o que fazia toda nova falha sobrescrever error_message de
+    // TODAS as linhas anteriores com mesmo provider+event_type. Bug grave.
+    const { data: auditRow, error: auditErr } = await supabase
       .from("webhook_events")
-      .insert({ provider: "easyflow", event_type: event || "unknown", payload: body });
+      .insert({ provider: "easyflow", event_type: event || "unknown", payload: body })
+      .select("id")
+      .single();
     if (auditErr) console.warn("[EasyFlow] webhook_events insert failed:", auditErr.message);
+    const auditId: string | null = auditRow?.id ?? null;
+
+    // Helpers — atualizam APENAS a linha deste webhook (por id), nunca por filtros
+    const markFailed = async (msg: string) => {
+      if (!auditId) return;
+      await supabase.from("webhook_events")
+        .update({ processed: false, error_message: msg })
+        .eq("id", auditId);
+    };
+    const markProcessed = async () => {
+      if (!auditId) return;
+      await supabase.from("webhook_events")
+        .update({ processed: true, error_message: null })
+        .eq("id", auditId);
+    };
 
     // ── Extract email (different locations for Order vs Subscription vs Payment) ──
     // Order events: payload.buyer.email
@@ -68,12 +88,85 @@ serve(async (req) => {
 
     // ── Fallbacks pra payment.paid sem email ──
     // Ordem por confiabilidade:
+    //   0. external_id no payload -> pending_checkouts (registrado ANTES do redirect,
+    //      resolve o caso "aluna paga com cartao do pai" — usuario logado clica
+    //      Pagar, registramos a intencao, EasyFlow forward o id pelo webhook)
     //   1. ID do pagamento → subscription existente (exato, instantaneo)
     //   2. EasyFlow API /sales/filter pelo payment ID (autoritativo, traz email real)
     //   3. holderName → profiles.full_name (heuristica, exige match UNICO + signup recente)
     //   4. holderName → auth.users (heuristica, mesma protecao)
     let fallbackUserId: string | null = null;
-    if (!email && (event === "payment.paid" || event === "subscriptionrecurrence.paid")) {
+    let resolvedPendingCheckoutId: string | null = null;
+
+    // ── Fallback 0: external_id apontando pra pending_checkouts ──
+    // EasyFlow nao tem documentacao publica sobre forwarding de query params
+    // como metadata. Hedge: tenta varios caminhos comuns no payload.
+    if (!email && (event === "payment.paid" || event === "subscriptionrecurrence.paid" || event === "order.paid")) {
+      const candidates = [
+        payload.external_id, payload.externalId,
+        payload.metadata?.external_id, payload.metadata?.user_id,
+        payload.customField1, payload.custom_field_1,
+        payload.referenceId, payload.reference_id,
+        body.external_id, body.externalId, body.metadata?.external_id,
+      ].filter(Boolean) as string[];
+
+      // Tambem varre o payload string a procura de UUID v4 (pode estar em
+      // qualquer campo nao mapeado pela EasyFlow)
+      const uuidRe = /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi;
+      const payloadStr = JSON.stringify(body);
+      const allUuids = Array.from(payloadStr.matchAll(uuidRe)).map(m => m[0].toLowerCase());
+
+      const tried = new Set<string>();
+      for (const candidate of [...candidates, ...allUuids]) {
+        if (tried.has(candidate)) continue;
+        tried.add(candidate);
+        const { data: pc } = await supabase
+          .from("pending_checkouts")
+          .select("id,user_id")
+          .eq("id", candidate)
+          .is("linked_at", null)
+          .maybeSingle();
+        if (pc) {
+          fallbackUserId = pc.user_id;
+          resolvedPendingCheckoutId = pc.id;
+          console.log(`[EasyFlow] Fallback 0 (external_id -> pending_checkouts): ${candidate} -> user ${fallbackUserId}`);
+          break;
+        }
+      }
+    }
+
+    // ── Fallback 0b: best-effort match por offer_id + janela temporal ──
+    // Quando o external_id nao chegou no payload, mas SO tem 1 checkout
+    // pendente recente da mesma oferta, e quase certo que e essa pessoa.
+    if (!email && !fallbackUserId && (event === "payment.paid" || event === "subscriptionrecurrence.paid")) {
+      const payloadStr = JSON.stringify(body);
+      const offerMatch = payloadStr.match(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i);
+      if (offerMatch) {
+        const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        const { data: candidates } = await supabase
+          .from("pending_checkouts")
+          .select("id,user_id,offer_id,created_at")
+          .gte("created_at", cutoff)
+          .is("linked_at", null)
+          .order("created_at", { ascending: false })
+          .limit(20);
+        // procura um cujo offer_id apareca no payload
+        const match = candidates?.find(c => c.offer_id && payloadStr.includes(c.offer_id));
+        if (match) {
+          // exige unico match na ultima hora pra reduzir risco de troca
+          const sameOffer = candidates!.filter(c => c.offer_id === match.offer_id);
+          if (sameOffer.length === 1) {
+            fallbackUserId = match.user_id;
+            resolvedPendingCheckoutId = match.id;
+            console.log(`[EasyFlow] Fallback 0b (offer_id + unico checkout pendente): ${match.offer_id} -> user ${fallbackUserId}`);
+          } else {
+            console.warn(`[EasyFlow] Fallback 0b ABORTADO: ${sameOffer.length} checkouts pendentes pra mesma oferta na ultima hora`);
+          }
+        }
+      }
+    }
+
+    if (!email && (event === "payment.paid" || event === "subscriptionrecurrence.paid") && !fallbackUserId) {
       console.log(`[EasyFlow] No email in ${event} payload, trying fallbacks...`);
 
       // ── Fallback 1: ID do pagamento -> subscription existente ──
@@ -181,38 +274,59 @@ serve(async (req) => {
         const holderName = payload.creditCard?.holderName || "desconhecido";
         const paymentMethod = payload.paymentMethod || "desconhecido";
         console.error(`[EasyFlow] ${event} sem email e fallbacks falharam. method=${paymentMethod} holderName=${holderName}`);
-        await supabase.from("webhook_events").update({
-          processed: false,
-          error_message: `no_email_all_fallbacks_failed: method=${paymentMethod} holderName=${holderName} paymentId=${payload.id}`,
-        }).eq("provider", "easyflow").eq("event_type", event).order("created_at", { ascending: false }).limit(1);
+        await markFailed(`no_email_all_fallbacks_failed: method=${paymentMethod} holderName=${holderName} paymentId=${payload.id}`);
         return json({ received: true, action: "skipped_no_email_fallbacks_failed", holderName, paymentMethod });
       }
     }
 
     if (!email && !fallbackUserId) {
       console.log("[EasyFlow] No email found, skipping");
-      await supabase.from("webhook_events").update({
-        processed: false,
-        error_message: "no_email_in_payload",
-      }).eq("provider", "easyflow").eq("event_type", event).order("created_at", { ascending: false }).limit(1);
+      await markFailed("no_email_in_payload");
       return json({ received: true, action: "skipped_no_email" });
     }
 
+    // ── Ofertas/checkouts especificos que sabemos serem ANUAIS (forca deteccao
+    // determinante, sem depender de como o painel EasyFlow nomeou o produto).
+    // Atualmente: 3 ofertas da roleta da Semana Medica de Itajuba (50/30/20% off).
+    // Manter sincronizado com supabase/functions/roulette-spin/index.ts
+    const ROLETA_ANNUAL_OFFER_IDS = new Set([
+      "6385c0a1-b988-4ddd-9607-ee2ec15b3846", // 20% off anual
+      "5d0dbbfd-d06c-4252-8a29-3c51665c77c2", // 30% off anual
+      "fc67ad17-4b71-4067-b25b-52370c6de476", // 50% off anual
+    ]);
+
     // ── Detect plan from subscription periodicity / product name / description ──
     const detectPlan = (): string => {
-      // Subscription events have periodicity
+      // 0. Match deterministico por offer/checkout id — busca o UUID em qualquer
+      // campo do payload pra cobrir variacoes de schema da EasyFlow
+      // (offer.id, checkout.id, offerId, items[].offer.id, etc.)
+      try {
+        const payloadStr = JSON.stringify(payload);
+        for (const id of ROLETA_ANNUAL_OFFER_IDS) {
+          if (payloadStr.includes(id)) {
+            console.log(`[EasyFlow] detectPlan: roleta annual offer detected (${id}) -> annual`);
+            return "annual";
+          }
+        }
+      } catch { /* ignore */ }
+
+      // 1. Subscription events have periodicity
       const period = (payload.periodicity || "").toLowerCase();
       if (period === "annualy" || period === "annually" || period === "yearly") return "annual";
       if (period === "biannualy" || period === "biannually") return "biannual";
       if (period === "monthly") return "monthly";
       if (period === "quarterly") return "quarterly";
 
-      // Order events — combina nome + descricao + offer.name pra pegar "Cobranca comum / Assinatura anual"
+      // 2. Order events — combina nome + descricao + offer.name pra pegar "Cobranca comum / Assinatura anual"
       const haystack = [
         payload.items?.[0]?.product?.name,
         payload.items?.[0]?.product?.description,
         payload.items?.[0]?.offer?.name,
         payload.items?.[0]?.offer?.description,
+        payload.offer?.name,
+        payload.offer?.description,
+        payload.product?.name,
+        payload.product?.description,
         payload.name,
         payload.description,
       ].filter(Boolean).join(" ").toLowerCase();
@@ -261,10 +375,7 @@ serve(async (req) => {
       const profile = await findUser();
       if (!profile) {
         console.error(`[EasyFlow] User NOT FOUND: ${email} — criar conta antes ou revisar payload`);
-        await supabase.from("webhook_events").update({
-          processed: false,
-          error_message: `user_not_found: ${email}`,
-        }).eq("provider", "easyflow").eq("event_type", event).order("created_at", { ascending: false }).limit(1);
+        await markFailed(`user_not_found: ${email}`);
         return json({ received: true, action: "user_not_found", email }, 200);
       }
 
@@ -309,10 +420,7 @@ serve(async (req) => {
       }
       if (subErr) {
         console.error(`[EasyFlow] FAILED to upsert subscription for ${email}:`, subErr.message);
-        await supabase.from("webhook_events").update({
-          processed: false,
-          error_message: `subscription_upsert_failed: ${subErr.message}`,
-        }).eq("provider", "easyflow").eq("event_type", event).order("created_at", { ascending: false }).limit(1);
+        await markFailed(`subscription_upsert_failed: ${subErr.message}`);
         return json({ received: true, action: "error", error: subErr.message }, 500);
       }
 
@@ -352,7 +460,90 @@ serve(async (req) => {
         .eq("user_id", profile.user_id)
         .eq("status", "em_cobranca");
 
+      // Marca pending_checkout como resolvido (se foi por Fallback 0/0b)
+      if (resolvedPendingCheckoutId) {
+        await supabase.from("pending_checkouts")
+          .update({ linked_at: new Date().toISOString(), payment_id: payload.id ?? null })
+          .eq("id", resolvedPendingCheckoutId);
+      }
+
+      // ── Lanca a receita em admin_receitas pro admin CRM financeiro ──
+      // Dedup por payment_id (unique partial index). Se o mesmo paymentId chegar
+      // via order.paid e depois payment.paid, so o primeiro entra.
+      try {
+        // Extrai valueInCents do evento certo
+        let valueInCents = 0;
+        let paymentId: string | null = null;
+        let orderId: string | null = null;
+        let paidAt: string | null = null;
+        if (event === "order.paid" || event === "order.created") {
+          orderId = payload.id ?? null;
+          paymentId = payload.payments?.[0]?.id ?? null;
+          valueInCents = Array.isArray(payload.items)
+            ? payload.items.reduce((s: number, it: any) => s + (it.valueInCents ?? 0), 0)
+            : (payload.valueInCents ?? 0);
+          paidAt = payload.paidAt ?? null;
+        } else if (event === "payment.paid") {
+          paymentId = payload.id ?? null;
+          valueInCents = payload.valuePaidInCents ?? payload.valueInCents ?? 0;
+        } else if (event === "subscriptionrecurrence.paid") {
+          paymentId = payload.paymentId ?? payload.id ?? null;
+          valueInCents = payload.valueInCents ?? payload.valuePaidInCents ?? 0;
+        } else if (event === "subscription.created" || event === "subscription.activated") {
+          // Esses eventos nao tem cobranca propria — pulam admin_receitas.
+          paymentId = null;
+        }
+
+        if (paymentId && valueInCents > 0) {
+          // Mapeia plano EN -> enum portugues do admin_receitas
+          const planoMap: Record<string, "mensal" | "anual" | "bianual" | null> = {
+            monthly: "mensal",
+            annual: "anual",
+            biannual: "bianual",
+            quarterly: null, // sem enum equivalente, pula
+            free_access: null,
+            none: null,
+          };
+          const planoAdmin = planoMap[plan];
+          if (planoAdmin) {
+            const dataInicio = (paidAt ? new Date(paidAt) : new Date()).toISOString().slice(0, 10);
+            // Calcula data_renovacao baseada no plano
+            const renov = new Date(paidAt ?? now);
+            if (planoAdmin === "mensal") renov.setMonth(renov.getMonth() + 1);
+            else if (planoAdmin === "anual") renov.setFullYear(renov.getFullYear() + 1);
+            else if (planoAdmin === "bianual") renov.setMonth(renov.getMonth() + 6);
+
+            const valorReais = valueInCents / 100;
+            const { error: receitaErr } = await supabase.from("admin_receitas").insert({
+              produto: "preceptormed",
+              plano: planoAdmin,
+              valor: valorReais,
+              data_inicio: dataInicio,
+              data_renovacao: renov.toISOString().slice(0, 10),
+              status: "ativo",
+              origem: "easyflow",
+              usuario_id: profile.user_id,
+              payment_id: paymentId,
+              order_id: orderId,
+              event_type: event,
+              observacoes: `Webhook ${event} — ${email}`,
+            });
+            if (receitaErr) {
+              // Conflito (23505) = dedup esperado. Outros erros logam.
+              if (!receitaErr.message.includes("admin_receitas_payment_id_uq")) {
+                console.warn(`[EasyFlow] admin_receitas insert falhou: ${receitaErr.message}`);
+              }
+            } else {
+              console.log(`[EasyFlow] 💰 admin_receitas: R$${valorReais.toFixed(2)} (${planoAdmin}) ${email}`);
+            }
+          }
+        }
+      } catch (revErr) {
+        console.warn("[EasyFlow] admin_receitas exception:", revErr);
+      }
+
       console.log(`[EasyFlow] ✅ Activated: ${email} -> ${plan}`);
+      await markProcessed();
       return json({ received: true, action: "activated", email, plan });
     }
 
@@ -379,6 +570,15 @@ serve(async (req) => {
         await supabase.from("crm_leads")
           .update({ status: "churned", churned_at: new Date().toISOString() })
           .eq("user_id", profile.user_id);
+
+        // Marca receita correspondente como cancelada no admin financeiro
+        const cancelPaymentId = payload.id ?? payload.paymentId ?? null;
+        const cancelOrderId = payload.id ?? null;
+        if (cancelPaymentId) {
+          await supabase.from("admin_receitas")
+            .update({ status: "cancelado", updated_at: new Date().toISOString() })
+            .or(`payment_id.eq.${cancelPaymentId},order_id.eq.${cancelOrderId}`);
+        }
 
         console.log(`[EasyFlow] ❌ Cancelled/Expired: ${email}`);
       }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import CrmShellV3, { Kpi, PageHero, PeriodBar, CardHead } from "@/components/crm/v3/CrmShellV3";
 import {
   Plus, Download, Send, Activity, Edit3, Eye, Gift, UserX, Loader2,
@@ -458,6 +458,39 @@ export function EmailTemplatesV3() {
 /* =========================================================
    ATIVIDADE / ANALYTICS — dados reais de generation_logs + user_progression
    ========================================================= */
+/* ─── Estimativa de custo da IA ──────────────────────────────────
+ * Sem token logs por chamada, estimamos custo medio por function_name
+ * baseado em tokens medios observados (input + output) × precos da
+ * Gemini 2.5 Flash (junho/2026: $0.30/1M input, $2.50/1M output).
+ * Multiplicado por USD_BRL pra mostrar em reais.
+ */
+const USD_BRL = 5.5;
+const GEMINI_FLASH_IN_PER_1M = 0.30;
+const GEMINI_FLASH_OUT_PER_1M = 2.50;
+
+// Tokens medios por funcao (estimado por inspecao dos prompts/outputs)
+const AVG_TOKENS: Record<string, { in: number; out: number }> = {
+  "generate-fechamento": { in: 5500, out: 12000 },
+  "generate-exam":       { in: 3500, out: 5500 },
+  "generate-enamed":     { in: 4000, out: 6500 },
+  "generate-flashcards": { in: 2500, out: 3000 },
+  "scientific-mentor":   { in: 3500, out: 5500 },
+  "ai-chat":             { in: 3500, out: 1500 },
+  "support-chat":        { in: 2000, out: 1500 },
+};
+const FALLBACK_TOKENS = { in: 2000, out: 2000 };
+
+/** Custo estimado em USD de uma chamada da funcao */
+function estimateCostUsd(functionName: string): number {
+  const t = AVG_TOKENS[functionName] ?? FALLBACK_TOKENS;
+  return (t.in * GEMINI_FLASH_IN_PER_1M + t.out * GEMINI_FLASH_OUT_PER_1M) / 1_000_000;
+}
+
+/** Custo estimado em BRL (USD × cambio) */
+function estimateCostBrl(functionName: string): number {
+  return estimateCostUsd(functionName) * USD_BRL;
+}
+
 function useRealActivity() {
   return useQuery({
     queryKey: ["crm", "real-activity"],
@@ -613,13 +646,68 @@ function fmtRelative(iso: string): string {
   return `há ${Math.floor(diff / 86400000)} dias`;
 }
 
+type TopUserSortKey = "index" | "user" | "calls" | "features" | "lastUsed";
+
 export function AnalyticsV3() {
   const { data: act, isLoading } = useRealActivity();
   const { data: streaks } = useStreakLeaders();
   const { data: utm } = useUtmBreakdown();
 
+  // Ordenacao da tabela "Top usuarios ativos" — click na <th> ordena, click denovo inverte
+  const [topUsersSort, setTopUsersSort] = useState<{ key: TopUserSortKey; dir: "asc" | "desc" }>({ key: "calls", dir: "desc" });
+  const toggleTopUsersSort = (key: TopUserSortKey) => {
+    setTopUsersSort(prev => prev.key === key
+      ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+      : { key, dir: key === "user" ? "asc" : "desc" });
+  };
+  const sortedTopUsers = useMemo(() => {
+    const list = act?.topUsers ?? [];
+    if (list.length === 0) return list;
+    const dirMul = topUsersSort.dir === "asc" ? 1 : -1;
+    const getKey = (u: any, key: TopUserSortKey) => {
+      switch (key) {
+        case "user": return (u.name ?? u.email ?? "").toLowerCase();
+        case "calls": return Number(u.calls ?? 0);
+        case "features": return Number(u.features ?? 0);
+        case "lastUsed": return new Date(u.lastUsed ?? 0).getTime();
+        default: return 0;
+      }
+    };
+    if (topUsersSort.key === "index") return [...list]; // ordem natural
+    return [...list].sort((a, b) => {
+      const av = getKey(a, topUsersSort.key);
+      const bv = getKey(b, topUsersSort.key);
+      if (av < bv) return -1 * dirMul;
+      if (av > bv) return  1 * dirMul;
+      return 0;
+    });
+  }, [act?.topUsers, topUsersSort]);
+
   const stickiness = (act?.mau ?? 0) > 0 ? Math.round(((act?.dau ?? 0) / (act?.mau ?? 1)) * 100) : 0;
   const maxDay = Math.max(1, ...((act?.timeseries ?? []).map((d) => d.calls)));
+
+  // ── Custo estimado de IA ──
+  const costStats = useMemo(() => {
+    const features = act?.topFeatures ?? [];
+    let totalUsd = 0;
+    const byFunction = features.map(f => {
+      const usd = estimateCostUsd(f.name) * f.calls;
+      totalUsd += usd;
+      return {
+        name: f.name,
+        calls: f.calls,
+        users: f.users,
+        usd,
+        brl: usd * USD_BRL,
+        unitBrl: estimateCostBrl(f.name),
+      };
+    }).sort((a, b) => b.usd - a.usd);
+    const totalBrl = totalUsd * USD_BRL;
+    const totalCalls = features.reduce((s, f) => s + f.calls, 0);
+    const avgPerCallBrl = totalCalls > 0 ? totalBrl / totalCalls : 0;
+    const costPerDauBrl = (act?.dau ?? 0) > 0 ? totalBrl / (act?.dau ?? 1) : 0;
+    return { totalUsd, totalBrl, byFunction, avgPerCallBrl, costPerDauBrl, totalCalls };
+  }, [act?.topFeatures, act?.dau]);
 
   return (
     <CrmShellV3 mode="marketing" crumbs={[{ label: "CRM" }, { label: "Marketing" }, { label: "Atividade" }]}>
@@ -636,6 +724,32 @@ export function AnalyticsV3() {
           <Kpi label="MAU" value={fmt(act?.mau ?? 0)} deltaText="últimos 30 dias" />
           <Kpi label="Stickiness" value={`${stickiness}%`} deltaText="DAU / MAU" accent="warn" />
           <Kpi label="Calls IA / 30d" value={fmt(act?.totalCalls ?? 0)} deltaText="generation_logs" />
+        </section>
+
+        {/* ── KPIs de custo de IA ── */}
+        <section className="crm-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+          <Kpi
+            label="Custo IA · 30d"
+            value={`R$ ${costStats.totalBrl.toFixed(2)}`}
+            deltaText={`~US$ ${costStats.totalUsd.toFixed(2)} · estimado`}
+            accent="neg"
+          />
+          <Kpi
+            label="Custo médio / chamada"
+            value={`R$ ${costStats.avgPerCallBrl.toFixed(3)}`}
+            deltaText={`${fmt(costStats.totalCalls)} chamadas`}
+          />
+          <Kpi
+            label="Custo / DAU"
+            value={`R$ ${costStats.costPerDauBrl.toFixed(2)}`}
+            deltaText="por usuário ativo hoje"
+          />
+          <Kpi
+            label="Projeção 30d"
+            value={`R$ ${(costStats.totalBrl).toFixed(2)}`}
+            deltaText={`Anualizado: R$ ${(costStats.totalBrl * 12).toFixed(0)}`}
+            accent="warn"
+          />
         </section>
 
         {isLoading ? (
@@ -724,12 +838,20 @@ export function AnalyticsV3() {
 
             {/* Top users */}
             <section className="crm-card">
-              <CardHead title="Top usuários ativos · 30d" sub={`Ordenados por chamadas de IA · top ${(act?.topUsers ?? []).length}`} />
-              {(act?.topUsers ?? []).length > 0 ? (
+              <CardHead title="Top usuários ativos · 30d" sub={`Clique no cabeçalho para ordenar · top ${(act?.topUsers ?? []).length}`} />
+              {sortedTopUsers.length > 0 ? (
                 <table className="crm-tbl">
-                  <thead><tr><th>#</th><th>Usuário</th><th style={{ textAlign: "right" }}>Calls IA</th><th style={{ textAlign: "right" }}>Features</th><th>Última atividade</th></tr></thead>
+                  <thead>
+                    <tr>
+                      <SortableTh label="#" sortKey="index" align="left" current={topUsersSort} onToggle={toggleTopUsersSort} />
+                      <SortableTh label="Usuário" sortKey="user" align="left" current={topUsersSort} onToggle={toggleTopUsersSort} />
+                      <SortableTh label="Calls IA" sortKey="calls" align="right" current={topUsersSort} onToggle={toggleTopUsersSort} />
+                      <SortableTh label="Features" sortKey="features" align="right" current={topUsersSort} onToggle={toggleTopUsersSort} />
+                      <SortableTh label="Última atividade" sortKey="lastUsed" align="left" current={topUsersSort} onToggle={toggleTopUsersSort} />
+                    </tr>
+                  </thead>
                   <tbody>
-                    {(act?.topUsers ?? []).map((u, i) => (
+                    {sortedTopUsers.map((u, i) => (
                       <tr key={u.user_id}>
                         <td className="muted crm-mono" style={{ fontSize: 11 }}>{i + 1}</td>
                         <td>
@@ -772,6 +894,58 @@ export function AnalyticsV3() {
               ) : (
                 <div style={{ padding: 32, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>Sem chamadas em generation_logs.</div>
               )}
+            </section>
+
+            {/* Custos de IA · breakdown por feature */}
+            <section className="crm-card">
+              <CardHead
+                title="Custo estimado de IA · 30d"
+                sub={`Baseado em tokens médios por chamada × preços Gemini 2.5 Flash · câmbio USD ${USD_BRL.toFixed(2)} BRL`}
+              />
+              {costStats.byFunction.length > 0 ? (
+                <table className="crm-tbl">
+                  <thead>
+                    <tr>
+                      <th>Feature</th>
+                      <th style={{ textAlign: "right" }}>Chamadas</th>
+                      <th style={{ textAlign: "right" }}>Usuários</th>
+                      <th style={{ textAlign: "right" }}>Custo unitário</th>
+                      <th style={{ textAlign: "right" }}>Custo total</th>
+                      <th style={{ textAlign: "right" }}>% do total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {costStats.byFunction.map((f) => {
+                      const pct = costStats.totalBrl > 0 ? (f.brl / costStats.totalBrl) * 100 : 0;
+                      return (
+                        <tr key={f.name}>
+                          <td>{FEATURE_LABELS[f.name] ?? f.name}</td>
+                          <td className="num">{fmt(f.calls)}</td>
+                          <td className="num muted">{f.users}</td>
+                          <td className="num muted">R$ {f.unitBrl.toFixed(3)}</td>
+                          <td className="num"><strong style={{ color: "var(--crm-green-deep)" }}>R$ {f.brl.toFixed(2)}</strong></td>
+                          <td className="num muted">{pct.toFixed(1)}%</td>
+                        </tr>
+                      );
+                    })}
+                    <tr style={{ borderTop: "2px solid var(--crm-border)", fontWeight: 700 }}>
+                      <td>Total</td>
+                      <td className="num">{fmt(costStats.totalCalls)}</td>
+                      <td></td>
+                      <td className="num muted">R$ {costStats.avgPerCallBrl.toFixed(3)} médio</td>
+                      <td className="num" style={{ color: "var(--crm-green-deep)" }}>R$ {costStats.totalBrl.toFixed(2)}</td>
+                      <td className="num">100%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{ padding: 32, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
+                  Sem chamadas em <code>generation_logs</code> nos últimos 30d.
+                </div>
+              )}
+              <div style={{ padding: "12px 20px", fontSize: 11, color: "var(--crm-ink-4)", borderTop: "1px solid var(--crm-border)", lineHeight: 1.5 }}>
+                ⚠️ <strong>Estimativa</strong> — sem token logs por chamada, usamos médias por function_name (5500 in + 12000 out pra fechamento, 3500 + 1500 pra chat, etc.). Para custo exato, ative o Cloud Billing do Gemini ou logue <code>usageMetadata.totalTokenCount</code> por chamada nas edge functions.
+              </div>
             </section>
 
             {/* Streaks */}
@@ -1323,3 +1497,38 @@ function days(rows: any[]) {
 
 // Suprime warnings de imports não usados (usados em variantes condicionais)
 void Activity; void PLAN_TAG; void PLAN_LABEL;
+
+// ── Cabeçalho de tabela clicavel pra ordenar ──
+// Generico em <K extends string>. Reaproveitavel em qualquer tabela com sortKey.
+function SortableTh<K extends string>({
+  label, sortKey, align = "left", current, onToggle,
+}: {
+  label: string;
+  sortKey: K;
+  align?: "left" | "right";
+  current: { key: K; dir: "asc" | "desc" };
+  onToggle: (key: K) => void;
+}) {
+  const active = current.key === sortKey;
+  const arrow = active ? (current.dir === "asc" ? "▲" : "▼") : "";
+  return (
+    <th
+      onClick={() => onToggle(sortKey)}
+      style={{
+        cursor: "pointer",
+        userSelect: "none",
+        textAlign: align,
+        color: active ? "var(--crm-green-deep)" : undefined,
+        whiteSpace: "nowrap",
+      }}
+      title={`Ordenar por ${label}`}
+    >
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+        {label}
+        <span style={{ fontSize: 9, opacity: active ? 1 : 0.25, transition: "opacity .15s" }}>
+          {arrow || "▼"}
+        </span>
+      </span>
+    </th>
+  );
+}

@@ -32,22 +32,26 @@ Você está em um **chat**, não em um fechamento de PBL. Responda **proporciona
 
 # EVIDÊNCIA — PUBMED (CRÍTICO — LEIA COM ATENÇÃO)
 
-**REGRA DE OURO — NUNCA VIOLE**: Você só pode citar PMIDs que aparecem **EXPLICITAMENTE** no bloco \`ARTIGOS DO PUBMED ENCONTRADOS\` anexado à mensagem do usuário. Inventar, adivinhar, ou lembrar PMIDs do seu treinamento é **PROIBIDO**. Um PMID inventado é considerado uma falha grave (informação falsa ao estudante).
+**REGRA DE OURO — NUNCA VIOLE**: Você só pode citar PMIDs que aparecem **EXPLICITAMENTE** no bloco \`ARTIGOS DO PUBMED ENCONTRADOS\`. Inventar, adivinhar, ou lembrar PMIDs do seu treinamento é **PROIBIDO**.
+
+**REGRA DE OURO 2 — IGUALMENTE INVIOLÁVEL**: Para CADA PMID que você cita, a afirmação imediatamente antes da citação DEVE ser sustentada pelo título/abstract daquele artigo específico. Citar um PMID que não sustenta o que está escrito é tão grave quanto inventar o número — porque o estudante clica, lê outro tema, e perde confiança no app.
 
 Como proceder:
 
 1. **Se o bloco \`ARTIGOS DO PUBMED ENCONTRADOS\` existir**:
-   - Leia os abstracts fornecidos.
-   - **Use esses artigos como base das citações** — mesmo que não sejam perfeitos, são a única fonte válida de PMID nesta resposta.
-   - Cite pelo menos 1–2 deles inline no formato \`[PMID: XXXXX]\` ao final da frase.
-   - Se um artigo não bater exatamente com a pergunta mas tocar no tema, você pode usá-lo para contextualizar um ponto tangente (ex: "Em pacientes com DRC, a hipertensão é o fator modificável mais impactante [PMID: XXXXX], e no nosso caso...").
-   - Termine a resposta com \`---\` seguido de \`**Referências PubMed**\` e a lista no formato:
+   - Leia os abstracts fornecidos com atenção.
+   - Cite **apenas** os artigos cujo abstract sustenta diretamente a afirmação que você está fazendo.
+   - **É preferível responder sem nenhuma citação** a forçar uma citação que não corresponde. Nunca cite "porque toca no tema" — só cite se o artigo prova o ponto.
+   - Se nenhum artigo da lista sustenta seu ponto, escreva a evidência em termos gerais ("estudos randomizados mostram...", "diretrizes SBC recomendam...") **sem PMID**, e adicione no final: \`(Nota: a busca PubMed desta sessão não retornou artigo específico para este ponto.)\`
+   - Formato da citação inline: \`[PMID: XXXXX]\` ao final da frase sustentada.
+   - Se citar 1 ou mais artigos, termine a resposta com \`---\` seguido de \`**Referências PubMed**\` listando apenas os efetivamente citados, no formato:
      \`1. Autor et al. Título traduzido em português. Revista. Ano. (PMID: XXXXX)\`
+   - Não é obrigatório citar nenhum artigo — qualidade da correspondência > quantidade.
 
 2. **Se NÃO houver bloco \`ARTIGOS DO PUBMED ENCONTRADOS\`** (pergunta conversacional curta, saudação, etc.):
    - Responda sem citações, sem lista de referências.
 
-3. **REGRA ABSOLUTA**: Nunca escreva a string \`PMID:\` seguida de um número que não esteja explicitamente na lista fornecida. PMIDs não vêm da sua memória — só do bloco \`ARTIGOS DO PUBMED ENCONTRADOS\`. Se precisar mencionar evidência sem PMID específico disponível, escreva em termos gerais ("estudos randomizados mostram...", "diretrizes SBC recomendam...") sem número.
+3. **REGRA ABSOLUTA**: Nunca escreva a string \`PMID:\` seguida de um número que não esteja explicitamente na lista fornecida. PMIDs não vêm da sua memória — só do bloco \`ARTIGOS DO PUBMED ENCONTRADOS\`.
 
 # ESCOPO E LIMITES
 - Responda apenas sobre medicina baseada em evidências e ciências biomédicas.
@@ -460,7 +464,32 @@ serve(async (req) => {
       },
     });
 
-    return new Response(response.body!.pipeThrough(transformStream), {
+    // Prepend a meta event with PMID -> article metadata so the frontend
+    // can render tooltips with the actual title before the user clicks.
+    const articleMeta = pubmedArticles.map(a => ({
+      pmid: a.pmid,
+      title: a.title,
+      journal: a.journal,
+      year: a.year,
+    }));
+    const metaEvent = `data: ${JSON.stringify({ type: "pubmed_meta", articles: articleMeta })}\n\n`;
+    const combined = new ReadableStream({
+      async start(controller) {
+        controller.enqueue(new TextEncoder().encode(metaEvent));
+        const reader = response.body!.pipeThrough(transformStream).getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(value);
+          }
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(combined, {
       headers: {
         ...corsHeaders,
         "Content-Type": "text/event-stream",

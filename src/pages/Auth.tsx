@@ -37,11 +37,13 @@ const Auth = () => {
 
   useEffect(() => {
     if (user && planType && !redirectingToCheckout) {
-      const link = getEasyflowLink(planType, user.email ?? undefined);
-      if (link) {
-        setRedirectingToCheckout(true);
-        window.location.href = link;
-      }
+      (async () => {
+        const link = await getEasyflowLink(planType, user.email ?? undefined, user.id, 'auth');
+        if (link) {
+          setRedirectingToCheckout(true);
+          window.location.href = link;
+        }
+      })();
     }
   }, [user, planType, redirectingToCheckout, navigate]);
 

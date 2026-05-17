@@ -41,16 +41,17 @@ async function fetchSubscriptionsViaEdge(): Promise<any[]> {
 // ── DASHBOARD KPIs ────────────────────────────────────────────
 
 export async function getDashboardKpis() {
-  const { count: totalSubscribers } = await supabase
-    .from("crm_leads")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "subscriber");
-
-  // Calculate MRR from actual subscription plans (only from baseline date forward).
-  // MRR_BASELINE_DATE importado de ./constants pra manter consistente com useAdminDashboard.
+  // ── Fonte autoritativa de assinantes ativos: subscriptions com plan pagante ──
+  // Antes lia de crm_leads.status='subscriber' (resultado inflado por duplicatas
+  // e leads antigos cuja assinatura caducou sem virar churned). Agora conta
+  // direto da tabela subscriptions, que reflete o estado real.
   const MRR_BASELINE = MRR_BASELINE_DATE;
   const allSubs = await fetchSubscriptionsViaEdge();
   const activeSubs = allSubs.filter((s: any) => s.status === "active");
+  const payingActive = activeSubs.filter((s: any) =>
+    s.plan_type === "monthly" || s.plan_type === "annual" || s.plan_type === "biannual"
+  );
+  const totalSubscribers = payingActive.length;
 
   const PLAN_MRR: Record<string, number> = {
     monthly: 49.90,

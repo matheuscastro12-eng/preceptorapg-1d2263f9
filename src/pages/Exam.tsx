@@ -5,12 +5,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useToast } from '@/hooks/use-toast';
-import { useExamGenerator, type ExamConfig, type PracticeMode } from '@/hooks/useExamGenerator';
+import { useExamGenerator, type ExamConfig, type PracticeMode, type ExamPdf } from '@/hooks/useExamGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate } from 'react-router-dom';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import GenerationProgress from '@/components/GenerationProgress';
 import ExamConfigPanel from '@/components/exam/ExamConfigPanel';
+import CustomExamInput from '@/components/exam/CustomExamInput';
+import { BookOpen, PenLine } from 'lucide-react';
 import SimulationView from '@/components/exam/SimulationView';
 import ContextChat from '@/components/ContextChat';
 import { exportToPDF } from '@/utils/pdfExport';
@@ -66,6 +68,9 @@ const Exam = () => {
   const lockedMode = modeFromUrl === 'caso_clinico' || modeFromUrl === 'prova' ? modeFromUrl : null;
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [inputMode, setInputMode] = useState<'biblioteca' | 'topicos'>('biblioteca');
+  const [materias, setMaterias] = useState('');
+  const [examPdfs, setExamPdfs] = useState<ExamPdf[]>([]);
   const [config, setConfig] = useState<ExamConfig>({
     quantidade: 20,
     nivel: 'residencia',
@@ -177,6 +182,21 @@ const Exam = () => {
     setExamStarted(true);
 
     await generate(conteudo, config);
+  };
+
+  const handleGenerateCustom = async () => {
+    const materiasList = materias.split('\n').map(s => s.trim()).filter(Boolean);
+    if (materiasList.length === 0 && examPdfs.length === 0) {
+      toast({
+        title: 'Adicione conteúdo',
+        description: 'Digite ao menos uma matéria ou anexe um PDF.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setShowSimulation(false);
+    setExamStarted(true);
+    await generate('', config, { materias: materiasList, pdfs: examPdfs });
   };
 
   const handleBackToMenu = () => {
@@ -303,18 +323,59 @@ const Exam = () => {
           </div>
         ) : (
           /* ── Config Page ── */
-          <div className="py-4 sm:py-8">
-            <ExamConfigPanel
-              selectedIds={selectedIds}
-              onSelectionChange={setSelectedIds}
-              config={config}
-              onConfigChange={(c) => setConfig({ ...c, simulationMode: true })}
-              generating={generating}
-              hasStartedReceiving={hasStartedReceiving}
-              isComplete={isComplete}
-              onGenerate={handleGenerate}
-              lockedMode={lockedMode}
-            />
+          <div className="py-4 sm:py-8 space-y-5">
+            {/* Toggle entre fonte do conteudo */}
+            <div className="flex gap-2 bg-slate-100 p-1 rounded-xl max-w-md mx-auto">
+              <button
+                onClick={() => setInputMode('biblioteca')}
+                className={`flex-1 px-4 py-2.5 rounded-lg text-[13px] font-bold inline-flex items-center justify-center gap-2 transition-all ${
+                  inputMode === 'biblioteca'
+                    ? 'bg-white text-[#005344] shadow-[0_2px_6px_-2px_rgba(0,83,68,0.25)]'
+                    : 'text-[#4a5568] hover:text-[#191c1d]'
+                }`}
+              >
+                <BookOpen className="w-4 h-4" />
+                Da biblioteca
+              </button>
+              <button
+                onClick={() => setInputMode('topicos')}
+                className={`flex-1 px-4 py-2.5 rounded-lg text-[13px] font-bold inline-flex items-center justify-center gap-2 transition-all ${
+                  inputMode === 'topicos'
+                    ? 'bg-white text-[#005344] shadow-[0_2px_6px_-2px_rgba(0,83,68,0.25)]'
+                    : 'text-[#4a5568] hover:text-[#191c1d]'
+                }`}
+              >
+                <PenLine className="w-4 h-4" />
+                Tópicos livres
+              </button>
+            </div>
+
+            {inputMode === 'biblioteca' ? (
+              <ExamConfigPanel
+                selectedIds={selectedIds}
+                onSelectionChange={setSelectedIds}
+                config={config}
+                onConfigChange={(c) => setConfig({ ...c, simulationMode: true })}
+                generating={generating}
+                hasStartedReceiving={hasStartedReceiving}
+                isComplete={isComplete}
+                onGenerate={handleGenerate}
+                lockedMode={lockedMode}
+              />
+            ) : (
+              <CustomExamInput
+                materias={materias}
+                setMaterias={setMaterias}
+                pdfs={examPdfs}
+                setPdfs={setExamPdfs}
+                config={config}
+                setConfig={setConfig}
+                generating={generating}
+                hasStartedReceiving={hasStartedReceiving}
+                isComplete={isComplete}
+                onGenerate={handleGenerateCustom}
+              />
+            )}
           </div>
         )}
       </div>

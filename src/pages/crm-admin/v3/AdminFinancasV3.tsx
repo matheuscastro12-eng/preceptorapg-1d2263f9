@@ -372,9 +372,16 @@ export function FluxoCaixaV3() {
         {showAporte && <AporteModal onClose={() => setShowAporte(false)} />}
 
         <section className="crm-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
-          <Kpi label="Saldo total" value={fluxo ? fmtBRL(fluxo.saldo_atual) : "—"}
-            deltaText={fx?.total_aportes > 0 ? `inclui ${fmtBRL(fx.total_aportes)} de aportes` : (fluxo?.data_atualizacao ? `atualizado ${fmtData(fluxo.data_atualizacao)}` : "sem dado")}
-            accent="mrr" />
+          <Kpi
+            label="Saldo total"
+            value={fluxo ? fmtBRL(fluxo.saldo_atual) : "—"}
+            deltaText={
+              fluxo
+                ? `baseline ${fmtBRL(fx.saldo_baseline)}${fluxo.data_atualizacao ? " de " + fmtData(fluxo.data_atualizacao) : ""} · +${fmtBRL(fx.receitas_realizadas)} entrou · −${fmtBRL(fx.despesas_realizadas)} saiu${fx?.total_aportes > 0 ? ` · +${fmtBRL(fx.total_aportes)} aportes` : ""}`
+                : "sem dado"
+            }
+            accent="mrr"
+          />
           <Kpi label="A receber 30d" value={fmtBRL(aReceber)} deltaText={`${(entradas ?? []).filter((e: any) => new Date(e.data) <= em30d).length} previstos`} />
           <Kpi label="A pagar 30d" value={fmtBRL(aPagar)} deltaText={`${(saidas ?? []).filter((s: any) => new Date(s.data) <= em30d).length} previstos`} accent="neg" />
           <Kpi label="Δ caixa 30d" value={`${deltaCaixa >= 0 ? "+" : "−"}${fmtBRL(Math.abs(deltaCaixa))}`}

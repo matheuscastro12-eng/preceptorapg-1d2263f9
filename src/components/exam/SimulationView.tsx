@@ -1,10 +1,14 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import PostSimulationFeedback from '@/components/exam/PostSimulationFeedback';
-import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Trophy, Eye, EyeOff, Loader2 } from 'lucide-react';
+import {
+  ChevronLeft, ChevronRight, CheckCircle2, XCircle, Trophy, Eye, EyeOff,
+  Loader2, Sparkles, BookOpen,
+} from 'lucide-react';
+
+/* ─── Tipos ─── */
 
 interface ParsedQuestion {
   number: number;
@@ -22,6 +26,8 @@ interface SimulationViewProps {
   isGenerating?: boolean;
   isComplete?: boolean;
 }
+
+/* ─── Parser de markdown gerado pelo modelo ─── */
 
 function parseQuestions(markdown: string): ParsedQuestion[] {
   const questions: ParsedQuestion[] = [];
@@ -59,7 +65,7 @@ function parseQuestions(markdown: string): ParsedQuestion[] {
     const altRegex = /\*\*([A-E])\)\*\*\s*(.+)/g;
     let altMatch;
     while ((altMatch = altRegex.exec(questionPart)) !== null) {
-      if (!alternatives.find(a => a.letter === altMatch[1])) {
+      if (!alternatives.find(a => a.letter === altMatch![1])) {
         alternatives.push({ letter: altMatch[1], text: altMatch[2].trim() });
       }
     }
@@ -77,6 +83,8 @@ function parseQuestions(markdown: string): ParsedQuestion[] {
 
   return questions;
 }
+
+/* ─── Componente ─── */
 
 const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = true }: SimulationViewProps) => {
   const navigate = useNavigate();
@@ -139,40 +147,30 @@ const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = 
     return topics;
   }, [showResults, answers, questions]);
 
+  /* ─── Loading enquanto questões aparecem ─── */
   if (questions.length === 0 && !isGenerating) {
     return (
-      <div className="flex flex-col items-center justify-center h-full py-16 text-center gap-4">
-        <p className="text-muted-foreground text-sm">Não foi possível analisar as questões para o modo simulação.</p>
+      <div className="flex flex-col items-center justify-center h-full py-16 text-center gap-3">
+        <BookOpen className="h-10 w-10 text-[#94a3b8] opacity-50" strokeWidth={1.2} />
+        <p className="text-[13px] text-[#4a5568] font-semibold">Não conseguimos identificar questões</p>
         <button
           onClick={onExit}
-          className="h-9 px-4 rounded-lg text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all duration-200 active:scale-95"
+          className="h-9 px-4 rounded-lg text-[12.5px] font-bold border-2 border-slate-200 text-[#4a5568] hover:border-[#005344] hover:text-[#005344] transition-all"
         >
-          Voltar para visualização completa
+          Voltar
         </button>
       </div>
     );
   }
 
   if (questions.length === 0 && isGenerating) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full py-16 text-center space-y-4">
-        <div className="relative">
-          <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center">
-            <Loader2 className="h-6 w-6 text-emerald-600 animate-spin" />
-          </div>
-        </div>
-        <div>
-          <p className="text-foreground font-medium text-sm">Gerando as questões...</p>
-          <p className="text-xs text-muted-foreground mt-1">Aguarde um momento.</p>
-        </div>
-      </div>
-    );
+    return <LoadingState eyebrow="Preparando" title="Elaborando primeira questão" hint="Isso leva alguns segundos." />;
   }
 
-  // Results screen
+  /* ─── Tela de resultados ─── */
   if (showResults) {
     return (
-      <ScrollArea className="flex-1 min-h-0 px-2 py-4">
+      <ScrollArea className="flex-1 min-h-0">
         <PostSimulationFeedback
           score={score}
           wrongTopics={wrongTopics}
@@ -186,44 +184,31 @@ const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = 
     );
   }
 
-  // Waiting for next question
+  /* ─── Aguardando próxima questão chegar do stream ─── */
   if (isWaitingForQuestion) {
     return (
       <div className="flex flex-col h-full">
-        {/* Progress bar */}
-        <div className="mb-4 shrink-0 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Questão {currentIndex + 1}</span>
-            <span className="text-xs text-muted-foreground">{answeredCount} respondida{answeredCount !== 1 ? 's' : ''}</span>
-          </div>
-          <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
-          </div>
-        </div>
-        <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-          <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center">
-            <Loader2 className="h-6 w-6 text-emerald-600 animate-spin" />
-          </div>
-          <div>
-            <p className="text-foreground font-medium text-sm">Aguarde um momento...</p>
-            <p className="text-xs text-muted-foreground mt-1">A próxima questão ainda está sendo gerada.</p>
-          </div>
-        </div>
-        <div className="flex items-center justify-between pt-4 border-t border-slate-100 shrink-0">
-          <button
-            onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
-            disabled={currentIndex === 0}
-            className="flex items-center gap-1.5 h-9 px-3.5 rounded-lg text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="h-4 w-4" /> Anterior
-          </button>
-          <span className="text-xs text-muted-foreground">Gerando...</span>
-        </div>
+        <ProgressHeader currentIndex={currentIndex} totalQuestions={totalQuestions} answeredCount={answeredCount} progress={progress} isComplete={isComplete} isGenerating={isGenerating} />
+        <LoadingState eyebrow="Aguarde" title="Próxima questão chegando" hint="O modelo está finalizando a redação." compact />
+        <FooterNav
+          currentIndex={currentIndex}
+          totalQuestions={totalQuestions}
+          answeredCount={answeredCount}
+          isLastAvailable
+          showFinishButton={false}
+          isGenerating={isGenerating}
+          onPrev={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
+          onNext={() => { /* desabilitado */ }}
+          onFinish={() => { /* nao aparece */ }}
+          questions={questions}
+          answers={answers}
+          setCurrentIndex={setCurrentIndex}
+        />
       </div>
     );
   }
 
-  // Question view
+  /* ─── Tela da questão atual ─── */
   const isRevealed = revealedQuestions.has(currentIndex);
   const userAnswer = answers[currentIndex];
   const isLastAvailable = currentIndex === totalQuestions - 1;
@@ -231,74 +216,68 @@ const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = 
 
   return (
     <div className="flex flex-col h-full">
-      {/* Progress */}
-      <div className="mb-4 shrink-0 space-y-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-600">
-            Questão {currentIndex + 1} de {isComplete ? totalQuestions : `${totalQuestions}+`}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {answeredCount} respondida{answeredCount !== 1 ? 's' : ''}
-            {isGenerating && <span className="ml-2 text-emerald-600 font-medium">• Gerando...</span>}
-          </span>
-        </div>
-        <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
+      <ProgressHeader
+        currentIndex={currentIndex}
+        totalQuestions={totalQuestions}
+        answeredCount={answeredCount}
+        progress={progress}
+        isComplete={isComplete}
+        isGenerating={isGenerating}
+      />
 
-      {/* Scrollable content */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className="space-y-4 pr-2">
+        <article className="space-y-5 pr-2 pb-4">
           {/* Tags */}
           {(currentQ.type || currentQ.tema) && (
             <div className="flex items-center gap-1.5 flex-wrap">
               {currentQ.type && (
-                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium border border-slate-200">
+                <span className="text-[10px] font-bold uppercase tracking-[0.14em] px-2.5 py-1 rounded-md bg-slate-100 text-[#4a5568] border border-slate-200">
                   {currentQ.type}
                 </span>
               )}
               {currentQ.tema && (
-                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium border border-emerald-200/60">
+                <span className="text-[10px] font-bold uppercase tracking-[0.14em] px-2.5 py-1 rounded-md text-[#005344]" style={{ background: 'rgba(0,109,91,0.08)', border: '1px solid rgba(0,109,91,0.25)' }}>
                   {currentQ.tema}
                 </span>
               )}
             </div>
           )}
 
-          {/* Question text */}
-          <div className="prose prose-sm max-w-none text-[14px] leading-relaxed">
+          {/* Enunciado */}
+          <div className="prose prose-sm max-w-none text-[14px] leading-[1.7] text-[#3E4945] prose-strong:text-[#191C1D] prose-headings:font-['Manrope'] prose-headings:text-[#191C1D]">
             <MarkdownRenderer content={currentQ.enunciado} />
           </div>
 
-          {/* Alternatives */}
-          <div className="space-y-2">
+          {/* Alternativas */}
+          <div className="space-y-2.5">
             {currentQ.alternatives.map((alt) => {
               const isSelected = userAnswer === alt.letter;
               const isCorrectAlt = alt.letter === currentQ.correctAnswer;
               const showFeedback = isRevealed && userAnswer;
 
-              let altClass = 'border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/40';
-              let badgeClass = 'bg-slate-100 text-slate-500';
-              let opacity = '';
+              // estados visuais
+              let style: React.CSSProperties = {
+                background: '#fff',
+                borderColor: '#e2e8f0',
+                color: '#3E4945',
+              };
+              let badgeBg = '#f1f5f9';
+              let badgeColor = '#64748b';
+              let opacity = 1;
 
               if (showFeedback) {
                 if (isCorrectAlt) {
-                  altClass = 'border-emerald-400 bg-emerald-50 text-emerald-800';
-                  badgeClass = 'bg-emerald-100 text-emerald-700';
+                  style = { background: 'rgba(0,109,91,0.06)', borderColor: '#005344', color: '#003D32' };
+                  badgeBg = '#005344'; badgeColor = '#fff';
                 } else if (isSelected) {
-                  altClass = 'border-red-300 bg-red-50 text-red-800';
-                  badgeClass = 'bg-red-100 text-red-600';
+                  style = { background: 'rgba(220,38,38,0.04)', borderColor: '#fca5a5', color: '#991b1b' };
+                  badgeBg = '#fee2e2'; badgeColor = '#dc2626';
                 } else {
-                  altClass = 'border-slate-100 bg-slate-50 text-slate-400';
-                  opacity = 'opacity-60';
+                  opacity = 0.5;
                 }
               } else if (isSelected) {
-                altClass = 'border-emerald-400 bg-emerald-50 text-emerald-800 shadow-sm';
-                badgeClass = 'bg-emerald-100 text-emerald-700';
+                style = { background: 'rgba(0,109,91,0.04)', borderColor: '#005344', color: '#003D32', boxShadow: '0 0 0 4px rgba(0,109,91,0.06)' };
+                badgeBg = '#005344'; badgeColor = '#fff';
               }
 
               return (
@@ -306,18 +285,22 @@ const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = 
                   key={alt.letter}
                   onClick={() => selectAnswer(alt.letter)}
                   disabled={isRevealed}
-                  className={`w-full text-left p-3 sm:p-3.5 rounded-xl border-2 transition-all duration-150 active:scale-[0.99] disabled:cursor-default ${altClass} ${opacity}`}
+                  style={{ ...style, opacity }}
+                  className="w-full text-left p-3.5 sm:p-4 rounded-xl border-2 transition-all duration-150 active:scale-[0.995] disabled:cursor-default group"
                 >
                   <div className="flex items-start gap-3">
-                    <span className={`shrink-0 h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-150 ${badgeClass}`}>
+                    <span
+                      className="shrink-0 h-8 w-8 rounded-lg flex items-center justify-center text-[13px] font-['Manrope'] font-bold transition-all"
+                      style={{ background: badgeBg, color: badgeColor }}
+                    >
                       {alt.letter}
                     </span>
-                    <span className="text-sm flex-1 pt-0.5">{alt.text}</span>
+                    <span className="text-[13.5px] leading-relaxed flex-1 pt-1">{alt.text}</span>
                     {showFeedback && isCorrectAlt && (
-                      <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
+                      <CheckCircle2 className="h-5 w-5 text-[#005344] shrink-0 mt-1" />
                     )}
                     {showFeedback && isSelected && !isCorrectAlt && (
-                      <XCircle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+                      <XCircle className="h-5 w-5 text-red-400 shrink-0 mt-1" />
                     )}
                   </div>
                 </button>
@@ -325,116 +308,279 @@ const SimulationView = ({ resultado, onExit, isGenerating = false, isComplete = 
             })}
           </div>
 
-          {/* Gabarito / Reveal */}
+          {/* Reveal / Gabarito */}
           {userAnswer && (
-            <div className="pt-2 space-y-3">
+            <div className="pt-1 space-y-3">
               {!isRevealed ? (
                 <button
                   onClick={toggleReveal}
-                  className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-medium border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all duration-200 active:scale-95"
+                  className="inline-flex items-center gap-2 h-10 px-4 rounded-xl text-[12.5px] font-bold border-2 text-[#005344] transition-all hover:bg-[#005344]/05"
+                  style={{ borderColor: 'rgba(0,109,91,0.25)', background: 'rgba(0,109,91,0.04)' }}
                 >
-                  <Eye className="h-4 w-4" /> Ver Gabarito
+                  <Eye className="h-4 w-4" /> Ver gabarito + explicação
                 </button>
               ) : (
-                <>
-                  <div className="rounded-xl border border-emerald-200/60 bg-emerald-50/60 p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-emerald-700 flex items-center gap-1.5">
-                        <CheckCircle2 className="h-4 w-4" />
-                        Gabarito: {currentQ.correctAnswer}
-                      </span>
+                <div className="bg-white rounded-2xl border-2 overflow-hidden" style={{ borderColor: 'rgba(0,109,91,0.2)' }}>
+                  <div className="h-[3px] bg-gradient-to-r from-[#003D32] via-[#005344] to-[#C9A84C]" />
+                  <div className="px-4 sm:px-5 py-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-[#005344] inline-flex items-center gap-2">
+                        <span className="w-5 h-px bg-[#C9A84C]" />
+                        Gabarito · {currentQ.correctAnswer}
+                      </p>
                       <button
                         onClick={toggleReveal}
-                        className="flex items-center gap-1 h-7 px-2.5 rounded-lg text-xs font-medium text-slate-500 hover:bg-slate-100 transition-all duration-200 active:scale-95"
+                        className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[11px] font-bold text-[#94a3b8] hover:text-[#4a5568] hover:bg-slate-50 transition-colors"
                       >
                         <EyeOff className="h-3 w-3" /> Ocultar
                       </button>
                     </div>
-                    {currentQ.explanation && (
-                      <div className="prose prose-sm max-w-none text-sm border-t border-emerald-200/40 pt-3">
+
+                    {/* Texto da alternativa correta — sempre visivel */}
+                    {(() => {
+                      const correctAlt = currentQ.alternatives.find(a => a.letter === currentQ.correctAnswer);
+                      if (!correctAlt) return null;
+                      return (
+                        <div className="mb-3 p-3 rounded-lg bg-[#005344]/04 border border-[#005344]/15">
+                          <p className="text-[12px] leading-relaxed text-[#003D32]">
+                            <strong className="font-bold">Alternativa correta:</strong>{' '}
+                            <span className="font-semibold">{correctAlt.letter})</span>{' '}
+                            {correctAlt.text}
+                          </p>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Explicação (se existir) ou fallback */}
+                    {currentQ.explanation && currentQ.explanation.trim() ? (
+                      <div className="prose prose-sm max-w-none text-[12.5px] leading-relaxed text-[#3E4945] prose-strong:text-[#191C1D] prose-headings:font-['Manrope']">
                         <MarkdownRenderer content={currentQ.explanation} />
                       </div>
+                    ) : (
+                      <p className="text-[11.5px] text-[#94a3b8] italic leading-relaxed">
+                        Explicação detalhada ainda não disponível para esta questão. Use o chat lateral pra discutir o raciocínio.
+                      </p>
                     )}
                   </div>
-                  {currentIndex < totalQuestions - 1 && (
-                    <button
-                      onClick={() => setCurrentIndex(currentIndex + 1)}
-                      className="w-full h-10 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98] hover:brightness-110"
-                      style={{ background: 'linear-gradient(135deg, #126b62, #005e56)' }}
-                    >
-                      Próxima Questão <ChevronRight className="h-4 w-4" />
-                    </button>
-                  )}
-                  {currentIndex === totalQuestions - 1 && isGenerating && (
-                    <button
-                      onClick={() => setCurrentIndex(currentIndex + 1)}
-                      disabled
-                      className="w-full h-10 rounded-xl text-sm font-medium flex items-center justify-center gap-2 border border-slate-200 text-slate-400 bg-slate-50"
-                    >
-                      <Loader2 className="h-4 w-4 animate-spin" /> Aguardando próxima questão...
-                    </button>
-                  )}
-                </>
+                </div>
+              )}
+
+              {/* Próxima */}
+              {isRevealed && currentIndex < totalQuestions - 1 && (
+                <button
+                  onClick={() => setCurrentIndex(currentIndex + 1)}
+                  className="w-full h-11 rounded-xl font-['Manrope'] text-[13.5px] font-bold text-white inline-flex items-center justify-center gap-2 transition-all group relative overflow-hidden"
+                  style={{
+                    background: 'linear-gradient(135deg, #003D32 0%, #005344 50%, #006D5B 100%)',
+                    boxShadow: '0 6px 18px -6px rgba(0,109,91,0.45)',
+                  }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#C9A84C]/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                  <span className="relative inline-flex items-center gap-2">
+                    Próxima questão <ChevronRight className="h-4 w-4" />
+                  </span>
+                </button>
+              )}
+              {isRevealed && currentIndex === totalQuestions - 1 && isGenerating && (
+                <button
+                  disabled
+                  className="w-full h-11 rounded-xl text-[12.5px] font-bold border-2 border-slate-200 text-[#94a3b8] bg-slate-50 inline-flex items-center justify-center gap-2"
+                >
+                  <Loader2 className="h-4 w-4 animate-spin" /> Próxima questão chegando…
+                </button>
               )}
             </div>
           )}
-        </div>
+        </article>
       </ScrollArea>
 
-      {/* Navigation footer */}
-      <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-slate-100 shrink-0 gap-2 mt-2">
-        <button
-          onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
-          disabled={currentIndex === 0}
-          className="flex items-center gap-1.5 h-9 px-3.5 rounded-lg text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">Anterior</span>
-          <span className="sm:hidden">Ant.</span>
-        </button>
-
-        {/* Question dots — only show on sm+ if few questions */}
-        {totalQuestions <= 10 && (
-          <div className="hidden sm:flex items-center gap-1">
-            {questions.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentIndex(i)}
-                className={`h-2 rounded-full transition-all duration-200 ${
-                  i === currentIndex
-                    ? 'w-5 bg-emerald-500'
-                    : answers[i]
-                      ? 'w-2 bg-emerald-200'
-                      : 'w-2 bg-slate-200 hover:bg-slate-300'
-                }`}
-              />
-            ))}
-          </div>
-        )}
-
-        {showFinishButton ? (
-          <button
-            onClick={finishExam}
-            className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-semibold text-white transition-all duration-200 active:scale-95 hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #126b62, #005e56)' }}
-          >
-            <Trophy className="h-4 w-4" />
-            <span>Finalizar ({answeredCount}/{totalQuestions})</span>
-          </button>
-        ) : (
-          <button
-            onClick={() => setCurrentIndex(currentIndex + 1)}
-            disabled={isLastAvailable && !isGenerating}
-            className="flex items-center gap-1.5 h-9 px-3.5 rounded-lg text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <span className="hidden sm:inline">Próxima</span>
-            <span className="sm:hidden">Próx.</span>
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        )}
-      </div>
+      <FooterNav
+        currentIndex={currentIndex}
+        totalQuestions={totalQuestions}
+        answeredCount={answeredCount}
+        isLastAvailable={isLastAvailable}
+        showFinishButton={showFinishButton}
+        isGenerating={isGenerating}
+        onPrev={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
+        onNext={() => setCurrentIndex(currentIndex + 1)}
+        onFinish={finishExam}
+        questions={questions}
+        answers={answers}
+        setCurrentIndex={setCurrentIndex}
+      />
     </div>
   );
 };
 
 export default SimulationView;
+
+/* ─── Subcomponentes ─── */
+
+function ProgressHeader({
+  currentIndex, totalQuestions, answeredCount, progress, isComplete, isGenerating,
+}: {
+  currentIndex: number; totalQuestions: number; answeredCount: number;
+  progress: number; isComplete: boolean; isGenerating: boolean;
+}) {
+  return (
+    <header className="shrink-0 mb-4 space-y-2">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2 leading-none mb-1">
+            <span className="w-5 h-px bg-[#C9A84C]" />
+            Questão {currentIndex + 1} de {isComplete ? totalQuestions : `${totalQuestions}+`}
+          </p>
+          <p className="text-[11.5px] text-[#4a5568] inline-flex items-center gap-2 leading-none">
+            <span>{answeredCount} respondida{answeredCount !== 1 ? 's' : ''}</span>
+            {isGenerating && (
+              <span className="inline-flex items-center gap-1 text-[#8a6f26] font-bold">
+                <Sparkles className="h-3 w-3" /> Gerando…
+              </span>
+            )}
+          </p>
+        </div>
+      </div>
+      <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width: `${progress}%`,
+            background: 'linear-gradient(90deg, #005344, #006D5B, #C9A84C)',
+          }}
+        />
+      </div>
+    </header>
+  );
+}
+
+function LoadingState({ eyebrow, title, hint, compact }: { eyebrow: string; title: string; hint: string; compact?: boolean }) {
+  return (
+    <div className={`flex-1 w-full flex items-center justify-center ${compact ? 'py-6' : 'py-10'}`}>
+      <div className="w-full max-w-2xl mx-auto relative overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        {/* Ribbon top */}
+        <div className="h-[3px] bg-gradient-to-r from-[#003D32] via-[#005344] via-50% to-[#C9A84C]" />
+
+        {/* Decoração SVG ao fundo */}
+        <svg
+          className="absolute right-0 top-0 h-full pointer-events-none opacity-[0.06]"
+          width="280" height="100%" viewBox="0 0 280 200" preserveAspectRatio="xMaxYMid slice"
+        >
+          <defs>
+            <pattern id="loading-dots" width="16" height="16" patternUnits="userSpaceOnUse">
+              <circle cx="8" cy="8" r="0.7" fill="#005344" />
+            </pattern>
+          </defs>
+          <rect width="280" height="200" fill="url(#loading-dots)" />
+          <circle cx="220" cy="100" r="55" fill="none" stroke="#005344" strokeWidth="1" />
+          <circle cx="220" cy="100" r="38" fill="none" stroke="#005344" strokeWidth="0.7" strokeDasharray="3 3" />
+          <circle cx="220" cy="100" r="22" fill="none" stroke="#C9A84C" strokeWidth="1" />
+        </svg>
+
+        <div className="relative flex items-center gap-5 px-6 sm:px-8 py-6 sm:py-8">
+          {/* Loader cube */}
+          <div className="shrink-0 relative">
+            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#003D32] to-[#006D5B] flex items-center justify-center shadow-[0_10px_24px_-10px_rgba(0,109,91,0.55)]">
+              <Loader2 className="h-6 w-6 text-white animate-spin" />
+            </div>
+            <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-[#C9A84C] ring-2 ring-white animate-pulse" />
+          </div>
+
+          {/* Texto */}
+          <div className="min-w-0 flex-1">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2 mb-1.5">
+              <span className="w-5 h-px bg-[#C9A84C]" />
+              {eyebrow}
+            </p>
+            <p className="font-['Manrope'] font-bold text-[18px] sm:text-[20px] text-[#191C1D] tracking-[-0.015em] leading-tight">{title}</p>
+            <p className="text-[12.5px] text-[#4a5568] mt-1 leading-snug">{hint}</p>
+          </div>
+        </div>
+
+        {/* Animação de pontos progressivos no rodapé */}
+        <div className="px-6 sm:px-8 pb-5 flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#005344] animate-[wave_1.2s_ease-in-out_infinite]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[#005344] animate-[wave_1.2s_ease-in-out_0.2s_infinite]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[#005344] animate-[wave_1.2s_ease-in-out_0.4s_infinite]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[#C9A84C]/60 animate-[wave_1.2s_ease-in-out_0.6s_infinite]" />
+          <span className="ml-2 text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#94a3b8]">
+            Streaming
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FooterNav({
+  currentIndex, totalQuestions, answeredCount, isLastAvailable, showFinishButton, isGenerating,
+  onPrev, onNext, onFinish,
+  questions, answers, setCurrentIndex,
+}: {
+  currentIndex: number; totalQuestions: number; answeredCount: number;
+  isLastAvailable: boolean; showFinishButton: boolean; isGenerating: boolean;
+  onPrev: () => void; onNext: () => void; onFinish: () => void;
+  questions: ParsedQuestion[]; answers: Record<number, string>;
+  setCurrentIndex: (i: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-slate-100 shrink-0 gap-2 mt-2">
+      <button
+        onClick={onPrev}
+        disabled={currentIndex === 0}
+        className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg text-[12px] font-bold border-2 border-slate-200 text-[#4a5568] hover:border-[#005344] hover:text-[#005344] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        <span className="hidden sm:inline">Anterior</span>
+        <span className="sm:hidden">Ant.</span>
+      </button>
+
+      {totalQuestions <= 12 && (
+        <div className="hidden sm:flex items-center gap-1">
+          {questions.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentIndex(i)}
+              className="transition-all duration-150"
+              style={{
+                height: 6,
+                width: i === currentIndex ? 22 : 8,
+                borderRadius: 9999,
+                background: i === currentIndex
+                  ? '#005344'
+                  : answers[i]
+                    ? 'rgba(0,109,91,0.35)'
+                    : '#e2e8f0',
+              }}
+              aria-label={`Ir para questão ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+
+      {showFinishButton ? (
+        <button
+          onClick={onFinish}
+          className="inline-flex items-center gap-2 h-9 px-4 rounded-lg font-['Manrope'] text-[12.5px] font-bold text-white transition-all group relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, #003D32 0%, #005344 50%, #006D5B 100%)',
+            boxShadow: '0 4px 14px -4px rgba(0,109,91,0.45)',
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#C9A84C]/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+          <Trophy className="h-4 w-4 relative" />
+          <span className="relative">Finalizar ({answeredCount}/{totalQuestions})</span>
+        </button>
+      ) : (
+        <button
+          onClick={onNext}
+          disabled={isLastAvailable && !isGenerating}
+          className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg text-[12px] font-bold border-2 border-slate-200 text-[#4a5568] hover:border-[#005344] hover:text-[#005344] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <span className="hidden sm:inline">Próxima</span>
+          <span className="sm:hidden">Próx.</span>
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  );
+}

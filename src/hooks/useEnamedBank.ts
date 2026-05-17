@@ -4,6 +4,9 @@ import { useToast } from '@/hooks/use-toast';
 
 export type EnamedArea = 'clinica_medica' | 'cirurgia' | 'ginecologia_obstetricia' | 'pediatria' | 'saude_coletiva';
 
+/** Origem da questao: o banco oficial INEP (ENAMED) ou Revalida (mesma banca, prova diferente) */
+export type QuestionSource = 'all' | 'enamed' | 'revalida';
+
 export interface EnamedQuestion {
   id: string;
   numero: number;
@@ -17,6 +20,21 @@ export interface EnamedQuestion {
   explicacao: string | null;
   ano: number;
   anulada: boolean;
+  /** 'enamed' | 'revalida' — fonte da questao no banco oficial INEP */
+  source?: string;
+  /** URL publica da imagem (ECG, RX, tabela, etc) quando a questao tem figura no enunciado */
+  imagem_url?: string | null;
+}
+
+/** Label da prova de origem pra mostrar no UI ("ENAMED 2025" | "Revalida 2024.2" etc) */
+export function sourceLabel(source: string | undefined, ano: number): string {
+  const s = (source ?? 'enamed').toLowerCase();
+  if (s === 'revalida') {
+    // 2024 = 2024.2, 2025 = 2025.1 — convencao do nosso ingest
+    const edicao = ano === 2024 ? '2024.2' : ano === 2025 ? '2025.1' : String(ano);
+    return `Revalida ${edicao}`;
+  }
+  return `ENAMED ${ano}`;
 }
 
 export const AREA_LABELS: Record<string, string> = {
@@ -32,7 +50,7 @@ export const useEnamedBank = () => {
   const [questions, setQuestions] = useState<EnamedQuestion[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchQuestions = useCallback(async (opts?: { area?: EnamedArea; limit?: number; shuffle?: boolean }) => {
+  const fetchQuestions = useCallback(async (opts?: { area?: EnamedArea; limit?: number; shuffle?: boolean; source?: QuestionSource }) => {
     setLoading(true);
     try {
       let query = supabase
@@ -42,6 +60,9 @@ export const useEnamedBank = () => {
 
       if (opts?.area) {
         query = query.eq('area', opts.area);
+      }
+      if (opts?.source && opts.source !== 'all') {
+        query = query.eq('source', opts.source);
       }
 
       const { data, error } = await query.order('numero', { ascending: true });

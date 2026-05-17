@@ -28,6 +28,54 @@ const PRIZES: PrizeConfig[] = [
 
 const EVENT_SLUG = "semana-itajuba";
 
+/**
+ * Decora a URL do checkout EasyFlow com email + external_id apontando
+ * pra uma linha em pending_checkouts. Resolve o caso "estudante paga
+ * com cartao do pai": o webhook ve o external_id no payload e identifica
+ * o estudante mesmo sem email/holderName batendo.
+ *
+ * Se a insercao da intencao falhar, retorna a URL original sem decoracao
+ * (degradacao gradativa — sem regressao do comportamento anterior).
+ */
+async function decorateCheckoutUrl(
+  supabase: ReturnType<typeof createClient>,
+  checkoutUrl: string | null,
+  userId: string | null | undefined,
+  email: string | null,
+): Promise<string | null> {
+  if (!checkoutUrl) return null;
+  try {
+    const url = new URL(checkoutUrl);
+    if (email) url.searchParams.set("email", email);
+    if (userId) {
+      const offerMatch = checkoutUrl.match(/\/offer\/([a-f0-9-]{36})/i);
+      const offerId = offerMatch ? offerMatch[1] : "";
+      const { data, error } = await supabase
+        .from("pending_checkouts")
+        .insert({
+          user_id: userId,
+          offer_id: offerId || "unknown",
+          plan_hint: "roulette",
+          source: "roulette-spin",
+        })
+        .select("id")
+        .single();
+      if (!error && data?.id) {
+        url.searchParams.set("external_id", data.id);
+        url.searchParams.set("externalId", data.id);
+        url.searchParams.set("metadata[external_id]", data.id);
+        url.searchParams.set("customField1", data.id);
+      } else if (error) {
+        console.warn("decorateCheckoutUrl pending_checkouts insert falhou:", error.message);
+      }
+    }
+    return url.toString();
+  } catch (e) {
+    console.warn("decorateCheckoutUrl error:", e);
+    return checkoutUrl;
+  }
+}
+
 /** Sorteia um prêmio com base nos pesos. */
 function drawPrize(): PrizeConfig {
   const total = PRIZES.reduce((s, p) => s + p.weight, 0);
@@ -84,12 +132,18 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existing) {
+      const decoratedUrl = await decorateCheckoutUrl(
+        supabase,
+        existing.coupon_code,
+        body.user_id,
+        emailLower,
+      );
       return new Response(
         JSON.stringify({
           alreadySpun: true,
           prize: existing.prize,
           prize_label: existing.prize_label,
-          checkout_url: existing.coupon_code, // coluna reaproveitada
+          checkout_url: decoratedUrl,
           redemption_code: existing.redemption_code,
           spun_at: existing.created_at,
           message: "Você já participou da roleta nesse evento.",
@@ -151,12 +205,18 @@ serve(async (req) => {
           .eq("event_slug", EVENT_SLUG)
           .ilike("email", emailLower)
           .maybeSingle();
+        const decoratedRace = await decorateCheckoutUrl(
+          supabase,
+          existingAfterRace?.coupon_code ?? null,
+          body.user_id,
+          emailLower,
+        );
         return new Response(
           JSON.stringify({
             alreadySpun: true,
             prize: existingAfterRace?.prize,
             prize_label: existingAfterRace?.prize_label,
-            checkout_url: existingAfterRace?.coupon_code, // reaproveitada
+            checkout_url: decoratedRace,
             redemption_code: existingAfterRace?.redemption_code,
             spun_at: existingAfterRace?.created_at,
             message: "Você já participou da roleta nesse evento.",
@@ -172,12 +232,18 @@ serve(async (req) => {
     // consulta roulette_spins WHERE prize='mensal_gratis' AND delivered_at
     // IS NULL e aplica o free_access via /admin/users.
 
+    const decorated = await decorateCheckoutUrl(
+      supabase,
+      prize.checkout_url || null,
+      validatedUserId,
+      emailLower,
+    );
     return new Response(
       JSON.stringify({
         alreadySpun: false,
         prize: prize.key,
         prize_label: prize.label,
-        checkout_url: prize.checkout_url || null,
+        checkout_url: decorated,
         redemption_code: spin.redemption_code,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
