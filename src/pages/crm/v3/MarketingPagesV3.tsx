@@ -1532,3 +1532,158 @@ function SortableTh<K extends string>({
     </th>
   );
 }
+
+/* =========================================================
+   ROLETA — participantes do evento (Semana Médica Itajubá)
+   ========================================================= */
+interface RouletteSpin {
+  id: string;
+  email: string;
+  full_name: string;
+  faculdade: string | null;
+  phone: string | null;
+  prize: string;
+  prize_label: string;
+  redemption_code: string;
+  delivered_at: string | null;
+  created_at: string;
+}
+
+const PRIZE_LABEL: Record<string, string> = {
+  desconto_20: "20% off anual",
+  desconto_30: "30% off anual",
+  desconto_50: "50% off anual",
+  mensal_gratis: "1 mês grátis",
+  chaveiro: "Chaveiro",
+};
+
+function useRouletteSpins() {
+  return useQuery({
+    queryKey: ["crm", "roulette-spins"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("roulette_spins")
+        .select("id, email, full_name, faculdade, phone, prize, prize_label, redemption_code, delivered_at, created_at")
+        .eq("event_slug", "semana-itajuba")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as RouletteSpin[];
+    },
+    refetchInterval: 60_000,
+  });
+}
+
+export function RoletaV3() {
+  const { data: spins, isLoading } = useRouletteSpins();
+  const lista = spins ?? [];
+
+  const total = lista.length;
+  const comTelefone = lista.filter((s) => s.phone && s.phone.trim()).length;
+  const porPremio = lista.reduce<Record<string, number>>((acc, s) => {
+    acc[s.prize] = (acc[s.prize] ?? 0) + 1;
+    return acc;
+  }, {});
+  const mensalPendente = lista.filter((s) => s.prize === "mensal_gratis" && !s.delivered_at).length;
+
+  const exportCSV = () => {
+    const headers = ["Data", "Nome", "Email", "WhatsApp", "Faculdade", "Prêmio", "Código", "Entregue"];
+    const rows = lista.map((s) => [
+      new Date(s.created_at).toLocaleString("pt-BR"),
+      s.full_name ?? "",
+      s.email ?? "",
+      s.phone ?? "",
+      s.faculdade ?? "",
+      PRIZE_LABEL[s.prize] ?? s.prize_label ?? s.prize,
+      s.redemption_code ?? "",
+      s.delivered_at ? "sim" : "não",
+    ]);
+    const csv = [headers, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `roleta-semana-itajuba-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <CrmShellV3 mode="marketing" crumbs={[{ label: "CRM" }, { label: "Marketing" }, { label: "Roleta" }]}
+      topbarTools={<><button className="crm-btn crm-btn-primary" onClick={exportCSV} disabled={total === 0}><Download size={13} /> Exportar CSV</button></>}
+    >
+      <main className="crm-page">
+        <PageHero
+          eyebrow="Marketing · Evento presencial"
+          title={<>Roleta — <em>Semana Médica Itajubá</em></>}
+          sub="Participantes que se cadastraram e giraram a roleta. Lista de leads do evento (atualiza a cada 60s)."
+        />
+
+        <section className="crm-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+          <Kpi label="Participantes" value={total} accent="mrr" />
+          <Kpi label="Com WhatsApp" value={comTelefone} deltaText={total > 0 ? `${Math.round((comTelefone / total) * 100)}% do total` : "—"} />
+          <Kpi label="Mês grátis a ativar" value={mensalPendente} accent={mensalPendente > 0 ? "warn" : undefined} deltaText="prize=mensal_gratis pendente" />
+          <Kpi label="50% off ganhos" value={porPremio["desconto_50"] ?? 0} />
+        </section>
+
+        <section className="crm-card">
+          <CardHead
+            title="Participantes da roleta"
+            sub={`${total} cadastros · ${comTelefone} com telefone`}
+            side={<button className="crm-btn crm-btn-ghost" onClick={exportCSV} disabled={total === 0}><Download size={13} /> CSV</button>}
+          />
+          {isLoading ? (
+            <div style={{ padding: 48, textAlign: "center", color: "var(--crm-ink-4)" }}>
+              <Loader2 className="animate-spin" style={{ display: "inline-block", color: "var(--crm-green-deep)" }} />
+            </div>
+          ) : total > 0 ? (
+            <table className="crm-tbl">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Contato</th>
+                  <th>Faculdade</th>
+                  <th>Prêmio</th>
+                  <th>Código</th>
+                  <th>Data</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lista.map((s) => (
+                  <tr key={s.id}>
+                    <td><div className="lead-name">{s.full_name || "—"}</div></td>
+                    <td>
+                      <div className="lead-email">{s.email}</div>
+                      <div className="crm-mono" style={{ fontSize: 12, color: s.phone ? "var(--crm-ink-2)" : "var(--crm-neg)" }}>
+                        {s.phone || "sem telefone"}
+                      </div>
+                    </td>
+                    <td className="muted">{s.faculdade || "—"}</td>
+                    <td>
+                      <span className={`crm-tag ${s.prize === "mensal_gratis" ? "crm-tag-warn" : "crm-tag-green"}`}>
+                        <span className="crm-tag-dot" />
+                        {PRIZE_LABEL[s.prize] ?? s.prize_label ?? s.prize}
+                      </span>
+                      {s.prize === "mensal_gratis" && (
+                        <span className="crm-mono" style={{ fontSize: 10, marginLeft: 6, color: s.delivered_at ? "var(--crm-pos)" : "var(--crm-neg)" }}>
+                          {s.delivered_at ? "ativado" : "ativar"}
+                        </span>
+                      )}
+                    </td>
+                    <td className="crm-mono" style={{ fontSize: 12 }}>{s.redemption_code}</td>
+                    <td className="muted">{new Date(s.created_at).toLocaleString("pt-BR")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div style={{ padding: 32, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
+              Nenhum participante ainda. Compartilhe <code>thepreceptor.com.br/semana-itajuba</code> no evento.
+            </div>
+          )}
+        </section>
+      </main>
+    </CrmShellV3>
+  );
+}
