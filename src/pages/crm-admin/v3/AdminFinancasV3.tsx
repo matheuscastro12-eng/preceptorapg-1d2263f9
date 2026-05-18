@@ -8,7 +8,7 @@ import { usePromocoesTrimestrais } from "@/hooks/useCarreira";
 import { useMembros } from "@/hooks/useTime";
 import { useReceitas, useReceitaResumo, useReceitaPorPlano } from "@/hooks/useReceitas";
 import { useDespesas, useDespesaResumo, useDespesasPorCategoria } from "@/hooks/useDespesas";
-import { useFluxoCaixa, useRunway, useEntradasPrevistas, useSaidasPrevistas, useEntradasRealizadas, useAportes, useCreateAporte, useDeleteAporte } from "@/hooks/useFluxoCaixa";
+import { useFluxoCaixa, useRunway, useEntradasPrevistas, useSaidasPrevistas, useEntradasRealizadas, useAportes, useCreateAporte, useDeleteAporte, useUpdateSaldo } from "@/hooks/useFluxoCaixa";
 import { useInadimplencias, useInadimplenciaStats } from "@/hooks/useInadimplencia";
 import { usePremissaAtiva, useDREData, calcularReceitas } from "@/hooks/useForecast";
 import { useOKRs } from "@/hooks/useOKRs";
@@ -347,6 +347,7 @@ export function FluxoCaixaV3() {
   const { data: realizadas } = useEntradasRealizadas(diasReal);
   const { data: aportes } = useAportes();
   const [showAporte, setShowAporte] = useState(false);
+  const [showSaldo, setShowSaldo] = useState(false);
 
   const hoje = new Date();
   const em30d = new Date(hoje.getTime() + 30 * 86400000);
@@ -364,7 +365,10 @@ export function FluxoCaixaV3() {
           sub="Saldo bancário, recebíveis previstos e contas a pagar (90 dias)."
           actions={
             <>
-              <button className="crm-btn crm-btn-primary" onClick={() => setShowAporte(true)}>
+              <button className="crm-btn crm-btn-primary" onClick={() => setShowSaldo(true)}>
+                <Wallet size={13} /> Ajustar saldo
+              </button>
+              <button className="crm-btn crm-btn-ghost" onClick={() => setShowAporte(true)}>
                 <Plus size={13} /> Registrar aporte
               </button>
               <button className="crm-btn crm-btn-ghost"><Download size={13} /> CSV</button>
@@ -373,6 +377,7 @@ export function FluxoCaixaV3() {
         />
 
         {showAporte && <AporteModal onClose={() => setShowAporte(false)} />}
+        {showSaldo && <SaldoModal saldoAtual={fx?.saldo_baseline ?? 0} onClose={() => setShowSaldo(false)} />}
 
         <section className="crm-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
           <Kpi
@@ -605,6 +610,70 @@ function AporteModal({ onClose }: { onClose: () => void }) {
           <button type="submit" disabled={create.isPending} className="crm-btn crm-btn-primary" style={{ display: "flex", alignItems: "center", gap: 6 }}>
             {create.isPending && <Loader2 size={13} className="animate-spin" />}
             {create.isPending ? "Salvando..." : "Salvar aporte"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function SaldoModal({ saldoAtual, onClose }: { saldoAtual: number; onClose: () => void }) {
+  const update = useUpdateSaldo();
+  const [valor, setValor] = useState(
+    saldoAtual ? String(saldoAtual).replace(".", ",") : "",
+  );
+  const [obs, setObs] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    const num = Number(valor.replace(/\./g, "").replace(",", "."));
+    if (isNaN(num)) { setError("Valor inválido"); return; }
+    try {
+      await update.mutateAsync({
+        saldo: num,
+        observacoes: obs.trim() || `Saldo definido manualmente em ${new Date().toLocaleDateString("pt-BR")}`,
+      });
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao salvar saldo");
+    }
+  };
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", padding: 20, zIndex: 1000 }}>
+      <form onClick={(e) => e.stopPropagation()} onSubmit={submit} className="crm-card" style={{ width: "min(480px, 100%)", maxHeight: "90vh", overflow: "auto", padding: 0, background: "var(--crm-surface)" }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--crm-line)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontFamily: "var(--crm-sans)", fontSize: 16, fontWeight: 700, color: "var(--crm-ink)" }}>Ajustar saldo do caixa</div>
+            <div className="crm-mono" style={{ fontSize: 11, color: "var(--crm-ink-4)", marginTop: 2 }}>define o ponto de partida (saldo do banco hoje)</div>
+          </div>
+          <button type="button" onClick={onClose} className="crm-btn-icon"><X /></button>
+        </div>
+
+        <div style={{ padding: 20, display: "grid", gap: 14 }}>
+          <div style={{ fontSize: 13, color: "var(--crm-ink-3)", lineHeight: 1.5, background: "var(--crm-surface-2)", padding: "10px 12px", borderRadius: 6 }}>
+            Coloque aqui o saldo que está na conta <strong>hoje</strong>. A partir deste valor,
+            o sistema soma automaticamente receitas e aportes e subtrai despesas conforme você
+            lança. Pode reajustar quando quiser — sempre vale o último valor informado.
+          </div>
+          <Field label="Saldo atual do caixa (R$)">
+            <input type="text" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0,00" style={inputStyle} autoFocus required />
+          </Field>
+          <Field label="Observação (opcional)">
+            <input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Ex: saldo Asaas + conta PJ em 18/05" style={inputStyle} />
+          </Field>
+          {error && (
+            <div style={{ fontSize: 12, color: "var(--crm-neg)", background: "var(--crm-neg-soft)", padding: "8px 10px", borderRadius: 6 }}>{error}</div>
+          )}
+        </div>
+
+        <div style={{ padding: "14px 20px", borderTop: "1px solid var(--crm-line)", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button type="button" onClick={onClose} className="crm-btn crm-btn-ghost">Cancelar</button>
+          <button type="submit" disabled={update.isPending} className="crm-btn crm-btn-primary" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {update.isPending && <Loader2 size={13} className="animate-spin" />}
+            {update.isPending ? "Salvando..." : "Salvar saldo"}
           </button>
         </div>
       </form>
