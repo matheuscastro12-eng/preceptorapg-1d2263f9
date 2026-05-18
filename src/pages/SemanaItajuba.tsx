@@ -65,6 +65,17 @@ export default function SemanaItajuba() {
       return;
     }
 
+    // Telefone obrigatório — exige ao menos 10 dígitos (DDD + número)
+    const phoneDigits = form.phone.replace(/\D/g, "");
+    if (phoneDigits.length < 10) {
+      toast({ title: "WhatsApp obrigatório", description: "Informe um número válido com DDD (ex: 35 99999-9999).", variant: "destructive" });
+      return;
+    }
+    if (!form.faculdade.trim()) {
+      toast({ title: "Faculdade obrigatória", description: "Informe sua faculdade.", variant: "destructive" });
+      return;
+    }
+
     setSubmitting(true);
     try {
       // Tenta cadastrar
@@ -270,8 +281,8 @@ function SignupSection({
         <Field label="Nome completo" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} required />
         <Field label="Email" type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required />
         <Field label="Senha (mínimo 6 caracteres)" type="password" value={form.password} onChange={(v) => setForm({ ...form, password: v })} required minLength={6} />
-        <Field label="Faculdade" value={form.faculdade} onChange={(v) => setForm({ ...form, faculdade: v })} placeholder="FMIT" />
-        <Field label="WhatsApp (opcional)" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="(35) 99999-9999" />
+        <Field label="Faculdade" value={form.faculdade} onChange={(v) => setForm({ ...form, faculdade: v })} placeholder="FMIT" required />
+        <Field label="WhatsApp" type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="(35) 99999-9999" required />
 
         <button
           type="submit"
