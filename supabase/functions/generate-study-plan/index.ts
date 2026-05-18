@@ -157,103 +157,101 @@ Deno.serve(async (req) => {
       fase: classifyPhase(idx, total),
     }));
 
-    // ===== Chamada IA =====
-    const systemPrompt = `Você é tutor de medicina brasileiro. Vai criar um cronograma de estudo dia-a-dia para um estudante que tem prova "${body.prova_nome}" em ${body.prova_data} (${total} dias incluindo hoje), com ${horas}h disponíveis por dia.
-
-Tópicos brutos do estudante:
-"""${body.topicos_input}"""
-
-REGRAS DE DISTRIBUIÇÃO:
-1. Normalize os tópicos: corrija abreviações ("cardio" → "Cardiologia"), expanda siglas ("ICC" → "Insuficiência Cardíaca"), agrupe sinônimos.
-2. Para cada dia, escolha 1 tópico principal e gere 2-4 atividades concretas que cabem em ~${horas}h.
-3. Tipos de atividade disponíveis:
-   - "fechamento": gerar resumo de PBL com fisiopatologia em cascata (use para conteúdo novo, ~25-30 min cada)
-   - "flashcards": criar deck de 8-12 cards do tema (~15-20 min)
-   - "questoes": fazer simulado de N questões (3-10), ~5 min por questão
-   - "revisao_flash": revisar flashcards já criados (~10-15 min)
-   - "leitura": ler diretrizes/Harrison sobre tópico (~30 min)
-4. Fases já estão definidas. Respeite:
-   - "aprendizado" (início): 1 fechamento + 1 flashcards + 1 questoes (3-5 q)
-   - "consolidacao" (meio): 1 fechamento curto OU revisão + flashcards + questoes
-   - "revisao_final" (final): SOMENTE revisao_flash + questoes (5-10 q misturadas)
-   - "descanso" (último dia): 1 atividade leve (revisao_flash de 15 min) + descanso.
-5. NÃO repita o mesmo tema 2 dias seguidos. Distribua os tópicos cobrindo TODOS antes de revisar.
-6. Use linguagem brasileira ("você", informal, prática). Descrição = 1 linha acionável: "Gere fechamento de IAM com supra incluindo manejo agudo".
-7. Temas devem ser específicos, não genéricos: "ICC com fração de ejeção reduzida", não "ICC".
-
-Responda APENAS o JSON estruturado conforme o schema.`;
-
-    const userPrompt = `Dias com fases já definidas (${total} dias):\n${JSON.stringify(skeleton)}\n\nTópicos do estudante: ${body.topicos_input}\nHoras por dia: ${horas}h`;
-
-    // gemini-2.0-flash: sem "thinking" (que no 2.5-flash consumia os
-    // maxOutputTokens antes de emitir o JSON, truncando a resposta e
-    // quebrando o JSON.parse -> "Falha ao gerar plano"). 2.0-flash lida
-    // muito bem com responseSchema/JSON estruturado e output grande.
+    // ===== Chamada IA — em JANELAS de dias =====
+    // Planos longos (até 180 dias) estouravam o maxOutputTokens num único
+    // JSON -> truncava -> "Erro ao gerar plano". Geramos a distribuição em
+    // janelas de 25 dias (cada uma cabe folgado nos tokens). A 1ª janela
+    // tambem normaliza os tópicos; as seguintes recebem essa lista.
+    const CHUNK = 25;
     const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
 
-    let lastErr: string | null = null;
-    let parsed: { topicos_normalizados: string[]; distribuicao: DiaIA[] } | null = null;
+    const baseRules = `Tipos de atividade: "fechamento" (resumo PBL, ~25-30min), "flashcards" (deck 8-12 cards, ~15-20min), "questoes" (simulado N questões 3-10, ~5min/q), "revisao_flash" (revisar flashcards, ~10-15min), "leitura" (diretrizes/Harrison, ~30min).
+Fases (já definidas em cada dia):
+- "aprendizado": 1 fechamento + 1 flashcards + 1 questoes (3-5 q)
+- "consolidacao": 1 fechamento curto OU revisão + flashcards + questoes
+- "revisao_final": SOMENTE revisao_flash + questoes (5-10 q misturadas)
+- "descanso": 1 atividade leve (revisao_flash 15min) + descanso
+Regras: cada dia 1 tópico principal + 2-4 atividades que cabem em ~${horas}h. NÃO repita o mesmo tema 2 dias seguidos. Temas específicos ("ICC com fração de ejeção reduzida", não "ICC"). Linguagem BR informal. Descrição = 1 linha acionável.`;
 
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const res = await fetch(geminiURL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemPrompt }] },
-            contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-            generationConfig: {
-              temperature: 0.6,
-              responseMimeType: "application/json",
-              responseSchema: planSchema,
-              maxOutputTokens: 32000,
-            },
-          }),
-        });
+    async function generateChunk(
+      skel: { data: string; fase: string }[],
+      isFirst: boolean,
+      topicosNorm: string[],
+    ): Promise<{ topicos_normalizados: string[]; distribuicao: DiaIA[] }> {
+      const sys = `Você é tutor de medicina brasileiro criando um cronograma para a prova "${body.prova_nome}" em ${body.prova_data} (${total} dias no total), ${horas}h/dia.
 
-        if (!res.ok) {
-          lastErr = `Gemini ${res.status}: ${await res.text().catch(() => "")}`;
-          if (res.status >= 500) {
-            await new Promise((r) => setTimeout(r, [1000, 3000, 9000][attempt] ?? 3000));
-            continue;
-          }
-          return jsonErr(502, lastErr);
-        }
+${baseRules}
 
-        const out = await res.json();
-        const finishReason = out?.candidates?.[0]?.finishReason;
-        let text = out?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!text) {
-          lastErr = `Resposta vazia da IA (finishReason=${finishReason ?? "?"})`;
-          console.warn("[generate-study-plan]", lastErr, JSON.stringify(out?.candidates?.[0] ?? out).slice(0, 500));
-          continue;
-        }
-        // Resiliencia: remove fences markdown se o modelo encapsular o JSON
-        text = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
-        if (finishReason === "MAX_TOKENS") {
-          // JSON provavelmente truncado — registra e tenta de novo
-          lastErr = "Resposta truncada (MAX_TOKENS)";
-          console.warn("[generate-study-plan] MAX_TOKENS — JSON truncado, retry");
-          continue;
-        }
+${isFirst
+  ? `Normalize os tópicos do estudante (corrija abreviações: "cardio"→"Cardiologia"; expanda siglas: "ICC"→"Insuficiência Cardíaca"; agrupe sinônimos) e devolva em "topicos_normalizados".`
+  : `Tópicos já normalizados (use SOMENTE estes, devolva a mesma lista em "topicos_normalizados"): ${JSON.stringify(topicosNorm)}`}
+
+Gere "distribuicao" APENAS para os ${skel.length} dias informados (não invente outras datas). Distribua os tópicos cobrindo todos antes de revisar. Responda APENAS o JSON do schema.`;
+
+      const usr = `Tópicos brutos do estudante: """${body.topicos_input}"""\nHoras/dia: ${horas}h\nDias desta janela (com fase): ${JSON.stringify(skel)}`;
+
+      let err = "";
+      for (let attempt = 0; attempt < 3; attempt++) {
         try {
-          parsed = JSON.parse(text);
-        } catch (pe) {
-          lastErr = `JSON invalido: ${String(pe)} — inicio: ${text.slice(0, 200)}`;
-          console.warn("[generate-study-plan]", lastErr);
-          continue;
+          const res = await fetch(geminiURL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: sys }] },
+              contents: [{ role: "user", parts: [{ text: usr }] }],
+              generationConfig: {
+                temperature: 0.55,
+                responseMimeType: "application/json",
+                responseSchema: planSchema,
+                maxOutputTokens: 24000,
+              },
+            }),
+          });
+          if (!res.ok) {
+            err = `Gemini ${res.status}: ${await res.text().catch(() => "")}`;
+            if (res.status >= 500) { await new Promise((r) => setTimeout(r, [1000, 3000, 8000][attempt] ?? 3000)); continue; }
+            throw new Error(err);
+          }
+          const out = await res.json();
+          const fr = out?.candidates?.[0]?.finishReason;
+          let text = out?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!text) { err = `vazia (finishReason=${fr ?? "?"})`; console.warn("[generate-study-plan]", err); continue; }
+          text = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+          if (fr === "MAX_TOKENS") { err = "MAX_TOKENS (janela truncada)"; console.warn("[generate-study-plan]", err); continue; }
+          const p = JSON.parse(text);
+          if (p?.distribuicao?.length) return p;
+          err = "distribuicao vazia";
+        } catch (e) {
+          err = String(e);
+          console.warn("[generate-study-plan] chunk attempt", attempt, err);
+          await new Promise((r) => setTimeout(r, [1000, 3000, 8000][attempt] ?? 3000));
         }
-        break;
-      } catch (e) {
-        lastErr = String(e);
-        console.warn("[generate-study-plan] attempt", attempt, "erro:", lastErr);
-        await new Promise((r) => setTimeout(r, [1000, 3000, 9000][attempt] ?? 3000));
       }
+      throw new Error(`Falha na janela de dias: ${err}`);
     }
 
-    if (!parsed || !parsed.distribuicao || parsed.distribuicao.length === 0) {
-      console.error("[generate-study-plan] falha final:", lastErr);
-      return jsonErr(502, `Falha ao gerar plano: ${lastErr ?? "desconhecido"}`);
+    const windows: { data: string; fase: string }[][] = [];
+    for (let i = 0; i < skeleton.length; i += CHUNK) {
+      windows.push(skeleton.slice(i, i + CHUNK));
+    }
+
+    let parsed: { topicos_normalizados: string[]; distribuicao: DiaIA[] };
+    try {
+      const firstChunk = await generateChunk(windows[0], true, []);
+      const topicosNorm = firstChunk.topicos_normalizados ?? [];
+      const allDist: DiaIA[] = [...firstChunk.distribuicao];
+      for (let i = 1; i < windows.length; i++) {
+        const c = await generateChunk(windows[i], false, topicosNorm);
+        allDist.push(...c.distribuicao);
+      }
+      parsed = { topicos_normalizados: topicosNorm, distribuicao: allDist };
+    } catch (e) {
+      console.error("[generate-study-plan] falha final:", e);
+      return jsonErr(502, `Falha ao gerar plano: ${(e as Error).message ?? e}`);
+    }
+
+    if (!parsed.distribuicao || parsed.distribuicao.length === 0) {
+      return jsonErr(502, "Falha ao gerar plano: distribuição vazia");
     }
 
     // ===== Marcar plano anterior como abandonado se existir =====
@@ -275,7 +273,7 @@ Responda APENAS o JSON estruturado conforme o schema.`;
         horas_dia: horas,
         status: "active",
         raw_plan: parsed,
-        generation_meta: { model: "gemini-2.5-flash", attempts: 1 },
+        generation_meta: { model: "gemini-2.0-flash", windows: windows.length, chunk_days: CHUNK },
       })
       .select()
       .single();
