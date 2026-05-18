@@ -120,10 +120,13 @@ export function useFluxoCaixa() {
         .gte("data", baselineDate);
       const despesasTotal = (despesas ?? []).reduce((s, d) => s + Number(d.valor), 0);
 
-      // Aportes/investimentos — entram integralmente no caixa
+      // Aportes APÓS o baseline (mesma regra de receitas/despesas).
+      // Aporte anterior ao baseline já está embutido no saldo informado —
+      // somá-lo de novo duplicaria o valor no caixa.
       const { data: aportes } = await supabase
         .from("admin_aportes")
-        .select("valor");
+        .select("valor")
+        .gte("data", baselineDate);
       const aportesTotal = (aportes ?? []).reduce((s, a) => s + Number(a.valor), 0);
 
       const saldoEfetivo = baseline + receitasTotal - despesasTotal + aportesTotal;
@@ -181,7 +184,7 @@ export function useRunway() {
         .from("admin_despesas").select("valor").gte("data", baselineDate);
       const despesasDesdeBaseline = (despesasBase ?? []).reduce((s, d) => s + Number(d.valor), 0);
 
-      const { data: aportes } = await supabase.from("admin_aportes").select("valor");
+      const { data: aportes } = await supabase.from("admin_aportes").select("valor").gte("data", baselineDate);
       const totalAportes = (aportes ?? []).reduce((s, a) => s + Number(a.valor), 0);
 
       const saldo = baseline + receitasTotal - despesasDesdeBaseline + totalAportes;
