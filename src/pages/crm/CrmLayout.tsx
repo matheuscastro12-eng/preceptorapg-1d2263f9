@@ -20,6 +20,7 @@ const V3_PAGES = new Set([
   "/admin/crm-mkt/cohorts",
   "/admin/crm-mkt/users",
   "/admin/crm-mkt/analytics",
+  "/admin/crm-mkt/roleta",
   "/admin/crm-mkt/suporte",
 ]);
 
