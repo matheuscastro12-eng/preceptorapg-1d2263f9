@@ -118,19 +118,26 @@ Deno.serve(async (req) => {
     if (userErr || !userData.user) return jsonErr(401, "Usuário inválido");
     const userId = userData.user.id;
 
-    // Gate: apenas pagantes (status active + plan != free_access)
+    // Gate: usuario com acesso ativo (paid OU free_access) OU admin.
+    // free_access é concedido manualmente (founders, comp, beta) — tem
+    // mesma experiencia que paid. Antes era bloqueado, gerando 403 confuso.
     const { data: sub } = await svcClient
       .from("subscriptions")
-      .select("status, plan_type")
+      .select("status, plan_type, access_expires_at")
       .eq("user_id", userId)
       .maybeSingle();
 
-    const isPago = sub?.status === "active" && sub?.plan_type && !["none", "free_access"].includes(sub.plan_type);
+    const isExpired = sub?.access_expires_at
+      ? new Date(sub.access_expires_at).getTime() < Date.now()
+      : false;
+    const hasActiveAccess = !isExpired && sub?.status === "active" &&
+      sub?.plan_type && sub.plan_type !== "none";
+
     const { data: roleRow } = await svcClient.from("user_roles").select("role").eq("user_id", userId).maybeSingle();
     const isAdmin = roleRow?.role === "admin";
 
-    if (!isPago && !isAdmin) {
-      return jsonErr(403, "Cronograma é exclusivo para assinantes pagos. Faça upgrade para criar seu plano de estudos.");
+    if (!hasActiveAccess && !isAdmin) {
+      return jsonErr(403, "Cronograma é exclusivo para assinantes ativos. Faça upgrade para criar seu plano de estudos.");
     }
 
     const body: ReqBody = await req.json();

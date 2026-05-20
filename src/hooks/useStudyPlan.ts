@@ -160,8 +160,17 @@ export async function createStudyPlan(input: {
 }): Promise<{ plan_id: string; total_dias: number; topicos_normalizados: string[] }> {
   const { data, error } = await supabase.functions.invoke("generate-study-plan", { body: input });
   if (error) {
-    const msg = error.message ?? "Erro ao gerar plano";
-    throw new Error(msg);
+    // supabase-js retorna "Edge Function returned a non-2xx status code"
+    // genericamente — pegamos a mensagem real do corpo da resposta.
+    let real = error.message ?? "Erro ao gerar plano";
+    try {
+      const ctx = (error as { context?: Response }).context;
+      if (ctx && typeof ctx.json === "function") {
+        const body = await ctx.json();
+        if (body?.error) real = body.error;
+      }
+    } catch { /* mantém msg genérica */ }
+    throw new Error(real);
   }
   if (!data?.success) {
     throw new Error(data?.error ?? "Falha desconhecida");
