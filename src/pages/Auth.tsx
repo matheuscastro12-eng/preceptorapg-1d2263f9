@@ -136,106 +136,8 @@ const Auth = () => {
   )}`;
 
   return (
-    <div className="flex min-h-screen">
-      {/* ═══════════════════════════════════════════════
-          LEFT PANEL — editorial, typography-first
-          ═══════════════════════════════════════════════ */}
-      <aside
-        className="hidden lg:flex lg:w-[48%] xl:w-[52%] relative flex-col justify-between overflow-hidden text-white"
-        style={{ background: 'var(--pmed-gradient-primary)' }}
-      >
-        {/* Grain texture overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none mix-blend-overlay"
-          style={{ backgroundImage: `url("${noiseTexture}")` }}
-        />
-        {/* Subtle gold glow — asymmetric accent */}
-        <div className="absolute -top-32 -right-32 w-[420px] h-[420px] rounded-full bg-brand-gold/10 blur-[120px] pointer-events-none" />
-        <div className="absolute -bottom-32 -left-16 w-[360px] h-[360px] rounded-full bg-brand-primary/30 blur-[100px] pointer-events-none" />
-
-        {/* Top — logo + tagline */}
-        <div className="relative z-10 px-12 xl:px-16 pt-12">
-          <div className="flex items-center gap-3 mb-2">
-            <img src={logoPreceptor} alt="PreceptorMED" className="h-10 w-10" />
-            <div className="flex flex-col">
-              <span className="text-lg font-bold tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
-                PreceptorMED
-              </span>
-              <span className="text-[10px] text-brand-gold/90 font-semibold uppercase tracking-[0.15em]">
-                Curadoria de medicina acadêmica
-              </span>
-            </div>
-          </div>
-          <div className="mt-1 h-px w-16 bg-gradient-to-r from-brand-gold to-transparent" />
-        </div>
-
-        {/* Middle — typography hero + real example */}
-        <div className="relative z-10 px-12 xl:px-16 flex-1 flex flex-col justify-center py-12">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-xl"
-          >
-            <p className="text-[11px] font-semibold text-brand-gold uppercase tracking-[0.2em] mb-5">
-              Para estudantes de medicina brasileiros
-            </p>
-            <h1
-              className="text-4xl xl:text-5xl font-bold leading-[1.05] tracking-tight mb-8"
-              style={{ fontFamily: 'var(--font-display)' }}
-            >
-              Estude com rigor.
-              <br />
-              <span className="text-brand-gold/90">Não com resumos de slide.</span>
-            </h1>
-            <p className="text-[15px] text-white/75 leading-[1.7] mb-10 max-w-lg">
-              Resumos de PBL com fisiopatologia em cascata, correlação clínico-básica e terminologia técnica. Em português, no padrão do fechamento acadêmico.
-            </p>
-          </motion.div>
-
-          {/* Real preview card — concrete proof */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="relative bg-white/[0.04] backdrop-blur-sm border border-white/10 rounded-lg p-5 max-w-md"
-          >
-            <div className="flex items-center justify-between mb-3 pb-3 border-b border-white/10">
-              <span className="text-[11px] font-semibold text-white/60 tracking-wide">
-                Endocrinologia · Emergência
-              </span>
-              <span className="text-[9px] px-2 py-0.5 bg-brand-gold/20 text-brand-gold font-bold rounded">
-                EXEMPLO
-              </span>
-            </div>
-            <h4 className="text-[15px] font-bold text-white mb-3" style={{ fontFamily: 'var(--font-display)' }}>
-              Cetoacidose Diabética
-            </h4>
-            <p className="text-[11px] font-bold text-brand-gold/80 uppercase tracking-wider mb-1.5">
-              Fisiopatologia em cascata
-            </p>
-            <p className="text-[13px] text-white/75 leading-relaxed">
-              A deficiência de <span className="text-white font-medium">insulina</span>, somada ao excesso de{' '}
-              <span className="text-white font-medium">glucagon, cortisol e catecolaminas</span>, ativa a{' '}
-              <span className="text-white font-medium">CPT-1</span> hepática e desencadeia β-oxidação com produção de β-hidroxibutirato e acetoacetato…
-            </p>
-            <div className="pointer-events-none absolute inset-x-5 bottom-5 h-10 bg-gradient-to-t from-[#00473c] to-transparent" />
-          </motion.div>
-        </div>
-
-        {/* Bottom — quiet footer */}
-        <div className="relative z-10 px-12 xl:px-16 pb-10">
-          <div className="h-px w-full bg-white/5 mb-5" />
-          <p className="text-[11px] text-white/40 leading-relaxed max-w-md">
-            ENAMED no padrão INEP · Chat com busca no PubMed · Flashcards com SM-2 real · Biblioteca pessoal exportável
-          </p>
-        </div>
-      </aside>
-
-      {/* ═══════════════════════════════════════════════
-          RIGHT PANEL — form, clean and direct
-          ═══════════════════════════════════════════════ */}
-      <main className="flex w-full lg:w-[52%] xl:w-[48%] flex-col px-5 sm:px-8 py-8 sm:py-10 bg-white relative">
+    <div className="min-h-screen bg-white">
+      <main className="flex w-full flex-col px-5 sm:px-8 py-8 sm:py-10 bg-white relative min-h-screen max-w-md sm:max-w-lg mx-auto">
         {/* Top bar — back button */}
         <div className="flex items-center justify-between">
           <Button
@@ -249,7 +151,7 @@ const Auth = () => {
         </div>
 
         {/* Mobile branding */}
-        <div className="lg:hidden mt-8 mb-6 flex items-center gap-3">
+        <div className="mt-6 mb-4 flex items-center gap-3 justify-center">
           <img src={logoPreceptor} alt="PreceptorMED" className="h-10 w-10" />
           <div>
             <p className="font-bold text-brand-ink tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)' }}>

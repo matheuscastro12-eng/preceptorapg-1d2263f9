@@ -92,6 +92,14 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
+  const [topBannerDismissed, setTopBannerDismissed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try { return sessionStorage.getItem('pmed_upgrade_banner_dismissed') === '1'; } catch { return false; }
+  });
+  const dismissTopBanner = () => {
+    try { sessionStorage.setItem('pmed_upgrade_banner_dismissed', '1'); } catch { /* storage indisponivel */ }
+    setTopBannerDismissed(true);
+  };
 
   const isFreeUser = !hasAccess && !isAdmin;
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Estudante';
@@ -291,14 +299,20 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
         {isFreeUser && !subLoading && (
           <div className="relative overflow-hidden mb-5 px-4 py-4 rounded-xl bg-gradient-to-br from-brand-gold/25 via-brand-gold/10 to-transparent border border-brand-gold/30">
             <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-brand-gold/15 blur-2xl pointer-events-none" />
+            <div className="absolute top-2 right-2 bg-[#C9A84C] text-[#003D32] px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider shadow-sm">
+              -41%
+            </div>
             <div className="relative">
-              <p className="text-xs font-bold text-brand-gold mb-1">✦ Desbloqueie tudo</p>
-              <p className="text-[11px] text-white/80 mb-3 leading-relaxed">Resumos ilimitados, simulados PreceptorMED, biblioteca pessoal.</p>
+              <p className="text-[10px] font-bold text-brand-gold uppercase tracking-wider mb-1">✦ Plano Anual</p>
+              <p className="text-[18px] font-extrabold text-white leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
+                R$ 29,24<span className="text-[11px] font-medium text-white/70">/mês</span>
+              </p>
+              <p className="text-[10px] text-white/55 line-through mb-3">de R$ 49,90/mês</p>
               <button
                 onClick={() => navigate('/pricing')}
                 className="w-full text-xs font-semibold text-brand-primary-darker bg-brand-gold py-2 rounded-lg hover:bg-brand-gold/90 transition-colors"
               >
-                Conhecer planos
+                Quero garantir 41% OFF
               </button>
             </div>
           </div>
@@ -386,6 +400,42 @@ const DashboardLayout = ({ children, mainClassName, hideFooter }: DashboardLayou
             {userInitial}
           </button>
         </header>
+
+        {/* Upgrade banner — só para usuários free, dispensável por sessão.
+            Oculto em /menu pois lá já aparece o UpsellOfferModal. */}
+        {isFreeUser && !subLoading && !topBannerDismissed && location.pathname !== '/menu' && (
+          <div
+            className="sticky top-14 lg:top-0 z-30 text-white shadow-sm"
+            style={{ background: 'linear-gradient(90deg, #003D32 0%, #005344 50%, #006D5B 100%)' }}
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-10 py-2.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="hidden sm:inline-flex items-center bg-[#C9A84C] text-[#003D32] px-1.5 py-0.5 rounded text-[10px] font-extrabold tracking-wider shrink-0">
+                  -41% OFF
+                </span>
+                <p className="text-xs sm:text-sm text-white/95 truncate">
+                  <span className="font-semibold">Plano Anual a R$ 29,24/mês</span>
+                  <span className="hidden md:inline text-white/70"> · economia de R$ 247,90/ano</span>
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => navigate('/pricing')}
+                  className="text-[11px] sm:text-xs font-semibold bg-[#C9A84C] text-[#003D32] px-3 py-1.5 rounded-md hover:bg-[#d3b65a] transition-colors"
+                >
+                  Ver oferta
+                </button>
+                <button
+                  onClick={dismissTopBanner}
+                  aria-label="Dispensar"
+                  className="p-1 text-white/60 hover:text-white transition-colors"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Main */}
         <main className={`flex-1 ${mainClassName ?? "p-6 sm:p-10 max-w-7xl mx-auto w-full"}`}>

@@ -94,8 +94,11 @@ const Pricing = () => {
           {/* Cards */}
           <div className="flex flex-col md:flex-row justify-center gap-8 mb-16 animate-fade-up" style={{ animationDelay: '0.1s' }}>
             {/* Mensal */}
-            <div className="flex-1 bg-white p-10 rounded-2xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] border border-slate-200/30 hover:shadow-xl transition-all duration-300">
-              <h3 className="text-xl font-bold mb-2 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Mensal</h3>
+            <div className="flex-1 bg-white p-10 rounded-2xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] border border-slate-200/30 hover:shadow-xl transition-all duration-300 relative overflow-hidden">
+              <div className="absolute top-0 left-0 bg-slate-100 text-slate-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-br-lg">
+                Sem fidelidade
+              </div>
+              <h3 className="text-xl font-bold mb-2 text-[#191c1d] mt-2 sm:mt-0" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Mensal</h3>
               <div className="mb-6">
                 <span className="text-4xl font-extrabold text-[#005344]">R$ 49,90</span>
                 <span className="text-slate-500">/mês</span>
@@ -126,10 +129,13 @@ const Pricing = () => {
 
             {/* Anual — highlighted como MAIS POPULAR */}
             <div className="flex-1 bg-white p-10 rounded-2xl shadow-xl border-2 border-[#006D5B] relative overflow-hidden hover:shadow-2xl transition-all duration-300">
+              <div className="absolute top-0 left-0 bg-[#C9A84C] text-[#003D32] px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider rounded-br-lg shadow-md">
+                -41% OFF
+              </div>
               <div className="absolute top-0 right-0 bg-[#006D5B] text-white px-4 py-1 text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
                 Mais Popular
               </div>
-              <h3 className="text-xl font-bold mb-2 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Anual</h3>
+              <h3 className="text-xl font-bold mb-2 text-[#191c1d] mt-3 sm:mt-2" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Anual</h3>
               <p className="text-lg text-slate-400 line-through mb-1 font-medium">De R$ 598,80</p>
               <div className="mb-2">
                 <span className="text-4xl font-extrabold text-[#005344]">R$ 350,90</span>
@@ -169,8 +175,14 @@ const Pricing = () => {
             </div>
 
             {/* Bianual */}
-            <div className="flex-1 bg-white p-10 rounded-2xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] border border-slate-200/30 hover:shadow-xl transition-all duration-300">
-              <h3 className="text-xl font-bold mb-2 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Bianual</h3>
+            <div className="flex-1 bg-white p-10 rounded-2xl shadow-[0px_4px_20px_rgba(25,28,29,0.06)] border border-slate-200/30 hover:shadow-xl transition-all duration-300 relative overflow-hidden">
+              <div className="absolute top-0 left-0 bg-[#C9A84C] text-[#003D32] px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider rounded-br-lg shadow-md">
+                -50% OFF
+              </div>
+              <div className="absolute top-0 right-0 bg-slate-700 text-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
+                Maior economia
+              </div>
+              <h3 className="text-xl font-bold mb-2 text-[#191c1d] mt-3 sm:mt-2" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Bianual</h3>
               <p className="text-lg text-slate-400 line-through mb-1 font-medium">De R$ 1.197,60</p>
               <div className="mb-2">
                 <span className="text-4xl font-extrabold text-[#005344]">R$ 599,90</span>

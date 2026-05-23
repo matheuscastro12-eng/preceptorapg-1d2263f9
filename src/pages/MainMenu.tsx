@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import OnboardingTour, { type TourStep } from '@/components/OnboardingTour';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import TrialBanner from '@/components/TrialBanner';
+import UpsellOfferModal from '@/components/UpsellOfferModal';
 import { supabase } from '@/integrations/supabase/client';
 import { Lock } from 'lucide-react';
 import { format } from 'date-fns';
@@ -122,6 +123,7 @@ const MainMenu = () => {
   return (
     <DashboardLayout>
       <OnboardingTour steps={menuTourSteps} tourKey="main-menu" />
+      <UpsellOfferModal enabled={isFreeUser} />
 
       <div className="space-y-10">
         {/* Greeting */}
