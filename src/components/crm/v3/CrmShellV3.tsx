@@ -5,7 +5,7 @@ import {
   LayoutGrid, Users, Filter, Heart, AlertTriangle, Zap, Mail,
   MessageSquare, Settings, Wallet, TrendingUp, Target, ListChecks,
   CalendarDays, Trophy, Briefcase, BarChart3, LogOut, Bell, Share2, Plus, Home, Activity,
-  Menu, X, Gift,
+  Menu, X, Gift, Image as ImageIcon,
 } from "lucide-react";
 import "@/styles/crm-design.css";
 
@@ -32,6 +32,7 @@ const MARKETING_NAV: { label: string; items: NavItem[] }[] = [
       { to: "/admin/crm-mkt/leads", label: "Leads", icon: Users },
       { to: "/admin/crm-mkt/funnel", label: "Funil & UTM", icon: Filter },
       { to: "/admin/crm-mkt/landing-funnel", label: "Landing pages", icon: BarChart3 },
+      { to: "/admin/crm-mkt/banners", label: "Banners da home", icon: ImageIcon },
       { to: "/admin/crm-mkt/health", label: "Saúde dos alunos", icon: Heart },
       { to: "/admin/crm-mkt/cohorts", label: "Coortes", icon: TrendingUp },
       { to: "/admin/crm-mkt/churn", label: "Risco de churn", icon: AlertTriangle },

@@ -130,6 +130,118 @@ serve(async (req) => {
       return json({ subscriptions: data });
     }
 
+    // ─────────────────────────────────────────────────────────
+    // landing_banners — CMS de banners da home (pedido do MKT)
+    // ─────────────────────────────────────────────────────────
+
+    // Lista todos (inclui inativos/agendados) — visao admin
+    if (action === "banner_list_all") {
+      const { data, error } = await supabase
+        .from("landing_banners")
+        .select("*")
+        .order("ordem", { ascending: true })
+        .order("created_at", { ascending: false });
+      if (error) return json({ error: error.message }, 500);
+      return json({ banners: data ?? [] });
+    }
+
+    // Cria banner
+    if (action === "banner_create") {
+      const { banner } = body as { banner: Record<string, unknown> };
+      if (!banner || !banner.image_url || !banner.cta_link) {
+        return json({ error: "banner.image_url e banner.cta_link sao obrigatorios" }, 400);
+      }
+      const { data, error } = await supabase
+        .from("landing_banners")
+        .insert({
+          title: banner.title ?? null,
+          subtitle: banner.subtitle ?? null,
+          image_url: banner.image_url,
+          cta_label: banner.cta_label ?? "Saiba mais",
+          cta_link: banner.cta_link,
+          link_target: banner.link_target ?? "same",
+          ordem: banner.ordem ?? 0,
+          ativo: banner.ativo ?? true,
+          starts_at: banner.starts_at ?? null,
+          ends_at: banner.ends_at ?? null,
+          audience: banner.audience ?? "all",
+          created_by: (payload as { user_id?: string }).user_id ?? null,
+        })
+        .select()
+        .single();
+      if (error) return json({ error: error.message }, 500);
+      return json({ banner: data });
+    }
+
+    // Atualiza banner por id
+    if (action === "banner_update") {
+      const { id, banner } = body as { id: string; banner: Record<string, unknown> };
+      if (!id) return json({ error: "id obrigatorio" }, 400);
+      const allowed = [
+        "title", "subtitle", "image_url", "cta_label", "cta_link",
+        "link_target", "ordem", "ativo", "starts_at", "ends_at", "audience",
+      ];
+      const patch: Record<string, unknown> = {};
+      for (const k of allowed) if (k in (banner ?? {})) patch[k] = banner[k];
+      const { data, error } = await supabase
+        .from("landing_banners")
+        .update(patch)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) return json({ error: error.message }, 500);
+      return json({ banner: data });
+    }
+
+    // Remove banner
+    if (action === "banner_delete") {
+      const { id } = body as { id: string };
+      if (!id) return json({ error: "id obrigatorio" }, 400);
+      // Tenta apagar a imagem associada do bucket se for nosso storage
+      const { data: row } = await supabase
+        .from("landing_banners").select("image_url").eq("id", id).maybeSingle();
+      if (row?.image_url && typeof row.image_url === "string") {
+        const m = row.image_url.match(/\/landing-banners\/(.+)$/);
+        if (m) await supabase.storage.from("landing-banners").remove([m[1]]);
+      }
+      const { error } = await supabase.from("landing_banners").delete().eq("id", id);
+      if (error) return json({ error: error.message }, 500);
+      return json({ success: true });
+    }
+
+    // Reordena em lote — recebe [{id, ordem}, ...]
+    if (action === "banner_reorder") {
+      const { items } = body as { items: Array<{ id: string; ordem: number }> };
+      if (!Array.isArray(items)) return json({ error: "items deve ser array" }, 400);
+      for (const it of items) {
+        const { error } = await supabase
+          .from("landing_banners")
+          .update({ ordem: it.ordem })
+          .eq("id", it.id);
+        if (error) return json({ error: `falha em ${it.id}: ${error.message}` }, 500);
+      }
+      return json({ success: true, count: items.length });
+    }
+
+    // Gera URL assinada pra upload direto ao bucket (client faz PUT)
+    if (action === "banner_get_upload_url") {
+      const { filename } = body as { filename: string };
+      if (!filename) return json({ error: "filename obrigatorio" }, 400);
+      const safe = String(filename).replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
+      const path = `${Date.now()}_${safe}`;
+      const { data, error } = await supabase.storage
+        .from("landing-banners")
+        .createSignedUploadUrl(path);
+      if (error) return json({ error: error.message }, 500);
+      const { data: pub } = supabase.storage.from("landing-banners").getPublicUrl(path);
+      return json({
+        uploadUrl: data.signedUrl,
+        token: data.token,
+        path,
+        publicUrl: pub.publicUrl,
+      });
+    }
+
     return json({ error: `Acao desconhecida: ${action}` }, 400);
   } catch (err) {
     return json({ error: (err as Error).message }, 500);
