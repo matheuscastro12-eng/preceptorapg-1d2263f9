@@ -24,6 +24,7 @@ type Banner = {
   title: string | null;
   subtitle: string | null;
   image_url: string;
+  image_url_mobile: string | null;
   cta_label: string;
   cta_link: string;
   link_target: "same" | "new";
@@ -42,6 +43,7 @@ const EMPTY_FORM: BannerForm = {
   title: "",
   subtitle: "",
   image_url: "",
+  image_url_mobile: null,
   cta_label: "Cadastre-se agora",
   cta_link: "/auth?tab=signup",
   link_target: "same",
@@ -92,8 +94,9 @@ export default function CrmBanners() {
   const [editing, setEditing] = useState<Banner | null>(null);
   const [creating, setCreating] = useState<boolean>(false);
   const [form, setForm] = useState<BannerForm>(EMPTY_FORM);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingSlot, setUploadingSlot] = useState<"desktop" | "mobile" | null>(null);
+  const desktopFileRef = useRef<HTMLInputElement>(null);
+  const mobileFileRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["crm-banners"],
@@ -118,6 +121,7 @@ export default function CrmBanners() {
       title: b.title ?? "",
       subtitle: b.subtitle ?? "",
       image_url: b.image_url,
+      image_url_mobile: b.image_url_mobile ?? null,
       cta_label: b.cta_label,
       cta_link: b.cta_link,
       link_target: b.link_target,
@@ -187,21 +191,22 @@ export default function CrmBanners() {
     ]);
   };
 
-  const onPickFile = async (file: File) => {
+  const onPickFile = async (slot: "desktop" | "mobile", file: File) => {
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
       alert("Imagem maior que 10 MB. Reduza antes de enviar.");
       return;
     }
-    setUploading(true);
+    setUploadingSlot(slot);
     try {
       const url = await uploadImageToStorage(file);
-      setForm((f) => ({ ...f, image_url: url }));
+      setForm((f) => slot === "desktop" ? { ...f, image_url: url } : { ...f, image_url_mobile: url });
     } catch (e) {
       alert((e as Error).message);
     } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      setUploadingSlot(null);
+      const ref = slot === "desktop" ? desktopFileRef : mobileFileRef;
+      if (ref.current) ref.current.value = "";
     }
   };
 
@@ -231,49 +236,106 @@ export default function CrmBanners() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Coluna imagem */}
-              <div className="space-y-3">
-                <label className="text-xs font-semibold text-gray-700">Imagem (1920×400 recomendado)</label>
-                {form.image_url ? (
-                  <div className="relative rounded-md overflow-hidden border border-gray-200">
-                    <img src={form.image_url} alt="Preview do banner" className="w-full h-32 object-cover bg-gray-50" />
+              {/* Coluna imagens — desktop + mobile */}
+              <div className="space-y-5">
+                {/* Slot DESKTOP */}
+                <div className="space-y-2">
+                  <div className="flex items-baseline justify-between">
+                    <label className="text-xs font-semibold text-gray-700">Imagem desktop *</label>
+                    <span className="text-[10px] text-gray-400">1920×1080 recomendado · 16:9</span>
+                  </div>
+                  {form.image_url ? (
+                    <div className="relative rounded-md overflow-hidden border border-gray-200">
+                      <img src={form.image_url} alt="Preview desktop" className="w-full h-28 object-cover bg-gray-50" />
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, image_url: "" }))}
+                        className="absolute top-2 right-2 bg-black/70 text-white rounded p-1 hover:bg-black"
+                        aria-label="Remover imagem desktop"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="rounded-md border-2 border-dashed border-gray-300 p-4 text-center bg-gray-50">
+                      <p className="text-[11px] text-gray-500">PNG, JPG, WEBP ou AVIF · até 10 MB</p>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <input
+                      ref={desktopFileRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/avif"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) onPickFile("desktop", f); }}
+                      className="hidden"
+                    />
                     <button
                       type="button"
-                      onClick={() => setForm((f) => ({ ...f, image_url: "" }))}
-                      className="absolute top-2 right-2 bg-black/70 text-white rounded p-1 hover:bg-black"
-                      aria-label="Remover imagem"
+                      onClick={() => desktopFileRef.current?.click()}
+                      disabled={uploadingSlot !== null}
+                      className="crm-btn crm-btn-ghost"
                     >
-                      <X size={12} />
+                      {uploadingSlot === "desktop" ? <><Loader2 size={13} className="animate-spin" /> Enviando…</> : <><Upload size={13} /> Enviar</>}
                     </button>
+                    <input
+                      type="text"
+                      placeholder="…ou cole uma URL externa"
+                      value={form.image_url}
+                      onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))}
+                      className="flex-1 h-9 px-3 text-sm border border-gray-200 rounded bg-white focus:outline-none focus:border-green-700"
+                    />
                   </div>
-                ) : (
-                  <div className="rounded-md border-2 border-dashed border-gray-300 p-6 text-center bg-gray-50">
-                    <p className="text-xs text-gray-500 mb-2">PNG, JPG, WEBP ou AVIF · até 10 MB</p>
+                </div>
+
+                {/* Slot MOBILE */}
+                <div className="space-y-2">
+                  <div className="flex items-baseline justify-between">
+                    <label className="text-xs font-semibold text-gray-700">Imagem mobile (opcional)</label>
+                    <span className="text-[10px] text-gray-400">720×900 recomendado · 4:5</span>
                   </div>
-                )}
-                <div className="flex gap-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp,image/avif"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) onPickFile(f); }}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    className="crm-btn crm-btn-ghost"
-                  >
-                    {uploading ? <><Loader2 size={13} className="animate-spin" /> Enviando…</> : <><Upload size={13} /> Enviar imagem</>}
-                  </button>
-                  <input
-                    type="text"
-                    placeholder="…ou cole uma URL externa"
-                    value={form.image_url}
-                    onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))}
-                    className="flex-1 h-9 px-3 text-sm border border-gray-200 rounded bg-white focus:outline-none focus:border-green-700"
-                  />
+                  {form.image_url_mobile ? (
+                    <div className="relative rounded-md overflow-hidden border border-gray-200 max-w-[120px]">
+                      <img src={form.image_url_mobile} alt="Preview mobile" className="w-full h-32 object-cover bg-gray-50" />
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, image_url_mobile: null }))}
+                        className="absolute top-1.5 right-1.5 bg-black/70 text-white rounded p-1 hover:bg-black"
+                        aria-label="Remover imagem mobile"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="rounded-md border-2 border-dashed border-gray-300 p-3 text-center bg-gray-50">
+                      <p className="text-[11px] text-gray-500 leading-relaxed">
+                        Se vazio, usa a mesma imagem desktop em todas as resoluções.
+                      </p>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <input
+                      ref={mobileFileRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/avif"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) onPickFile("mobile", f); }}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => mobileFileRef.current?.click()}
+                      disabled={uploadingSlot !== null}
+                      className="crm-btn crm-btn-ghost"
+                    >
+                      {uploadingSlot === "mobile" ? <><Loader2 size={13} className="animate-spin" /> Enviando…</> : <><Upload size={13} /> Enviar</>}
+                    </button>
+                    <input
+                      type="text"
+                      placeholder="…ou cole uma URL externa"
+                      value={form.image_url_mobile ?? ""}
+                      onChange={(e) => setForm((f) => ({ ...f, image_url_mobile: e.target.value || null }))}
+                      className="flex-1 h-9 px-3 text-sm border border-gray-200 rounded bg-white focus:outline-none focus:border-green-700"
+                    />
+                  </div>
                 </div>
               </div>
 

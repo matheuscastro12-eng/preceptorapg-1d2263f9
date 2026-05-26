@@ -157,6 +157,7 @@ serve(async (req) => {
           title: banner.title ?? null,
           subtitle: banner.subtitle ?? null,
           image_url: banner.image_url,
+          image_url_mobile: banner.image_url_mobile ?? null,
           cta_label: banner.cta_label ?? "Saiba mais",
           cta_link: banner.cta_link,
           link_target: banner.link_target ?? "same",
@@ -178,7 +179,7 @@ serve(async (req) => {
       const { id, banner } = body as { id: string; banner: Record<string, unknown> };
       if (!id) return json({ error: "id obrigatorio" }, 400);
       const allowed = [
-        "title", "subtitle", "image_url", "cta_label", "cta_link",
+        "title", "subtitle", "image_url", "image_url_mobile", "cta_label", "cta_link",
         "link_target", "ordem", "ativo", "starts_at", "ends_at", "audience",
       ];
       const patch: Record<string, unknown> = {};
@@ -197,12 +198,18 @@ serve(async (req) => {
     if (action === "banner_delete") {
       const { id } = body as { id: string };
       if (!id) return json({ error: "id obrigatorio" }, 400);
-      // Tenta apagar a imagem associada do bucket se for nosso storage
+      // Tenta apagar as imagens associadas do bucket (desktop + mobile)
       const { data: row } = await supabase
-        .from("landing_banners").select("image_url").eq("id", id).maybeSingle();
-      if (row?.image_url && typeof row.image_url === "string") {
-        const m = row.image_url.match(/\/landing-banners\/(.+)$/);
-        if (m) await supabase.storage.from("landing-banners").remove([m[1]]);
+        .from("landing_banners").select("image_url, image_url_mobile").eq("id", id).maybeSingle();
+      const paths: string[] = [];
+      for (const url of [row?.image_url, row?.image_url_mobile]) {
+        if (url && typeof url === "string") {
+          const m = url.match(/\/landing-banners\/(.+)$/);
+          if (m) paths.push(m[1]);
+        }
+      }
+      if (paths.length > 0) {
+        await supabase.storage.from("landing-banners").remove(paths);
       }
       const { error } = await supabase.from("landing_banners").delete().eq("id", id);
       if (error) return json({ error: error.message }, 500);

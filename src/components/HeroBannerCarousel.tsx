@@ -18,6 +18,7 @@ interface Banner {
   title: string | null;
   subtitle: string | null;
   image_url: string;
+  image_url_mobile: string | null;
   cta_label: string;
   cta_link: string;
   link_target: "same" | "new";
@@ -46,7 +47,7 @@ export default function HeroBannerCarousel({
     (async () => {
       const { data, error } = await supabase
         .from("landing_banners")
-        .select("id, title, subtitle, image_url, cta_label, cta_link, link_target, audience, ordem")
+        .select("id, title, subtitle, image_url, image_url_mobile, cta_label, cta_link, link_target, audience, ordem")
         .order("ordem", { ascending: true });
       if (cancelled) return;
       if (error) { setBanners([]); return; }
@@ -81,20 +82,27 @@ export default function HeroBannerCarousel({
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-slate-900 aspect-[1920/400] min-h-[180px]"
+      className="relative w-full overflow-hidden bg-slate-900 aspect-[4/5] sm:aspect-[16/9] max-h-[80vh]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-roledescription="carousel"
     >
       {/* Slide atual — key forca remount e fade */}
       <div key={current.id} className="absolute inset-0 animate-fade-in">
-        <img
-          src={current.image_url}
-          alt={current.title ?? "Banner promocional"}
-          className="absolute inset-0 w-full h-full object-cover"
-          loading="eager"
-          decoding="async"
-        />
+        {/* <picture> entrega image_url_mobile em viewports <=640px se cadastrada;
+            cai para image_url em desktops e como fallback. */}
+        <picture>
+          {current.image_url_mobile && (
+            <source media="(max-width: 640px)" srcSet={current.image_url_mobile} />
+          )}
+          <img
+            src={current.image_url}
+            alt={current.title ?? "Banner promocional"}
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="eager"
+            decoding="async"
+          />
+        </picture>
         {hasOverlayContent && (
           <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/35 to-transparent" />
         )}
