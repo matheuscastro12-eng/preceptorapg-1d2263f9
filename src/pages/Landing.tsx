@@ -13,7 +13,6 @@ import logoIcon from '@/assets/logo-icon.png';
 import { Loader2 } from 'lucide-react';
 import Reveal from '@/components/landing/Reveal';
 import ScrollProgress from '@/components/landing/ScrollProgress';
-import HeroBannerCarousel from '@/components/HeroBannerCarousel';
 import Parallax from '@/components/landing/Parallax';
 
 const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
@@ -192,9 +191,6 @@ const Landing = () => {
       <ScrollProgress />
 
       <main className="flex-1">
-
-        {/* ─── Hero banner carousel (CMS gerenciado pelo MKT) ─── */}
-        <HeroBannerCarousel audience="visitors" />
 
         {/* ─── Hero ─────────────────────────────────────── */}
         <section data-section="hero" className="relative flex items-center min-h-[calc(100vh-65px)] py-10 sm:py-14 px-4 sm:px-6 lg:px-10 overflow-hidden">
