@@ -6,7 +6,66 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const FLASHCARD_PROMPT = `Você é um professor de medicina especialista em criar flashcards para revisão espaçada.
+// ────────────────────────────────────────────────────────────────
+// Subseções médicas padrão (fixo). A UI envia o subset que o aluno
+// selecionou. A IA preenche `secao` em cada card com EXATAMENTE
+// uma das strings da lista enviada.
+// ────────────────────────────────────────────────────────────────
+const VALID_SECTIONS = [
+  "Definição/Classificação",
+  "Epidemiologia",
+  "Fisiopatologia",
+  "Etiologia",
+  "Fatores de risco",
+  "Quadro clínico",
+  "Diagnóstico",
+  "Diagnóstico diferencial",
+  "Tratamento",
+  "Complicações",
+  "Prognóstico",
+  "Pontos de prova",
+] as const;
+
+// Prompt para geração estruturada por tema + seções selecionadas.
+function buildStructuredPrompt(opts: {
+  topic: string;
+  sections: string[];
+  customObjectives?: string;
+  count: number;
+}): string {
+  const sectionsList = opts.sections.map((s) => `  - "${s}"`).join("\n");
+  const custom = opts.customObjectives?.trim()
+    ? `\n\nOBJETIVOS ESPECÍFICOS DO ALUNO (priorize estes pontos, pode criar uma seção "Objetivos específicos" se útil):\n${opts.customObjectives.trim()}`
+    : "";
+
+  return `Você é um professor de medicina especialista em criar flashcards para revisão espaçada (algoritmo SM-2).
+
+TAREFA: gerar ${opts.count} flashcards sobre **${opts.topic}**, distribuídos entre as seções selecionadas pelo aluno.
+
+SEÇÕES PERMITIDAS (use EXATAMENTE estas strings no campo "secao"):
+${sectionsList}${custom}
+
+REGRAS:
+- Total: aproximadamente ${opts.count} flashcards (pode variar ±2)
+- Distribua os cards entre as seções acima de forma proporcional ao peso clínico/acadêmico de cada uma (não força distribuição igual)
+- Cada flashcard:
+  * "front" = pergunta concisa que testa COMPREENSÃO (não memorização rasa)
+  * "back" = resposta técnica em 1-4 frases, com terminologia médica precisa, valores numéricos quando relevantes
+  * "secao" = uma das strings exatas da lista acima
+- Cubra conceitos clinicamente relevantes para PBL, ENAMED e Revalida
+- Inclua: mecanismos fisiopatológicos em cascata, critérios diagnósticos (Roma IV, IDSA, etc.), condutas baseadas em diretrizes brasileiras (SBC, FEBRASGO, SBP, MS) quando aplicável
+- NÃO crie cards de seções fora da lista permitida
+- Markdown simples permitido no back (**negrito** para conceitos-chave)
+
+FORMATO DE SAÍDA (JSON array, sem texto adicional, sem markdown wrapper):
+[
+  {"front": "Pergunta?", "back": "Resposta técnica.", "secao": "Fisiopatologia"},
+  {"front": "Pergunta?", "back": "Resposta técnica.", "secao": "Tratamento"}
+]`;
+}
+
+// Prompt legado (compatibilidade com chamadas a partir de fechamentos)
+const LEGACY_PROMPT = `Você é um professor de medicina especialista em criar flashcards para revisão espaçada.
 
 A partir do conteúdo acadêmico fornecido, gere flashcards de alta qualidade.
 
@@ -17,7 +76,6 @@ REGRAS:
 - Respostas devem ser concisas (1-3 frases)
 - Cubra os conceitos mais importantes e clinicamente relevantes
 - Use terminologia médica adequada
-- Inclua: definições, mecanismos, diagnósticos diferenciais, condutas
 
 FORMATO DE SAÍDA (JSON array):
 [
@@ -56,13 +114,59 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { content, source_id, source_type = "resumo" } = body;
+    const {
+      // Modo novo: estruturado por tema/seções
+      topic,
+      sections,
+      custom_objectives,
+      count,
+      // Modo antigo (fechamentos): conteúdo bruto
+      content,
+      source_id,
+      source_type = "resumo",
+    } = body as {
+      topic?: string;
+      sections?: string[];
+      custom_objectives?: string;
+      count?: number;
+      content?: string;
+      source_id?: string;
+      source_type?: string;
+    };
 
-    if (!content || typeof content !== "string" || content.trim().length < 50) {
-      return new Response(
-        JSON.stringify({ error: "Conteúdo insuficiente para gerar flashcards" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    // Decide qual modo usar
+    const isStructured = !!(topic && topic.trim());
+
+    let promptText: string;
+    let temaForRow: string | null = null;
+    if (isStructured) {
+      const validSections = (sections ?? []).filter((s) =>
+        (VALID_SECTIONS as readonly string[]).includes(s)
       );
+      if (validSections.length === 0) {
+        return new Response(
+          JSON.stringify({ error: "Selecione pelo menos uma seção" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const safeCount = Math.max(5, Math.min(40, count ?? 15));
+      promptText = buildStructuredPrompt({
+        topic: topic!.trim(),
+        sections: validSections,
+        customObjectives: custom_objectives,
+        count: safeCount,
+      });
+      temaForRow = topic!.trim();
+    } else {
+      if (!content || typeof content !== "string" || content.trim().length < 50) {
+        return new Response(
+          JSON.stringify({ error: "Conteúdo insuficiente para gerar flashcards" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      // Trim para não estourar tokens
+      const trimmedContent = content.slice(0, 50000);
+      promptText = LEGACY_PROMPT + "\n\n---\n\nCONTEÚDO:\n\n" + trimmedContent;
     }
 
     const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
@@ -70,18 +174,13 @@ serve(async (req) => {
       throw new Error("GOOGLE_AI_API_KEY not configured");
     }
 
-    // Trim content to avoid token limits
-    const trimmedContent = content.slice(0, 50000);
-
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_AI_API_KEY}`;
 
     const response = await fetch(geminiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [
-          { role: "user", parts: [{ text: FLASHCARD_PROMPT + "\n\n---\n\nCONTEÚDO:\n\n" + trimmedContent }] },
-        ],
+        contents: [{ role: "user", parts: [{ text: promptText }] }],
         generationConfig: {
           temperature: 0.7,
           maxOutputTokens: 8192,
@@ -107,7 +206,7 @@ serve(async (req) => {
     }
     jsonStr = jsonMatch[0];
 
-    let flashcards: Array<{ front: string; back: string; area?: string }>;
+    let flashcards: Array<{ front: string; back: string; area?: string; secao?: string }>;
     try {
       flashcards = JSON.parse(jsonStr);
     } catch {
@@ -130,6 +229,8 @@ serve(async (req) => {
       front: fc.front,
       back: fc.back,
       area: fc.area || null,
+      tema: temaForRow,                          // tema preenchido no modo estruturado
+      secao: isStructured ? (fc.secao || null) : null, // secao só no modo estruturado
       source_type,
       source_id: source_id || null,
     }));
@@ -147,7 +248,7 @@ serve(async (req) => {
     });
 
     return new Response(
-      JSON.stringify({ success: true, count: rows.length }),
+      JSON.stringify({ success: true, count: rows.length, tema: temaForRow }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
