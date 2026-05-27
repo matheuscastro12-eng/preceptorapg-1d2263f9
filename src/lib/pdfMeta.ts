@@ -9,15 +9,17 @@ export interface PdfMeta {
   firstPageTextSnippet: string;
 }
 
+// Worker bundlado pelo Vite — vem do mesmo origin que a app (sem CDN
+// externa, sem problema de CSP). O Vite emite o arquivo em /assets/
+// com hash de cache e devolve a URL pronta via import `?url`.
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+
 let pdfjsPromise: Promise<typeof import("pdfjs-dist")> | null = null;
 
 async function loadPdfjs() {
   if (!pdfjsPromise) {
     pdfjsPromise = import("pdfjs-dist").then(async (mod) => {
-      // Worker via CDN — evita bundle do worker no nosso build
-      const workerSrc =
-        `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${mod.version}/pdf.worker.min.mjs`;
-      mod.GlobalWorkerOptions.workerSrc = workerSrc;
+      mod.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
       return mod;
     });
   }
