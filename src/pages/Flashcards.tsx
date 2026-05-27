@@ -7,7 +7,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import PageSkeleton from '@/components/PageSkeleton';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, RotateCcw, Check, X, Layers, Brain, Sparkles, Trash2, ChevronRight, BookOpen, Plus, Loader2, FolderTree } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Check, X, Layers, Brain, Sparkles, Trash2, ChevronRight, BookOpen, Plus, Loader2, FolderTree, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -95,6 +95,9 @@ const Flashcards = () => {
   const [customObjectives, setCustomObjectives] = useState('');
   const [cardCount, setCardCount] = useState(15);
   const [generatingDeck, setGeneratingDeck] = useState(false);
+
+  // Edição de card (texto + dificuldade SM-2)
+  const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
 
   const planAutoMarkedRef = useRef(false);
 
@@ -278,6 +281,75 @@ const Flashcards = () => {
     setAllCards(prev => prev.filter(c => c.id !== id));
     toast({ title: 'Card removido' });
     if (currentIndex >= dueCards.length - 1 && currentIndex > 0) setCurrentIndex(prev => prev - 1);
+  };
+
+  /**
+   * Salva edições no card: texto (front/back) e/ou dificuldade
+   * via preset que ajusta a maquinaria SM-2.
+   */
+  const handleSaveCardEdit = async (patch: { front?: string; back?: string; difficulty?: 'reset' | 'hard' | 'normal' | 'easy' }) => {
+    if (!editingCard) return;
+    const dbPatch: Record<string, unknown> = {};
+    if (patch.front !== undefined && patch.front !== editingCard.front) dbPatch.front = patch.front;
+    if (patch.back !== undefined && patch.back !== editingCard.back) dbPatch.back = patch.back;
+
+    if (patch.difficulty) {
+      const now = new Date();
+      switch (patch.difficulty) {
+        case 'reset':
+          // Volta o card para o estado inicial (vai aparecer hoje)
+          dbPatch.ease_factor = 2.5;
+          dbPatch.interval_days = 1;
+          dbPatch.repetitions = 0;
+          dbPatch.next_review = now.toISOString();
+          break;
+        case 'hard':
+          // Marca como difícil — força aparecer hoje, ease mais baixo
+          dbPatch.ease_factor = Math.max(1.3, editingCard.ease_factor - 0.2);
+          dbPatch.interval_days = 1;
+          dbPatch.next_review = now.toISOString();
+          break;
+        case 'normal':
+          // Reseta para o "meio do caminho" — em 3 dias com ease 2.5
+          dbPatch.ease_factor = 2.5;
+          dbPatch.interval_days = 3;
+          dbPatch.repetitions = Math.max(1, editingCard.repetitions);
+          const in3 = new Date();
+          in3.setDate(in3.getDate() + 3);
+          dbPatch.next_review = in3.toISOString();
+          break;
+        case 'easy':
+          // Marca como fácil — empurra revisão pra ~14 dias
+          dbPatch.ease_factor = Math.min(3.0, editingCard.ease_factor + 0.15);
+          dbPatch.interval_days = 14;
+          dbPatch.repetitions = Math.max(2, editingCard.repetitions);
+          const in14 = new Date();
+          in14.setDate(in14.getDate() + 14);
+          dbPatch.next_review = in14.toISOString();
+          break;
+      }
+    }
+
+    if (Object.keys(dbPatch).length === 0) {
+      setEditingCard(null);
+      return;
+    }
+
+    const { error } = await supabase.from('flashcards').update(dbPatch).eq('id', editingCard.id);
+    if (error) {
+      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+      return;
+    }
+
+    // Atualiza estado local sem precisar refetch completo
+    setAllCards(prev => prev.map(c => c.id === editingCard.id ? { ...c, ...dbPatch } as Flashcard : c));
+    setDueCards(prev => prev.map(c => c.id === editingCard.id ? { ...c, ...dbPatch } as Flashcard : c));
+    setEditingCard(null);
+    toast({ title: 'Card atualizado' });
+    // Reconstrói decks pra refletir mudança de next_review (afeta dueCards count)
+    if (patch.difficulty) {
+      fetchCards();
+    }
   };
 
   /** Apaga um tema inteiro (todos os cards do tema). */
@@ -468,10 +540,19 @@ const Flashcards = () => {
                   <Button variant="outline" onClick={backToTemas}>Voltar aos decks</Button>
                 </div>
               ) : (
-                <ReviewSession dueCards={dueCards} currentIndex={currentIndex} flipped={flipped} reviewedCount={reviewedCount} onFlip={() => setFlipped(!flipped)} onReview={handleReview} onDelete={deleteCard} />
+                <ReviewSession dueCards={dueCards} currentIndex={currentIndex} flipped={flipped} reviewedCount={reviewedCount} onFlip={() => setFlipped(!flipped)} onReview={handleReview} onDelete={deleteCard} onEdit={(c) => setEditingCard(c)} />
               )}
             </div>
           </div>
+        )}
+
+        {/* Modal de edição de card */}
+        {editingCard && (
+          <CardEditorModal
+            card={editingCard}
+            onCancel={() => setEditingCard(null)}
+            onSave={handleSaveCardEdit}
+          />
         )}
       </div>
     </DashboardLayout>
@@ -959,7 +1040,7 @@ function SubsecoesPanel({ tema, onBack, onReviewAll, onReviewSecao, onDeleteDeck
 }
 
 // ───────────────────────────────────────────────────────────────────
-function ReviewSession({ dueCards, currentIndex, flipped, reviewedCount, onFlip, onReview, onDelete }: { dueCards: Flashcard[]; currentIndex: number; flipped: boolean; reviewedCount: number; onFlip: () => void; onReview: (q: 'easy' | 'good' | 'hard' | 'again') => void; onDelete: (id: string) => void }) {
+function ReviewSession({ dueCards, currentIndex, flipped, reviewedCount, onFlip, onReview, onDelete, onEdit }: { dueCards: Flashcard[]; currentIndex: number; flipped: boolean; reviewedCount: number; onFlip: () => void; onReview: (q: 'easy' | 'good' | 'hard' | 'again') => void; onDelete: (id: string) => void; onEdit: (c: Flashcard) => void }) {
   const currentCard = dueCards[currentIndex];
   const progress = dueCards.length > 0 ? (reviewedCount / dueCards.length) * 100 : 0;
   return (
@@ -1016,12 +1097,153 @@ function ReviewSession({ dueCards, currentIndex, flipped, reviewedCount, onFlip,
       )}
 
       {currentCard && (
-        <div className="flex justify-center">
+        <div className="flex justify-center gap-5">
+          <button className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-[#005344] transition-colors" onClick={() => onEdit(currentCard)}>
+            <Pencil className="h-3 w-3" /> Editar card
+          </button>
+          <span className="text-slate-200">·</span>
           <button className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-red-400 transition-colors" onClick={() => onDelete(currentCard.id)}>
             <Trash2 className="h-3 w-3" /> Remover card
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────
+// Modal de edição de card: texto (front/back) + ajuste de dificuldade.
+function CardEditorModal({
+  card,
+  onCancel,
+  onSave,
+}: {
+  card: Flashcard;
+  onCancel: () => void;
+  onSave: (patch: { front?: string; back?: string; difficulty?: 'reset' | 'hard' | 'normal' | 'easy' }) => void;
+}) {
+  const [front, setFront] = useState(card.front);
+  const [back, setBack] = useState(card.back);
+  const [difficulty, setDifficulty] = useState<'reset' | 'hard' | 'normal' | 'easy' | null>(null);
+
+  const textChanged = front.trim() !== card.front || back.trim() !== card.back;
+  const canSave = textChanged || difficulty !== null;
+
+  const handleSubmit = () => {
+    if (!canSave) return;
+    onSave({
+      front: textChanged ? front.trim() : undefined,
+      back: textChanged ? back.trim() : undefined,
+      difficulty: difficulty ?? undefined,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[80] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="h-1 bg-gradient-to-r from-[#003D32] via-[#005344] via-[#006D5B] to-[#C9A84C] rounded-t-2xl" />
+        <div className="p-6 sm:p-8 space-y-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#005344] inline-flex items-center gap-2.5 mb-2">
+                <span className="w-6 h-px bg-[#C9A84C]" />
+                Editar card
+              </p>
+              <h3 className="font-['Manrope'] font-bold text-[20px] text-[#191C1D]">
+                Refine o card ou ajuste a dificuldade
+              </h3>
+            </div>
+            <button
+              onClick={onCancel}
+              aria-label="Fechar"
+              className="h-9 w-9 rounded-lg text-slate-400 hover:text-[#191C1D] hover:bg-slate-100 transition-colors flex items-center justify-center"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Front */}
+          <div>
+            <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-2">
+              Frente (pergunta)
+            </label>
+            <textarea
+              value={front}
+              onChange={(e) => setFront(e.target.value)}
+              rows={2}
+              className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 text-sm focus:outline-none focus:border-[#005344] focus:ring-4 focus:ring-[#005344]/10 transition-shadow resize-none"
+            />
+          </div>
+
+          {/* Back */}
+          <div>
+            <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-2">
+              Verso (resposta)
+            </label>
+            <textarea
+              value={back}
+              onChange={(e) => setBack(e.target.value)}
+              rows={4}
+              className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 text-sm focus:outline-none focus:border-[#005344] focus:ring-4 focus:ring-[#005344]/10 transition-shadow resize-none"
+            />
+          </div>
+
+          {/* Dificuldade — presets que ajustam SM-2 */}
+          <div>
+            <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-1">
+              Ajustar dificuldade <span className="font-normal normal-case tracking-normal text-[#94a3b8]">(opcional)</span>
+            </label>
+            <p className="text-[11px] text-[#94a3b8] mb-3 leading-relaxed">
+              Sobrescreve o progresso SM-2 do card. Útil pra forçar a revisão hoje, marcar como dominado, ou resetar do zero.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { id: 'reset' as const, label: 'Reset', sub: 'volta ao início', color: '#64748b', bg: '#f1f5f9' },
+                { id: 'hard' as const, label: 'Difícil', sub: 'aparece hoje', color: '#ef4444', bg: '#fef2f2' },
+                { id: 'normal' as const, label: 'Normal', sub: 'em 3 dias', color: '#126b62', bg: '#f0faf8' },
+                { id: 'easy' as const, label: 'Fácil', sub: 'em 14 dias', color: '#3b82f6', bg: '#eff6ff' },
+              ].map((preset) => {
+                const active = difficulty === preset.id;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => setDifficulty(active ? null : preset.id)}
+                    className={`flex flex-col items-center justify-center py-3 px-2 rounded-xl border-2 transition-all ${
+                      active ? 'shadow-sm' : 'hover:border-slate-300'
+                    }`}
+                    style={{
+                      borderColor: active ? preset.color : '#e2e8f0',
+                      background: active ? preset.bg : 'white',
+                      color: active ? preset.color : '#64748b',
+                    }}
+                  >
+                    <span className="text-[12px] font-bold">{preset.label}</span>
+                    <span className="text-[10px] mt-0.5 opacity-70">{preset.sub}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={onCancel}
+              className="px-4 h-11 rounded-xl text-sm font-bold text-[#4a5568] hover:bg-slate-100 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!canSave}
+              className="inline-flex items-center justify-center gap-2 px-5 h-11 rounded-xl bg-gradient-to-br from-[#003D32] via-[#005344] to-[#006D5B] text-white text-sm font-bold shadow-[0_8px_24px_-4px_rgba(0,109,91,0.35)] hover:shadow-[0_12px_28px_-4px_rgba(0,109,91,0.5)] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <Check className="w-4 h-4" />
+              Salvar
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
