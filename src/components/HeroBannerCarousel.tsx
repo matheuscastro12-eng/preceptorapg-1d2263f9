@@ -78,17 +78,23 @@ export default function HeroBannerCarousel({
     else window.location.href = b.cta_link;
   };
 
-  const hasOverlayContent = !!(current.title || current.subtitle || current.cta_label);
-
   return (
     <section
-      className="relative w-full overflow-hidden bg-slate-900 aspect-[4/5] sm:aspect-[16/9] max-h-[80vh]"
+      className="relative w-full overflow-hidden bg-slate-900 aspect-[4/5] sm:aspect-[16/9] max-h-[65vh]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-roledescription="carousel"
     >
-      {/* Slide atual — key forca remount e fade */}
-      <div key={current.id} className="absolute inset-0 animate-fade-in">
+      {/* Slide atual — imagem É o banner inteiro, clicavel.
+          Texto/CTA devem estar embutidos na arte. Title/subtitle/cta_label
+          do CRM viram alt/aria-label para acessibilidade, nao overlay. */}
+      <button
+        key={current.id}
+        type="button"
+        onClick={() => goBanner(current)}
+        aria-label={current.cta_label || current.title || "Abrir banner"}
+        className="absolute inset-0 animate-fade-in cursor-pointer block w-full h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-inset"
+      >
         {/* <picture> entrega image_url_mobile em viewports <=640px se cadastrada;
             cai para image_url em desktops e como fallback. */}
         <picture>
@@ -97,43 +103,14 @@ export default function HeroBannerCarousel({
           )}
           <img
             src={current.image_url}
-            alt={current.title ?? "Banner promocional"}
+            alt={current.title ?? current.subtitle ?? "Banner promocional"}
             className="absolute inset-0 w-full h-full object-cover"
             loading="eager"
             decoding="async"
+            draggable={false}
           />
         </picture>
-        {hasOverlayContent && (
-          <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/35 to-transparent" />
-        )}
-
-        <div className="relative h-full flex items-center px-6 sm:px-10 lg:px-16">
-          <div className="max-w-2xl w-full mx-auto md:mx-0 md:w-auto text-white">
-            {current.title && (
-              <h2
-                className="text-xl sm:text-3xl lg:text-4xl font-bold leading-tight mb-2 tracking-tight drop-shadow-md"
-                style={{ fontFamily: "'Manrope', sans-serif" }}
-              >
-                {current.title}
-              </h2>
-            )}
-            {current.subtitle && (
-              <p className="text-xs sm:text-base text-white/90 mb-3 sm:mb-4 max-w-lg drop-shadow">
-                {current.subtitle}
-              </p>
-            )}
-            {current.cta_label && (
-              <button
-                onClick={() => goBanner(current)}
-                className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#C9A84C] text-[#003D32] font-semibold text-xs sm:text-sm rounded-lg shadow-md hover:bg-[#d3b65a] active:scale-[0.98] transition-all"
-              >
-                {current.cta_label}
-                <span aria-hidden>→</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+      </button>
 
       {/* Controles — só aparecem se houver >1 banner */}
       {banners.length > 1 && (

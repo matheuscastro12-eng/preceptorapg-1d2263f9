@@ -235,6 +235,16 @@ export default function CrmBanners() {
               </button>
             </div>
 
+            {/* Convenção: a imagem é o banner inteiro. Texto/CTA visíveis
+                ficam embutidos na arte. Os campos abaixo (título, subtítulo,
+                texto do botão) servem apenas como metadados para acessibilidade
+                e SEO — não são sobrepostos visualmente na imagem. */}
+            <div className="mb-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-[12px] text-amber-900 leading-relaxed">
+                💡 <strong>Importante:</strong> o texto e o botão do banner devem estar <strong>dentro da imagem</strong> (a arte do banner já vem pronta com o título, descrição e CTA). Os campos abaixo (título, subtítulo, etc.) são apenas para acessibilidade e SEO — não aparecem sobrepostos na imagem.
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Coluna imagens — desktop + mobile */}
               <div className="space-y-5">
@@ -339,37 +349,44 @@ export default function CrmBanners() {
                 </div>
               </div>
 
-              {/* Coluna campos */}
+              {/* Coluna campos — alt/SEO e link de destino */}
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-semibold text-gray-700">Título (opcional)</label>
+                  <label className="text-xs font-semibold text-gray-700">
+                    Nome interno do banner <span className="text-gray-400 font-normal">(uso da equipe, não aparece)</span>
+                  </label>
                   <input
                     type="text" value={form.title ?? ""}
                     onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                    placeholder='Ex.: "Cadastre-se e ganhe 10% OFF"'
+                    placeholder='Ex.: "Campanha cadastro 10% OFF — set/26"'
                     className="w-full h-9 px-3 text-sm border border-gray-200 rounded bg-white focus:outline-none focus:border-green-700"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-700">Subtítulo (opcional)</label>
+                  <label className="text-xs font-semibold text-gray-700">
+                    Descrição da imagem <span className="text-gray-400 font-normal">(alt text — SEO/acessibilidade)</span>
+                  </label>
                   <input
                     type="text" value={form.subtitle ?? ""}
                     onChange={(e) => setForm((f) => ({ ...f, subtitle: e.target.value }))}
-                    placeholder='Texto de apoio'
+                    placeholder='Ex.: "Estudante de medicina com livro e estetoscópio"'
                     className="w-full h-9 px-3 text-sm border border-gray-200 rounded bg-white focus:outline-none focus:border-green-700"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-gray-700">Texto do botão (CTA)</label>
+                    <label className="text-xs font-semibold text-gray-700">
+                      Ação descritiva <span className="text-gray-400 font-normal">(aria-label)</span>
+                    </label>
                     <input
                       type="text" value={form.cta_label}
                       onChange={(e) => setForm((f) => ({ ...f, cta_label: e.target.value }))}
+                      placeholder='Ex.: "Cadastrar e ganhar 10% OFF"'
                       className="w-full h-9 px-3 text-sm border border-gray-200 rounded bg-white focus:outline-none focus:border-green-700"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-gray-700">Link do CTA *</label>
+                    <label className="text-xs font-semibold text-gray-700">Link de destino *</label>
                     <input
                       type="text" value={form.cta_link} required
                       onChange={(e) => setForm((f) => ({ ...f, cta_link: e.target.value }))}
