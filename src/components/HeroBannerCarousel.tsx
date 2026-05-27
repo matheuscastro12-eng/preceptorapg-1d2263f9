@@ -80,23 +80,26 @@ export default function HeroBannerCarousel({
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-slate-900 aspect-[4/5] sm:aspect-[16/9] max-h-[65vh]"
+      className="relative w-full overflow-hidden bg-slate-900"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-roledescription="carousel"
     >
       {/* Slide atual — imagem É o banner inteiro, clicavel.
-          Texto/CTA devem estar embutidos na arte. Title/subtitle/cta_label
-          do CRM viram alt/aria-label para acessibilidade, nao overlay. */}
+          Sem aspect-ratio fixo: a imagem do banner dita a altura
+          (preserva proporcao original sem cortar). Texto/CTA estao
+          embutidos na arte; title/subtitle/cta_label do CRM viram
+          metadados de acessibilidade. */}
       <button
         key={current.id}
         type="button"
         onClick={() => goBanner(current)}
         aria-label={current.cta_label || current.title || "Abrir banner"}
-        className="absolute inset-0 animate-fade-in cursor-pointer block w-full h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-inset"
+        className="animate-fade-in cursor-pointer block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-inset"
       >
         {/* <picture> entrega image_url_mobile em viewports <=640px se cadastrada;
-            cai para image_url em desktops e como fallback. */}
+            cai para image_url em desktops e como fallback. A imagem usa
+            altura natural (h-auto) — sem cortar o topo/laterais. */}
         <picture>
           {current.image_url_mobile && (
             <source media="(max-width: 640px)" srcSet={current.image_url_mobile} />
@@ -104,7 +107,7 @@ export default function HeroBannerCarousel({
           <img
             src={current.image_url}
             alt={current.title ?? current.subtitle ?? "Banner promocional"}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="block w-full h-auto"
             loading="eager"
             decoding="async"
             draggable={false}
