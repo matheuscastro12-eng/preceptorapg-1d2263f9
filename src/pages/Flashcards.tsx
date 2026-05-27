@@ -90,6 +90,7 @@ const Flashcards = () => {
   // Criação de deck — modal com seções selecionáveis
   const [creatingDeck, setCreatingDeck] = useState(false);
   const [newDeckTopic, setNewDeckTopic] = useState('');
+  const [deckMode, setDeckMode] = useState<'disease' | 'topic'>('disease');
   const [selectedSections, setSelectedSections] = useState<Set<Section>>(new Set(DEFAULT_SECTIONS));
   const [customObjectives, setCustomObjectives] = useState('');
   const [cardCount, setCardCount] = useState(15);
@@ -311,7 +312,7 @@ const Flashcards = () => {
       toast({ title: 'Tema muito curto', description: 'Informe pelo menos 3 caracteres.', variant: 'destructive' });
       return;
     }
-    if (selectedSections.size === 0) {
+    if (deckMode === 'disease' && selectedSections.size === 0) {
       toast({ title: 'Selecione ao menos uma seção', description: 'Marque pelo menos 1 categoria de conteúdo.', variant: 'destructive' });
       return;
     }
@@ -320,7 +321,8 @@ const Flashcards = () => {
       const { data, error } = await supabase.functions.invoke('generate-flashcards', {
         body: {
           topic,
-          sections: Array.from(selectedSections),
+          mode: deckMode,
+          sections: deckMode === 'disease' ? Array.from(selectedSections) : [],
           custom_objectives: customObjectives.trim() || undefined,
           count: cardCount,
         },
@@ -337,6 +339,7 @@ const Flashcards = () => {
       setNewDeckTopic('');
       setCustomObjectives('');
       setSelectedSections(new Set(DEFAULT_SECTIONS));
+      setDeckMode('disease');
       setCardCount(15);
       await fetchCards();
 
@@ -378,6 +381,8 @@ const Flashcards = () => {
           <CreateDeckPanel
             topic={newDeckTopic}
             onTopicChange={setNewDeckTopic}
+            deckMode={deckMode}
+            onDeckModeChange={setDeckMode}
             selectedSections={selectedSections}
             onToggleSection={toggleSection}
             customObjectives={customObjectives}
@@ -385,7 +390,7 @@ const Flashcards = () => {
             cardCount={cardCount}
             onCountChange={setCardCount}
             generating={generatingDeck}
-            onCancel={() => { setCreatingDeck(false); setNewDeckTopic(''); }}
+            onCancel={() => { setCreatingDeck(false); setNewDeckTopic(''); setDeckMode('disease'); }}
             onCreate={handleCreateDeckFromTopic}
             fromPlan={planCtx.isFromPlan}
           />
@@ -510,10 +515,12 @@ function FlashcardsSkeleton() {
 
 // ───────────────────────────────────────────────────────────────────
 function CreateDeckPanel({
-  topic, onTopicChange, selectedSections, onToggleSection, customObjectives, onCustomChange, cardCount, onCountChange, generating, onCancel, onCreate, fromPlan,
+  topic, onTopicChange, deckMode, onDeckModeChange, selectedSections, onToggleSection, customObjectives, onCustomChange, cardCount, onCountChange, generating, onCancel, onCreate, fromPlan,
 }: {
   topic: string;
   onTopicChange: (s: string) => void;
+  deckMode: 'disease' | 'topic';
+  onDeckModeChange: (m: 'disease' | 'topic') => void;
   selectedSections: Set<Section>;
   onToggleSection: (s: Section) => void;
   customObjectives: string;
@@ -525,6 +532,7 @@ function CreateDeckPanel({
   onCreate: () => void;
   fromPlan: boolean;
 }) {
+  const isDisease = deckMode === 'disease';
   return (
     <div className="relative bg-white rounded-3xl border border-slate-200 shadow-[0_1px_2px_rgba(25,28,29,0.04)] overflow-hidden">
       <div className="h-1 bg-gradient-to-r from-[#003D32] via-[#005344] via-[#006D5B] to-[#C9A84C]" />
@@ -546,30 +554,72 @@ function CreateDeckPanel({
           <em className="not-italic font-medium text-[#8a6f26]">de um tema</em>.
         </h1>
         <p className="text-sm text-[#4a5568] mb-8 max-w-[60ch] leading-relaxed">
-          Informe a doença/condição, selecione as subseções que quer estudar e o PreceptorMED
-          gera os flashcards organizados.
+          {isDisease
+            ? 'Informe a doença/condição, selecione as subseções que quer estudar e o PreceptorMED gera os flashcards organizados.'
+            : 'Informe o tópico livre (exame, sistema, procedimento, conceito) e a IA divide em subtópicos lógicos do tema automaticamente.'}
         </p>
 
         <div className="max-w-2xl space-y-7">
+          {/* Mode toggle — Doença vs Tópico livre */}
+          <div>
+            <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-2">
+              Tipo de tema
+            </label>
+            <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200">
+              <button
+                type="button"
+                onClick={() => !generating && onDeckModeChange('disease')}
+                disabled={generating}
+                className={`px-4 py-2 rounded-lg text-[12px] font-bold transition-all disabled:opacity-50 ${
+                  isDisease
+                    ? 'bg-white text-[#003D32] shadow-sm'
+                    : 'text-[#94a3b8] hover:text-[#4a5568]'
+                }`}
+              >
+                Doença/Condição
+              </button>
+              <button
+                type="button"
+                onClick={() => !generating && onDeckModeChange('topic')}
+                disabled={generating}
+                className={`px-4 py-2 rounded-lg text-[12px] font-bold transition-all disabled:opacity-50 ${
+                  !isDisease
+                    ? 'bg-white text-[#003D32] shadow-sm'
+                    : 'text-[#94a3b8] hover:text-[#4a5568]'
+                }`}
+              >
+                Tema livre
+              </button>
+            </div>
+            <p className="text-[11px] text-[#94a3b8] mt-2 max-w-md leading-relaxed">
+              {isDisease
+                ? 'Cards organizados nas 12 seções clássicas (Fisiopato, Diagnóstico, Tratamento, etc.).'
+                : 'Para exames (ex: Leucograma), sistemas (Renina-angiotensina), procedimentos (Punção lombar) ou conceitos. A IA escolhe os subtópicos adequados ao tema.'}
+            </p>
+          </div>
+
           {/* Tema */}
           <div>
             <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568] mb-2">
-              Tema do deck *
+              {isDisease ? 'Doença/Condição *' : 'Tópico/tema *'}
             </label>
             <input
               value={topic}
               onChange={(e) => onTopicChange(e.target.value)}
-              placeholder="Ex: Insuficiência Cardíaca com FE reduzida"
+              placeholder={isDisease ? 'Ex: Insuficiência Cardíaca com FE reduzida' : 'Ex: Leucograma, Punção lombar, Sistema renina-angiotensina'}
               disabled={generating}
               autoFocus
               className="w-full h-12 px-4 rounded-xl border-2 border-slate-200 text-sm focus:outline-none focus:border-[#005344] focus:ring-4 focus:ring-[#005344]/10 transition-shadow disabled:opacity-50"
             />
             <p className="text-[11px] text-[#94a3b8] mt-1.5">
-              Quanto mais específico, melhores os flashcards. "IAM com supra de ST" &gt; "Cardio".
+              {isDisease
+                ? 'Quanto mais específico, melhores os flashcards. "IAM com supra de ST" > "Cardio".'
+                : 'Pode ser qualquer assunto não-doença que você queira estudar de forma estruturada.'}
             </p>
           </div>
 
-          {/* Seções */}
+          {/* Seções — só em modo Doença */}
+          {isDisease && (
           <div>
             <div className="flex items-baseline justify-between mb-2">
               <label className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#4a5568]">
@@ -606,6 +656,7 @@ function CreateDeckPanel({
             </div>
             <p className="text-[11px] text-[#94a3b8] mt-2">Desmarque as seções que não quer no deck.</p>
           </div>
+          )}
 
           {/* Objetivos específicos */}
           <div>
@@ -615,13 +666,17 @@ function CreateDeckPanel({
             <textarea
               value={customObjectives}
               onChange={(e) => onCustomChange(e.target.value)}
-              placeholder='Ex: "Quero focar em critérios de Framingham, manejo de descompensação aguda e diferença entre ICFEr e ICFEp"'
+              placeholder={isDisease
+                ? 'Ex: "Quero focar em critérios de Framingham, manejo de descompensação aguda e diferença entre ICFEr e ICFEp"'
+                : 'Ex: "Foque em achados em viroses, distinguir reativo de neoplásico, valores em pediatria"'}
               disabled={generating}
               rows={3}
               className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 text-sm focus:outline-none focus:border-[#005344] focus:ring-4 focus:ring-[#005344]/10 transition-shadow disabled:opacity-50 resize-none"
             />
             <p className="text-[11px] text-[#94a3b8] mt-1.5">
-              Aponte tópicos extras ou ângulos que você quer priorizar. A IA dá peso a esses pontos.
+              {isDisease
+                ? 'Aponte tópicos extras ou ângulos que você quer priorizar. A IA dá peso a esses pontos.'
+                : 'Direcione o foco do estudo — a IA prioriza esses pontos ao montar os subtópicos.'}
             </p>
           </div>
 
@@ -669,7 +724,7 @@ function CreateDeckPanel({
             </button>
             <button
               onClick={onCreate}
-              disabled={generating || topic.trim().length < 3 || selectedSections.size === 0}
+              disabled={generating || topic.trim().length < 3 || (isDisease && selectedSections.size === 0)}
               className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-gradient-to-br from-[#003D32] via-[#005344] to-[#006D5B] text-white text-sm font-bold shadow-[0_8px_24px_-4px_rgba(0,109,91,0.4)] hover:shadow-[0_12px_28px_-4px_rgba(0,109,91,0.55)] disabled:opacity-50 transition-all"
             >
               {generating ? (

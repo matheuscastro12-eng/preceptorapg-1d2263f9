@@ -26,6 +26,49 @@ const VALID_SECTIONS = [
   "Pontos de prova",
 ] as const;
 
+/**
+ * Modo "tema livre" — para tópicos que não são doenças (exames, sistemas,
+ * procedimentos, conceitos). A IA escolhe organicamente os subtopicos
+ * adequados ao tema. Resultado: hierarquia ainda funciona, mas as secoes
+ * são geradas pela IA (não as 12 médicas padrão).
+ */
+function buildFreeTopicPrompt(opts: {
+  topic: string;
+  customObjectives?: string;
+  count: number;
+}): string {
+  const custom = opts.customObjectives?.trim()
+    ? `\n\nOBJETIVOS ESPECÍFICOS DO ALUNO (priorize estes pontos):\n${opts.customObjectives.trim()}`
+    : "";
+
+  return `Você é um professor de medicina especialista em criar flashcards para revisão espaçada (algoritmo SM-2).
+
+TAREFA: gerar ${opts.count} flashcards sobre **${opts.topic}**, organizados por subtópicos LÓGICOS DO TEMA (não use o esquema clássico de doença).
+
+ORGANIZAÇÃO (use seu julgamento pedagógico):
+- Identifique 3-6 subtópicos úteis para ESTE tema específico
+- Adapte ao tipo de tema. Exemplos:
+  * Exame laboratorial ("Leucograma"): "Valores de referência", "Neutrofilia: causas", "Neutropenia: causas", "Eosinofilia", "Linfocitose reativa vs maligna"
+  * Sistema/cascata ("Sistema renina-angiotensina"): "Componentes", "Cascata bioquímica", "Regulação", "Drogas que atuam no sistema"
+  * Procedimento ("Punção lombar"): "Indicações", "Contraindicações", "Técnica", "Complicações", "Análise do liquor"
+  * Conceito clínico ("Choque hipovolêmico"): "Definição e classes ATLS", "Sinais vitais por classe", "Reposição volêmica", "Erros comuns"
+- Cada subtópico: 2-6 cards aproximadamente
+- O nome do subtópico vai no campo "secao" — curto (2-5 palavras), descritivo
+
+REGRAS DOS CARDS:
+- Total: ~${opts.count} flashcards (±2)
+- "front" = pergunta concisa testando COMPREENSÃO (não memorização rasa)
+- "back" = resposta técnica em 1-4 frases, com valores numéricos quando relevantes
+- Use terminologia médica precisa, cite diretrizes (SBC, MS, ATLS, etc.) quando aplicável
+- Markdown simples permitido no back (**negrito** para conceitos-chave)${custom}
+
+FORMATO DE SAÍDA (JSON array, sem texto adicional, sem markdown wrapper):
+[
+  {"front": "Pergunta?", "back": "Resposta técnica.", "secao": "Nome do subtópico"},
+  {"front": "Pergunta?", "back": "Resposta técnica.", "secao": "Outro subtópico"}
+]`;
+}
+
 // Prompt para geração estruturada por tema + seções selecionadas.
 function buildStructuredPrompt(opts: {
   topic: string;
@@ -115,8 +158,9 @@ serve(async (req) => {
 
     const body = await req.json();
     const {
-      // Modo novo: estruturado por tema/seções
+      // Modo novo: estruturado por tema/seções OU tema livre
       topic,
+      mode,                  // 'disease' | 'topic' (default 'disease')
       sections,
       custom_objectives,
       count,
@@ -126,6 +170,7 @@ serve(async (req) => {
       source_type = "resumo",
     } = body as {
       topic?: string;
+      mode?: "disease" | "topic";
       sections?: string[];
       custom_objectives?: string;
       count?: number;
@@ -140,22 +185,33 @@ serve(async (req) => {
     let promptText: string;
     let temaForRow: string | null = null;
     if (isStructured) {
-      const validSections = (sections ?? []).filter((s) =>
-        (VALID_SECTIONS as readonly string[]).includes(s)
-      );
-      if (validSections.length === 0) {
-        return new Response(
-          JSON.stringify({ error: "Selecione pelo menos uma seção" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
       const safeCount = Math.max(5, Math.min(40, count ?? 15));
-      promptText = buildStructuredPrompt({
-        topic: topic!.trim(),
-        sections: validSections,
-        customObjectives: custom_objectives,
-        count: safeCount,
-      });
+      const finalMode: "disease" | "topic" = mode === "topic" ? "topic" : "disease";
+      if (finalMode === "topic") {
+        // Tema livre: IA escolhe os subtópicos
+        promptText = buildFreeTopicPrompt({
+          topic: topic!.trim(),
+          customObjectives: custom_objectives,
+          count: safeCount,
+        });
+      } else {
+        // Doença/Condição: 12 seções médicas padrão
+        const validSections = (sections ?? []).filter((s) =>
+          (VALID_SECTIONS as readonly string[]).includes(s)
+        );
+        if (validSections.length === 0) {
+          return new Response(
+            JSON.stringify({ error: "Selecione pelo menos uma seção" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        promptText = buildStructuredPrompt({
+          topic: topic!.trim(),
+          sections: validSections,
+          customObjectives: custom_objectives,
+          count: safeCount,
+        });
+      }
       temaForRow = topic!.trim();
     } else {
       if (!content || typeof content !== "string" || content.trim().length < 50) {
