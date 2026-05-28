@@ -6,11 +6,15 @@ import { supabase } from "@/integrations/supabase/client";
 /**
  * HeroBannerCarousel — carrossel de banners no topo da Landing.
  *
- * Le `landing_banners` direto (RLS publica permite ativos dentro da janela).
- * Filtra por audience client-side ('visitors' default na Landing publica).
- * Autoplay 5s, prev/next, dots. Links abrem na mesma aba se link_target='same'.
+ * REGRA DE OURO (evita corte): o container do slide tem a proporção
+ * EXATA da imagem. Com isso, object-cover não corta nada.
+ *   - desktop: 16:9 (banners cadastrados em 3840×2160)
+ *   - mobile : 4:5 (versões retrato 3240×4050) via <picture>
+ * Se o banner não tiver versão mobile, usamos 16:9 também no celular
+ * (a desktop encaixa sem corte).
  *
- * Vazio = nao renderiza nada (graceful, nao quebra layout).
+ * Largura limitada a max-w-7xl (alinha com o resto da landing) → altura
+ * fica ~675px no desktop, sem dominar o viewport. Vazio = não renderiza.
  */
 
 interface Banner {
@@ -27,15 +31,15 @@ interface Banner {
 }
 
 interface HeroBannerCarouselProps {
-  /** Filtro de publico. 'visitors' = nao logado (Landing publica). */
+  /** Filtro de público. 'visitors' = não logado (Landing pública). */
   audience?: "visitors" | "free" | "paid";
-  /** Intervalo de autoplay em ms. 0 = desativado. Default 5000. */
+  /** Intervalo de autoplay em ms. 0 = desativado. Default 6000. */
   autoplayMs?: number;
 }
 
 export default function HeroBannerCarousel({
   audience = "visitors",
-  autoplayMs = 5000,
+  autoplayMs = 6000,
 }: HeroBannerCarouselProps) {
   const [banners, setBanners] = useState<Banner[] | null>(null);
   const [index, setIndex] = useState(0);
@@ -65,6 +69,11 @@ export default function HeroBannerCarousel({
     return () => window.clearInterval(t);
   }, [banners, autoplayMs, paused]);
 
+  // Garante que o index nunca fica fora do range se a lista mudar
+  useEffect(() => {
+    if (banners && index >= banners.length) setIndex(0);
+  }, [banners, index]);
+
   const current = useMemo(() => (banners && banners[index]) || null, [banners, index]);
 
   if (!banners || banners.length === 0 || !current) return null;
@@ -78,81 +87,85 @@ export default function HeroBannerCarousel({
     else window.location.href = b.cta_link;
   };
 
+  const goTo = (i: number) => setIndex(((i % banners.length) + banners.length) % banners.length);
+
+  // Proporção do container = proporção da imagem (sem corte).
+  const hasMobile = !!current.image_url_mobile;
+  const aspectClass = hasMobile ? "aspect-[4/5] sm:aspect-[16/9]" : "aspect-[16/9]";
+
   return (
-    <section
-      className="relative w-full overflow-hidden bg-slate-900"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      aria-roledescription="carousel"
-    >
-      {/* Slide atual — imagem É o banner inteiro, clicavel.
-          Sem aspect-ratio fixo: a imagem do banner dita a altura
-          (preserva proporcao original sem cortar). Texto/CTA estao
-          embutidos na arte; title/subtitle/cta_label do CRM viram
-          metadados de acessibilidade. */}
-      <button
-        key={current.id}
-        type="button"
-        onClick={() => goBanner(current)}
-        aria-label={current.cta_label || current.title || "Abrir banner"}
-        className="animate-fade-in cursor-pointer block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-inset"
-      >
-        {/* <picture> entrega image_url_mobile em viewports <=640px se cadastrada;
-            cai para image_url em desktops e como fallback. A imagem usa
-            altura natural (h-auto) — sem cortar o topo/laterais. */}
-        <picture>
-          {current.image_url_mobile && (
-            <source media="(max-width: 640px)" srcSet={current.image_url_mobile} />
-          )}
-          <img
-            src={current.image_url}
-            alt={current.title ?? current.subtitle ?? "Banner promocional"}
-            className="block w-full h-auto"
-            loading="eager"
-            decoding="async"
-            draggable={false}
-          />
-        </picture>
-      </button>
-
-      {/* Controles — só aparecem se houver >1 banner */}
-      {banners.length > 1 && (
-        <>
+    <section className="w-full px-4 sm:px-6 md:px-10 pt-5 sm:pt-7" aria-label="Destaques">
+      <div className="max-w-7xl mx-auto">
+        <div
+          className="relative rounded-2xl overflow-hidden bg-slate-900 shadow-[0_10px_40px_-14px_rgba(0,61,50,0.45)] ring-1 ring-black/5"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          aria-roledescription="carousel"
+        >
+          {/* Slide atual — a imagem É o banner inteiro, clicável.
+              key força fade entre slides. */}
           <button
-            onClick={() => setIndex((i) => (i - 1 + banners.length) % banners.length)}
-            aria-label="Banner anterior"
-            className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white flex items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+            key={current.id}
+            type="button"
+            onClick={() => goBanner(current)}
+            aria-label={current.cta_label || current.title || "Abrir banner"}
+            className={`relative block w-full ${aspectClass} animate-fade-in cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-gold/60 focus-visible:ring-inset`}
           >
-            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-          <button
-            onClick={() => setIndex((i) => (i + 1) % banners.length)}
-            aria-label="Próximo banner"
-            className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white flex items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-          >
-            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-
-          <div
-            className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-1.5"
-            role="tablist"
-            aria-label="Selecionar banner"
-          >
-            {banners.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setIndex(i)}
-                role="tab"
-                aria-selected={i === index}
-                aria-label={`Ir para banner ${i + 1}`}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === index ? "w-6 bg-white" : "w-1.5 bg-white/40 hover:bg-white/60"
-                }`}
+            <picture>
+              {current.image_url_mobile && (
+                <source media="(max-width: 639px)" srcSet={current.image_url_mobile} />
+              )}
+              <img
+                src={current.image_url}
+                alt={current.title ?? current.subtitle ?? "Banner promocional"}
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="eager"
+                decoding="async"
+                draggable={false}
               />
-            ))}
-          </div>
-        </>
-      )}
+            </picture>
+          </button>
+
+          {/* Controles — só com >1 banner */}
+          {banners.length > 1 && (
+            <>
+              <button
+                onClick={() => goTo(index - 1)}
+                aria-label="Banner anterior"
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white flex items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => goTo(index + 1)}
+                aria-label="Próximo banner"
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white flex items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+
+              <div
+                className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-1.5 px-2.5 py-1.5 rounded-full bg-black/25 backdrop-blur-sm"
+                role="tablist"
+                aria-label="Selecionar banner"
+              >
+                {banners.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => goTo(i)}
+                    role="tab"
+                    aria-selected={i === index}
+                    aria-label={`Ir para banner ${i + 1}`}
+                    className={`h-1.5 rounded-full transition-all ${
+                      i === index ? "w-6 bg-white" : "w-1.5 bg-white/50 hover:bg-white/80"
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </section>
   );
 }
