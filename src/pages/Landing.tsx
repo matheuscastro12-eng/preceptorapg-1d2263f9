@@ -865,13 +865,13 @@ const Landing = () => {
               </p>
 
               {/* Urgência — banner promocional */}
-              <div className="mt-6 inline-flex items-center gap-2.5 px-4 py-2.5 bg-brand-gold/10 border border-brand-gold/30 rounded-lg">
+              <div className="mt-6 inline-flex items-center gap-2.5 px-4 py-2.5 bg-gradient-to-r from-brand-gold/20 to-brand-gold/5 border border-brand-gold/40 rounded-lg shadow-[0_2px_12px_-4px_rgba(201,168,76,0.4)]">
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-gold opacity-60" />
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-gold" />
                 </span>
-                <span className="text-xs sm:text-sm font-semibold text-brand-primary-dark">
-                  Oferta de lançamento: descontos de até 50% por tempo limitado
+                <span className="text-xs sm:text-sm font-bold text-brand-primary-dark">
+                  Oferta de lançamento: até <span className="text-[#8a6f26]">50% OFF</span> por tempo limitado
                 </span>
               </div>
             </div>
@@ -880,10 +880,13 @@ const Landing = () => {
               {/* Mensal */}
               <div className="flex-1 bg-white p-6 sm:p-10 rounded-2xl shadow-[0_4px_24px_-8px_rgba(0,109,91,0.08),0_1px_2px_0_rgba(25,28,29,0.04)] border border-slate-200/40 hover:shadow-[0_12px_40px_-12px_rgba(0,109,91,0.15),0_2px_4px_0_rgba(25,28,29,0.04)] transition-shadow duration-300">
                 <h3 className="text-lg sm:text-xl font-bold mb-2 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Mensal</h3>
-                <div className="mb-4 sm:mb-6">
-                  <span className="text-3xl sm:text-4xl font-extrabold text-[#005344]">R$ 49,90</span>
+                <div className="mb-1.5">
+                  <span className="text-4xl sm:text-5xl font-extrabold text-[#005344] tracking-tight">R$ 49,90</span>
                   <span className="text-slate-500">/mês</span>
                 </div>
+                <p className="text-xs text-slate-500 mb-4 sm:mb-6">
+                  Sem fidelidade · <span className="font-semibold text-brand-primary-dark">economize até 50%</span> nos planos anual e bianual
+                </p>
                 <ul className="space-y-3 sm:space-y-4 mb-6 sm:mb-10 text-sm text-[#191c1d]">
                   <li className="flex items-center gap-3">
                     <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
@@ -911,18 +914,28 @@ const Landing = () => {
 
               {/* Anual — highlighted */}
               <div className="flex-1 bg-white p-6 sm:p-10 rounded-2xl shadow-[0_16px_48px_-12px_rgba(0,109,91,0.25),0_4px_12px_-4px_rgba(0,109,91,0.10)] border-2 border-brand-primary relative overflow-hidden hover:shadow-[0_24px_56px_-12px_rgba(0,109,91,0.35),0_6px_16px_-4px_rgba(0,109,91,0.15)] transition-shadow duration-300">
+                {/* Badge de desconto — destaque máximo */}
+                <div className="absolute top-0 left-0 bg-brand-gold text-brand-primary-darker px-3 py-1.5 text-sm font-extrabold tracking-tight rounded-br-xl shadow-[0_4px_12px_-2px_rgba(201,168,76,0.5)]">
+                  −41% OFF
+                </div>
                 <div className="absolute top-0 right-0 bg-brand-primary-dark text-white px-3 sm:px-4 py-1 text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
-                  Mais Popular
+                  ★ Mais Popular
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold mb-3 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Anual</h3>
-                <div className="mb-1">
-                  <span className="text-sm text-slate-400 line-through">De R$ 598,80</span>
+                <h3 className="text-lg sm:text-xl font-bold mb-3 mt-4 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Anual</h3>
+                {/* /mês como número-herói */}
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-4xl sm:text-5xl font-extrabold text-[#005344] tracking-tight">R$ 29,24</span>
+                  <span className="text-slate-500 text-sm font-medium">/mês</span>
                 </div>
-                <div className="mb-1">
-                  <span className="text-3xl sm:text-4xl font-extrabold text-[#005344]">R$ 350,90</span>
-                  <span className="text-slate-500">/ano</span>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 mb-3">
+                  <span className="text-sm text-slate-400 line-through">R$ 49,90/mês</span>
+                  <span className="text-[11px] font-semibold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded">cobrado R$ 350,90/ano</span>
                 </div>
-                <p className="text-xs text-[#006D5B] font-semibold mb-6">Equivale a R$ 29,24/mês — Economia de 41%</p>
+                {/* Economia em destaque */}
+                <div className="inline-flex items-center gap-1.5 bg-brand-gold/15 border border-brand-gold/40 rounded-lg px-3 py-1.5 mb-6">
+                  <MI name="savings" fill className="text-[#8a6f26] text-base" />
+                  <span className="text-[13px] font-bold text-brand-primary-darker">Você economiza R$ 247,90</span>
+                </div>
                 <ul className="space-y-3 sm:space-y-4 mb-6 sm:mb-10 text-sm text-[#191c1d]">
                   <li className="flex items-center gap-3 font-semibold">
                     <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
@@ -958,18 +971,28 @@ const Landing = () => {
 
               {/* Bianual */}
               <div className="flex-1 bg-white p-6 sm:p-10 rounded-2xl shadow-[0_4px_24px_-8px_rgba(201,168,76,0.12),0_1px_2px_0_rgba(25,28,29,0.04)] border border-slate-200/40 hover:shadow-[0_12px_40px_-12px_rgba(201,168,76,0.22),0_2px_4px_0_rgba(25,28,29,0.04)] transition-shadow duration-300 relative overflow-hidden">
-                <div className="absolute top-0 right-0 bg-brand-gold text-white px-3 sm:px-4 py-1 text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
-                  Maior Economia
+                {/* Badge de desconto — máximo */}
+                <div className="absolute top-0 left-0 bg-brand-gold text-brand-primary-darker px-3 py-1.5 text-sm font-extrabold tracking-tight rounded-br-xl shadow-[0_4px_12px_-2px_rgba(201,168,76,0.5)]">
+                  −50% OFF
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold mb-3 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Bianual</h3>
-                <div className="mb-1">
-                  <span className="text-sm text-slate-400 line-through">De R$ 1.197,60</span>
+                <div className="absolute top-0 right-0 bg-brand-primary-dark text-white px-3 sm:px-4 py-1 text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
+                  Maior economia
                 </div>
-                <div className="mb-1">
-                  <span className="text-3xl sm:text-4xl font-extrabold text-[#005344]">R$ 599,90</span>
-                  <span className="text-slate-500">/2 anos</span>
+                <h3 className="text-lg sm:text-xl font-bold mb-3 mt-4 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Bianual</h3>
+                {/* /mês como número-herói */}
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-4xl sm:text-5xl font-extrabold text-[#005344] tracking-tight">R$ 24,99</span>
+                  <span className="text-slate-500 text-sm font-medium">/mês</span>
                 </div>
-                <p className="text-xs text-[#006D5B] font-semibold mb-6">Equivale a R$ 24,99/mês — Economia de 50%</p>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 mb-3">
+                  <span className="text-sm text-slate-400 line-through">R$ 49,90/mês</span>
+                  <span className="text-[11px] font-semibold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded">cobrado R$ 599,90/2 anos</span>
+                </div>
+                {/* Economia em destaque */}
+                <div className="inline-flex items-center gap-1.5 bg-brand-gold/15 border border-brand-gold/40 rounded-lg px-3 py-1.5 mb-6">
+                  <MI name="savings" fill className="text-[#8a6f26] text-base" />
+                  <span className="text-[13px] font-bold text-brand-primary-darker">Você economiza R$ 597,70</span>
+                </div>
                 <ul className="space-y-3 sm:space-y-4 mb-6 sm:mb-10 text-sm text-[#191c1d]">
                   <li className="flex items-center gap-3 font-semibold">
                     <MI name="check_circle" fill className="text-[#006D5B] text-lg" />
