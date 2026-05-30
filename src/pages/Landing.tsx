@@ -215,8 +215,6 @@ const Landing = () => {
                   <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
                   +1.200 estudantes ativos
                 </span>
-                <span className="text-slate-400">·</span>
-                <span>NPS 72</span>
               </p>
               <h1
                 className="text-3xl sm:text-5xl md:text-6xl lg:text-[3.75rem] xl:text-[4.25rem] font-bold leading-[1.08] mb-6 sm:mb-8 tracking-[-0.02em] text-brand-ink"
