@@ -126,6 +126,18 @@ export default function HeroBannerCarousel({
             </picture>
           </button>
 
+          {/* CTA explícito — canto inferior direito. Irmão do slide (não
+              aninhado) pra não criar botão-dentro-de-botão; z acima das setas. */}
+          <button
+            key={`cta-${current.id}`}
+            type="button"
+            onClick={() => goBanner(current)}
+            className="absolute bottom-3 right-3 sm:bottom-5 sm:right-5 z-20 inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg bg-brand-gold text-brand-primary-darker text-xs sm:text-sm font-bold shadow-[0_6px_20px_-4px_rgba(0,0,0,0.45)] hover:bg-[#d3b65a] active:scale-[0.97] transition-all animate-fade-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          >
+            {current.cta_label || "Começar agora"}
+            <span aria-hidden>→</span>
+          </button>
+
           {/* Controles — só com >1 banner */}
           {banners.length > 1 && (
             <>

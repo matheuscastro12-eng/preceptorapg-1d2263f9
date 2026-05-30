@@ -922,19 +922,19 @@ const Landing = () => {
                   ★ Mais Popular
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold mb-3 mt-4 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Anual</h3>
-                {/* /mês como número-herói */}
+                {/* parcelamento — 12x pequeno + valor grande */}
                 <div className="flex items-baseline gap-1.5">
+                  <span className="text-base sm:text-lg font-semibold text-slate-500">12x de</span>
                   <span className="text-4xl sm:text-5xl font-extrabold text-[#005344] tracking-tight">R$ 29,24</span>
-                  <span className="text-slate-500 text-sm font-medium">/mês</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 mb-3">
                   <span className="text-sm text-slate-400 line-through">R$ 49,90/mês</span>
-                  <span className="text-[11px] font-semibold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded">cobrado R$ 350,90/ano</span>
+                  <span className="text-[11px] font-semibold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded">ou R$ 350,90 à vista</span>
                 </div>
-                {/* Economia em destaque */}
-                <div className="inline-flex items-center gap-1.5 bg-brand-gold/15 border border-brand-gold/40 rounded-lg px-3 py-1.5 mb-6">
-                  <MI name="savings" fill className="text-[#8a6f26] text-base" />
-                  <span className="text-[13px] font-bold text-brand-primary-darker">Você economiza R$ 247,90</span>
+                {/* Economia em destaque — 41% */}
+                <div className="inline-flex items-center gap-2 bg-brand-gold/20 border border-brand-gold/50 rounded-lg px-3.5 py-2 mb-6 shadow-[0_2px_10px_-3px_rgba(201,168,76,0.45)]">
+                  <MI name="savings" fill className="text-[#8a6f26] text-lg" />
+                  <span className="text-sm font-extrabold tracking-wide text-brand-primary-darker uppercase">Economia de 41%</span>
                 </div>
                 <ul className="space-y-3 sm:space-y-4 mb-6 sm:mb-10 text-sm text-[#191c1d]">
                   <li className="flex items-center gap-3 font-semibold">
@@ -979,19 +979,19 @@ const Landing = () => {
                   Maior economia
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold mb-3 mt-4 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>Plano Bianual</h3>
-                {/* /mês como número-herói */}
+                {/* parcelamento — 24x pequeno + valor grande */}
                 <div className="flex items-baseline gap-1.5">
+                  <span className="text-base sm:text-lg font-semibold text-slate-500">24x de</span>
                   <span className="text-4xl sm:text-5xl font-extrabold text-[#005344] tracking-tight">R$ 24,99</span>
-                  <span className="text-slate-500 text-sm font-medium">/mês</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 mb-3">
                   <span className="text-sm text-slate-400 line-through">R$ 49,90/mês</span>
-                  <span className="text-[11px] font-semibold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded">cobrado R$ 599,90/2 anos</span>
+                  <span className="text-[11px] font-semibold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded">ou R$ 599,90 à vista</span>
                 </div>
-                {/* Economia em destaque */}
-                <div className="inline-flex items-center gap-1.5 bg-brand-gold/15 border border-brand-gold/40 rounded-lg px-3 py-1.5 mb-6">
-                  <MI name="savings" fill className="text-[#8a6f26] text-base" />
-                  <span className="text-[13px] font-bold text-brand-primary-darker">Você economiza R$ 597,70</span>
+                {/* Economia em destaque — 50% */}
+                <div className="inline-flex items-center gap-2 bg-brand-gold/20 border border-brand-gold/50 rounded-lg px-3.5 py-2 mb-6 shadow-[0_2px_10px_-3px_rgba(201,168,76,0.45)]">
+                  <MI name="savings" fill className="text-[#8a6f26] text-lg" />
+                  <span className="text-sm font-extrabold tracking-wide text-brand-primary-darker uppercase">Economia de 50%</span>
                 </div>
                 <ul className="space-y-3 sm:space-y-4 mb-6 sm:mb-10 text-sm text-[#191c1d]">
                   <li className="flex items-center gap-3 font-semibold">
