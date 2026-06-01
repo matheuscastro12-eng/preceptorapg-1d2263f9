@@ -14,6 +14,7 @@ const V3_PAGES = new Set([
   "/admin/crm-mkt/funnel",
   "/admin/crm-mkt/landing-funnel",
   "/admin/crm-mkt/banners",
+  "/admin/crm-mkt/ads",
   "/admin/crm-mkt/health",
   "/admin/crm-mkt/churn",
   "/admin/crm-mkt/automations",
