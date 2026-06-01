@@ -79,6 +79,82 @@ export function useDeleteAporte() {
   });
 }
 
+// ── Saques / movimentações manuais de caixa ──────────────────────
+// efeito: 'somar' (entra no caixa, +) | 'subtrair' (retirada, −) | 'neutro' (só registro)
+export interface Saque {
+  id: string;
+  descricao: string;
+  valor: number;
+  data: string;
+  origem: "easyflow" | "banco" | "outro";
+  efeito: "somar" | "subtrair" | "neutro";
+  responsavel: string | null;
+  observacoes: string | null;
+  created_at: string;
+}
+
+export interface SaqueInsert {
+  descricao: string;
+  valor: number;
+  data: string;
+  origem?: Saque["origem"];
+  efeito?: Saque["efeito"];
+  responsavel?: string | null;
+  observacoes?: string | null;
+}
+
+/** Impacto líquido dos saques no saldo desde o baseline: Σsomar − Σsubtrair (neutro = 0). */
+async function fetchSaquesImpacto(baselineDate: string): Promise<{ impacto: number; somar: number; subtrair: number }> {
+  const { data } = await supabase
+    .from("admin_saques")
+    .select("valor, efeito")
+    .gte("data", baselineDate);
+  let somar = 0, subtrair = 0;
+  for (const s of data ?? []) {
+    const v = Number(s.valor);
+    if (s.efeito === "somar") somar += v;
+    else if (s.efeito === "subtrair") subtrair += v;
+  }
+  return { impacto: somar - subtrair, somar, subtrair };
+}
+
+export function useSaques() {
+  return useQuery({
+    queryKey: ["crm-admin", "saques"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_saques")
+        .select("*")
+        .order("data", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map((s) => ({ ...s, valor: Number(s.valor) })) as Saque[];
+    },
+  });
+}
+
+export function useCreateSaque() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (s: SaqueInsert) => {
+      const { data, error } = await supabase.from("admin_saques").insert(s).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["crm-admin"] }); },
+  });
+}
+
+export function useDeleteSaque() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("admin_saques").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["crm-admin"] }); },
+  });
+}
+
 /**
  * Saldo de caixa *efetivo* HOJE. Combina:
  *   baseline (admin_fluxo_caixa.saldo_atual, ponto de partida do banco)
@@ -129,7 +205,10 @@ export function useFluxoCaixa() {
         .gte("data", baselineDate);
       const aportesTotal = (aportes ?? []).reduce((s, a) => s + Number(a.valor), 0);
 
-      const saldoEfetivo = baseline + receitasTotal - despesasTotal + aportesTotal;
+      // Saques manuais desde o baseline: somar(+) / subtrair(−) / neutro(0)
+      const { impacto: saquesImpacto, somar: saquesSomar, subtrair: saquesSubtrair } = await fetchSaquesImpacto(baselineDate);
+
+      const saldoEfetivo = baseline + receitasTotal - despesasTotal + aportesTotal + saquesImpacto;
 
       return {
         id: data.id,
@@ -140,7 +219,10 @@ export function useFluxoCaixa() {
         receitas_realizadas: Math.round(receitasTotal * 100) / 100,
         despesas_realizadas: Math.round(despesasTotal * 100) / 100,
         total_aportes: Math.round(aportesTotal * 100) / 100,
-      } as FluxoCaixa & { saldo_baseline: number; receitas_realizadas: number; despesas_realizadas: number; total_aportes: number };
+        saques_somar: Math.round(saquesSomar * 100) / 100,
+        saques_subtrair: Math.round(saquesSubtrair * 100) / 100,
+        saques_impacto: Math.round(saquesImpacto * 100) / 100,
+      } as FluxoCaixa & { saldo_baseline: number; receitas_realizadas: number; despesas_realizadas: number; total_aportes: number; saques_somar: number; saques_subtrair: number; saques_impacto: number };
     },
   });
 }
@@ -187,7 +269,10 @@ export function useRunway() {
       const { data: aportes } = await supabase.from("admin_aportes").select("valor").gte("data", baselineDate);
       const totalAportes = (aportes ?? []).reduce((s, a) => s + Number(a.valor), 0);
 
-      const saldo = baseline + receitasTotal - despesasDesdeBaseline + totalAportes;
+      // Saques manuais (mesma regra do useFluxoCaixa pra runway bater com o saldo)
+      const { impacto: saquesImpacto } = await fetchSaquesImpacto(baselineDate);
+
+      const saldo = baseline + receitasTotal - despesasDesdeBaseline + totalAportes + saquesImpacto;
 
       // Burn medio dos ultimos 3 meses
       const now = new Date();
