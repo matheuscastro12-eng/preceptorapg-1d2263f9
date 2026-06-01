@@ -82,7 +82,7 @@ export function HealthV3() {
         </section>
 
         <section className="crm-card">
-          <CardHead title="Alunos em risco" sub={`${list?.total ?? 0} alunos com score em zona risk/critical`} side={<a className="crm-btn crm-btn-link" href="/admin/crm/health">Ver todos →</a>} />
+          <CardHead title="Alunos em risco" sub={`${list?.total ?? 0} alunos com score em zona risk/critical`} side={<a className="crm-btn crm-btn-link" href="/admin/crm-mkt/health">Ver todos →</a>} />
           {emRisco.length > 0 ? (
             <table className="crm-tbl">
               <thead><tr><th>Aluno</th><th>Score</th><th>Questões 7d</th><th>Dias ativos 14d</th></tr></thead>
@@ -330,9 +330,9 @@ export function AutomationsV3() {
                     <td className="lead-name">{p.trigger_name}</td>
                     <td><span className={`crm-tag crm-tag-${p.automation_type === "email" ? "blue" : p.automation_type === "push" ? "gold" : p.automation_type === "whatsapp" ? "green" : "gray"}`}><span className="crm-tag-dot" />{p.automation_type}</span></td>
                     <td className="num">{p.total_sent ?? 0}</td>
-                    <td className="num">{p.delivery_rate ? `${Math.round(p.delivery_rate * 100)}%` : "—"}</td>
-                    <td className="num">{p.open_rate ? `${Math.round(p.open_rate * 100)}%` : "—"}</td>
-                    <td className="num">{p.click_rate ? `${Math.round(p.click_rate * 100)}%` : "—"}</td>
+                    <td className="num">{p.total_sent > 0 ? `${Math.round((Number(p.delivered) / Number(p.total_sent)) * 100)}%` : "—"}</td>
+                    <td className="num">{p.open_rate_pct != null ? `${Math.round(Number(p.open_rate_pct))}%` : "—"}</td>
+                    <td className="num">{p.click_rate_pct != null ? `${Math.round(Number(p.click_rate_pct))}%` : "—"}</td>
                   </tr>
                 ))}
               </tbody>

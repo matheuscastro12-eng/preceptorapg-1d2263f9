@@ -153,7 +153,7 @@ export default function AdminReceita() {
                 );
               })}
               {(receitas ?? []).length === 0 && (
-                <tr><td colSpan={7} className="py-12 text-center text-gray-500">Nenhuma receita cadastrada</td></tr>
+                <tr><td colSpan={8} className="py-12 text-center text-gray-500">Nenhuma receita cadastrada</td></tr>
               )}
             </tbody>
           </table>
@@ -168,7 +168,7 @@ export default function AdminReceita() {
           {(porPlano ?? []).length > 0 ? (
             <div className="space-y-3">
               {(porPlano ?? []).map((p, i) => {
-                const max = porPlano![0].total;
+                const max = porPlano![0].total || 1;
                 return (
                   <div key={p.plano}>
                     <div className="flex items-center justify-between mb-1">
@@ -176,7 +176,7 @@ export default function AdminReceita() {
                       <span className="text-sm font-bold text-white">R$ {p.total.toFixed(2)}</span>
                     </div>
                     <div className="h-5 bg-gray-800 rounded-lg overflow-hidden">
-                      <div className="h-full rounded-lg" style={{ width: `${(p.total / max) * 100}%`, backgroundColor: PLANO_COLORS[i % PLANO_COLORS.length] }} />
+                      <div className="h-full rounded-lg" style={{ width: `${Math.max(0, (p.total / max) * 100)}%`, backgroundColor: PLANO_COLORS[i % PLANO_COLORS.length] }} />
                     </div>
                   </div>
                 );
@@ -277,9 +277,9 @@ export default function AdminReceita() {
                   rows={2} className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-[#C9A84C] resize-none" />
               </div>
 
-              <button type="submit" disabled={createReceita.isPending}
+              <button type="submit" disabled={createReceita.isPending || updateReceita.isPending}
                 className="w-full py-2.5 rounded-lg text-sm font-semibold bg-[#C9A84C] text-gray-900 hover:bg-yellow-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                {createReceita.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {(createReceita.isPending || updateReceita.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {(createReceita.isPending || updateReceita.isPending) ? "Salvando..." : editingId ? "Salvar Alteracoes" : "Cadastrar Receita"}
               </button>
             </form>

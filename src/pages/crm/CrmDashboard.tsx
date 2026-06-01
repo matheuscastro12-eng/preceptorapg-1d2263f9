@@ -156,7 +156,7 @@ export default function CrmDashboard() {
               <h2 className="text-sm md:text-base font-semibold text-white">Maiores Riscos de Churn</h2>
               <p className="text-xs text-gray-500 mt-0.5">{churnData?.total ?? 0} usuarios em risco</p>
             </div>
-            <Link to="/admin/crm/churn" className="text-xs text-green-400 hover:text-green-300 font-medium">Ver todos &rarr;</Link>
+            <Link to="/admin/crm-mkt/churn" className="text-xs text-green-400 hover:text-green-300 font-medium">Ver todos &rarr;</Link>
           </div>
           <div className="overflow-x-auto -mx-4 md:mx-0">
             <div className="min-w-[500px] px-4 md:px-0">
@@ -171,7 +171,7 @@ export default function CrmDashboard() {
               <h2 className="text-sm md:text-base font-semibold text-white">Automacoes Recentes</h2>
               <p className="text-xs text-gray-500 mt-0.5">{k.automationsToday} hoje</p>
             </div>
-            <Link to="/admin/crm/automations" className="text-xs text-green-400 hover:text-green-300 font-medium">Ver todas &rarr;</Link>
+            <Link to="/admin/crm-mkt/automations" className="text-xs text-green-400 hover:text-green-300 font-medium">Ver todas &rarr;</Link>
           </div>
           <AutomationsLog automations={automationsData?.automations ?? []} />
         </div>

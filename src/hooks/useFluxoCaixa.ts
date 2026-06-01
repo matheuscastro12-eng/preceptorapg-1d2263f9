@@ -253,7 +253,7 @@ export function useRunway() {
         .select("saldo_atual, data_atualizacao")
         .order("data_atualizacao", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       const baseline = Number(fluxo?.saldo_atual ?? 0);
       const baselineDate = (fluxo?.data_atualizacao ?? "").slice(0, 10) || "2026-01-01";
 
@@ -398,14 +398,28 @@ export function useProjecao90Dias() {
   return useQuery({
     queryKey: ["crm-admin", "projecao-90d"],
     queryFn: async () => {
-      // Saldo atual
+      // Saldo EFETIVO de partida (mesmo número do card "Saldo Atual"):
+      // baseline + receitas − despesas + aportes + saques desde o baseline.
       const { data: fluxo } = await supabase
         .from("admin_fluxo_caixa")
-        .select("saldo_atual")
+        .select("saldo_atual, data_atualizacao")
         .order("data_atualizacao", { ascending: false })
         .limit(1)
-        .single();
-      let saldo = Number(fluxo?.saldo_atual ?? 0);
+        .maybeSingle();
+      const baseline = Number(fluxo?.saldo_atual ?? 0);
+      const baselineDate = (fluxo?.data_atualizacao ?? "").slice(0, 10) || "2026-01-01";
+
+      const [recBase, despBase, aportesBase, saquesImp] = await Promise.all([
+        supabase.from("admin_receitas").select("valor").gte("data_inicio", baselineDate).eq("status", "ativo"),
+        supabase.from("admin_despesas").select("valor").gte("data", baselineDate),
+        supabase.from("admin_aportes").select("valor").gte("data", baselineDate),
+        fetchSaquesImpacto(baselineDate),
+      ]);
+      let saldo = baseline
+        + (recBase.data ?? []).reduce((s, r) => s + Number(r.valor), 0)
+        - (despBase.data ?? []).reduce((s, d) => s + Number(d.valor), 0)
+        + (aportesBase.data ?? []).reduce((s, a) => s + Number(a.valor), 0)
+        + saquesImp.impacto;
 
       // Entradas previstas (receitas ativas com renovacao)
       const { data: receitas } = await supabase

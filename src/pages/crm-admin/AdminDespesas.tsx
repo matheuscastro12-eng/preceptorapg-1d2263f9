@@ -282,9 +282,9 @@ export default function AdminDespesas() {
                 <textarea value={form.observacoes ?? ""} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} rows={2}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-[#C9A84C] resize-none" />
               </div>
-              <button type="submit" disabled={createDespesa.isPending}
+              <button type="submit" disabled={createDespesa.isPending || updateDespesa.isPending}
                 className="w-full py-2.5 rounded-lg text-sm font-semibold bg-[#C9A84C] text-gray-900 hover:bg-yellow-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                {createDespesa.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {(createDespesa.isPending || updateDespesa.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {(createDespesa.isPending || updateDespesa.isPending) ? "Salvando..." : editingId ? "Salvar Alteracoes" : "Cadastrar Despesa"}
               </button>
             </form>

@@ -200,7 +200,7 @@ export default function DashboardV3() {
                 <div className="crm-card-title"><LayoutGrid size={14} strokeWidth={1.8} /> Saúde dos alunos</div>
                 <div className="crm-card-sub">Score 0–100 · {totalHealth} alunos com score</div>
               </div>
-              <div className="crm-card-side"><a className="crm-btn crm-btn-link" href="/admin/crm/health">Ver mapa →</a></div>
+              <div className="crm-card-side"><a className="crm-btn crm-btn-link" href="/admin/crm-mkt/health">Ver mapa →</a></div>
             </div>
             <div className="crm-card-pad">
               <div ref={heatmapRef} className="crm-health-grid" />
@@ -222,7 +222,7 @@ export default function DashboardV3() {
                 <div className="crm-card-title"><AlertTriangle size={14} strokeWidth={1.8} /> Maiores riscos de churn</div>
                 <div className="crm-card-sub">{risks?.total ?? 0} predições ativas · ordenadas por probabilidade</div>
               </div>
-              <div className="crm-card-side"><a className="crm-btn crm-btn-link" href="/admin/crm/churn">Ver todos →</a></div>
+              <div className="crm-card-side"><a className="crm-btn crm-btn-link" href="/admin/crm-mkt/churn">Ver todos →</a></div>
             </div>
             <table className="crm-tbl">
               <thead>
@@ -269,7 +269,7 @@ export default function DashboardV3() {
                 <div className="crm-card-title"><Zap size={14} strokeWidth={1.8} /> Automações recentes</div>
                 <div className="crm-card-sub">{disparosHoje} disparos hoje · {(automations?.automations ?? []).length} no log</div>
               </div>
-              <div className="crm-card-side"><a className="crm-btn crm-btn-link" href="/admin/crm/automations">Logs →</a></div>
+              <div className="crm-card-side"><a className="crm-btn crm-btn-link" href="/admin/crm-mkt/automations">Logs →</a></div>
             </div>
             <div className="crm-automation-list">
               {(automations?.automations ?? []).map((a: any) => {

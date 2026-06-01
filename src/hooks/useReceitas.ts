@@ -104,7 +104,11 @@ export function useReceitaResumo(periodo: Periodo = "mes") {
       const mrrTotal = pagantes.reduce((s: number, sub: any) => s + (PLAN_PRICES[sub.plan_type] ?? 0), 0);
       const novas = pagantes.filter((s: any) => s.created_at >= `${since}T00:00:00.000Z`).length;
 
-      const cancelamentos = allSubs.filter((s: any) => s.status === "inactive").length;
+      // Cancelamentos DENTRO do período selecionado (não o total histórico).
+      // Usa updated_at (quando virou inactive) e respeita o período `since`.
+      const cancelamentos = allSubs.filter((s: any) =>
+        s.status === "inactive" && (s.updated_at ?? s.created_at) >= `${since}T00:00:00.000Z`
+      ).length;
 
       return {
         mrrTotal: Math.round(mrrTotal * 100) / 100,

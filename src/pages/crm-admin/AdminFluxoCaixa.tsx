@@ -62,8 +62,9 @@ export default function AdminFluxoCaixa() {
   const totalEntradas = (entradas ?? []).reduce((s, e) => s + e.valor, 0);
   const totalSaidas = (saidas ?? []).reduce((s, e) => s + e.valor, 0);
 
-  // Find min saldo in projection for alert
-  const minProjecao = Math.min(...(projecao ?? []).map((p) => p.saldo));
+  // Find min saldo in projection for alert (guard: Math.min() de array vazio = Infinity)
+  const projVals = (projecao ?? []).map((p) => p.saldo);
+  const minProjecao = projVals.length > 0 ? Math.min(...projVals) : 0;
 
   return (
   <>
