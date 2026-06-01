@@ -144,8 +144,14 @@ export function CrmAuthProvider({ children }: { children: React.ReactNode }) {
           const cached = localStorage.getItem(SESSION_KEY);
           if (cached) {
             const parsed = JSON.parse(cached);
-            if (parsed.id && parsed.username && parsed.acesso_marketing !== undefined) {
-              setCrmUser(parsed as CrmUser);
+            if (parsed.id && parsed.username) {
+              // Garante ambos os flags (sessões antigas podiam não ter
+              // acesso_admin → admin caía em "Acesso Negado" offline).
+              setCrmUser({
+                ...parsed,
+                acesso_marketing: parsed.acesso_marketing ?? false,
+                acesso_admin: parsed.acesso_admin ?? false,
+              } as CrmUser);
             }
           }
         } catch {}
