@@ -2,7 +2,7 @@ import CrmShellV3, { Kpi, PageHero, CardHead } from "@/components/crm/v3/CrmShel
 import { Plus, X, Loader2 } from "lucide-react";
 import { useMembros } from "@/hooks/useTime";
 import { useOneOnOnes, useOneOnOneAlerts, useCreateOneOnOne } from "@/hooks/useOneOnOne";
-import { useVagas, useContratacaoMetricas, useCandidatosByVaga } from "@/hooks/useContratacoes";
+import { useVagas, useContratacaoMetricas, useCandidatosByVaga, useUpdateCandidatoEtapa } from "@/hooks/useContratacoes";
 import { useFolhaConsolidada } from "@/hooks/useSalarios";
 import { useState } from "react";
 
@@ -375,18 +375,20 @@ function OneOnOneModal({ membros, onClose }: { membros: any[]; onClose: () => vo
 function HiringPipelineSection({ vagas, metricas }: { vagas: any[]; metricas: any }) {
   const [selectedVaga, setSelectedVaga] = useState<string | null>(vagas[0]?.id ?? null);
   const { data: candidatos } = useCandidatosByVaga(selectedVaga ?? undefined);
+  const updateEtapa = useUpdateCandidatoEtapa();
 
-  // Group candidatos by etapa
-  const stages = ["sourcing", "triagem", "tech", "cultural", "oferta"];
+  // Etapas REAIS do enum candidato_etapa do banco (antes usava
+  // sourcing/tech/cultural que não existiam → tudo caía no balde errado).
+  const stages = ["triagem", "rh", "tecnica", "case", "oferta", "aprovado", "recusado"];
   const stageLabels: Record<string, string> = {
-    sourcing: "Sourcing", triagem: "Triagem", tech: "Tech / Case", cultural: "Cultural", oferta: "Oferta",
+    triagem: "Triagem", rh: "RH", tecnica: "Técnica", case: "Case", oferta: "Oferta", aprovado: "Aprovado", recusado: "Recusado",
   };
   const byStage: Record<string, any[]> = {};
   stages.forEach((s) => { byStage[s] = []; });
   (candidatos ?? []).forEach((c: any) => {
-    const key = (c.etapa || "sourcing").toLowerCase();
+    const key = (c.etapa || "triagem").toLowerCase();
     if (byStage[key]) byStage[key].push(c);
-    else (byStage.sourcing ??= []).push(c);
+    else (byStage.triagem ??= []).push(c);
   });
 
   return (
@@ -412,9 +414,9 @@ function HiringPipelineSection({ vagas, metricas }: { vagas: any[]; metricas: an
         </div>
       ) : (
         <div className="crm-mobile-scroll-x" style={{
-          display: "grid", gridTemplateColumns: "repeat(5, 1fr)",
+          display: "grid", gridTemplateColumns: "repeat(7, minmax(150px, 1fr))",
           gap: 1, background: "var(--crm-line)",
-          borderRadius: "var(--crm-radius)", overflow: "hidden",
+          borderRadius: "var(--crm-radius)", overflow: "auto",
           margin: "4px 18px 18px",
         }}>
           {stages.map((s) => {
@@ -442,7 +444,6 @@ function HiringPipelineSection({ vagas, metricas }: { vagas: any[]; metricas: an
                     background: "var(--crm-surface)",
                     border: "1px solid var(--crm-line)",
                     borderRadius: 6, padding: "10px 12px", marginBottom: 8,
-                    cursor: "pointer",
                   }}>
                     <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--crm-ink)" }}>{c.nome}</div>
                     {c.fonte && <div className="crm-mono" style={{ fontSize: 11, color: "var(--crm-ink-4)", marginTop: 2 }}>{c.fonte}</div>}
@@ -451,6 +452,20 @@ function HiringPipelineSection({ vagas, metricas }: { vagas: any[]; metricas: an
                         <span className="crm-mono" style={{ fontSize: 10, padding: "2px 6px", borderRadius: 3, background: "var(--crm-surface-2)", color: "var(--crm-ink-3)" }}>fit {c.fit_cultural}/10</span>
                       </div>
                     )}
+                    {/* Mover candidato de etapa */}
+                    <select
+                      value={c.etapa}
+                      onChange={(e) => updateEtapa.mutate({ id: c.id, etapa: e.target.value })}
+                      disabled={updateEtapa.isPending}
+                      style={{
+                        marginTop: 8, width: "100%", fontSize: 11, padding: "4px 6px",
+                        borderRadius: 4, border: "1px solid var(--crm-line)",
+                        background: "var(--crm-surface-2)", color: "var(--crm-ink-3)", cursor: "pointer",
+                      }}
+                      title="Mover de etapa"
+                    >
+                      {stages.map((s) => <option key={s} value={s}>{stageLabels[s]}</option>)}
+                    </select>
                   </div>
                 ))}
               </div>

@@ -47,14 +47,25 @@ export function useOneOnOneAlerts() {
   return useQuery({
     queryKey: ["crm-admin", "oo-alerts"],
     queryFn: async () => {
-      const { data: membros } = await supabase.from("admin_membros").select("id, nome").eq("status", "ativo");
+      const { data: membros } = await supabase.from("admin_membros").select("id, nome, cargo").eq("status", "ativo");
       const { data: oos } = await supabase.from("admin_one_on_ones").select("membro_id, data").order("data", { ascending: false });
       const lastOO: Record<string, string> = {};
       (oos ?? []).forEach((o) => { if (!lastOO[o.membro_id]) lastOO[o.membro_id] = o.data; });
       const cutoff = new Date(Date.now() - 14 * 86400000).toISOString().split("T")[0];
-      return (membros ?? []).filter((m) => !lastOO[m.id] || lastOO[m.id] < cutoff).map((m) => ({
-        id: m.id, nome: m.nome, ultimo: lastOO[m.id] ?? null,
-      }));
+      // Shape alinhado com a UI (AdminTimeV3 / OneOnOneV3): membro_id, nome,
+      // cargo, ultimo, dias_desde_ultimo.
+      return (membros ?? []).filter((m) => !lastOO[m.id] || lastOO[m.id] < cutoff).map((m) => {
+        const ultimo = lastOO[m.id] ?? null;
+        const dias = ultimo ? Math.floor((Date.now() - new Date(ultimo).getTime()) / 86400000) : null;
+        return {
+          id: m.id,
+          membro_id: m.id,
+          nome: m.nome,
+          cargo: (m as { cargo?: string }).cargo ?? null,
+          ultimo,
+          dias_desde_ultimo: dias,
+        };
+      });
     },
   });
 }

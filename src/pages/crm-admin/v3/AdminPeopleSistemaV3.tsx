@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import CrmShellV3, { Kpi, PageHero, PeriodBar, CardHead } from "@/components/crm/v3/CrmShellV3";
-import { Plus, Calendar, Edit3, Trophy, Briefcase, Settings, Activity, CheckCircle2 } from "lucide-react";
+import { Plus, Calendar, Edit3, Trophy, Briefcase, Settings, Activity, CheckCircle2, X, Loader2 } from "lucide-react";
 import { useMembros } from "@/hooks/useTime";
-import { useOneOnOnes, useOneOnOneAlerts } from "@/hooks/useOneOnOne";
+import { useOneOnOnes, useOneOnOneAlerts, useCreateOneOnOne } from "@/hooks/useOneOnOne";
 import { usePDIs, usePDIStats } from "@/hooks/usePDI";
 import { useTrilhas, usePosicoes, usePromocoesTrimestrais } from "@/hooks/useCarreira";
-import { useVagas, useContratacaoMetricas } from "@/hooks/useContratacoes";
+import { useVagas, useContratacaoMetricas, useCreateVaga } from "@/hooks/useContratacoes";
 import { useFolhaConsolidada, useProjecaoFolha } from "@/hooks/useSalarios";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,13 +20,28 @@ export function OneOnOneV3() {
   const { data: oneOnes } = useOneOnOnes();
   const { data: alerts } = useOneOnOneAlerts();
   const { data: membros } = useMembros();
+  const createOO = useCreateOneOnOne();
+
+  const [showAgendar, setShowAgendar] = useState(false);
+  const [ooForm, setOoForm] = useState({ membro_id: "", proxima_data: "" });
 
   const ativos = (membros ?? []).filter((m: any) => m.status === "ativo");
   const proximos = (oneOnes ?? []).filter((o: any) => o.proxima_data && new Date(o.proxima_data) >= new Date()).sort((a: any, b: any) => a.proxima_data.localeCompare(b.proxima_data));
 
+  const handleAgendar = async () => {
+    if (!ooForm.membro_id || !ooForm.proxima_data) return;
+    await createOO.mutateAsync({
+      membro_id: ooForm.membro_id,
+      data: new Date().toISOString().slice(0, 10),
+      proxima_data: ooForm.proxima_data,
+    });
+    setShowAgendar(false);
+    setOoForm({ membro_id: "", proxima_data: "" });
+  };
+
   return (
     <CrmShellV3 mode="admin" crumbs={[{ label: "CRM" }, { label: "Admin" }, { label: "1:1s" }]}
-      topbarTools={<><button className="crm-btn crm-btn-primary"><Plus size={13} /> Agendar 1:1</button></>}
+      topbarTools={<><button className="crm-btn crm-btn-primary" onClick={() => setShowAgendar(true)}><Plus size={13} /> Agendar 1:1</button></>}
     >
       <main className="crm-page">
         <PageHero
@@ -92,6 +107,20 @@ export function OneOnOneV3() {
               </tbody>
             </table>
           </section>
+        )}
+
+        {showAgendar && (
+          <PeopleModal title="Agendar 1:1" onClose={() => setShowAgendar(false)}
+            onSave={handleAgendar} saving={createOO.isPending}
+            canSave={!!ooForm.membro_id && !!ooForm.proxima_data}>
+            <label className="pm-label">Membro *</label>
+            <select className="pm-input" value={ooForm.membro_id} onChange={(e) => setOoForm({ ...ooForm, membro_id: e.target.value })}>
+              <option value="">Selecione…</option>
+              {ativos.map((m: any) => <option key={m.id} value={m.id}>{m.nome}{m.cargo ? ` · ${m.cargo}` : ""}</option>)}
+            </select>
+            <label className="pm-label">Data do próximo 1:1 *</label>
+            <input type="date" className="pm-input" value={ooForm.proxima_data} onChange={(e) => setOoForm({ ...ooForm, proxima_data: e.target.value })} />
+          </PeopleModal>
         )}
       </main>
     </CrmShellV3>
@@ -227,13 +256,34 @@ export function CarreiraV3() {
 export function ContratacoesV3() {
   const { data: vagas } = useVagas();
   const { data: metricas } = useContratacaoMetricas();
+  const createVaga = useCreateVaga();
+
+  const [showVaga, setShowVaga] = useState(false);
+  const [vagaForm, setVagaForm] = useState({
+    titulo: "", area: "tech", vinculo_desejado: "clt", urgencia: "media", faixa_min: "", faixa_max: "",
+  });
 
   const abertas = (vagas ?? []).filter((v: any) => v.status !== "encerrada");
   const diasAberta = (data: string) => Math.floor((Date.now() - new Date(data).getTime()) / 86400000);
 
+  const handleCriarVaga = async () => {
+    if (!vagaForm.titulo.trim()) return;
+    await createVaga.mutateAsync({
+      titulo: vagaForm.titulo.trim(),
+      area: vagaForm.area,
+      vinculo_desejado: vagaForm.vinculo_desejado,
+      urgencia: vagaForm.urgencia,
+      faixa_min: vagaForm.faixa_min ? Number(vagaForm.faixa_min) : null,
+      faixa_max: vagaForm.faixa_max ? Number(vagaForm.faixa_max) : null,
+      status: "divulgada",
+    });
+    setShowVaga(false);
+    setVagaForm({ titulo: "", area: "tech", vinculo_desejado: "clt", urgencia: "media", faixa_min: "", faixa_max: "" });
+  };
+
   return (
     <CrmShellV3 mode="admin" crumbs={[{ label: "CRM" }, { label: "Admin" }, { label: "Contratações" }]}
-      topbarTools={<><button className="crm-btn crm-btn-primary"><Plus size={13} /> Nova vaga</button></>}
+      topbarTools={<><button className="crm-btn crm-btn-primary" onClick={() => setShowVaga(true)}><Plus size={13} /> Nova vaga</button></>}
     >
       <main className="crm-page">
         <PageHero
@@ -277,6 +327,42 @@ export function ContratacoesV3() {
             </div>
           )}
         </section>
+
+        {showVaga && (
+          <PeopleModal title="Nova vaga" onClose={() => setShowVaga(false)}
+            onSave={handleCriarVaga} saving={createVaga.isPending} canSave={!!vagaForm.titulo.trim()}>
+            <label className="pm-label">Título *</label>
+            <input className="pm-input" value={vagaForm.titulo} onChange={(e) => setVagaForm({ ...vagaForm, titulo: e.target.value })} placeholder="Ex.: Desenvolvedor(a) Full-stack" autoFocus />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <label className="pm-label">Área</label>
+                <select className="pm-input" value={vagaForm.area} onChange={(e) => setVagaForm({ ...vagaForm, area: e.target.value })}>
+                  {["tech", "marketing", "ops", "comercial"].map((a) => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="pm-label">Vínculo</label>
+                <select className="pm-input" value={vagaForm.vinculo_desejado} onChange={(e) => setVagaForm({ ...vagaForm, vinculo_desejado: e.target.value })}>
+                  {["socio", "clt", "pj", "estagio", "voluntario"].map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <label className="pm-label">Faixa mín. (R$)</label>
+                <input type="number" className="pm-input" value={vagaForm.faixa_min} onChange={(e) => setVagaForm({ ...vagaForm, faixa_min: e.target.value })} placeholder="0" />
+              </div>
+              <div>
+                <label className="pm-label">Faixa máx. (R$)</label>
+                <input type="number" className="pm-input" value={vagaForm.faixa_max} onChange={(e) => setVagaForm({ ...vagaForm, faixa_max: e.target.value })} placeholder="0" />
+              </div>
+            </div>
+            <label className="pm-label">Urgência</label>
+            <select className="pm-input" value={vagaForm.urgencia} onChange={(e) => setVagaForm({ ...vagaForm, urgencia: e.target.value })}>
+              {["alta", "media", "baixa"].map((u) => <option key={u} value={u}>{u}</option>)}
+            </select>
+          </PeopleModal>
+        )}
       </main>
     </CrmShellV3>
   );
@@ -542,5 +628,36 @@ export function WebhooksV3() {
         </section>
       </main>
     </CrmShellV3>
+  );
+}
+
+/* =========================================================
+   Modal reutilizável (People) — overlay leve no tema v3
+   ========================================================= */
+function PeopleModal({ title, onClose, onSave, saving, canSave, children }: {
+  title: string;
+  onClose: () => void;
+  onSave: () => void;
+  saving?: boolean;
+  canSave?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(0,0,0,0.35)", backdropFilter: "blur(2px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <style>{`.pm-label{display:block;font-size:11px;font-weight:600;color:var(--crm-ink-3);margin:12px 0 4px}.pm-input{width:100%;box-sizing:border-box;padding:8px 10px;font-size:13px;border:1px solid var(--crm-line);border-radius:6px;background:var(--crm-surface);color:var(--crm-ink)}.pm-input:focus{outline:none;border-color:#0F4128}`}</style>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--crm-surface)", border: "1px solid var(--crm-line)", borderRadius: 14, width: "100%", maxWidth: 440, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px -20px rgba(0,0,0,0.4)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid var(--crm-line)" }}>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--crm-ink)" }}>{title}</h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--crm-ink-4)", display: "flex" }}><X size={16} /></button>
+        </div>
+        <div style={{ padding: "4px 18px 16px" }}>{children}</div>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "14px 18px", borderTop: "1px solid var(--crm-line)" }}>
+          <button className="crm-btn crm-btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="crm-btn crm-btn-primary" onClick={onSave} disabled={saving || canSave === false}>
+            {saving ? <Loader2 size={13} className="animate-spin" /> : null} Salvar
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
