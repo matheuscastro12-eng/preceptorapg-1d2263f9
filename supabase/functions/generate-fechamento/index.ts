@@ -304,43 +304,12 @@ Os sintomas cardinais são:
 - Use cabeçalhos de 2/3/4 cerquilhas para seções principais, subseções e categorias.
 - Seja EXTENSO e DETALHADO.
 
-## DIAGRAMAS MERMAID (deixe o resumo mais ilustrável)
-Sempre que houver um PROCESSO, CASCATA, ALGORITMO, CLASSIFICAÇÃO ou LINHA DO TEMPO,
-inclua um diagrama Mermaid logo após explicar o conceito em texto. Isso torna o
-resumo muito mais palatável. Regras:
-
-- Use bloco de código com a linguagem \`mermaid\` (três crases + a palavra mermaid).
-- Tipos que você DEVE usar quando couber:
-  - **Cascata fisiopatológica / mecanismo** → \`flowchart TD\` (cima→baixo).
-  - **Algoritmo diagnóstico / conduta** → \`flowchart TD\` com decisões em losango \`{...}\`.
-  - **Classificação / taxonomia** → \`flowchart LR\` ou \`mindmap\`.
-  - **Evolução temporal da doença / história natural** → \`timeline\`.
-- Mantenha cada diagrama ENXUTO: 5 a 12 nós. Diagramas gigantes não renderizam bem.
-- Texto dos nós SEM acentos problemáticos dentro de \`[]\`; prefira frases curtas.
-  Use aspas se o rótulo tiver parêntese: \`A["IC (insuficiencia cardiaca)"]\`.
-- NÃO invente relações causais — o diagrama deve refletir exatamente o que você
-  escreveu no texto. O diagrama complementa, não substitui a explicação escrita.
-- 1 a 3 diagramas por resumo é o ideal. Não force diagrama onde não agrega.
-
-### Exemplo de cascata fisiopatológica
-\`\`\`mermaid
-flowchart TD
-  A["Lesao endotelial"] --> B["Ativacao plaquetaria"]
-  B --> C["Cascata de coagulacao"]
-  C --> D["Trombo intraluminal"]
-  D --> E["Isquemia tecidual"]
-  E --> F["Necrose / infarto"]
-\`\`\`
-
-### Exemplo de algoritmo diagnóstico
-\`\`\`mermaid
-flowchart TD
-  S["Dor toracica aguda"] --> Q{"ECG com supra de ST?"}
-  Q -->|Sim| IAM["IAMCSST - reperfusao imediata"]
-  Q -->|Nao| T{"Troponina elevada?"}
-  T -->|Sim| NSTEMI["IAMSSST"]
-  T -->|Nao| AI["Angina instavel / outras causas"]
-\`\`\`
+## FORMATO — APENAS TEXTO (SEM DIAGRAMAS)
+O resumo deve ser 100% TEXTUAL. NAO gere diagramas Mermaid, fluxogramas, mindmaps,
+timelines nem blocos de codigo \`mermaid\`. Processos, cascatas, algoritmos,
+classificacoes e linhas do tempo devem ser explicados em TEXTO CORRIDO e/ou listas
+(ex.: descreva a sequencia "passo 1 -> passo 2 -> passo 3" em texto ou bullets
+numerados). Em hipotese alguma abra um bloco \`\`\`mermaid.
 
 ## Rigor Científico
 - Cite números quando disponíveis (sensibilidade, especificidade, valores de referência)
@@ -827,10 +796,9 @@ O estudante pediu a versao REDUZIDA/ENXUTA. Isto TEM PRECEDENCIA sobre qualquer 
 1. Densidade > volume: mantenha a estrutura/secoes pedidas, mas escreva cada uma de forma CONCISA (1-2 paragrafos curtos OU uma lista enxuta). Corte redundancia e desenvolvimento exaustivo.
 2. So o essencial (o que cai em prova / muda conduta): definicoes-chave, mecanismo central em 1-2 frases, achados cardinais, criterios diagnosticos, condutas de 1a linha e principais armadilhas. Omita minucias moleculares e variantes raras.
 3. Listas curtas: prefira bullets diretos (termo em **negrito** + 1 linha), no maximo ~4-6 itens por lista.
-4. Diagramas Mermaid: no maximo 1, e so se sintetizar um algoritmo/cascata central. Pode nao ter nenhum.
-5. Tamanho-alvo: cerca de 1/3 da versao completa. Na duvida entre incluir ou cortar, CORTE.
-6. NAO sacrifique exatidao nem as REGRAS DE OURO: siglas por extenso na 1a vez de cada secao, terminologia medica correta, zero numeros inventados. Reduzir e sobre TAMANHO, nao sobre rigor.
-7. Os OBJETIVOS ESPECIFICOS do estudante (se houver) continuam sendo respondidos — de forma direta e enxuta.`;
+4. Tamanho-alvo: cerca de 1/3 da versao completa. Na duvida entre incluir ou cortar, CORTE.
+5. NAO sacrifique exatidao nem as REGRAS DE OURO: siglas por extenso na 1a vez de cada secao, terminologia medica correta, zero numeros inventados. Reduzir e sobre TAMANHO, nao sobre rigor.
+6. Os OBJETIVOS ESPECIFICOS do estudante (se houver) continuam sendo respondidos — de forma direta e enxuta.`;
     }
 
     // ────────────────────────────────────────────────────────────

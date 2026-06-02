@@ -1,21 +1,14 @@
-import React, { lazy, Suspense } from 'react';
+import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-// mermaid é pesado (~500KB) — só carrega quando há diagrama no conteúdo
-const MermaidDiagram = lazy(() => import('@/components/MermaidDiagram'));
-
-/** Detecta bloco ```mermaid``` e renderiza como SVG; senão, code inline. */
+/** Diagramas desativados — os resumos sao 100% textuais. Blocos ```mermaid```
+ *  (de resumos antigos) sao ocultados; o texto ao redor ja explica o conceito. */
 function renderCodeNode(props: any, inlineClass: string): React.ReactNode {
   const { className, children } = props;
   const lang = /language-(\w+)/.exec(className || '')?.[1];
   if (lang === 'mermaid') {
-    const src = String(Array.isArray(children) ? children.join('') : children ?? '');
-    return (
-      <Suspense fallback={<div className="my-5 rounded-lg border border-slate-200 bg-slate-50 py-10 text-center text-sm text-slate-400">Carregando diagrama…</div>}>
-        <MermaidDiagram code={src} />
-      </Suspense>
-    );
+    return null;
   }
   return <code className={inlineClass}>{children}</code>;
 }
