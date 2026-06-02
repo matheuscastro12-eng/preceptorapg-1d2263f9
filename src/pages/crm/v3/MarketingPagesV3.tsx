@@ -1,7 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, type CSSProperties } from "react";
 import CrmShellV3, { Kpi, PageHero, PeriodBar, CardHead } from "@/components/crm/v3/CrmShellV3";
 import {
   Plus, Download, Send, Activity, Edit3, Eye, Gift, UserX, Loader2,
+  Sparkles, RefreshCw, ChevronDown, Mail,
 } from "lucide-react";
 import {
   useDashboardKpis, useHealthDistribution, useHealthScoresList,
@@ -1346,68 +1347,438 @@ export function UsersV3() {
 }
 
 /* =========================================================
-   SUPORTE — dados reais via crm_tickets se existir
+   SUPORTE — dados reais do widget de suporte ao aluno.
+   Lê feedbacks, NPS, CSAT e o histórico completo de conversas
+   + mensagens (support_conversations / support_messages),
+   inclusive as recebidas antes desta aba ser ativada.
+   Admin enxerga tudo via RLS has_role(admin) — migration
+   20260411020000_admin_can_view_support_data.sql
    ========================================================= */
-function useSupportTickets() {
+type SupFeedback = { id: string; user_id: string; category: string; title: string | null; content: string; page_url: string | null; status: string; created_at: string };
+type SupNps = { id: string; user_id: string; score: number; category: "promoter" | "passive" | "detractor"; comment: string | null; created_at: string };
+type SupCsat = { id: string; user_id: string; conversation_id: string | null; rating: number; comment: string | null; resolved: boolean | null; created_at: string };
+type SupConversation = { id: string; user_id: string; subject: string | null; status: string; created_at: string; updated_at: string; closed_at: string | null };
+type SupMessage = { id: string; conversation_id: string; user_id: string; role: string; content: string; created_at: string };
+type SupProfile = { email?: string; full_name?: string };
+
+const SUP_PERIODS: { label: string; days: number | null }[] = [
+  { label: "7 dias", days: 7 },
+  { label: "30 dias", days: 30 },
+  { label: "90 dias", days: 90 },
+  { label: "Tudo", days: null },
+];
+
+const FB_CATEGORY_LABEL: Record<string, string> = {
+  general: "Geral", bug: "Bug", improvement: "Melhoria", feature_request: "Nova feature",
+  ui_ux: "UI/UX", content: "Conteúdo", performance: "Performance", other: "Outro",
+};
+const FB_CATEGORY_TAG: Record<string, string> = {
+  bug: "crm-tag-red", improvement: "crm-tag-blue", feature_request: "crm-tag-gold",
+  ui_ux: "crm-tag-warn", content: "crm-tag-green", performance: "crm-tag-warn",
+  general: "crm-tag-gray", other: "crm-tag-gray",
+};
+
+// Estilos reaproveitados (tokens do design system v3)
+const supEyebrow: CSSProperties = { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--crm-gold-deep)", marginBottom: 8 };
+const supItemCard: CSSProperties = { border: "1px solid var(--crm-line)", borderRadius: "var(--crm-radius-sm)", padding: "10px 12px", background: "var(--crm-surface-2)" };
+const supThemeCard: CSSProperties = { border: "1px solid var(--crm-line)", borderRadius: "var(--crm-radius-sm)", padding: 12, background: "var(--crm-surface-2)" };
+const supLoading: CSSProperties = { padding: 40, textAlign: "center" };
+const supEmpty: CSSProperties = { padding: 32, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 };
+const supQuote: CSSProperties = { fontSize: 12, color: "var(--crm-ink-3)", fontStyle: "italic", lineHeight: 1.5, margin: 0 };
+const supErr: CSSProperties = { marginBottom: 12, padding: "9px 11px", background: "var(--crm-neg-soft)", border: "1px solid var(--crm-neg)", borderRadius: "var(--crm-radius-sm)", fontSize: 12, color: "var(--crm-neg)" };
+const supList: CSSProperties = { margin: 0, paddingLeft: 16, display: "grid", gap: 4, fontSize: 12.5, color: "var(--crm-ink-2)", lineHeight: 1.5 };
+const supConvBtn: CSSProperties = { width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" };
+const supSelect: CSSProperties = { fontSize: 12, background: "var(--crm-surface)", border: "1px solid var(--crm-line-strong)", borderRadius: "var(--crm-radius-sm)", padding: "5px 8px", color: "var(--crm-ink-2)" };
+
+function useSupportData(periodDays: number | null) {
   return useQuery({
-    queryKey: ["crm", "support-tickets"],
+    queryKey: ["crm", "support-data", periodDays],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("crm_tickets" as any)
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (error) return [];
-      return (data ?? []) as any[];
+      const since = periodDays ? new Date(Date.now() - periodDays * 86400000).toISOString() : null;
+      const sel = (table: string, cols: string, lim: number) => {
+        let q: any = (supabase.from(table as any) as any).select(cols);
+        if (since) q = q.gte("created_at", since);
+        return q.order("created_at", { ascending: false }).limit(lim);
+      };
+
+      const [fbRes, npsRes, csatRes, convRes] = await Promise.all([
+        sel("support_feedback", "id, user_id, category, title, content, page_url, status, created_at", 300),
+        sel("nps_responses", "id, user_id, score, category, comment, created_at", 500),
+        sel("csat_responses", "id, user_id, conversation_id, rating, comment, resolved, created_at", 500),
+        sel("support_conversations", "id, user_id, subject, status, created_at, updated_at, closed_at", 200),
+      ]);
+
+      const feedbacks = (fbRes.data ?? []) as SupFeedback[];
+      const nps = (npsRes.data ?? []) as SupNps[];
+      const csat = (csatRes.data ?? []) as SupCsat[];
+      const conversations = (convRes.data ?? []) as SupConversation[];
+
+      // Mensagens das conversas do período (histórico completo do chat de suporte)
+      let messages: SupMessage[] = [];
+      const convIds = conversations.map((c) => c.id);
+      if (convIds.length > 0) {
+        const { data: msgData } = await (supabase.from("support_messages" as any) as any)
+          .select("id, conversation_id, user_id, role, content, created_at")
+          .in("conversation_id", convIds)
+          .order("created_at", { ascending: true })
+          .limit(3000);
+        messages = (msgData ?? []) as SupMessage[];
+      }
+
+      // Resolve identidade (profiles) de todos os user_ids envolvidos
+      const userIds = Array.from(new Set([
+        ...feedbacks.map((f) => f.user_id),
+        ...conversations.map((c) => c.user_id),
+        ...nps.map((n) => n.user_id),
+        ...csat.map((c) => c.user_id),
+      ].filter(Boolean)));
+      const profMap: Record<string, SupProfile> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, email, full_name")
+          .in("user_id", userIds);
+        (profiles ?? []).forEach((p: any) => { profMap[p.user_id] = { email: p.email, full_name: p.full_name }; });
+      }
+
+      const messagesByConv: Record<string, SupMessage[]> = {};
+      for (const m of messages) {
+        if (!messagesByConv[m.conversation_id]) messagesByConv[m.conversation_id] = [];
+        messagesByConv[m.conversation_id].push(m);
+      }
+
+      return { feedbacks, nps, csat, conversations, messagesByConv, profMap };
     },
+    refetchInterval: 120_000,
   });
 }
 
 export function SuporteV3() {
-  const { data: tickets } = useSupportTickets();
-  const lista = tickets ?? [];
-  const abertos = lista.filter((t: any) => t.status !== "closed" && t.status !== "resolved");
+  const [period, setPeriod] = useState<number | null>(null); // null = Tudo → mostra o histórico completo por padrão
+  const { data, isLoading } = useSupportData(period);
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const [summary, setSummary] = useState<any | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+
+  const feedbacks = data?.feedbacks ?? [];
+  const nps = data?.nps ?? [];
+  const csat = data?.csat ?? [];
+  const conversations = data?.conversations ?? [];
+  const messagesByConv = data?.messagesByConv ?? {};
+  const profMap = data?.profMap ?? {};
+
+  const who = (uid: string) => profMap[uid]?.full_name || profMap[uid]?.email || "Aluno";
+  const whoEmail = (uid: string) => profMap[uid]?.email || "";
+
+  const npsMetrics = useMemo(() => {
+    const total = nps.length;
+    if (!total) return { score: 0, promoters: 0, passives: 0, detractors: 0, total: 0 };
+    const promoters = nps.filter((n) => n.category === "promoter").length;
+    const passives = nps.filter((n) => n.category === "passive").length;
+    const detractors = nps.filter((n) => n.category === "detractor").length;
+    return { score: Math.round(((promoters - detractors) / total) * 100), promoters, passives, detractors, total };
+  }, [nps]);
+
+  const csatMetrics = useMemo(() => {
+    const total = csat.length;
+    if (!total) return { avg: 0, satisfied: 0, resolved: 0, total: 0 };
+    const avg = csat.reduce((s, c) => s + c.rating, 0) / total;
+    const satisfied = csat.filter((c) => c.rating >= 4).length;
+    const resolved = csat.filter((c) => c.resolved === true).length;
+    return { avg: Math.round(avg * 10) / 10, satisfied, resolved, total };
+  }, [csat]);
+
+  const categoryCounts = useMemo(() => {
+    const acc: Record<string, number> = {};
+    feedbacks.forEach((f) => { acc[f.category] = (acc[f.category] ?? 0) + 1; });
+    return acc;
+  }, [feedbacks]);
+
+  const filteredFeedbacks = useMemo(
+    () => (categoryFilter === "all" ? feedbacks : feedbacks.filter((f) => f.category === categoryFilter)),
+    [feedbacks, categoryFilter]
+  );
+
+  const abertos = conversations.filter((c) => c.status === "open").length;
+  const activeLabel = SUP_PERIODS.find((p) => p.days === period)?.label ?? "Tudo";
+
+  const generateSummary = async (refresh = false) => {
+    setSummaryLoading(true);
+    setSummaryError(null);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess?.session?.access_token;
+      const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/support-feedback-summary`);
+      url.searchParams.set("days", String(period ?? 3650));
+      if (refresh) url.searchParams.set("refresh", "1");
+      const resp = await fetch(url.toString(), {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      });
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json?.error ?? "Erro ao gerar resumo");
+      const raw = json.summary;
+      let themes: any[] = [];
+      if (raw?.detailed_summary) {
+        try { themes = JSON.parse(raw.detailed_summary).top_themes ?? []; } catch { themes = raw.top_themes ?? []; }
+      } else {
+        themes = raw?.top_themes ?? [];
+      }
+      setSummary({ ...raw, top_themes: themes });
+    } catch (e) {
+      setSummaryError(e instanceof Error ? e.message : "Erro ao gerar resumo");
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
 
   return (
-    <CrmShellV3 mode="marketing" crumbs={[{ label: "CRM" }, { label: "Marketing" }, { label: "Suporte" }]}
-      topbarTools={<><button className="crm-btn crm-btn-primary"><Plus size={13} /> Novo ticket</button></>}
-    >
+    <CrmShellV3 mode="marketing" crumbs={[{ label: "CRM" }, { label: "Marketing" }, { label: "Suporte" }]}>
       <main className="crm-page">
         <PageHero
           eyebrow="Marketing · Suporte ao aluno"
-          title={<>{abertos.length} tickets <em>abertos</em></>}
-          sub="Atendimentos via crm_tickets. SLA padrão: 24h primeira resposta."
+          title={<>Suporte <em>& Feedback</em></>}
+          sub="NPS, CSAT, feedbacks e histórico completo das conversas do widget de suporte — inclui mensagens recebidas antes desta aba ser ativada."
+          actions={
+            <PeriodBar
+              options={SUP_PERIODS.map((p) => p.label)}
+              active={activeLabel}
+              onChange={(l) => setPeriod(SUP_PERIODS.find((p) => p.label === l)?.days ?? null)}
+            />
+          }
         />
 
+        {/* KPIs */}
         <section className="crm-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
-          <Kpi label="Abertos" value={abertos.length} accent="mrr" />
-          <Kpi label="Total cadastrados" value={lista.length} />
-          <Kpi label="Resolvidos" value={lista.filter((t: any) => t.status === "resolved" || t.status === "closed").length} />
-          <Kpi label="Bugs" value={lista.filter((t: any) => t.category === "Bug" || t.categoria === "bug").length} accent="warn" />
+          <Kpi label="NPS Score" value={isLoading ? "—" : npsMetrics.score} accent={npsMetrics.score >= 50 ? "mrr" : npsMetrics.score >= 0 ? "warn" : "neg"} deltaText={`${npsMetrics.total} respostas`} />
+          <Kpi label="CSAT médio" value={isLoading ? "—" : csatMetrics.avg.toFixed(1)} unit="/5" deltaText={`${csatMetrics.total} avaliações`} />
+          <Kpi label="Feedbacks" value={isLoading ? "—" : feedbacks.length} deltaText="sugestões recebidas" />
+          <Kpi label="Conversas" value={isLoading ? "—" : conversations.length} accent={abertos > 0 ? "warn" : undefined} deltaText={`${abertos} abertas`} />
         </section>
 
+        {/* Resumo IA dos feedbacks */}
         <section className="crm-card">
-          <CardHead title="Tickets ativos" sub={`${abertos.length} aguardando ação`} />
-          {abertos.length > 0 ? (
-            <table className="crm-tbl">
-              <thead><tr><th>Ticket</th><th>Aluno</th><th>Categoria</th><th>Status</th><th>Aberto</th></tr></thead>
-              <tbody>
-                {abertos.slice(0, 30).map((r: any) => (
-                  <tr key={r.id}>
-                    <td><div className="crm-mono" style={{ fontSize: 11, color: "var(--crm-ink-4)" }}>#{String(r.id).slice(0, 6)}</div><div className="lead-name">{r.title ?? r.titulo ?? "—"}</div></td>
-                    <td className="muted">{r.user_email ?? r.email ?? "—"}</td>
-                    <td><span className="crm-tag crm-tag-gray"><span className="crm-tag-dot" />{r.category ?? r.categoria ?? "—"}</span></td>
-                    <td><span className="crm-tag crm-tag-warn"><span className="crm-tag-dot" />{r.status ?? "open"}</span></td>
-                    <td className="muted">{r.created_at ? new Date(r.created_at).toLocaleString("pt-BR") : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div style={{ padding: 48, textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
-              Nenhum ticket aberto em crm_tickets (ou tabela ainda não criada).
+          <CardHead
+            title={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><Sparkles size={15} style={{ color: "var(--crm-gold-deep)" }} /> Resumo inteligente dos feedbacks</span>}
+            sub="Análise gerada por PreceptorMED (Gemini) dos temas mais pedidos"
+            side={
+              summary ? (
+                <button className="crm-btn crm-btn-ghost" onClick={() => generateSummary(true)} disabled={summaryLoading}>
+                  <RefreshCw size={13} className={summaryLoading ? "animate-spin" : ""} /> Regenerar
+                </button>
+              ) : (
+                <button className="crm-btn crm-btn-primary" onClick={() => generateSummary(false)} disabled={summaryLoading || feedbacks.length === 0}>
+                  {summaryLoading ? <><Loader2 size={13} className="animate-spin" /> Gerando…</> : <><Sparkles size={13} /> Gerar resumo</>}
+                </button>
+              )
+            }
+          />
+          {summaryError && <div style={supErr}>{summaryError}</div>}
+          {!summary && !summaryLoading && (
+            <div style={{ padding: "24px 8px", textAlign: "center", color: "var(--crm-ink-4)", fontSize: 13 }}>
+              {feedbacks.length === 0 ? "Nenhum feedback no período selecionado." : `Clique em "Gerar resumo" para analisar os ${feedbacks.length} feedbacks.`}
             </div>
           )}
+          {summary && (
+            <div style={{ display: "grid", gap: 16 }}>
+              <div>
+                <div style={supEyebrow}>Resumo executivo</div>
+                <p style={{ fontSize: 13.5, color: "var(--crm-ink-2)", lineHeight: 1.6, margin: 0 }}>{summary.executive_summary}</p>
+                <div style={{ fontSize: 11, color: "var(--crm-ink-4)", marginTop: 6 }}>
+                  Gerado em {summary.generated_at ? new Date(summary.generated_at).toLocaleString("pt-BR") : "—"} · {summary.total_feedbacks} feedbacks
+                </div>
+              </div>
+              {summary.top_themes?.length > 0 && (
+                <div>
+                  <div style={supEyebrow}>Top temas pedidos</div>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {summary.top_themes.map((t: any, i: number) => (
+                      <div key={i} style={supThemeCard}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <span style={{ fontWeight: 700, color: "var(--crm-gold-deep)", fontSize: 12 }}>#{i + 1}</span>
+                          <span style={{ fontWeight: 600, color: "var(--crm-ink)", fontSize: 13 }}>{t.theme}</span>
+                          <span className={`crm-tag ${FB_CATEGORY_TAG[t.category] ?? "crm-tag-gray"}`}><span className="crm-tag-dot" />{FB_CATEGORY_LABEL[t.category] ?? t.category}</span>
+                          <span className="muted" style={{ marginLeft: "auto", fontWeight: 700 }}>{t.mentions}×</span>
+                        </div>
+                        {t.quotes?.length > 0 && (
+                          <div style={{ marginTop: 6, display: "grid", gap: 3 }}>
+                            {t.quotes.map((q: string, qi: number) => (
+                              <p key={qi} style={{ fontSize: 12, color: "var(--crm-ink-3)", fontStyle: "italic", borderLeft: "2px solid var(--crm-line-strong)", paddingLeft: 8, margin: 0 }}>"{q}"</p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {summary.detailed_summary && (() => {
+                let parsed: any;
+                try { parsed = JSON.parse(summary.detailed_summary); } catch { return null; }
+                return (
+                  <div className="crm-suporte-grid">
+                    {parsed.recommended_actions?.length > 0 && (
+                      <div style={supThemeCard}>
+                        <div style={{ ...supEyebrow, color: "var(--crm-info)" }}>Ações recomendadas</div>
+                        <ul style={supList}>{parsed.recommended_actions.map((a: string, i: number) => <li key={i}>{a}</li>)}</ul>
+                      </div>
+                    )}
+                    {parsed.quick_wins?.length > 0 && (
+                      <div style={supThemeCard}>
+                        <div style={{ ...supEyebrow, color: "var(--crm-pos)" }}>Quick wins</div>
+                        <ul style={supList}>{parsed.quick_wins.map((a: string, i: number) => <li key={i}>{a}</li>)}</ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </section>
+
+        {/* Histórico de conversas + mensagens */}
+        <section className="crm-card">
+          <CardHead title="Conversas de suporte" sub={`${conversations.length} conversas · clique para abrir o histórico de mensagens`} />
+          {isLoading ? (
+            <div style={supLoading}><Loader2 className="animate-spin" style={{ color: "var(--crm-green-deep)" }} /></div>
+          ) : conversations.length === 0 ? (
+            <div style={supEmpty}>Nenhuma conversa de suporte no período.</div>
+          ) : (
+            <div style={{ display: "grid", gap: 8 }}>
+              {conversations.map((c) => {
+                const msgs = messagesByConv[c.id] ?? [];
+                const open = expanded === c.id;
+                const email = whoEmail(c.user_id);
+                const name = who(c.user_id);
+                return (
+                  <div key={c.id} style={{ border: "1px solid var(--crm-line)", borderRadius: "var(--crm-radius)", overflow: "hidden", background: "var(--crm-surface)" }}>
+                    <button onClick={() => setExpanded(open ? null : c.id)} style={supConvBtn}>
+                      <ChevronDown size={15} style={{ color: "var(--crm-ink-4)", transform: open ? "rotate(0)" : "rotate(-90deg)", transition: "transform .15s", flexShrink: 0 }} />
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div className="lead-name" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.subject || "(sem assunto)"}</div>
+                        <div className="lead-email">{name}{email && email !== name ? ` · ${email}` : ""}</div>
+                      </div>
+                      <span className="muted" style={{ flexShrink: 0 }}>{msgs.length} msg</span>
+                      <span className={`crm-tag ${c.status === "resolved" ? "crm-tag-green" : c.status === "escalated" ? "crm-tag-red" : "crm-tag-warn"}`} style={{ flexShrink: 0 }}>
+                        <span className="crm-tag-dot" />{c.status === "resolved" ? "resolvido" : c.status === "escalated" ? "escalado" : "aberto"}
+                      </span>
+                      <span className="muted" style={{ flexShrink: 0 }}>{new Date(c.created_at).toLocaleDateString("pt-BR")}</span>
+                    </button>
+                    {open && (
+                      <div style={{ borderTop: "1px solid var(--crm-line)", padding: 14, background: "var(--crm-surface-2)", display: "grid", gap: 8 }}>
+                        {msgs.length === 0 ? (
+                          <div className="muted" style={{ textAlign: "center", padding: 8 }}>Sem mensagens registradas nesta conversa.</div>
+                        ) : msgs.map((m) => (
+                          <div key={m.id} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-start" : "flex-end" }}>
+                            <div style={{ maxWidth: "80%", borderRadius: 10, padding: "8px 11px", fontSize: 12.5, lineHeight: 1.5, background: m.role === "user" ? "var(--crm-surface)" : "var(--crm-green-soft)", color: "var(--crm-ink-2)", border: "1px solid var(--crm-line)" }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", color: m.role === "user" ? "var(--crm-ink-4)" : "var(--crm-green-deep)", marginBottom: 2 }}>{m.role === "user" ? "Aluno" : "Suporte IA"}</div>
+                              <div style={{ whiteSpace: "pre-wrap" }}>{m.content}</div>
+                              <div style={{ fontSize: 10, color: "var(--crm-ink-5)", marginTop: 3 }}>{new Date(m.created_at).toLocaleString("pt-BR")}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Feedbacks + NPS/CSAT */}
+        <div className="crm-suporte-grid">
+          <section className="crm-card">
+            <CardHead
+              title="Feedbacks recebidos"
+              sub={`${filteredFeedbacks.length} no filtro atual`}
+              side={
+                <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={supSelect}>
+                  <option value="all">Todas categorias ({feedbacks.length})</option>
+                  {Object.entries(FB_CATEGORY_LABEL).map(([k, l]) => {
+                    const n = categoryCounts[k] ?? 0;
+                    return n > 0 ? <option key={k} value={k}>{l} ({n})</option> : null;
+                  })}
+                </select>
+              }
+            />
+            {isLoading ? (
+              <div style={supLoading}><Loader2 className="animate-spin" style={{ color: "var(--crm-green-deep)" }} /></div>
+            ) : filteredFeedbacks.length === 0 ? (
+              <div style={supEmpty}>Nenhum feedback neste período.</div>
+            ) : (
+              <div style={{ display: "grid", gap: 8, maxHeight: 560, overflowY: "auto" }}>
+                {filteredFeedbacks.map((f) => (
+                  <div key={f.id} style={supItemCard}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                      <span className={`crm-tag ${FB_CATEGORY_TAG[f.category] ?? "crm-tag-gray"}`}><span className="crm-tag-dot" />{FB_CATEGORY_LABEL[f.category] ?? f.category}</span>
+                      {f.title && <span style={{ fontWeight: 600, fontSize: 12.5, color: "var(--crm-ink)" }}>{f.title}</span>}
+                      <span className="muted" style={{ marginLeft: "auto" }}>{new Date(f.created_at).toLocaleDateString("pt-BR")}</span>
+                    </div>
+                    <p style={{ fontSize: 12.5, color: "var(--crm-ink-3)", lineHeight: 1.5, margin: 0, whiteSpace: "pre-wrap" }}>{f.content}</p>
+                    <div style={{ fontSize: 11, color: "var(--crm-ink-4)", marginTop: 5 }}>{who(f.user_id)}{f.page_url ? ` · ${f.page_url}` : ""}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <div style={{ display: "grid", gap: 16 }}>
+            <section className="crm-card">
+              <CardHead title="NPS · comentários" sub={`${npsMetrics.promoters} 🟢  ${npsMetrics.passives} 🟡  ${npsMetrics.detractors} 🔴`} />
+              {nps.filter((n) => n.comment).length === 0 ? (
+                <div style={supEmpty}>Sem comentários.</div>
+              ) : (
+                <div style={{ display: "grid", gap: 8, maxHeight: 360, overflowY: "auto" }}>
+                  {nps.filter((n) => n.comment).slice(0, 40).map((n) => (
+                    <div key={n.id} style={supItemCard}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                        <span className={`crm-tag ${n.category === "promoter" ? "crm-tag-green" : n.category === "passive" ? "crm-tag-warn" : "crm-tag-red"}`}>{n.score}</span>
+                        <span className="muted" style={{ marginLeft: "auto" }}>{new Date(n.created_at).toLocaleDateString("pt-BR")}</span>
+                      </div>
+                      <p style={supQuote}>"{n.comment}"</p>
+                      <div style={{ fontSize: 11, color: "var(--crm-ink-4)", marginTop: 4 }}>{who(n.user_id)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="crm-card">
+              <CardHead title="CSAT · comentários" sub={`${csatMetrics.satisfied} satisfeitos · ${csatMetrics.resolved} resolvidos`} />
+              {csat.filter((c) => c.comment).length === 0 ? (
+                <div style={supEmpty}>Sem comentários.</div>
+              ) : (
+                <div style={{ display: "grid", gap: 8, maxHeight: 360, overflowY: "auto" }}>
+                  {csat.filter((c) => c.comment).slice(0, 40).map((c) => (
+                    <div key={c.id} style={supItemCard}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                        <span style={{ color: "var(--crm-gold-deep)", fontWeight: 700, fontSize: 12, letterSpacing: 1 }}>
+                          {"★".repeat(c.rating)}<span style={{ color: "var(--crm-line-strong)" }}>{"★".repeat(5 - c.rating)}</span>
+                        </span>
+                        {c.resolved === true && <span className="crm-tag crm-tag-green">resolvido</span>}
+                        {c.resolved === false && <span className="crm-tag crm-tag-warn">escalado</span>}
+                        <span className="muted" style={{ marginLeft: "auto" }}>{new Date(c.created_at).toLocaleDateString("pt-BR")}</span>
+                      </div>
+                      <p style={supQuote}>"{c.comment}"</p>
+                      <div style={{ fontSize: 11, color: "var(--crm-ink-4)", marginTop: 4 }}>{who(c.user_id)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        </div>
+
+        {/* Nota de escalonamento */}
+        <section style={{ border: "1px solid var(--crm-line-strong)", background: "var(--crm-gold-soft)", borderRadius: "var(--crm-radius)", padding: 14, display: "flex", gap: 10, alignItems: "flex-start" }}>
+          <Mail size={15} style={{ color: "var(--crm-gold-deep)", flexShrink: 0, marginTop: 2 }} />
+          <div style={{ fontSize: 12.5, color: "var(--crm-ink-3)", lineHeight: 1.5 }}>
+            Quando o suporte IA não resolve, o aluno é direcionado para <strong style={{ color: "var(--crm-green-deep)" }}>matheus@ospreceptores.com</strong>. Conversas escaladas aparecem acima com o status <span style={{ color: "var(--crm-neg)" }}>escalado</span>.
+          </div>
         </section>
       </main>
     </CrmShellV3>

@@ -434,6 +434,10 @@
 .crm-v3 .crm-tag-gray { background: var(--crm-surface-3); color: var(--crm-ink-3); }
 .crm-v3 .crm-tag-outline-green { background: transparent; color: var(--crm-green-deep); border-color: var(--crm-line-strong); }
 
+/* GRID 2-col da página Suporte (feedbacks + comentários) — empilha no mobile */
+.crm-v3 .crm-suporte-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .crm-v3 .crm-suporte-grid { grid-template-columns: 1fr; } }
+
 /* SCORE BAR */
 .crm-v3 .crm-score { display: inline-flex; align-items: center; gap: 7px; }
 .crm-v3 .crm-score-bar {
