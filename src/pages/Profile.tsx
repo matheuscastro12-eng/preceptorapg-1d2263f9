@@ -2,23 +2,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Tables } from '@/integrations/supabase/types';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Camera, Edit2, Save, X, UserPlus, UserMinus, MessageCircle, TrendingUp, Target, Brain, Calendar, BarChart3, Layers, Flame, GraduationCap, MapPin, FileText } from 'lucide-react';
+import { ArrowLeft, Camera, Edit2, UserPlus, UserMinus, MessageCircle, TrendingUp, Target, Brain, BarChart3, Layers, Flame, GraduationCap, MapPin, FileText, Star, Crown, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import PageSkeleton from '@/components/PageSkeleton';
 import SubscriptionManager from '@/components/profile/SubscriptionManager';
+import AchievementsTab from '@/components/profile/AchievementsTab';
+import AccountTab from '@/components/profile/AccountTab';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area } from 'recharts';
-
-type Profile = Tables<'profiles'>;
+import { useProgression, xpForNextLevel, LEVEL_NAMES } from '@/hooks/useGamification';
 
 const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
   <span
@@ -37,6 +30,7 @@ interface ProfileData {
   avatar_url: string | null;
   university: string | null;
   semester: string | null;
+  phone: string | null;
 }
 
 interface AttemptRow {
@@ -68,6 +62,15 @@ interface RecentActivity {
   bgColor: string;
 }
 
+type TabKey = 'evolucao' | 'conquistas' | 'atividades' | 'plano' | 'conta';
+const TABS: { key: TabKey; label: string }[] = [
+  { key: 'evolucao', label: 'Evolução' },
+  { key: 'conquistas', label: 'Conquistas' },
+  { key: 'atividades', label: 'Atividade' },
+  { key: 'plano', label: 'Plano' },
+  { key: 'conta', label: 'Conta' },
+];
+
 const chartConfig: ChartConfig = {
   acertos: { label: 'Acertos', color: 'hsl(var(--primary))' },
   total: { label: 'Total', color: 'hsl(var(--muted-foreground))' },
@@ -78,19 +81,19 @@ const ProfilePage = () => {
   const { user, loading: authLoading } = useAuth();
   const { userId } = useParams();
   const navigate = useNavigate();
+  const { data: prog } = useProgression();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [editForm, setEditForm] = useState({ full_name: '', bio: '', university: '', semester: '' });
   const [stats, setStats] = useState({ fechamentos: 0, favoritos: 0, followers: 0, following: 0 });
   const [isFollowing, setIsFollowing] = useState(false);
+  const [planType, setPlanType] = useState<string>('none');
   const [publicFechamentos, setPublicFechamentos] = useState<Array<{ id: string; content: string; fechamentos: { tema: string } | null }>>([]);
   const [attempts, setAttempts] = useState<AttemptRow[]>([]);
   const [flashcardCount, setFlashcardCount] = useState(0);
   const [evoLoading, setEvoLoading] = useState(true);
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
-  const [activeTab, setActiveTab] = useState<'evolucao' | 'atividades' | 'assinatura'>('evolucao');
+  const [activeTab, setActiveTab] = useState<TabKey>('evolucao');
 
   const targetUserId = userId || user?.id;
   const isOwnProfile = !userId || userId === user?.id;
@@ -104,6 +107,7 @@ const ProfilePage = () => {
       if (isOwnProfile) {
         fetchEvolutionData();
         fetchRecentActivity();
+        fetchSubscription();
       }
     }
   }, [targetUserId, user]);
@@ -117,14 +121,13 @@ const ProfilePage = () => {
         if (!insertErr && newProfile) data = newProfile;
       }
       if (data) {
-        setProfile({ user_id: data.user_id, email: data.email, full_name: data.full_name, bio: data.bio, avatar_url: data.avatar_url, university: data.university, semester: data.semester });
-        setEditForm({ full_name: data.full_name || '', bio: data.bio || '', university: data.university || '', semester: data.semester || '' });
+        setProfile({ user_id: data.user_id, email: data.email, full_name: data.full_name, bio: data.bio, avatar_url: data.avatar_url, university: data.university, semester: data.semester, phone: (data as { phone?: string | null }).phone ?? null });
       }
     } else {
       const { data, error } = await (supabase.from('public_profiles' as any).select('user_id, full_name, bio, avatar_url, university, semester').eq('user_id', targetUserId!).maybeSingle() as any);
       if (error) { toast.error('Erro ao carregar perfil'); setLoading(false); return; }
       if (data) {
-        setProfile({ user_id: data.user_id, full_name: data.full_name, bio: data.bio, avatar_url: data.avatar_url, university: data.university, semester: data.semester });
+        setProfile({ user_id: data.user_id, full_name: data.full_name, bio: data.bio, avatar_url: data.avatar_url, university: data.university, semester: data.semester, phone: null });
       }
     }
     setLoading(false);
@@ -138,6 +141,11 @@ const ProfilePage = () => {
       supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', targetUserId!),
     ]);
     setStats({ fechamentos: fechRes.count || 0, favoritos: favRes.count || 0, followers: followersRes.count || 0, following: followingRes.count || 0 });
+  };
+
+  const fetchSubscription = async () => {
+    const { data } = await supabase.from('subscriptions').select('plan_type, status').eq('user_id', user!.id).maybeSingle();
+    setPlanType((data as { plan_type?: string } | null)?.plan_type ?? 'none');
   };
 
   const fetchEvolutionData = async () => {
@@ -222,15 +230,6 @@ const ProfilePage = () => {
     setUploading(false);
   };
 
-  const handleSaveProfile = async () => {
-    if (!user) return;
-    const { error } = await supabase.from('profiles').update({ full_name: editForm.full_name, bio: editForm.bio, university: editForm.university, semester: editForm.semester }).eq('user_id', user.id);
-    if (error) { toast.error('Erro ao salvar perfil'); return; }
-    setProfile(prev => prev ? { ...prev, ...editForm } : prev);
-    setEditing(false);
-    toast.success('Perfil atualizado!');
-  };
-
   const handleFollow = async () => {
     if (!user || !targetUserId) return;
     if (isFollowing) {
@@ -287,6 +286,18 @@ const ProfilePage = () => {
   const initials = useMemo(() => (profile?.full_name || profile?.email || '?').slice(0, 2).toUpperCase(), [profile]);
   const displayName = profile?.full_name || profile?.email?.split('@')[0] || 'Usuário';
 
+  // ── Gamification (perfil próprio) ──
+  const level = prog?.level ?? 1;
+  const levelName = LEVEL_NAMES[Math.min(level, 10)] ?? `Nível ${level}`;
+  const nextName = LEVEL_NAMES[Math.min(level + 1, 10)] ?? `Nível ${level + 1}`;
+  const { current: levelBase, needed } = xpForNextLevel(level);
+  const totalXp = prog?.total_xp ?? 0;
+  const xpInLevel = Math.max(0, totalXp - levelBase);
+  const xpPct = needed > 0 ? Math.min(100, Math.round((xpInLevel / needed) * 100)) : 100;
+  const xpToNext = Math.max(0, needed - xpInLevel);
+  const streak = prog?.streak_days ?? 0;
+  const showUpgrade = isOwnProfile && !['annual', 'biannual'].includes(planType);
+
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
     const now = new Date();
@@ -327,7 +338,7 @@ const ProfilePage = () => {
           </div>
 
           {/* Profile info in banner */}
-          <div className="relative z-10 px-4 sm:px-8 lg:px-12 pt-4 pb-5 sm:pt-6 sm:pb-8 flex flex-col sm:flex-row items-center sm:items-end gap-3 sm:gap-8">
+          <div className="relative z-10 px-4 sm:px-8 lg:px-12 pt-4 pb-5 sm:pt-6 sm:pb-6 flex flex-col sm:flex-row items-center sm:items-end gap-3 sm:gap-8">
             {/* Avatar */}
             <div className="relative group shrink-0">
               <div className="w-20 h-20 sm:w-36 sm:h-36 rounded-2xl border-4 border-white/10 overflow-hidden shadow-2xl bg-[#005344]">
@@ -361,19 +372,34 @@ const ProfilePage = () => {
                     {profile.semester}
                   </span>
                 )}
+                <span className="text-white/60 text-xs sm:text-sm font-medium flex items-center gap-1">
+                  <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5 opacity-60" />
+                  {stats.followers} seguidores · {stats.following} seguindo
+                </span>
               </div>
             </div>
 
             {/* Actions */}
             <div className="flex gap-2 sm:gap-3 shrink-0">
               {isOwnProfile ? (
-                <button
-                  onClick={() => setEditing(true)}
-                  className="bg-white/10 backdrop-blur-xl border border-white/20 text-white px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 hover:bg-white/20 transition-all"
-                >
-                  <Edit2 className="h-3.5 w-3.5" />
-                  Editar Perfil
-                </button>
+                <>
+                  {showUpgrade && (
+                    <button
+                      onClick={() => setActiveTab('plano')}
+                      className="bg-[#C9A84C] text-[#3d2f08] px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 hover:brightness-105 transition-all shadow-lg"
+                    >
+                      <Crown className="h-3.5 w-3.5" />
+                      Fazer upgrade
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setActiveTab('conta')}
+                    className="bg-white/10 backdrop-blur-xl border border-white/20 text-white px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 hover:bg-white/20 transition-all"
+                  >
+                    <Edit2 className="h-3.5 w-3.5" />
+                    Editar Perfil
+                  </button>
+                </>
               ) : (
                 <>
                   <button
@@ -396,44 +422,50 @@ const ProfilePage = () => {
               )}
             </div>
           </div>
+
+          {/* Gamification strip (perfil próprio) */}
+          {isOwnProfile && prog && (
+            <div className="relative z-10 px-4 sm:px-8 lg:px-12 pb-5 sm:pb-7">
+              <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+                {/* Level + XP */}
+                <button onClick={() => setActiveTab('conquistas')} className="flex items-center gap-3 flex-1 min-w-0 text-left group">
+                  <div className="w-11 h-11 rounded-xl bg-[#9df3dc]/15 flex items-center justify-center shrink-0 group-hover:bg-[#9df3dc]/25 transition-colors">
+                    <Star className="w-5 h-5 text-[#9df3dc]" fill="currentColor" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-xs font-bold text-white truncate">Nível {level} · {levelName}</span>
+                      <span className="text-[10px] font-bold text-[#9df3dc] shrink-0">{totalXp.toLocaleString('pt-BR')} XP</span>
+                    </div>
+                    <div className="h-1.5 bg-white/15 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-700" style={{ width: `${xpPct}%`, background: 'linear-gradient(90deg,#9df3dc,#C9A84C)' }} />
+                    </div>
+                    <p className="text-[10px] text-white/50 mt-1">{xpToNext > 0 ? `faltam ${xpToNext} XP p/ ${nextName}` : 'Nível máximo 🎉'}</p>
+                  </div>
+                </button>
+
+                <div className="hidden sm:block w-px h-12 bg-white/15" />
+
+                {/* Streak */}
+                <button onClick={() => setActiveTab('conquistas')} className="flex items-center gap-2.5 shrink-0 group">
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${streak > 0 ? 'bg-orange-400/15 group-hover:bg-orange-400/25' : 'bg-white/10'}`}>
+                    <Flame className={`w-5 h-5 ${streak > 0 ? 'text-orange-300' : 'text-white/30'}`} fill={streak > 0 ? 'currentColor' : 'none'} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-base font-extrabold text-white leading-none">{streak} <span className="text-xs font-bold text-white/60">dias</span></p>
+                    <p className="text-[10px] text-white/50 uppercase tracking-wider font-bold mt-0.5">Sequência</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
         </header>
 
         {/* ═══════════════ MAIN CONTENT ═══════════════ */}
         <div className="px-3 sm:px-8 lg:px-12 py-5 sm:py-10 space-y-6 sm:space-y-10">
 
-          {/* Edit form modal-style */}
-          {editing && (
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-6 shadow-sm space-y-3 sm:space-y-4 animate-fade-up">
-              <h3 className="font-['Manrope'] text-base sm:text-lg font-bold text-[#191c1d]">Editar Perfil</h3>
-              <div className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">Nome Completo</Label>
-                  <Input value={editForm.full_name} onChange={e => setEditForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Seu nome" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-500">Faculdade</Label>
-                    <Input value={editForm.university} onChange={e => setEditForm(f => ({ ...f, university: e.target.value }))} placeholder="Ex: UFMG" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-500">Período</Label>
-                    <Input value={editForm.semester} onChange={e => setEditForm(f => ({ ...f, semester: e.target.value }))} placeholder="Ex: 8º" />
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">Bio</Label>
-                <Textarea value={editForm.bio} onChange={e => setEditForm(f => ({ ...f, bio: e.target.value }))} placeholder="Conte sobre você..." maxLength={200} className="resize-none" rows={2} />
-              </div>
-              <div className="flex gap-2 pt-1">
-                <Button onClick={handleSaveProfile} className="gap-1.5 bg-[#006D5B] hover:bg-[#005344]"><Save className="h-4 w-4" /> Salvar</Button>
-                <Button variant="outline" onClick={() => setEditing(false)}><X className="h-4 w-4" /></Button>
-              </div>
-            </div>
-          )}
-
           {/* Bio */}
-          {profile.bio && !editing && (
+          {profile.bio && (
             <p className="text-sm text-[#3e4945]/80 max-w-xl leading-relaxed">{profile.bio}</p>
           )}
 
@@ -443,47 +475,50 @@ const ProfilePage = () => {
               <div className="w-1 sm:w-1.5 h-5 sm:h-6 bg-[#006D5B] rounded-full" />
               <h3 className="font-['Manrope'] text-base sm:text-xl font-bold text-[#191c1d]">Visão Geral</h3>
             </div>
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-4">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5 sm:gap-4">
               <StatCard label="Resumos Gerados" value={stats.fechamentos} badge={stats.favoritos > 0 ? `${stats.favoritos} fav` : undefined} badgeColor="bg-[#c8eade] text-[#005344]" />
               <StatCard label="Simulados" value={overallStats.simCount} badge={overallStats.avg > 0 ? `${overallStats.avg}% média` : undefined} badgeColor="bg-amber-100 text-amber-700" />
               <StatCard label="Flashcards" value={flashcardCount} />
-              <StatCard label="Seguidores" value={stats.followers} badge={stats.following > 0 ? `${stats.following} seguindo` : undefined} badgeColor="bg-slate-100 text-slate-500" />
+              {isOwnProfile && <StatCard label="Streak" value={streak} badge={(prog?.best_streak ?? 0) > 0 ? `${prog?.best_streak}d recorde` : undefined} badgeColor="bg-orange-100 text-orange-700" />}
+              {isOwnProfile && <StatCard label="Nível" value={level} badge={levelName} badgeColor="bg-[#006D5B]/10 text-[#006D5B]" />}
             </div>
           </section>
 
-          {/* ─── Tabs ─── */}
+          {/* ─── Tabs (own profile) ─── */}
           {isOwnProfile && (
             <section>
-              <div className="bg-[#f3f4f5] p-1 sm:p-1.5 rounded-xl sm:rounded-2xl flex gap-1 sm:gap-1.5 max-w-md mb-5 sm:mb-6">
-                <button
-                  onClick={() => setActiveTab('evolucao')}
-                  className={`flex-1 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-['Manrope'] text-xs sm:text-sm font-bold transition-all ${
-                    activeTab === 'evolucao' ? 'bg-white text-[#006D5B] shadow-sm border border-slate-200/40' : 'text-[#6e7975] hover:bg-white/60'
-                  }`}
-                >
-                  Evolução
-                </button>
-                <button
-                  onClick={() => setActiveTab('atividades')}
-                  className={`flex-1 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-['Manrope'] text-xs sm:text-sm font-bold transition-all ${
-                    activeTab === 'atividades' ? 'bg-white text-[#006D5B] shadow-sm border border-slate-200/40' : 'text-[#6e7975] hover:bg-white/60'
-                  }`}
-                >
-                  Atividade
-                </button>
-                <button
-                  onClick={() => setActiveTab('assinatura')}
-                  className={`flex-1 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-['Manrope'] text-xs sm:text-sm font-bold transition-all ${
-                    activeTab === 'assinatura' ? 'bg-white text-[#006D5B] shadow-sm border border-slate-200/40' : 'text-[#6e7975] hover:bg-white/60'
-                  }`}
-                >
-                  Assinatura
-                </button>
+              <div className="bg-[#f3f4f5] p-1 sm:p-1.5 rounded-xl sm:rounded-2xl flex gap-1 mb-5 sm:mb-6 overflow-x-auto">
+                {TABS.map(t => (
+                  <button
+                    key={t.key}
+                    onClick={() => setActiveTab(t.key)}
+                    className={`flex-1 whitespace-nowrap px-3 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-['Manrope'] text-xs sm:text-sm font-bold transition-all ${
+                      activeTab === t.key ? 'bg-white text-[#006D5B] shadow-sm border border-slate-200/40' : 'text-[#6e7975] hover:bg-white/60'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
               </div>
 
-              {activeTab === 'assinatura' && (
-                <SubscriptionManager />
+              {activeTab === 'plano' && <SubscriptionManager />}
+
+              {activeTab === 'conta' && (
+                <AccountTab
+                  userId={user.id}
+                  email={profile.email || user.email || ''}
+                  initial={{
+                    full_name: profile.full_name || '',
+                    university: profile.university || '',
+                    semester: profile.semester || '',
+                    bio: profile.bio || '',
+                    phone: profile.phone || '',
+                  }}
+                  onSaved={(v) => setProfile(prev => prev ? { ...prev, ...v } : prev)}
+                />
               )}
+
+              {activeTab === 'conquistas' && <AchievementsTab />}
 
               {activeTab === 'evolucao' && (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">

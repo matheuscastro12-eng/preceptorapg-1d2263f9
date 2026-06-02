@@ -2,11 +2,20 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { openEasyflowCheckout } from '@/utils/easyflow';
 import { toast } from 'sonner';
 import {
   CreditCard, AlertTriangle, Loader2, XCircle, Clock, Crown, Gift,
-  Ban, Trash2, ChevronRight, Info,
+  Ban, Trash2, ChevronRight, Info, Sparkles, Check,
 } from 'lucide-react';
+
+// Planos disponíveis — espelha os preços/economia exibidos na Pricing.tsx
+// (mesmos checkouts do EasyFlow). Mantenha em sincronia com src/pages/Pricing.tsx.
+const PLAN_OPTIONS: { key: 'monthly' | 'annual' | 'biannual'; name: string; price: string; per: string; sub: string; save: string | null; best?: boolean }[] = [
+  { key: 'monthly', name: 'Mensal', price: 'R$ 49,90', per: '/mês', sub: 'Cobrado mensalmente', save: null },
+  { key: 'annual', name: 'Anual', price: 'R$ 29,24', per: '/mês', sub: '12× R$ 29,24 · R$ 350,90/ano', save: '41% OFF', best: true },
+  { key: 'biannual', name: 'Bianual', price: 'R$ 24,99', per: '/mês', sub: '24× R$ 24,99 · R$ 599,90', save: '50% OFF' },
+];
 
 interface Subscription {
   status: string;
@@ -37,6 +46,7 @@ export default function SubscriptionManager() {
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmAction>(null);
+  const [subscribing, setSubscribing] = useState<string | null>(null);
 
   const load = async () => {
     if (!user) return;
@@ -46,7 +56,7 @@ export default function SubscriptionManager() {
       .select('status, plan_type, access_expires_at, current_period_end, cancel_at_period_end, canceled_at')
       .eq('user_id', user.id)
       .maybeSingle();
-    setSub((data as Subscription | null) ?? null);
+    setSub((data as unknown as Subscription | null) ?? null);
     setLoading(false);
   };
 
@@ -98,6 +108,18 @@ export default function SubscriptionManager() {
     }
   };
 
+  const handleUpgrade = async (plan: string) => {
+    if (!user) return;
+    setSubscribing(plan);
+    try {
+      // openEasyflowCheckout redireciona via window.location; só voltamos aqui em caso de erro.
+      await openEasyflowCheckout(plan, user.email ?? undefined, user.id, 'profile-plano');
+    } catch {
+      toast.error('Não foi possível abrir o checkout. Tente novamente.');
+      setSubscribing(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -144,17 +166,6 @@ export default function SubscriptionManager() {
                     : <>Expira em <strong>{periodEndFmt}</strong></>}
               </p>
             )}
-            {!sub || sub.plan_type === 'none' ? (
-              <div className="mt-3">
-                <button
-                  onClick={() => navigate('/pricing')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#006D5B] text-white text-sm font-bold rounded-lg hover:bg-[#005344] transition-colors"
-                >
-                  Ver planos
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            ) : null}
           </div>
         </div>
 
@@ -166,6 +177,63 @@ export default function SubscriptionManager() {
             </p>
           </div>
         )}
+      </div>
+
+      {/* Planos disponíveis / upgrade — sempre visível (o fix da descoberta) */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+        <div className="flex items-center gap-2 mb-1">
+          <Sparkles className="w-4 h-4 text-[#C9A84C]" />
+          <h3 className="text-sm font-bold text-[#191C1D] font-['Manrope']">{isPaying ? 'Trocar de plano' : 'Escolha seu plano'}</h3>
+        </div>
+        <p className="text-xs text-[#4a5568] mb-4">
+          {isPaying ? 'Faça upgrade e pague menos por mês.' : 'Desbloqueie tudo do PreceptorMED — fechamentos, simulados, flashcards e curadoria.'}
+        </p>
+        <div className="grid sm:grid-cols-3 gap-3">
+          {PLAN_OPTIONS.map((opt) => {
+            const isCurrent = isActive && sub?.plan_type === opt.key;
+            return (
+              <div
+                key={opt.key}
+                className={`relative rounded-xl border p-4 flex flex-col ${opt.best ? 'border-[#006D5B] ring-1 ring-[#006D5B]/20' : 'border-slate-200'} ${isCurrent ? 'bg-[#f0f6f1]' : 'bg-white'}`}
+              >
+                {opt.best && !isCurrent && (
+                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-[#006D5B] text-white text-[9px] font-bold uppercase tracking-wider whitespace-nowrap">
+                    Recomendado
+                  </span>
+                )}
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-sm font-bold text-[#191C1D]">{opt.name}</span>
+                  {opt.save && <span className="px-1.5 py-0.5 rounded bg-[#C9A84C]/15 text-[#8a6f26] text-[9px] font-bold">{opt.save}</span>}
+                </div>
+                <div className="mb-0.5">
+                  <span className="text-xl font-extrabold text-[#005344] font-['Manrope']">{opt.price}</span>
+                  <span className="text-xs text-slate-400 font-medium">{opt.per}</span>
+                </div>
+                <p className="text-[10px] text-[#6e7975] mb-3 leading-snug flex-1">{opt.sub}</p>
+                {isCurrent ? (
+                  <span className="w-full inline-flex items-center justify-center gap-1 py-2 rounded-lg bg-green-100 text-green-700 text-xs font-bold">
+                    <Check className="w-3.5 h-3.5" /> Plano atual
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => handleUpgrade(opt.key)}
+                    disabled={!!subscribing}
+                    className={`w-full py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 ${
+                      opt.best ? 'bg-[#006D5B] text-white hover:bg-[#005344]' : 'bg-slate-100 text-[#191C1D] hover:bg-slate-200'
+                    }`}
+                  >
+                    {subscribing === opt.key && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    {isPaying ? 'Trocar' : 'Assinar'}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-[#6e7975] mt-3 flex items-start gap-1">
+          <Info className="w-3 h-3 shrink-0 mt-0.5" />
+          Pagamento seguro via EasyFlow (cartão, Pix ou boleto). A nota fiscal é enviada para o seu e-mail após a confirmação.
+        </p>
       </div>
 
       {/* Ações de assinatura (só se tem plano pago ativo) */}
