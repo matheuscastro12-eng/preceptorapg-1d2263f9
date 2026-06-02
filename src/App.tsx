@@ -1,4 +1,4 @@
-import { lazy as reactLazy, Suspense } from "react";
+import { lazy as reactLazy, Suspense, useDeferredValue, useEffect } from "react";
 
 // Wraps React.lazy to auto-reload quando um chunk antigo sumiu pos-deploy.
 //
@@ -57,18 +57,23 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CrmAuthProvider } from "./contexts/CrmAuthContext";
 import { usePageTracking } from "./hooks/usePageTracking";
 import PageSkeleton from "./components/PageSkeleton";
+import NavProgress from "./components/NavProgress";
 
 // Core pages (loaded eagerly — first paint)
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import MainMenu from "./pages/MainMenu";
 import NotFound from "./pages/NotFound";
+
+// Shell persistente do app autenticado (sidebar + chrome). Layout route:
+// monta uma vez e só o conteúdo (Outlet) troca entre páginas.
+const DashboardShell = lazy(() => import("./components/layout/DashboardShell"));
 
 // Lazy-loaded pages (split into separate chunks)
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -155,26 +160,35 @@ function PageTracker({ children }: { children: React.ReactNode }) {
 
 const LazyFallback = () => <PageSkeleton variant="menu" />;
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" enableSystem={false}>
-      <TooltipProvider>
-        <AuthProvider>
-        <CrmAuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-          <PageTracker>
-            <Suspense fallback={<LazyFallback />}>
-              <Routes>
+// Navegação fluida sem flash de tela branca.
+//
+// `useDeferredValue(location)` faz a localização "exibida" ficar um passo
+// atrás da real: enquanto o chunk lazy da próxima página carrega, o React
+// continua mostrando a página atual (com a sidebar) em vez de cair no
+// fallback branco de tela cheia. Quando o chunk chega, troca de uma vez.
+// A `NavProgress` no topo dá o feedback de carregamento.
+function AppRoutes() {
+  const location = useLocation();
+  const navType = useNavigationType();
+  const deferredLocation = useDeferredValue(location);
+  const isPending = deferredLocation !== location;
+
+  // Sobe pro topo ao navegar pra frente (PUSH/REPLACE); preserva a posição
+  // de scroll no voltar/avançar do navegador (POP). Dispara quando a NOVA
+  // página realmente aparece (deferredLocation muda), não na hora do clique.
+  useEffect(() => {
+    if (navType !== "POP") window.scrollTo(0, 0);
+  }, [deferredLocation.pathname, navType]);
+
+  return (
+    <>
+      <NavProgress active={isPending} />
+      <Suspense fallback={<LazyFallback />}>
+        <Routes location={deferredLocation}>
                 <Route path="/" element={<Landing />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/login" element={<Navigate to="/auth" replace />} />
                 <Route path="/welcome" element={<Navigate to="/inscricao" replace />} />
-                <Route path="/menu" element={<MainMenu />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/library" element={<Library />} />
-                <Route path="/exam" element={<Exam />} />
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/subscription" element={<Subscription />} />
                 <Route path="/admin" element={<Navigate to="/admin/crm" replace />} />
@@ -215,30 +229,38 @@ const App = () => (
                   <Route path="webhooks" element={<AdminWebhooks />} />
                   <Route path="inadimplencia" element={<AdminInadimplencia />} />
                 </Route>
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/ai-chat" element={<AIChat />} />
-                <Route path="/enamed" element={<Enamed />} />
-                <Route path="/flashcards" element={<Flashcards />} />
-                <Route path="/scientific-studio" element={<ScientificStudio />} />
-                <Route path="/provas" element={<Provas />} />
-                <Route path="/provas/:id/review" element={<ProvaReview />} />
-                <Route path="/provas/:id/simulado" element={<ProvaSimulado />} />
-                <Route path="/whitebook" element={<Whitebook />} />
-                <Route path="/whitebook/calculator/:slug" element={<WhitebookCalculator />} />
-                <Route path="/whitebook/drug/:slug" element={<WhitebookDrug />} />
-                <Route path="/whitebook/protocol/:slug" element={<WhitebookProtocol />} />
-                <Route path="/whitebook/prescription/:slug" element={<WhitebookPrescription />} />
-                <Route path="/admin/whitebook" element={<WhitebookAdmin />} />
-                <Route path="/casos-clinicos" element={<CasosClinicos />} />
-                <Route path="/casos-clinicos/novo" element={<CasosClinicosNovo />} />
-                <Route path="/casos-clinicos/:id" element={<CasoClinico />} />
-                <Route path="/cronograma" element={<Cronograma />} />
-                <Route path="/cronograma/novo" element={<CronogramaNovo />} />
-                <Route path="/cronograma/dia/:date" element={<CronogramaDia />} />
-                <Route path="/scribe" element={<Scribe />} />
-                <Route path="/scribe/nova" element={<ScribeNova />} />
-                <Route path="/scribe/:id/review" element={<ScribeReview />} />
-                <Route path="/scribe/:id/audit" element={<ScribeAudit />} />
+                {/* App autenticado — shell persistente: a sidebar NÃO remonta
+                    entre páginas; só o conteúdo (Outlet) troca. Fim do flash. */}
+                <Route element={<DashboardShell />}>
+                  <Route path="/menu" element={<MainMenu />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/library" element={<Library />} />
+                  <Route path="/exam" element={<Exam />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/ai-chat" element={<AIChat />} />
+                  <Route path="/enamed" element={<Enamed />} />
+                  <Route path="/flashcards" element={<Flashcards />} />
+                  <Route path="/scientific-studio" element={<ScientificStudio />} />
+                  <Route path="/provas" element={<Provas />} />
+                  <Route path="/provas/:id/review" element={<ProvaReview />} />
+                  <Route path="/provas/:id/simulado" element={<ProvaSimulado />} />
+                  <Route path="/whitebook" element={<Whitebook />} />
+                  <Route path="/whitebook/calculator/:slug" element={<WhitebookCalculator />} />
+                  <Route path="/whitebook/drug/:slug" element={<WhitebookDrug />} />
+                  <Route path="/whitebook/protocol/:slug" element={<WhitebookProtocol />} />
+                  <Route path="/whitebook/prescription/:slug" element={<WhitebookPrescription />} />
+                  <Route path="/admin/whitebook" element={<WhitebookAdmin />} />
+                  <Route path="/casos-clinicos" element={<CasosClinicos />} />
+                  <Route path="/casos-clinicos/novo" element={<CasosClinicosNovo />} />
+                  <Route path="/casos-clinicos/:id" element={<CasoClinico />} />
+                  <Route path="/cronograma" element={<Cronograma />} />
+                  <Route path="/cronograma/novo" element={<CronogramaNovo />} />
+                  <Route path="/cronograma/dia/:date" element={<CronogramaDia />} />
+                  <Route path="/scribe" element={<Scribe />} />
+                  <Route path="/scribe/nova" element={<ScribeNova />} />
+                  <Route path="/scribe/:id/review" element={<ScribeReview />} />
+                  <Route path="/scribe/:id/audit" element={<ScribeAudit />} />
+                </Route>
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/obrigado" element={<SubscriptionThankYou />} />
                 <Route path="/obrigado/:plano" element={<SubscriptionThankYou />} />
@@ -250,8 +272,23 @@ const App = () => (
                 <Route path="/topics" element={<Navigate to="/profile" replace />} />
                 <Route path="/evolution" element={<Navigate to="/profile" replace />} />
                 <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+        </Routes>
+      </Suspense>
+    </>
+  );
+}
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" enableSystem={false}>
+      <TooltipProvider>
+        <AuthProvider>
+        <CrmAuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+          <PageTracker>
+            <AppRoutes />
           </PageTracker>
           </BrowserRouter>
         </CrmAuthProvider>
