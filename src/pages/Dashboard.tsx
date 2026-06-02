@@ -89,6 +89,8 @@ const Dashboard = () => {
   const [tema, setTema] = useState('');
   const [objetivos, setObjetivos] = useState('');
   const [modo, setModo] = useState<GenerationMode>('fechamento');
+  // Profundidade do fechamento: completo (máx. profundidade) vs reduzido (enxuto)
+  const [tamanho, setTamanho] = useState<'completo' | 'reduzido'>('completo');
   // Seções do resumo — todas marcadas por padrão
   const DEFAULT_SECOES = {
     nosologia: true,
@@ -172,7 +174,7 @@ const Dashboard = () => {
   }> => {
     const response = await fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-fechamento`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ tema, objetivos, modo, secoes, artigos: artigos.map(a => ({ name: a.name, mimeType: a.mimeType, data: a.data })) }) }
+      { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ tema, objetivos, modo, tamanho, secoes, artigos: artigos.map(a => ({ name: a.name, mimeType: a.mimeType, data: a.data })) }) }
     );
     if (!response.ok) {
       const e = await response.json().catch(() => ({}));
@@ -806,6 +808,8 @@ const Dashboard = () => {
                   setObjetivos={setObjetivos}
                   modo={modo}
                   setModo={setModo}
+                  tamanho={tamanho}
+                  setTamanho={setTamanho}
                   secoes={secoes}
                   setSecoes={setSecoes}
                   artigos={artigos}

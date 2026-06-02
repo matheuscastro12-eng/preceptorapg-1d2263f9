@@ -577,7 +577,7 @@ serve(async (req) => {
 
     // Parse and validate input
     const body = await req.json();
-    const { tema, objetivos, modo = "fechamento", secoes = {}, artigos: rawArtigos } = body;
+    const { tema, objetivos, modo = "fechamento", tamanho = "completo", secoes = {}, artigos: rawArtigos } = body;
 
     // Validate artigos (artigos anexados pelo estudante — PDFs)
     interface AttachedArticle {
@@ -657,6 +657,16 @@ serve(async (req) => {
       );
     }
 
+    // Validate tamanho (profundidade do fechamento: completo vs reduzido)
+    const validTamanhos = ["completo", "reduzido"];
+    const sanitizedTamanho = (typeof tamanho === "string" ? tamanho.toLowerCase().trim() : "completo");
+    if (!validTamanhos.includes(sanitizedTamanho)) {
+      return new Response(
+        JSON.stringify({ error: "Tamanho deve ser 'completo' ou 'reduzido'" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Sanitize inputs
     const sanitizedTema = tema.trim().replace(/[\x00-\x1F\x7F]/g, "");
     const sanitizedObjetivos = objetivos ? objetivos.trim().replace(/[\x00-\x1F\x7F]/g, "") : "";
@@ -676,6 +686,10 @@ serve(async (req) => {
       userPrompt = `**Tema Central:** ${sanitizedTema}
 
 Gere um ROTEIRO DE SLIDES COMPLETO para seminário acadêmico sobre este tema. Cada slide deve conter Conteúdo Visual, Script do Orador e Clinical Pearl. Siga a estrutura obrigatória de slides.`;
+    } else if (sanitizedTamanho === "reduzido") {
+      userPrompt = `**Tema Central:** ${sanitizedTema}
+
+Gere um fechamento de PBL OBJETIVO e ENXUTO sobre este tema — uma revisão de ALTO RENDIMENTO, direta ao ponto, do tipo que se relê na véspera da prova. Priorize o essencial e corte o excesso (siga o bloco "MODO REDUZIDO" ao final).`;
     } else {
       userPrompt = `**Tema Central:** ${sanitizedTema}
 
@@ -800,7 +814,24 @@ Antes de escrever, analise internamente:
 4. Se HIBRIDO (tema mistura subareas explicitas): cubra somente as nomeadas.
 ${sanitizedObjetivos ? "5. Como cada objetivo do estudante mapeia para a estrutura escolhida? Os objetivos tem precedencia." : ""}
 
-Agora gere o resumo completo dentro do escopo identificado.`;
+Agora gere o resumo dentro do escopo identificado.`;
+
+    // Modo reduzido: diretiva forte de concisao, anexada por ultimo (override
+    // sobre as instrucoes de "seja extenso" do system prompt).
+    if (sanitizedTamanho === "reduzido") {
+      userPrompt += `
+
+# MODO REDUZIDO — RESUMO ENXUTO (PRIORIDADE MAXIMA — OVERRIDE)
+O estudante pediu a versao REDUZIDA/ENXUTA. Isto TEM PRECEDENCIA sobre qualquer instrucao de "seja extenso/completo/profundo". Entregue uma revisao OBJETIVA e de ALTO RENDIMENTO — do tamanho de uma revisao de vespera de prova, nao um tratado.
+
+1. Densidade > volume: mantenha a estrutura/secoes pedidas, mas escreva cada uma de forma CONCISA (1-2 paragrafos curtos OU uma lista enxuta). Corte redundancia e desenvolvimento exaustivo.
+2. So o essencial (o que cai em prova / muda conduta): definicoes-chave, mecanismo central em 1-2 frases, achados cardinais, criterios diagnosticos, condutas de 1a linha e principais armadilhas. Omita minucias moleculares e variantes raras.
+3. Listas curtas: prefira bullets diretos (termo em **negrito** + 1 linha), no maximo ~4-6 itens por lista.
+4. Diagramas Mermaid: no maximo 1, e so se sintetizar um algoritmo/cascata central. Pode nao ter nenhum.
+5. Tamanho-alvo: cerca de 1/3 da versao completa. Na duvida entre incluir ou cortar, CORTE.
+6. NAO sacrifique exatidao nem as REGRAS DE OURO: siglas por extenso na 1a vez de cada secao, terminologia medica correta, zero numeros inventados. Reduzir e sobre TAMANHO, nao sobre rigor.
+7. Os OBJETIVOS ESPECIFICOS do estudante (se houver) continuam sendo respondidos — de forma direta e enxuta.`;
+    }
 
     // ────────────────────────────────────────────────────────────
     // STREAMING COM CONTINUAÇÃO AUTOMÁTICA + FALLBACK DE MODELO

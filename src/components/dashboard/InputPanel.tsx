@@ -12,6 +12,8 @@ interface InputPanelProps {
   setObjetivos: (value: string) => void;
   modo: GenerationMode;
   setModo: (value: GenerationMode) => void;
+  tamanho: 'completo' | 'reduzido';
+  setTamanho: (value: 'completo' | 'reduzido') => void;
   secoes: Record<string, boolean>;
   setSecoes: (value: Record<string, boolean>) => void;
   artigos: AttachedArticle[];
@@ -75,7 +77,7 @@ const SECTION_GROUPS: {
 
 const InputPanel = ({
   tema, setTema, objetivos, setObjetivos,
-  modo, setModo, secoes, setSecoes,
+  modo, setModo, tamanho, setTamanho, secoes, setSecoes,
   artigos, setArtigos,
   generating, hasStartedReceiving,
   isComplete, onGenerate, canGenerate = true, cooldown = false,
@@ -407,6 +409,47 @@ const InputPanel = ({
                     })}
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ── ④ PROFUNDIDADE ── */}
+        <section>
+          <div className="flex items-baseline justify-between mb-3">
+            <label className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#4a5568] inline-flex items-center gap-2">
+              ④ Profundidade
+              <span className="text-[9.5px] font-medium normal-case tracking-normal text-[#94a3b8]">
+                tamanho do resumo
+              </span>
+            </label>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { v: 'completo', t: 'Completo', d: 'Máxima profundidade técnica' },
+              { v: 'reduzido', t: 'Reduzido', d: 'Objetivo e enxuto · alto rendimento' },
+            ] as const).map((opt) => {
+              const active = tamanho === opt.v;
+              return (
+                <button
+                  key={opt.v}
+                  type="button"
+                  onClick={() => setTamanho(opt.v)}
+                  disabled={generating}
+                  className={`text-left rounded-xl border-2 px-4 py-3 transition-all disabled:opacity-40 ${
+                    active
+                      ? 'border-[#005344] bg-[#005344]/[0.04] shadow-[0_0_0_4px_rgba(0,109,91,0.06)]'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${active ? 'border-[#005344]' : 'border-slate-300'}`}>
+                      {active && <span className="w-1.5 h-1.5 rounded-full bg-[#005344]" />}
+                    </span>
+                    <span className={`text-[13.5px] font-bold ${active ? 'text-[#005344]' : 'text-[#191C1D]'}`}>{opt.t}</span>
+                  </div>
+                  <p className="text-[11px] text-[#4a5568] mt-1 leading-snug pl-[22px]">{opt.d}</p>
+                </button>
               );
             })}
           </div>
