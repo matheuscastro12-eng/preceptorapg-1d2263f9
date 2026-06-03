@@ -2,6 +2,11 @@ import { createRoot } from "react-dom/client";
 import ErrorBoundary from "./components/ErrorBoundary";
 import App from "./App.tsx";
 import "./index.css";
+import { captureFirstTouch } from "./lib/attribution";
+
+// Captura a 1ª origem do visitante (UTM/referrer) o quanto antes — antes de
+// uma navegação SPA limpar a URL. Persistido no cadastro p/ atribuir mídia.
+captureFirstTouch();
 
 // Global error handlers — pegam erros que escapam do React (TDZ em
 // modules, promises rejeitadas, listeners fora do tree). Loga no console

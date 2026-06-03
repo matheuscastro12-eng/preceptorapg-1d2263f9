@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { convertVisitorToSignup } from '@/hooks/useVisitorTracking';
+import { applyFirstTouchToProfile } from '@/lib/attribution';
 
 interface AuthContextType {
   user: User | null;
@@ -74,6 +75,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         fullName: name,
       });
+      // Atribuição: grava o first-touch UTM no profile (best-effort, não bloqueia)
+      applyFirstTouchToProfile(data.user.id);
     }
 
     return { error };

@@ -130,6 +130,7 @@ const CrmSuporte = lazy(() => import("./pages/crm/v3/MarketingPagesV3").then((m)
 const CrmRoleta = lazy(() => import("./pages/crm/v3/MarketingPagesV3").then((m) => ({ default: m.RoletaV3 })));
 const CrmBanners = lazy(() => import("./pages/crm/v3/CrmBanners"));
 const CrmAds = lazy(() => import("./pages/crm/v3/CrmAds"));
+const CrmAquisicao = lazy(() => import("./pages/crm/v3/CrmAquisicao"));
 
 // CRM Admin pages (lazy — admin only) — todos v3
 const CrmAdminLayout = lazy(() => import("./pages/crm-admin/CrmAdminLayout"));
@@ -200,6 +201,7 @@ function AppRoutes() {
                   <Route path="landing-funnel" element={<CrmLandingFunnel />} />
                   <Route path="banners" element={<CrmBanners />} />
                   <Route path="ads" element={<CrmAds />} />
+                  <Route path="aquisicao" element={<CrmAquisicao />} />
                   <Route path="health" element={<CrmHealth />} />
                   <Route path="churn" element={<CrmChurn />} />
                   <Route path="automations" element={<CrmAutomations />} />

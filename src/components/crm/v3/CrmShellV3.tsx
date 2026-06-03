@@ -32,6 +32,7 @@ const MARKETING_NAV: { label: string; items: NavItem[] }[] = [
       { to: "/admin/crm-mkt/leads", label: "Leads", icon: Users },
       { to: "/admin/crm-mkt/funnel", label: "Funil & UTM", icon: Filter },
       { to: "/admin/crm-mkt/ads", label: "Meta Ads", icon: Megaphone },
+      { to: "/admin/crm-mkt/aquisicao", label: "Aquisição", icon: Target },
       { to: "/admin/crm-mkt/landing-funnel", label: "Landing pages", icon: BarChart3 },
       { to: "/admin/crm-mkt/banners", label: "Banners da home", icon: ImageIcon },
       { to: "/admin/crm-mkt/health", label: "Saúde dos alunos", icon: Heart },
