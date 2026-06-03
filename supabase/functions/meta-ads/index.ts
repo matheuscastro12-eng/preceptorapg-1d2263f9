@@ -6,6 +6,7 @@
 // Auth: token CRM (HMAC) — só admins do CRM chamam.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -84,10 +85,29 @@ serve(async (req) => {
 
     const META_TOKEN = Deno.env.get("META_ADS_TOKEN");
     const ACCOUNT = Deno.env.get("META_ADS_ACCOUNT_ID");
+
+    // Sem token Graph API: servimos os dados sincronizados via MCP do Claude
+    // (tabela meta_ads_sync, gravada manualmente/periodicamente). Se o token
+    // for configurado depois, o caminho live (Graph API) abaixo assume.
     if (!META_TOKEN || !ACCOUNT) {
+      try {
+        const sb = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        );
+        const { data: row } = await sb
+          .from("meta_ads_sync")
+          .select("payload, synced_at")
+          .order("synced_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (row?.payload) {
+          return json({ ...(row.payload as Record<string, unknown>), synced: true, synced_at: row.synced_at });
+        }
+      } catch (_e) { /* tabela ausente ou sem sync ainda */ }
       return json({
         error: "not_configured",
-        message: "Meta Ads ainda não configurado. Defina os secrets META_ADS_TOKEN e META_ADS_ACCOUNT_ID.",
+        message: "Meta Ads ainda nao configurado. Sincronize via Claude (MCP) ou defina os secrets META_ADS_TOKEN e META_ADS_ACCOUNT_ID.",
       }, 200);
     }
     const act = ACCOUNT.startsWith("act_") ? ACCOUNT : `act_${ACCOUNT}`;
