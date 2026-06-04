@@ -193,9 +193,6 @@ const Landing = () => {
 
       <main className="flex-1">
 
-        {/* ─── Hero banner carousel (CMS gerenciado pelo MKT) ─── */}
-        <HeroBannerCarousel audience="visitors" />
-
         {/* ─── Hero ─────────────────────────────────────── */}
         <section data-section="hero" className="relative flex items-center min-h-[calc(100vh-65px)] py-10 sm:py-14 px-4 sm:px-6 lg:px-10 overflow-hidden">
           {/* Dot grid decorativo no canto superior direito */}
@@ -270,16 +267,39 @@ const Landing = () => {
 
             <Reveal as="div" direction="left" distance={32} delay={120} className="lg:w-1/2 relative w-full">
               <Parallax speed={0.06}>
-                <div className="relative z-10 rounded-xl overflow-hidden border border-slate-200 shadow-[0_24px_60px_-20px_rgba(0,109,91,0.35),0_8px_20px_-8px_rgba(0,109,91,0.20),0_1px_3px_0_rgba(25,28,29,0.08)]">
-                  <video
-                    src="/video-lp.mp4"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    preload="metadata"
-                    className="block w-full h-auto"
-                  />
+                {/* Preview do produto — CSS puro (antes era um vídeo de 41MB que
+                    matava o load no mobile). Mostra um fechamento real em 20s. */}
+                <div className="relative z-10 rounded-xl overflow-hidden border border-slate-200 bg-white shadow-[0_24px_60px_-20px_rgba(0,109,91,0.35),0_8px_20px_-8px_rgba(0,109,91,0.20),0_1px_3px_0_rgba(25,28,29,0.08)]">
+                  <div className="flex items-center gap-1.5 px-4 py-3 border-b border-slate-100 bg-slate-50/80">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-400/70" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400/70" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/70" />
+                    <span className="ml-3 text-[11px] font-semibold text-slate-500 truncate">Fechamento · Insuficiência Cardíaca</span>
+                    <span className="ml-auto text-[10px] font-extrabold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded-full shrink-0">20s</span>
+                  </div>
+                  <div className="p-5 sm:p-6 space-y-4">
+                    <div>
+                      <div className="text-[10.5px] font-bold uppercase tracking-wide text-brand-primary mb-2">Fisiopatologia — cascata</div>
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
+                        <span className="px-2 py-1 rounded-md bg-slate-100 text-slate-700">↓ débito cardíaco</span>
+                        <span className="text-brand-gold">→</span>
+                        <span className="px-2 py-1 rounded-md bg-slate-100 text-slate-700">ativação do SRAA</span>
+                        <span className="text-brand-gold">→</span>
+                        <span className="px-2 py-1 rounded-md bg-slate-100 text-slate-700">retenção de Na⁺/H₂O</span>
+                        <span className="text-brand-gold">→</span>
+                        <span className="px-2 py-1 rounded-md bg-red-50 text-red-600">congestão</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5" aria-hidden>
+                      <div className="h-2.5 rounded bg-slate-100 w-[92%]" />
+                      <div className="h-2.5 rounded bg-slate-100 w-[78%]" />
+                      <div className="h-2.5 rounded bg-slate-100 w-[88%]" />
+                    </div>
+                    <div className="text-[12.5px] text-slate-600 leading-relaxed">
+                      <span className="font-semibold text-brand-ink">Tratamento:</span> IECA + betabloqueador + diurético de alça
+                      <span className="ml-1.5 inline-flex items-center gap-1 text-[10px] font-semibold text-brand-primary bg-brand-primary/[0.08] px-1.5 py-0.5 rounded align-middle">PubMed ↗</span>
+                    </div>
+                  </div>
                 </div>
               </Parallax>
               {/* Decoração sutil — blur verde atrás do video */}
@@ -288,6 +308,11 @@ const Landing = () => {
             </Reveal>
           </div>
         </section>
+
+        {/* ─── Hero banner carousel (CMS do MKT) — movido p/ ABAIXO do hero:
+             no mobile (~85% do tráfego) os banners 4:5 empurravam a proposta
+             de valor + CTA pra fora da 1ª dobra. Agora o hero aparece 1º. ─── */}
+        <HeroBannerCarousel audience="visitors" />
 
         {/* ─── Pain points — você se reconhece? ───────────── */}
         <section data-section="pain-points" className="relative py-16 sm:py-24 bg-white border-t border-slate-100 overflow-hidden">
