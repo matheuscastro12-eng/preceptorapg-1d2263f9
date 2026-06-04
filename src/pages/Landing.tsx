@@ -13,7 +13,6 @@ import logoIcon from '@/assets/logo-icon.png';
 import { Loader2 } from 'lucide-react';
 import Reveal from '@/components/landing/Reveal';
 import ScrollProgress from '@/components/landing/ScrollProgress';
-import HeroBannerCarousel from '@/components/HeroBannerCarousel';
 import Parallax from '@/components/landing/Parallax';
 
 const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
@@ -135,7 +134,7 @@ const Landing = () => {
                 onClick={() => { trackConversion('header-signup'); navigate('/auth?tab=signup'); }}
                 className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-brand-primary-dark text-white text-[13px] font-semibold rounded-md hover:bg-brand-primary-darker transition-all shadow-[0_4px_12px_-2px_rgba(0,109,91,0.35)] hover:shadow-[0_6px_16px_-2px_rgba(0,109,91,0.45)]"
               >
-                Começar
+                Testar grátis
                 <span className="text-brand-gold">→</span>
               </button>
               {/* Mobile hamburger */}
@@ -181,7 +180,7 @@ const Landing = () => {
                 onClick={() => { trackConversion('mobile-menu-signup'); navigate('/auth?tab=signup'); }}
                 className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-white bg-brand-primary-dark hover:bg-brand-primary-darker rounded-md transition-colors"
               >
-                Começar
+                Testar grátis
                 <span className="text-brand-gold">→</span>
               </button>
             </div>
@@ -206,63 +205,44 @@ const Landing = () => {
 
           <div className="relative max-w-[1400px] mx-auto w-full flex flex-col lg:flex-row items-center gap-10 lg:gap-14 xl:gap-20">
             <div className="lg:w-1/2 animate-fade-up">
-              <p className="mb-6 sm:mb-8 text-[11px] sm:text-xs font-semibold text-brand-primary-dark uppercase tracking-[0.2em] flex items-center gap-2 flex-wrap">
-                <span className="w-10 h-px bg-brand-gold" />
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-brand-gold/10 text-brand-primary-dark rounded-full">
+              <p className="mb-5 sm:mb-7">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-brand-gold/10 text-brand-primary-dark rounded-full text-[11px] sm:text-xs font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
-                  +1.200 estudantes ativos
+                  +1.200 estudantes de medicina
                 </span>
               </p>
               <h1
-                className="text-3xl sm:text-5xl md:text-6xl lg:text-[3.75rem] xl:text-[4.25rem] font-bold leading-[1.08] mb-6 sm:mb-8 tracking-[-0.02em] text-brand-ink"
+                className="text-[2rem] sm:text-5xl md:text-6xl lg:text-[3.75rem] xl:text-[4.25rem] font-bold leading-[1.07] mb-4 sm:mb-6 tracking-[-0.02em] text-brand-ink"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
                 Domine PBL, ENAMED e Revalida em <span className="text-brand-primary">1/3 do tempo</span>.
               </h1>
-              <p className="text-base sm:text-lg lg:text-xl text-slate-600 leading-[1.6] mb-8 sm:mb-10 max-w-2xl">
-                Fechamentos acadêmicos com fisiopatologia em cascata, simulados no padrão INEP e chat com PubMed integrado. <span className="font-semibold text-brand-ink">Gere seu primeiro resumo em 20 segundos</span>, grátis e sem cartão.
+              <p className="text-[15px] sm:text-lg lg:text-xl text-slate-600 leading-[1.55] mb-6 sm:mb-8 max-w-xl">
+                Fechamentos completos em <strong className="font-semibold text-brand-ink">20 segundos</strong>, simulados no padrão INEP e respostas com <strong className="font-semibold text-brand-ink">PubMed citado</strong>. A IA médica que <span className="text-brand-primary font-semibold">não inventa referência</span>.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   data-cta="hero-signup"
                   onClick={() => { trackConversion('hero-signup'); navigate('/auth?tab=signup'); }}
-                  className="inline-flex items-center justify-center gap-2 px-7 lg:px-9 py-4 lg:py-5 bg-brand-primary-dark text-white text-sm lg:text-base font-semibold rounded-lg hover:bg-brand-primary-darker active:scale-[0.98] transition-all shadow-[0_8px_24px_-8px_rgba(0,109,91,0.45),0_2px_4px_-1px_rgba(0,109,91,0.20)] hover:shadow-[0_12px_32px_-8px_rgba(0,109,91,0.55),0_4px_8px_-2px_rgba(0,109,91,0.25)]"
+                  className="group inline-flex items-center justify-center gap-2 px-7 lg:px-9 py-4 lg:py-[18px] bg-brand-primary-dark text-white text-[15px] lg:text-base font-bold rounded-xl hover:bg-brand-primary-darker active:scale-[0.98] transition-all shadow-[0_10px_30px_-8px_rgba(0,109,91,0.5),0_2px_4px_-1px_rgba(0,109,91,0.20)]"
                 >
-                  Gerar meu 1º resumo grátis
-                  <span className="text-brand-gold">→</span>
+                  Começar 3 dias grátis
+                  <span className="text-brand-gold group-hover:translate-x-0.5 transition-transform">→</span>
                 </button>
                 <button
-                  data-cta="hero-see-pricing"
-                  onClick={() => document.getElementById('precos')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="px-6 lg:px-8 py-4 lg:py-5 text-brand-ink text-sm lg:text-base font-semibold hover:text-brand-primary-dark transition-colors text-center"
+                  data-cta="hero-how"
+                  onClick={() => document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="px-6 py-4 text-brand-ink text-[15px] font-semibold hover:text-brand-primary-dark transition-colors text-center"
                 >
-                  Ver planos →
+                  Ver como funciona
                 </button>
               </div>
 
-              {/* Trust strip — risk reversal */}
-              <div className="mt-7 sm:mt-9 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] sm:text-xs text-slate-600">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-brand-primary text-base leading-none">✓</span>
-                  Sem cartão pra testar
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-brand-primary text-base leading-none">✓</span>
-                  3 dias de garantia
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-brand-primary text-base leading-none">✓</span>
-                  Cancele em 1 clique
-                </span>
-              </div>
-
-              {/* Linha de prova técnica */}
-              <div className="mt-8 sm:mt-10 flex items-center gap-4 text-[11px] sm:text-xs text-slate-500">
-                <span className="w-10 h-px bg-slate-300" />
-                <span className="uppercase tracking-[0.15em] font-semibold">
-                  ENAMED · REVALIDA · PubMed · SM-2
-                </span>
-              </div>
+              {/* Microcopy — risk reversal enxuto */}
+              <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-slate-500">
+                <span className="inline-flex items-center gap-1.5"><span className="text-brand-primary">✓</span> Grátis, sem cartão</span>
+                <span className="inline-flex items-center gap-1.5"><span className="text-brand-primary">✓</span> Cancele quando quiser</span>
+              </p>
             </div>
 
             <Reveal as="div" direction="left" distance={32} delay={120} className="lg:w-1/2 relative w-full">
@@ -308,11 +288,6 @@ const Landing = () => {
             </Reveal>
           </div>
         </section>
-
-        {/* ─── Hero banner carousel (CMS do MKT) — movido p/ ABAIXO do hero:
-             no mobile (~85% do tráfego) os banners 4:5 empurravam a proposta
-             de valor + CTA pra fora da 1ª dobra. Agora o hero aparece 1º. ─── */}
-        <HeroBannerCarousel audience="visitors" />
 
         {/* ─── Pain points — você se reconhece? ───────────── */}
         <section data-section="pain-points" className="relative py-16 sm:py-24 bg-white border-t border-slate-100 overflow-hidden">
@@ -1050,37 +1025,6 @@ const Landing = () => {
               </div>
             </div>
 
-            {/* Garantia + risk reversal */}
-            <div className="mt-12 sm:mt-16 max-w-3xl mx-auto">
-              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-5 sm:p-7 bg-gradient-to-br from-brand-primary/5 to-brand-gold/5 border border-brand-primary/20 rounded-2xl">
-                <div className="flex-shrink-0 inline-flex items-center justify-center w-14 h-14 rounded-full bg-white border-2 border-brand-primary text-brand-primary shadow-sm">
-                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                </div>
-                <div className="flex-1 text-center sm:text-left">
-                  <p className="text-base sm:text-lg font-bold text-brand-ink mb-1" style={{ fontFamily: "'Manrope', sans-serif" }}>
-                    3 dias de garantia incondicional
-                  </p>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    Use a plataforma à vontade durante 3 dias. Se não economizar pelo menos 5 horas de estudo na primeira semana, devolvemos 100% do valor. <span className="font-semibold text-brand-primary-dark">Sem perguntas.</span>
-                  </p>
-                </div>
-              </div>
-              <p className="text-center text-xs text-slate-500 mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-brand-primary">🔒</span> Pagamento seguro EasyFlow
-                </span>
-                <span className="text-slate-300">·</span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-brand-primary">⚡</span> Acesso liberado em segundos
-                </span>
-                <span className="text-slate-300">·</span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-brand-primary">↩</span> Cancele em 1 clique
-                </span>
-              </p>
-            </div>
           </div>
         </section>
 
@@ -1189,14 +1133,14 @@ const Landing = () => {
               {' '}fechamento de PBL <span className="text-brand-gold/90">na tela</span>.
             </h2>
             <p className="text-base sm:text-lg text-white/75 mb-8 sm:mb-10 leading-relaxed max-w-xl mx-auto">
-              Criar conta é grátis e leva 30 segundos. Você só paga quando decidir que vale a pena, e ainda tem 3 dias de garantia.
+              3 dias grátis, sem cartão. Gere seus primeiros fechamentos e veja a diferença antes de pagar qualquer coisa.
             </p>
             <button
               data-cta="final-cta-signup"
               onClick={() => { trackConversion('final-cta-signup'); navigate('/auth?tab=signup'); }}
               className="inline-flex items-center gap-2 px-8 sm:px-10 py-4 sm:py-5 bg-white text-brand-primary-dark rounded-lg text-base sm:text-lg font-bold hover:bg-slate-50 active:scale-[0.98] transition-colors shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3)]"
             >
-              Gerar meu 1º resumo grátis
+              Começar 3 dias grátis
               <span className="text-brand-gold">→</span>
             </button>
 
@@ -1204,15 +1148,15 @@ const Landing = () => {
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-white/70">
               <span className="inline-flex items-center gap-1.5">
                 <span className="text-brand-gold text-base leading-none">✓</span>
-                Sem cartão pra testar
+                Grátis por 3 dias
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="text-brand-gold text-base leading-none">✓</span>
-                3 dias de garantia
+                Sem cartão
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="text-brand-gold text-base leading-none">✓</span>
-                Cancele em 1 clique
+                Cancele quando quiser
               </span>
             </div>
           </Reveal>
