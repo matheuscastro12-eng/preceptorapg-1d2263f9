@@ -92,6 +92,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // direto no profile. Idempotente com o trigger — não bloqueia o fluxo.
       applyFirstTouchToProfile(data.user.id);
       // Pixel: cadastro concluído — sinal de conversão de topo para o Meta.
+      // (substitui o fbq inline anterior; trackCompleteRegistration faz o mesmo
+      // track via helper tipado — evita disparo duplicado do CompleteRegistration.)
       trackCompleteRegistration({ method: signupIntent === 'paid_signup' ? 'paid_intent' : 'organic' });
     }
 

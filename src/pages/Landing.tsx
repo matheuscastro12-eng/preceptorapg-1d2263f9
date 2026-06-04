@@ -13,8 +13,8 @@ import logoIcon from '@/assets/logo-icon.png';
 import { Loader2 } from 'lucide-react';
 import Reveal from '@/components/landing/Reveal';
 import ScrollProgress from '@/components/landing/ScrollProgress';
-import HeroBannerCarousel from '@/components/HeroBannerCarousel';
 import Parallax from '@/components/landing/Parallax';
+import DemoFechamento from '@/components/landing/DemoFechamento';
 
 const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
   <span
@@ -135,7 +135,7 @@ const Landing = () => {
                 onClick={() => { trackConversion('header-signup'); navigate('/auth?tab=signup'); }}
                 className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-brand-primary-dark text-white text-[13px] font-semibold rounded-md hover:bg-brand-primary-darker transition-all shadow-[0_4px_12px_-2px_rgba(0,109,91,0.35)] hover:shadow-[0_6px_16px_-2px_rgba(0,109,91,0.45)]"
               >
-                Começar
+                Testar grátis
                 <span className="text-brand-gold">→</span>
               </button>
               {/* Mobile hamburger */}
@@ -181,7 +181,7 @@ const Landing = () => {
                 onClick={() => { trackConversion('mobile-menu-signup'); navigate('/auth?tab=signup'); }}
                 className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-white bg-brand-primary-dark hover:bg-brand-primary-darker rounded-md transition-colors"
               >
-                Começar
+                Testar grátis
                 <span className="text-brand-gold">→</span>
               </button>
             </div>
@@ -206,63 +206,44 @@ const Landing = () => {
 
           <div className="relative max-w-[1400px] mx-auto w-full flex flex-col lg:flex-row items-center gap-10 lg:gap-14 xl:gap-20">
             <div className="lg:w-1/2 animate-fade-up">
-              <p className="mb-6 sm:mb-8 text-[11px] sm:text-xs font-semibold text-brand-primary-dark uppercase tracking-[0.2em] flex items-center gap-2 flex-wrap">
-                <span className="w-10 h-px bg-brand-gold" />
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-brand-gold/10 text-brand-primary-dark rounded-full">
+              <p className="mb-5 sm:mb-7">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-brand-gold/10 text-brand-primary-dark rounded-full text-[11px] sm:text-xs font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
-                  +1.200 estudantes ativos
+                  +1.200 estudantes de medicina
                 </span>
               </p>
               <h1
-                className="text-3xl sm:text-5xl md:text-6xl lg:text-[3.75rem] xl:text-[4.25rem] font-bold leading-[1.08] mb-6 sm:mb-8 tracking-[-0.02em] text-brand-ink"
+                className="text-[2rem] sm:text-5xl md:text-6xl lg:text-[3.75rem] xl:text-[4.25rem] font-bold leading-[1.07] mb-4 sm:mb-6 tracking-[-0.02em] text-brand-ink"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
                 Domine PBL, ENAMED e Revalida em <span className="text-brand-primary">1/3 do tempo</span>.
               </h1>
-              <p className="text-base sm:text-lg lg:text-xl text-slate-600 leading-[1.6] mb-8 sm:mb-10 max-w-2xl">
-                Fechamentos acadêmicos com fisiopatologia em cascata, simulados no padrão INEP e chat com PubMed integrado. <span className="font-semibold text-brand-ink">Gere seu primeiro resumo em 20 segundos</span>, grátis e sem cartão.
+              <p className="text-[15px] sm:text-lg lg:text-xl text-slate-600 leading-[1.55] mb-6 sm:mb-8 max-w-xl">
+                Fechamentos completos em <strong className="font-semibold text-brand-ink">20 segundos</strong>, simulados no padrão INEP e respostas com <strong className="font-semibold text-brand-ink">PubMed citado</strong>. A IA médica que <span className="text-brand-primary font-semibold">não inventa referência</span>.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   data-cta="hero-signup"
                   onClick={() => { trackConversion('hero-signup'); navigate('/auth?tab=signup'); }}
-                  className="inline-flex items-center justify-center gap-2 px-7 lg:px-9 py-4 lg:py-5 bg-brand-primary-dark text-white text-sm lg:text-base font-semibold rounded-lg hover:bg-brand-primary-darker active:scale-[0.98] transition-all shadow-[0_8px_24px_-8px_rgba(0,109,91,0.45),0_2px_4px_-1px_rgba(0,109,91,0.20)] hover:shadow-[0_12px_32px_-8px_rgba(0,109,91,0.55),0_4px_8px_-2px_rgba(0,109,91,0.25)]"
+                  className="group inline-flex items-center justify-center gap-2 px-7 lg:px-9 py-4 lg:py-[18px] bg-brand-primary-dark text-white text-[15px] lg:text-base font-bold rounded-xl hover:bg-brand-primary-darker active:scale-[0.98] transition-all shadow-[0_10px_30px_-8px_rgba(0,109,91,0.5),0_2px_4px_-1px_rgba(0,109,91,0.20)]"
                 >
-                  Gerar meu 1º resumo grátis
-                  <span className="text-brand-gold">→</span>
+                  Começar 3 dias grátis
+                  <span className="text-brand-gold group-hover:translate-x-0.5 transition-transform">→</span>
                 </button>
                 <button
-                  data-cta="hero-see-pricing"
-                  onClick={() => document.getElementById('precos')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="px-6 lg:px-8 py-4 lg:py-5 text-brand-ink text-sm lg:text-base font-semibold hover:text-brand-primary-dark transition-colors text-center"
+                  data-cta="hero-how"
+                  onClick={() => document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="px-6 py-4 text-brand-ink text-[15px] font-semibold hover:text-brand-primary-dark transition-colors text-center"
                 >
-                  Ver planos →
+                  Ver como funciona
                 </button>
               </div>
 
-              {/* Trust strip — risk reversal */}
-              <div className="mt-7 sm:mt-9 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] sm:text-xs text-slate-600">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-brand-primary text-base leading-none">✓</span>
-                  Sem cartão pra testar
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-brand-primary text-base leading-none">✓</span>
-                  3 dias de garantia
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-brand-primary text-base leading-none">✓</span>
-                  Cancele em 1 clique
-                </span>
-              </div>
-
-              {/* Linha de prova técnica */}
-              <div className="mt-8 sm:mt-10 flex items-center gap-4 text-[11px] sm:text-xs text-slate-500">
-                <span className="w-10 h-px bg-slate-300" />
-                <span className="uppercase tracking-[0.15em] font-semibold">
-                  ENAMED · REVALIDA · PubMed · SM-2
-                </span>
-              </div>
+              {/* Microcopy — risk reversal enxuto */}
+              <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-slate-500">
+                <span className="inline-flex items-center gap-1.5"><span className="text-brand-primary">✓</span> Grátis, sem cartão</span>
+                <span className="inline-flex items-center gap-1.5"><span className="text-brand-primary">✓</span> Cancele quando quiser</span>
+              </p>
             </div>
 
             <Reveal as="div" direction="left" distance={32} delay={120} className="lg:w-1/2 relative w-full">
@@ -277,28 +258,36 @@ const Landing = () => {
                     <span className="ml-3 text-[11px] font-semibold text-slate-500 truncate">Fechamento · Insuficiência Cardíaca</span>
                     <span className="ml-auto text-[10px] font-extrabold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded-full shrink-0">20s</span>
                   </div>
-                  <div className="p-5 sm:p-6 space-y-4">
-                    <div>
-                      <div className="text-[10.5px] font-bold uppercase tracking-wide text-brand-primary mb-2">Fisiopatologia — cascata</div>
-                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
-                        <span className="px-2 py-1 rounded-md bg-slate-100 text-slate-700">↓ débito cardíaco</span>
-                        <span className="text-brand-gold">→</span>
-                        <span className="px-2 py-1 rounded-md bg-slate-100 text-slate-700">ativação do SRAA</span>
-                        <span className="text-brand-gold">→</span>
-                        <span className="px-2 py-1 rounded-md bg-slate-100 text-slate-700">retenção de Na⁺/H₂O</span>
-                        <span className="text-brand-gold">→</span>
-                        <span className="px-2 py-1 rounded-md bg-red-50 text-red-600">congestão</span>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5" aria-hidden>
-                      <div className="h-2.5 rounded bg-slate-100 w-[92%]" />
-                      <div className="h-2.5 rounded bg-slate-100 w-[78%]" />
-                      <div className="h-2.5 rounded bg-slate-100 w-[88%]" />
-                    </div>
-                    <div className="text-[12.5px] text-slate-600 leading-relaxed">
-                      <span className="font-semibold text-brand-ink">Tratamento:</span> IECA + betabloqueador + diurético de alça
-                      <span className="ml-1.5 inline-flex items-center gap-1 text-[10px] font-semibold text-brand-primary bg-brand-primary/[0.08] px-1.5 py-0.5 rounded align-middle">PubMed ↗</span>
-                    </div>
+                  <div className="relative px-5 sm:px-6 py-5 text-left max-h-[360px] sm:max-h-[430px] overflow-hidden">
+                    <h4 className="flex items-center gap-2 text-[15px] font-bold text-brand-ink mb-1.5" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                      <span className="material-symbols-outlined text-brand-primary text-[18px]">cardiology</span>
+                      Fisiopatologia
+                    </h4>
+                    <p className="text-[12.5px] text-slate-600 leading-relaxed mb-3">
+                      A queda do <strong className="font-semibold text-brand-ink">débito cardíaco</strong> ativa o <strong className="font-semibold text-brand-ink">SRAA</strong> e o tônus simpático, gerando:
+                    </p>
+                    <ul className="space-y-1.5 mb-5">
+                      {[
+                        'Retenção de Na⁺ e água → congestão pulmonar',
+                        'Vasoconstrição → aumento da pós-carga',
+                        'Remodelamento ventricular → piora progressiva',
+                      ].map((t) => (
+                        <li key={t} className="flex items-start gap-2 text-[12.5px] text-slate-600 leading-snug">
+                          <span className="w-1.5 h-1.5 rounded-full bg-brand-primary mt-1.5 shrink-0" />
+                          <span>{t}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <h4 className="flex items-center gap-2 text-[15px] font-bold text-brand-ink mb-1.5" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                      <span className="material-symbols-outlined text-brand-primary text-[18px]">medication</span>
+                      Tratamento de 1ª linha
+                    </h4>
+                    <p className="text-[12.5px] text-slate-600 leading-relaxed">
+                      <strong className="font-semibold text-brand-ink">IECA/BRA + betabloqueador + antagonista da aldosterona</strong> reduzem mortalidade na ICFEr
+                      <span className="ml-1 inline-flex items-center gap-0.5 text-[10px] font-semibold text-brand-primary bg-brand-primary/[0.08] px-1.5 py-0.5 rounded align-middle"><span className="material-symbols-outlined text-[11px]">open_in_new</span>PubMed</span>.
+                    </p>
+                    {/* fade — sugere que há mais conteúdo no fechamento completo */}
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none" />
                   </div>
                 </div>
               </Parallax>
@@ -309,62 +298,8 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* ─── Hero banner carousel (CMS do MKT) — movido p/ ABAIXO do hero:
-             no mobile (~85% do tráfego) os banners 4:5 empurravam a proposta
-             de valor + CTA pra fora da 1ª dobra. Agora o hero aparece 1º. ─── */}
-        <HeroBannerCarousel audience="visitors" />
-
-        {/* ─── Pain points — você se reconhece? ───────────── */}
-        <section data-section="pain-points" className="relative py-16 sm:py-24 bg-white border-t border-slate-100 overflow-hidden">
-          <div className="absolute -top-20 -right-20 w-[24rem] h-[24rem] rounded-full bg-brand-gold/[0.05] blur-3xl pointer-events-none" />
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
-            <Reveal as="div" className="mb-10 sm:mb-14 max-w-2xl">
-              <p className="text-[11px] font-semibold text-brand-primary-dark uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                <span className="w-8 h-px bg-brand-gold" />
-                Você se reconhece?
-              </p>
-              <h2
-                className="text-2xl sm:text-4xl font-bold leading-tight text-brand-ink"
-                style={{ fontFamily: "'Manrope', sans-serif" }}
-              >
-                Cada hora perdida resumindo PowerPoint é<br className="hidden sm:block" />
-                {' '}<span className="text-brand-primary">uma hora a menos</span> revisando o que cai na prova.
-              </h2>
-            </Reveal>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-7">
-              {[
-                {
-                  pain: 'Você gasta 3-4h fazendo um único fechamento de PBL',
-                  fix: 'PreceptorMED gera fechamento completo em ~20 segundos, com fisiopatologia em cascata e mecanismo molecular.',
-                },
-                {
-                  pain: 'ChatGPT inventa referência, mistura idade pediátrica com adulto e erra dose',
-                  fix: 'Aqui as respostas vêm com PubMed citado inline e validação de terminologia médica brasileira.',
-                },
-                {
-                  pain: 'Tem ENAMED chegando e o material disponível é só PowerPoint do professor',
-                  fix: 'Banco de questões no padrão INEP 2011-2025, com vinhetas extensas e distratores plausíveis. Gerado sob demanda.',
-                },
-                {
-                  pain: 'Estuda hoje, esquece em 2 semanas, repete o ciclo no semestre seguinte',
-                  fix: 'Flashcards com SM-2 real (SuperMemo 2): cards voltam quando você está prestes a esquecer, não quando o app quer engajar.',
-                },
-              ].map((item, i) => (
-                <Reveal key={i} delay={i * 80} as="div" className="group relative bg-slate-50 rounded-xl p-6 sm:p-7 border border-slate-200/60 hover:border-brand-primary/30 hover:shadow-[0_8px_24px_-12px_rgba(0,109,91,0.18)] transition-all">
-                  <div className="flex items-start gap-3 mb-4">
-                    <span className="flex-shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-red-50 text-red-500 font-bold text-base">×</span>
-                    <p className="text-[15px] font-semibold text-brand-ink leading-snug">{item.pain}</p>
-                  </div>
-                  <div className="flex items-start gap-3 pl-1">
-                    <span className="flex-shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-brand-primary text-white font-bold text-sm">✓</span>
-                    <p className="text-sm text-slate-600 leading-relaxed">{item.fix}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
+        {/* ─── Experimente sem cadastro — prova de valor instantânea ─── */}
+        <DemoFechamento onSignup={() => { trackConversion('demo-signup'); navigate('/auth?tab=signup'); }} />
 
         {/* ─── Recursos — dark block verde ──────────────────── */}
         <section
@@ -402,31 +337,37 @@ const Landing = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-white/10 border border-white/10 rounded-lg overflow-hidden">
               {[
                 {
+                  icon: 'auto_awesome',
                   title: 'Fechamentos de PBL',
                   desc: 'Resumos com correlação clínico-básica obrigatória: fisiopatologia em cascata, mecanismos moleculares e anatomia aplicada ao caso.',
                   meta: 'Gerado em ~20 segundos',
                 },
                 {
+                  icon: 'history_edu',
                   title: 'Simulados ENAMED · REVALIDA',
                   desc: 'Questões no padrão INEP com vinhetas clínicas extensas, laboratórios numéricos e distratores plausíveis. 5 áreas cobertas.',
                   meta: 'Padrão INEP 2011–2025',
                 },
                 {
+                  icon: 'forum',
                   title: 'Chat com PubMed integrado',
                   desc: 'PreceptorMED busca artigos na PubMed, resume em português e cita fontes inline. Não é busca cega. É síntese com evidência.',
                   meta: 'Gemini 2.5 + E-utilities',
                 },
                 {
+                  icon: 'style',
                   title: 'Flashcards com SM-2',
                   desc: 'Repetição espaçada real (SuperMemo 2). Intervalos ajustam pela sua performance, sem fake streaks.',
                   meta: 'Algoritmo real, não gamificado',
                 },
                 {
+                  icon: 'science',
                   title: 'Mentor Científico',
                   desc: 'Revisão de TCC e artigos com validação ABNT e coerência metodológica. Cada seção avaliada independentemente.',
                   meta: 'Estruturado em 7 seções',
                 },
                 {
+                  icon: 'library_books',
                   title: 'Biblioteca pessoal',
                   desc: 'Todos os resumos, questões e flashcards ficam salvos e pesquisáveis. Exporte em PDF com formatação preservada.',
                   meta: 'Exportação PDF nativa',
@@ -443,6 +384,9 @@ const Landing = () => {
                   {/* Numbering sutil */}
                   <span className="absolute top-5 right-6 text-[11px] font-bold text-white/20 tabular-nums">
                     0{i + 1}
+                  </span>
+                  <span className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-brand-gold/10 border border-brand-gold/20 mb-4 text-brand-gold group-hover:bg-brand-gold/15 transition-colors">
+                    <span className="material-symbols-outlined text-[22px]">{feature.icon}</span>
                   </span>
                   <h3
                     className="text-lg font-bold mb-2 text-white tracking-tight"
@@ -533,58 +477,23 @@ const Landing = () => {
               </Reveal>
 
               {/* Pilares */}
-              <Reveal as="div" direction="up" delay={200} className="col-span-12 lg:col-span-5 space-y-7">
-                <div className="relative pl-5">
-                  <span
-                    className="absolute left-0 top-0 bottom-0 w-[2px] rounded-full"
-                    style={{ background: 'linear-gradient(180deg, rgb(var(--brand-gold)) 0%, rgb(var(--brand-primary)) 100%)' }}
-                  />
-                  <h4
-                    className="text-base font-bold mb-1.5 text-[#191c1d]"
-                    style={{ fontFamily: "'Manrope', sans-serif" }}
-                  >
-                    Resumos de PBL
-                  </h4>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    Fechamentos acadêmicos com correlação clínico-básica: fisiopatologia em cascata, mecanismos moleculares e anatomia aplicada.
-                  </p>
-                </div>
-
-                <div className="border-l-2 border-slate-200 pl-5">
-                  <h4
-                    className="text-base font-bold mb-1.5 text-[#191c1d]"
-                    style={{ fontFamily: "'Manrope', sans-serif" }}
-                  >
-                    Chat com PubMed
-                  </h4>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    PreceptorMED busca, resume e cita artigos do PubMed em português. Respostas baseadas em evidência, não em achismo.
-                  </p>
-                </div>
-
-                <div className="border-l-2 border-slate-200 pl-5">
-                  <h4
-                    className="text-base font-bold mb-1.5 text-[#191c1d]"
-                    style={{ fontFamily: "'Manrope', sans-serif" }}
-                  >
-                    Flashcards com SM-2
-                  </h4>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    Repetição espaçada real, baseada no algoritmo SuperMemo. Questões e cards voltam quando você está prestes a esquecer.
-                  </p>
-                </div>
-
-                <div className="border-l-2 border-slate-200 pl-5">
-                  <h4
-                    className="text-base font-bold mb-1.5 text-[#191c1d]"
-                    style={{ fontFamily: "'Manrope', sans-serif" }}
-                  >
-                    Mentor Científico
-                  </h4>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    Revisão estruturada de TCC e artigos: valida metodologia, ABNT e coerência de cada seção independentemente.
-                  </p>
-                </div>
+              <Reveal as="div" direction="up" delay={200} className="col-span-12 lg:col-span-5 space-y-5">
+                {[
+                  { icon: 'auto_awesome', title: 'Resumos de PBL', desc: 'Fechamentos acadêmicos com correlação clínico-básica: fisiopatologia em cascata, mecanismos moleculares e anatomia aplicada.' },
+                  { icon: 'forum', title: 'Chat com PubMed', desc: 'PreceptorMED busca, resume e cita artigos do PubMed em português. Respostas baseadas em evidência, não em achismo.' },
+                  { icon: 'style', title: 'Flashcards com SM-2', desc: 'Repetição espaçada real, baseada no algoritmo SuperMemo. Questões e cards voltam quando você está prestes a esquecer.' },
+                  { icon: 'science', title: 'Mentor Científico', desc: 'Revisão estruturada de TCC e artigos: valida metodologia, ABNT e coerência de cada seção independentemente.' },
+                ].map((p) => (
+                  <div key={p.title} className="flex gap-4">
+                    <span className="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-brand-primary/[0.07] border border-brand-primary/15 text-brand-primary">
+                      <span className="material-symbols-outlined text-[20px]">{p.icon}</span>
+                    </span>
+                    <div>
+                      <h4 className="text-base font-bold mb-1 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>{p.title}</h4>
+                      <p className="text-sm text-slate-600 leading-relaxed">{p.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </Reveal>
             </div>
           </div>
@@ -1050,37 +959,6 @@ const Landing = () => {
               </div>
             </div>
 
-            {/* Garantia + risk reversal */}
-            <div className="mt-12 sm:mt-16 max-w-3xl mx-auto">
-              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-5 sm:p-7 bg-gradient-to-br from-brand-primary/5 to-brand-gold/5 border border-brand-primary/20 rounded-2xl">
-                <div className="flex-shrink-0 inline-flex items-center justify-center w-14 h-14 rounded-full bg-white border-2 border-brand-primary text-brand-primary shadow-sm">
-                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                </div>
-                <div className="flex-1 text-center sm:text-left">
-                  <p className="text-base sm:text-lg font-bold text-brand-ink mb-1" style={{ fontFamily: "'Manrope', sans-serif" }}>
-                    3 dias de garantia incondicional
-                  </p>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    Use a plataforma à vontade durante 3 dias. Se não economizar pelo menos 5 horas de estudo na primeira semana, devolvemos 100% do valor. <span className="font-semibold text-brand-primary-dark">Sem perguntas.</span>
-                  </p>
-                </div>
-              </div>
-              <p className="text-center text-xs text-slate-500 mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-brand-primary">🔒</span> Pagamento seguro EasyFlow
-                </span>
-                <span className="text-slate-300">·</span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-brand-primary">⚡</span> Acesso liberado em segundos
-                </span>
-                <span className="text-slate-300">·</span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-brand-primary">↩</span> Cancele em 1 clique
-                </span>
-              </p>
-            </div>
           </div>
         </section>
 
@@ -1189,14 +1067,14 @@ const Landing = () => {
               {' '}fechamento de PBL <span className="text-brand-gold/90">na tela</span>.
             </h2>
             <p className="text-base sm:text-lg text-white/75 mb-8 sm:mb-10 leading-relaxed max-w-xl mx-auto">
-              Criar conta é grátis e leva 30 segundos. Você só paga quando decidir que vale a pena, e ainda tem 3 dias de garantia.
+              3 dias grátis, sem cartão. Gere seus primeiros fechamentos e veja a diferença antes de pagar qualquer coisa.
             </p>
             <button
               data-cta="final-cta-signup"
               onClick={() => { trackConversion('final-cta-signup'); navigate('/auth?tab=signup'); }}
               className="inline-flex items-center gap-2 px-8 sm:px-10 py-4 sm:py-5 bg-white text-brand-primary-dark rounded-lg text-base sm:text-lg font-bold hover:bg-slate-50 active:scale-[0.98] transition-colors shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3)]"
             >
-              Gerar meu 1º resumo grátis
+              Começar 3 dias grátis
               <span className="text-brand-gold">→</span>
             </button>
 
@@ -1204,15 +1082,15 @@ const Landing = () => {
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-white/70">
               <span className="inline-flex items-center gap-1.5">
                 <span className="text-brand-gold text-base leading-none">✓</span>
-                Sem cartão pra testar
+                Grátis por 3 dias
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="text-brand-gold text-base leading-none">✓</span>
-                3 dias de garantia
+                Sem cartão
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="text-brand-gold text-base leading-none">✓</span>
-                Cancele em 1 clique
+                Cancele quando quiser
               </span>
             </div>
           </Reveal>
