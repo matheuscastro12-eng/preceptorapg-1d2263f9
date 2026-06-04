@@ -258,28 +258,36 @@ const Landing = () => {
                     <span className="ml-3 text-[11px] font-semibold text-slate-500 truncate">Fechamento · Insuficiência Cardíaca</span>
                     <span className="ml-auto text-[10px] font-extrabold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded-full shrink-0">20s</span>
                   </div>
-                  <div className="p-5 sm:p-6 space-y-4">
-                    <div>
-                      <div className="text-[10.5px] font-bold uppercase tracking-wide text-brand-primary mb-2">Fisiopatologia — cascata</div>
-                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
-                        <span className="px-2 py-1 rounded-md bg-slate-100 text-slate-700">↓ débito cardíaco</span>
-                        <span className="text-brand-gold">→</span>
-                        <span className="px-2 py-1 rounded-md bg-slate-100 text-slate-700">ativação do SRAA</span>
-                        <span className="text-brand-gold">→</span>
-                        <span className="px-2 py-1 rounded-md bg-slate-100 text-slate-700">retenção de Na⁺/H₂O</span>
-                        <span className="text-brand-gold">→</span>
-                        <span className="px-2 py-1 rounded-md bg-red-50 text-red-600">congestão</span>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5" aria-hidden>
-                      <div className="h-2.5 rounded bg-slate-100 w-[92%]" />
-                      <div className="h-2.5 rounded bg-slate-100 w-[78%]" />
-                      <div className="h-2.5 rounded bg-slate-100 w-[88%]" />
-                    </div>
-                    <div className="text-[12.5px] text-slate-600 leading-relaxed">
-                      <span className="font-semibold text-brand-ink">Tratamento:</span> IECA + betabloqueador + diurético de alça
-                      <span className="ml-1.5 inline-flex items-center gap-1 text-[10px] font-semibold text-brand-primary bg-brand-primary/[0.08] px-1.5 py-0.5 rounded align-middle">PubMed ↗</span>
-                    </div>
+                  <div className="relative px-5 sm:px-6 py-5 text-left max-h-[360px] sm:max-h-[430px] overflow-hidden">
+                    <h4 className="flex items-center gap-2 text-[15px] font-bold text-brand-ink mb-1.5" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                      <span className="material-symbols-outlined text-brand-primary text-[18px]">cardiology</span>
+                      Fisiopatologia
+                    </h4>
+                    <p className="text-[12.5px] text-slate-600 leading-relaxed mb-3">
+                      A queda do <strong className="font-semibold text-brand-ink">débito cardíaco</strong> ativa o <strong className="font-semibold text-brand-ink">SRAA</strong> e o tônus simpático, gerando:
+                    </p>
+                    <ul className="space-y-1.5 mb-5">
+                      {[
+                        'Retenção de Na⁺ e água → congestão pulmonar',
+                        'Vasoconstrição → aumento da pós-carga',
+                        'Remodelamento ventricular → piora progressiva',
+                      ].map((t) => (
+                        <li key={t} className="flex items-start gap-2 text-[12.5px] text-slate-600 leading-snug">
+                          <span className="w-1.5 h-1.5 rounded-full bg-brand-primary mt-1.5 shrink-0" />
+                          <span>{t}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <h4 className="flex items-center gap-2 text-[15px] font-bold text-brand-ink mb-1.5" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                      <span className="material-symbols-outlined text-brand-primary text-[18px]">medication</span>
+                      Tratamento de 1ª linha
+                    </h4>
+                    <p className="text-[12.5px] text-slate-600 leading-relaxed">
+                      <strong className="font-semibold text-brand-ink">IECA/BRA + betabloqueador + antagonista da aldosterona</strong> reduzem mortalidade na ICFEr
+                      <span className="ml-1 inline-flex items-center gap-0.5 text-[10px] font-semibold text-brand-primary bg-brand-primary/[0.08] px-1.5 py-0.5 rounded align-middle"><span className="material-symbols-outlined text-[11px]">open_in_new</span>PubMed</span>.
+                    </p>
+                    {/* fade — sugere que há mais conteúdo no fechamento completo */}
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none" />
                   </div>
                 </div>
               </Parallax>
@@ -329,31 +337,37 @@ const Landing = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-white/10 border border-white/10 rounded-lg overflow-hidden">
               {[
                 {
+                  icon: 'auto_awesome',
                   title: 'Fechamentos de PBL',
                   desc: 'Resumos com correlação clínico-básica obrigatória: fisiopatologia em cascata, mecanismos moleculares e anatomia aplicada ao caso.',
                   meta: 'Gerado em ~20 segundos',
                 },
                 {
+                  icon: 'history_edu',
                   title: 'Simulados ENAMED · REVALIDA',
                   desc: 'Questões no padrão INEP com vinhetas clínicas extensas, laboratórios numéricos e distratores plausíveis. 5 áreas cobertas.',
                   meta: 'Padrão INEP 2011–2025',
                 },
                 {
+                  icon: 'forum',
                   title: 'Chat com PubMed integrado',
                   desc: 'PreceptorMED busca artigos na PubMed, resume em português e cita fontes inline. Não é busca cega. É síntese com evidência.',
                   meta: 'Gemini 2.5 + E-utilities',
                 },
                 {
+                  icon: 'style',
                   title: 'Flashcards com SM-2',
                   desc: 'Repetição espaçada real (SuperMemo 2). Intervalos ajustam pela sua performance, sem fake streaks.',
                   meta: 'Algoritmo real, não gamificado',
                 },
                 {
+                  icon: 'science',
                   title: 'Mentor Científico',
                   desc: 'Revisão de TCC e artigos com validação ABNT e coerência metodológica. Cada seção avaliada independentemente.',
                   meta: 'Estruturado em 7 seções',
                 },
                 {
+                  icon: 'library_books',
                   title: 'Biblioteca pessoal',
                   desc: 'Todos os resumos, questões e flashcards ficam salvos e pesquisáveis. Exporte em PDF com formatação preservada.',
                   meta: 'Exportação PDF nativa',
@@ -370,6 +384,9 @@ const Landing = () => {
                   {/* Numbering sutil */}
                   <span className="absolute top-5 right-6 text-[11px] font-bold text-white/20 tabular-nums">
                     0{i + 1}
+                  </span>
+                  <span className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-brand-gold/10 border border-brand-gold/20 mb-4 text-brand-gold group-hover:bg-brand-gold/15 transition-colors">
+                    <span className="material-symbols-outlined text-[22px]">{feature.icon}</span>
                   </span>
                   <h3
                     className="text-lg font-bold mb-2 text-white tracking-tight"
