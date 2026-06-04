@@ -477,58 +477,23 @@ const Landing = () => {
               </Reveal>
 
               {/* Pilares */}
-              <Reveal as="div" direction="up" delay={200} className="col-span-12 lg:col-span-5 space-y-7">
-                <div className="relative pl-5">
-                  <span
-                    className="absolute left-0 top-0 bottom-0 w-[2px] rounded-full"
-                    style={{ background: 'linear-gradient(180deg, rgb(var(--brand-gold)) 0%, rgb(var(--brand-primary)) 100%)' }}
-                  />
-                  <h4
-                    className="text-base font-bold mb-1.5 text-[#191c1d]"
-                    style={{ fontFamily: "'Manrope', sans-serif" }}
-                  >
-                    Resumos de PBL
-                  </h4>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    Fechamentos acadêmicos com correlação clínico-básica: fisiopatologia em cascata, mecanismos moleculares e anatomia aplicada.
-                  </p>
-                </div>
-
-                <div className="border-l-2 border-slate-200 pl-5">
-                  <h4
-                    className="text-base font-bold mb-1.5 text-[#191c1d]"
-                    style={{ fontFamily: "'Manrope', sans-serif" }}
-                  >
-                    Chat com PubMed
-                  </h4>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    PreceptorMED busca, resume e cita artigos do PubMed em português. Respostas baseadas em evidência, não em achismo.
-                  </p>
-                </div>
-
-                <div className="border-l-2 border-slate-200 pl-5">
-                  <h4
-                    className="text-base font-bold mb-1.5 text-[#191c1d]"
-                    style={{ fontFamily: "'Manrope', sans-serif" }}
-                  >
-                    Flashcards com SM-2
-                  </h4>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    Repetição espaçada real, baseada no algoritmo SuperMemo. Questões e cards voltam quando você está prestes a esquecer.
-                  </p>
-                </div>
-
-                <div className="border-l-2 border-slate-200 pl-5">
-                  <h4
-                    className="text-base font-bold mb-1.5 text-[#191c1d]"
-                    style={{ fontFamily: "'Manrope', sans-serif" }}
-                  >
-                    Mentor Científico
-                  </h4>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    Revisão estruturada de TCC e artigos: valida metodologia, ABNT e coerência de cada seção independentemente.
-                  </p>
-                </div>
+              <Reveal as="div" direction="up" delay={200} className="col-span-12 lg:col-span-5 space-y-5">
+                {[
+                  { icon: 'auto_awesome', title: 'Resumos de PBL', desc: 'Fechamentos acadêmicos com correlação clínico-básica: fisiopatologia em cascata, mecanismos moleculares e anatomia aplicada.' },
+                  { icon: 'forum', title: 'Chat com PubMed', desc: 'PreceptorMED busca, resume e cita artigos do PubMed em português. Respostas baseadas em evidência, não em achismo.' },
+                  { icon: 'style', title: 'Flashcards com SM-2', desc: 'Repetição espaçada real, baseada no algoritmo SuperMemo. Questões e cards voltam quando você está prestes a esquecer.' },
+                  { icon: 'science', title: 'Mentor Científico', desc: 'Revisão estruturada de TCC e artigos: valida metodologia, ABNT e coerência de cada seção independentemente.' },
+                ].map((p) => (
+                  <div key={p.title} className="flex gap-4">
+                    <span className="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-brand-primary/[0.07] border border-brand-primary/15 text-brand-primary">
+                      <span className="material-symbols-outlined text-[20px]">{p.icon}</span>
+                    </span>
+                    <div>
+                      <h4 className="text-base font-bold mb-1 text-[#191c1d]" style={{ fontFamily: "'Manrope', sans-serif" }}>{p.title}</h4>
+                      <p className="text-sm text-slate-600 leading-relaxed">{p.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </Reveal>
             </div>
           </div>
