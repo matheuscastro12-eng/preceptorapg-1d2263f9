@@ -77,6 +77,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       // Atribuição: grava o first-touch UTM no profile (best-effort, não bloqueia)
       applyFirstTouchToProfile(data.user.id);
+      // Meta Pixel: evento de conversão de cadastro (deixa o Meta otimizar por
+      // quem assina, não só por clique). O Pixel já é carregado no index.html.
+      try { (window as { fbq?: (...a: unknown[]) => void }).fbq?.("track", "CompleteRegistration"); } catch { /* sem pixel */ }
     }
 
     return { error };

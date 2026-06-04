@@ -14,6 +14,7 @@ import { Loader2 } from 'lucide-react';
 import Reveal from '@/components/landing/Reveal';
 import ScrollProgress from '@/components/landing/ScrollProgress';
 import Parallax from '@/components/landing/Parallax';
+import DemoFechamento from '@/components/landing/DemoFechamento';
 
 const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
   <span
@@ -289,57 +290,8 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* ─── Pain points — você se reconhece? ───────────── */}
-        <section data-section="pain-points" className="relative py-16 sm:py-24 bg-white border-t border-slate-100 overflow-hidden">
-          <div className="absolute -top-20 -right-20 w-[24rem] h-[24rem] rounded-full bg-brand-gold/[0.05] blur-3xl pointer-events-none" />
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
-            <Reveal as="div" className="mb-10 sm:mb-14 max-w-2xl">
-              <p className="text-[11px] font-semibold text-brand-primary-dark uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                <span className="w-8 h-px bg-brand-gold" />
-                Você se reconhece?
-              </p>
-              <h2
-                className="text-2xl sm:text-4xl font-bold leading-tight text-brand-ink"
-                style={{ fontFamily: "'Manrope', sans-serif" }}
-              >
-                Cada hora perdida resumindo PowerPoint é<br className="hidden sm:block" />
-                {' '}<span className="text-brand-primary">uma hora a menos</span> revisando o que cai na prova.
-              </h2>
-            </Reveal>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-7">
-              {[
-                {
-                  pain: 'Você gasta 3-4h fazendo um único fechamento de PBL',
-                  fix: 'PreceptorMED gera fechamento completo em ~20 segundos, com fisiopatologia em cascata e mecanismo molecular.',
-                },
-                {
-                  pain: 'ChatGPT inventa referência, mistura idade pediátrica com adulto e erra dose',
-                  fix: 'Aqui as respostas vêm com PubMed citado inline e validação de terminologia médica brasileira.',
-                },
-                {
-                  pain: 'Tem ENAMED chegando e o material disponível é só PowerPoint do professor',
-                  fix: 'Banco de questões no padrão INEP 2011-2025, com vinhetas extensas e distratores plausíveis. Gerado sob demanda.',
-                },
-                {
-                  pain: 'Estuda hoje, esquece em 2 semanas, repete o ciclo no semestre seguinte',
-                  fix: 'Flashcards com SM-2 real (SuperMemo 2): cards voltam quando você está prestes a esquecer, não quando o app quer engajar.',
-                },
-              ].map((item, i) => (
-                <Reveal key={i} delay={i * 80} as="div" className="group relative bg-slate-50 rounded-xl p-6 sm:p-7 border border-slate-200/60 hover:border-brand-primary/30 hover:shadow-[0_8px_24px_-12px_rgba(0,109,91,0.18)] transition-all">
-                  <div className="flex items-start gap-3 mb-4">
-                    <span className="flex-shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-red-50 text-red-500 font-bold text-base">×</span>
-                    <p className="text-[15px] font-semibold text-brand-ink leading-snug">{item.pain}</p>
-                  </div>
-                  <div className="flex items-start gap-3 pl-1">
-                    <span className="flex-shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-brand-primary text-white font-bold text-sm">✓</span>
-                    <p className="text-sm text-slate-600 leading-relaxed">{item.fix}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
+        {/* ─── Experimente sem cadastro — prova de valor instantânea ─── */}
+        <DemoFechamento onSignup={() => { trackConversion('demo-signup'); navigate('/auth?tab=signup'); }} />
 
         {/* ─── Recursos — dark block verde ──────────────────── */}
         <section
