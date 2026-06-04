@@ -7,6 +7,87 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function sha256Hex(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Envia o evento Purchase ao Meta via Conversions API (server-side). Esse é
+ * o sinal que faltava no funil: ensina o algoritmo QUEM realmente compra,
+ * permitindo otimizar campanhas para conversão e medir CAC/ROAS reais.
+ *
+ * Best-effort — nunca lança nem bloqueia o webhook. Requer o secret
+ * META_CAPI_TOKEN; META_PIXEL_ID default = o pixel do index.html.
+ * event_id = paymentId permite deduplicar com um eventual Purchase do client.
+ */
+async function sendMetaCapiPurchase(
+  admin: ReturnType<typeof createClient>,
+  args: { userId: string; email: string; valueCents: number; eventId: string | null; plan: string },
+): Promise<void> {
+  try {
+    const TOKEN = Deno.env.get("META_CAPI_TOKEN");
+    const PIXEL_ID = Deno.env.get("META_PIXEL_ID") ?? "2419833265151748";
+    if (!TOKEN) {
+      console.log("[CAPI] META_CAPI_TOKEN ausente — Purchase não enviado (configure o secret para ligar a otimização por conversão)");
+      return;
+    }
+    if (!args.valueCents || args.valueCents <= 0) return;
+
+    // Email para matching: usa o do evento; se faltar, busca no profile.
+    let email = (args.email || "").toLowerCase().trim();
+    if (!email) {
+      const { data: p } = await admin.from("profiles").select("email").eq("user_id", args.userId).maybeSingle();
+      email = ((p as { email?: string } | null)?.email || "").toLowerCase().trim();
+    }
+
+    // fbp/fbc do checkout mais recente desse usuário (melhora a atribuição).
+    let fbp: string | null = null;
+    let fbc: string | null = null;
+    const { data: pc } = await admin
+      .from("pending_checkouts")
+      .select("fbp, fbc, created_at")
+      .eq("user_id", args.userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (pc) { fbp = (pc as any).fbp ?? null; fbc = (pc as any).fbc ?? null; }
+
+    const userData: Record<string, unknown> = {};
+    if (email) userData.em = [await sha256Hex(email)];
+    if (fbp) userData.fbp = fbp;
+    if (fbc) userData.fbc = fbc;
+
+    const body = {
+      data: [{
+        event_name: "Purchase",
+        event_time: Math.floor(Date.now() / 1000),
+        action_source: "website",
+        event_id: args.eventId || `pmed_${args.userId}_${Math.floor(Date.now() / 1000)}`,
+        event_source_url: "https://thepreceptor.com.br/",
+        user_data: userData,
+        custom_data: { currency: "BRL", value: Number((args.valueCents / 100).toFixed(2)), content_name: `plano_${args.plan}` },
+      }],
+    };
+
+    const url = `https://graph.facebook.com/v19.0/${PIXEL_ID}/events?access_token=${encodeURIComponent(TOKEN)}`;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 5000);
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: ctrl.signal,
+    });
+    clearTimeout(t);
+    if (res.ok) console.log(`[CAPI] ✅ Purchase enviado: ${email || args.userId} R$${(args.valueCents / 100).toFixed(2)} (${args.plan})`);
+    else console.warn(`[CAPI] Purchase falhou: ${res.status} ${await res.text()}`);
+  } catch (e) {
+    console.warn("[CAPI] exceção:", (e as Error).message);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -492,6 +573,13 @@ serve(async (req) => {
         } else if (event === "subscription.created" || event === "subscription.activated") {
           // Esses eventos nao tem cobranca propria — pulam admin_receitas.
           paymentId = null;
+        }
+
+        // ── Meta CAPI: Purchase server-side (só em cobrança real com valor) ──
+        if (paymentId && valueInCents > 0) {
+          await sendMetaCapiPurchase(supabase, {
+            userId: profile.user_id, email, valueCents: valueInCents, eventId: paymentId, plan,
+          });
         }
 
         if (paymentId && valueInCents > 0) {

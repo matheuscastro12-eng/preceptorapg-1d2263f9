@@ -66,6 +66,8 @@ const MainMenu = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [recentItems, setRecentItems] = useState<RecentItem[]>([]);
+  // null = ainda carregando; false = nunca gerou um fechamento (ativação pendente)
+  const [hasGenerated, setHasGenerated] = useState<boolean | null>(null);
   const phaseAlreadyChecked = user ? sessionStorage.getItem('preceptor_phase_ok') === user.id : false;
   const [checkingPhase, setCheckingPhase] = useState(!phaseAlreadyChecked);
 
@@ -92,6 +94,7 @@ const MainMenu = () => {
         .order('created_at', { ascending: false })
         .limit(3);
       if (data) setRecentItems(data as RecentItem[]);
+      setHasGenerated((data?.length ?? 0) > 0);
     };
     fetchRecent();
   }, [user]);
@@ -100,6 +103,9 @@ const MainMenu = () => {
   if (!user) return <Navigate to="/auth" replace />;
 
   const isFreeUser = !hasAccess && !isAdmin;
+  // Ativação (Fase 2): quem PODE gerar (tem acesso/admin) mas ainda não gerou
+  // nenhum fechamento vê um card dominante levando ao 1º "aha".
+  const showActivation = (hasAccess || isAdmin) && hasGenerated === false;
 
   // Free users: allow AI Chat (has demo limit) and flashcards (has demo limit), block the rest
   const FREE_ALLOWED = ['/ai-chat', '/flashcards'];
@@ -126,6 +132,42 @@ const MainMenu = () => {
       <UpsellOfferModal enabled={isFreeUser} />
 
       <div className="space-y-10">
+        {/* Activation hero — só para quem tem acesso e ainda não gerou nada.
+            Leva direto ao 1º fechamento (o momento "aha" que destrava retenção). */}
+        {showActivation && (
+          <section
+            className="relative overflow-hidden rounded-2xl p-6 sm:p-8 text-white shadow-[0_12px_32px_-8px_rgba(0,83,68,0.35)]"
+            style={{ background: 'linear-gradient(135deg, #003326 0%, #00473c 45%, #006D5B 100%)' }}
+          >
+            <div className="absolute -top-16 -right-10 w-56 h-56 rounded-full bg-brand-gold/10 blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-32 h-32 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+            <div className="relative">
+              <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-brand-gold">
+                <span className="w-5 h-5 rounded-full bg-brand-gold text-[#003326] flex items-center justify-center text-[11px] font-extrabold">1</span>
+                Comece por aqui
+              </span>
+              <h3 className="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+                Gere seu 1º fechamento em ~20 segundos
+              </h3>
+              <p className="mt-2 text-white/80 text-sm leading-relaxed max-w-xl">
+                Escolha um tema da sua PBL e o PreceptorMED monta um resumo completo — com fisiopatologia em cascata e correlação clínico-básica. É o jeito mais rápido de sentir o valor na prática.
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-4">
+                <button
+                  onClick={() => go('/dashboard')}
+                  className="inline-flex items-center gap-2 bg-brand-gold text-[#003326] font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-brand-gold/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-2 focus-visible:ring-offset-[#003326]"
+                >
+                  <MI name="auto_awesome" fill className="text-[18px]" />
+                  Gerar meu 1º fechamento
+                </button>
+                <button onClick={() => navigate('/ai-chat')} className="text-sm font-semibold text-white/70 hover:text-white transition-colors">
+                  ou tirar uma dúvida no chat →
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Greeting */}
         <section>
           <h2 className="text-2xl sm:text-3xl font-bold text-brand-ink mb-1.5">

@@ -1,10 +1,18 @@
 import { supabase } from '@/integrations/supabase/client';
+import { trackInitiateCheckout, getFbp, getFbc } from '@/lib/metaPixel';
 
 // EasyFlow checkout links — centralized
 const LINKS: Record<string, string> = {
   monthly: 'https://pay.easyflow.digital/checkouts/offer/53711ff2-4e3f-4a3e-bf4f-b6297fb5d8e9',
   biannual: 'https://pay.easyflow.digital/checkouts/offer/5f3656be-83d5-4aa6-9e5e-4992a6d28864',
   annual: 'https://pay.easyflow.digital/checkouts/offer/694e4345-758b-4aaa-9187-407708447194',
+};
+
+// Valor cheio por plano (BRL) — usado no evento InitiateCheckout do Pixel.
+const PLAN_VALUE_BRL: Record<string, number> = {
+  monthly: 49.90,
+  annual: 350.90,
+  biannual: 599.90,
 };
 
 function extractOfferId(url: string): string | null {
@@ -41,9 +49,11 @@ export async function getEasyflowLink(
     try {
       const offerId = extractOfferId(base);
       if (offerId) {
+        // Cookies do Pixel guardados junto da intenção — o webhook envia no
+        // evento Purchase (CAPI) para casar a compra com o clique do anúncio.
         const { data, error } = await supabase
           .from('pending_checkouts')
-          .insert({ user_id: userId, offer_id: offerId, plan_hint: plan, source: source ?? null })
+          .insert({ user_id: userId, offer_id: offerId, plan_hint: plan, source: source ?? null, fbp: getFbp(), fbc: getFbc() })
           .select('id')
           .single();
         if (!error && data?.id) {
@@ -62,6 +72,10 @@ export async function getEasyflowLink(
     }
   }
 
+  // Pixel: início de checkout. Disparado aqui porque TODOS os callers
+  // (Pricing, Landing, Auth, paywall, perfil) navegam para o link logo após.
+  trackInitiateCheckout({ value: PLAN_VALUE_BRL[plan] ?? 0, currency: 'BRL', content_name: `plano_${plan}` });
+
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;
 }
@@ -73,5 +87,6 @@ export async function openEasyflowCheckout(
   source?: string,
 ) {
   const link = await getEasyflowLink(plan, email, userId, source);
+  // InitiateCheckout já é disparado dentro de getEasyflowLink.
   if (link) window.location.href = link;
 }

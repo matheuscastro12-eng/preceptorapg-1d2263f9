@@ -8,6 +8,7 @@ import { Menu, X, Loader2 } from 'lucide-react';
 import SupportWidget from '@/components/support/SupportWidget';
 import NpsModal from '@/components/support/NpsModal';
 import { usePresenceTracking } from '@/hooks/usePresenceTracking';
+import { FOCUS_MODE, isFocusPath } from '@/config/features';
 
 /**
  * Shell persistente do app autenticado.
@@ -43,7 +44,7 @@ interface NavGroup {
   items: NavItem[];
 }
 
-const sidebarNavGroups: NavGroup[] = [
+const allNavGroups: NavGroup[] = [
   {
     label: 'Estudo',
     items: [
@@ -84,6 +85,20 @@ const sidebarNavGroups: NavGroup[] = [
     ],
   },
 ];
+
+// Modo foco (Fase 2): mantém só os módulos com uso real — fechamentos
+// (/dashboard) + simulados/ENAMED/flashcards + biblioteca. Filtra itens e
+// filhos e descarta grupos que ficam vazios. Rotas seguem acessíveis por URL.
+const sidebarNavGroups: NavGroup[] = FOCUS_MODE
+  ? allNavGroups
+      .map(g => ({
+        ...g,
+        items: g.items
+          .map(it => (it.children ? { ...it, children: it.children.filter(c => isFocusPath(c.path)) } : it))
+          .filter(it => isFocusPath(it.path) || (it.children?.length ?? 0) > 0),
+      }))
+      .filter(g => g.items.length > 0)
+  : allNavGroups;
 
 // Flat list for auto-expand submenu logic
 const sidebarNavItems: NavItem[] = sidebarNavGroups.flatMap(g => g.items);

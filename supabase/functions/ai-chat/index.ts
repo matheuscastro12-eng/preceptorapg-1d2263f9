@@ -263,6 +263,80 @@ function formatArticlesForPrompt(articles: PubMedArticle[]): string {
   return context;
 }
 
+// ── Contexto de desempenho do aluno (o diferencial: "IA que conhece o aluno") ──
+
+/**
+ * Lê o histórico do próprio aluno (RLS aplica via Authorization do request)
+ * e monta um bloco compacto para personalizar a resposta. Best-effort:
+ * qualquer erro ou ausência de dados retorna string vazia (aluno novo).
+ */
+async function buildStudentContext(client: any, userId: string): Promise<string> {
+  try {
+    const [fechRes, enamedRes, weakRes, progRes] = await Promise.all([
+      client.from("fechamentos").select("tema, tipo, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(6),
+      client.from("enamed_attempts").select("area_filter, total_questions, correct_answers, percentage, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(8),
+      client.from("flashcards").select("tema, area, ease_factor, repetitions").eq("user_id", userId).lt("ease_factor", 2.1).gt("repetitions", 0).order("ease_factor", { ascending: true }).limit(8),
+      client.from("user_progression").select("level, streak_days, total_xp").eq("user_id", userId).maybeSingle(),
+    ]);
+
+    const lines: string[] = [];
+
+    const prog = progRes.data;
+    if (prog) {
+      const bits: string[] = [];
+      if (prog.level != null) bits.push(`nível ${prog.level}`);
+      if (prog.streak_days) bits.push(`ofensiva de ${prog.streak_days} dia(s)`);
+      if (bits.length) lines.push(`- Progresso: ${bits.join(", ")}.`);
+    }
+
+    const fech = (fechRes.data ?? []) as Array<{ tema?: string }>;
+    if (fech.length) {
+      const temas = [...new Set(fech.map((f) => f.tema).filter(Boolean))].slice(0, 6);
+      if (temas.length) lines.push(`- Temas estudados recentemente: ${temas.join("; ")}.`);
+    }
+
+    const enamed = (enamedRes.data ?? []) as Array<{ area_filter?: string; total_questions?: number; correct_answers?: number }>;
+    if (enamed.length) {
+      const byArea: Record<string, { c: number; t: number }> = {};
+      let totC = 0, totT = 0;
+      for (const a of enamed) {
+        totC += a.correct_answers ?? 0; totT += a.total_questions ?? 0;
+        const area = (a.area_filter || "geral").toString();
+        byArea[area] = byArea[area] || { c: 0, t: 0 };
+        byArea[area].c += a.correct_answers ?? 0;
+        byArea[area].t += a.total_questions ?? 0;
+      }
+      if (totT > 0) lines.push(`- Desempenho geral em simulados: ${Math.round((totC / totT) * 100)}% (${totC}/${totT} questões).`);
+      const weakAreas = Object.entries(byArea)
+        .filter(([, v]) => v.t >= 3)
+        .map(([k, v]) => ({ k, pct: v.c / v.t }))
+        .sort((a, b) => a.pct - b.pct)
+        .slice(0, 3)
+        .map((x) => `${x.k} (${Math.round(x.pct * 100)}%)`);
+      if (weakAreas.length) lines.push(`- Áreas mais fracas em simulados: ${weakAreas.join(", ")}.`);
+    }
+
+    const weak = (weakRes.data ?? []) as Array<{ tema?: string; area?: string }>;
+    if (weak.length) {
+      const temas = [...new Set(weak.map((c) => c.tema || c.area).filter(Boolean))].slice(0, 6);
+      if (temas.length) lines.push(`- Tópicos com baixa retenção (flashcards difíceis): ${temas.join("; ")}.`);
+    }
+
+    if (!lines.length) return "";
+
+    return `\n\n# CONTEXTO DO ALUNO (memória de desempenho — use para personalizar)
+${lines.join("\n")}
+
+Como usar este contexto:
+- Calibre a profundidade pelo nível e pelo histórico; conecte a pergunta atual ao que ele já estudou quando fizer sentido.
+- Priorize reforçar os pontos fracos acima quando forem relevantes para a pergunta.
+- NÃO repita esses dados de volta nem comente que tem acesso a eles, a menos que o aluno pergunte explicitamente sobre o próprio desempenho. Nunca invente histórico além do que está aqui.`;
+  } catch (e) {
+    console.error("buildStudentContext error:", e);
+    return "";
+  }
+}
+
 // ── Main handler ──
 
 serve(async (req) => {
@@ -296,6 +370,10 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Busca o contexto de desempenho do aluno em paralelo (não bloqueia o
+    // PubMed nem a checagem de assinatura). Resolvido ao montar o prompt.
+    const studentCtxPromise = buildStudentContext(supabaseClient, userId);
 
     // Check subscription status
     const { data: subscription } = await supabaseClient
@@ -376,7 +454,8 @@ serve(async (req) => {
       console.log(`PubMed found ${pubmedArticles.length} articles`);
     }
 
-    const systemPrompt = SYSTEM_PROMPT;
+    // Anexa o contexto de desempenho do aluno ao system prompt (vazio p/ aluno novo).
+    const systemPrompt = SYSTEM_PROMPT + (await studentCtxPromise);
 
     // Validate and sanitize messages
     const sanitizedMessages = messages.slice(-MAX_MESSAGES).map((m: any) => ({

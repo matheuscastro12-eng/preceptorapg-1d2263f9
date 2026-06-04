@@ -2,7 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { convertVisitorToSignup } from '@/hooks/useVisitorTracking';
-import { applyFirstTouchToProfile } from '@/lib/attribution';
+import { applyFirstTouchToProfile, getFirstTouch } from '@/lib/attribution';
+import { trackCompleteRegistration } from '@/lib/metaPixel';
 
 interface AuthContextType {
   user: User | null;
@@ -53,6 +54,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signUp = async (email: string, password: string, name: string, phone?: string, signupIntent?: 'paid_signup' | 'organic') => {
+    // First-touch capturado na 1ª visita (localStorage). Vai no
+    // raw_user_meta_data para o trigger handle_new_user gravar em
+    // profiles.first_utm_* na criação — caminho server-side, imune a RLS
+    // e à corrida que antes deixava 100% dos cadastros como "Direto".
+    const ft = getFirstTouch();
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -64,6 +71,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Quando 'paid_signup', o trigger pula o trial gratuito
           // (usuario veio do botao de assinatura — webhook EasyFlow cria sub paga)
           signup_intent: signupIntent ?? 'organic',
+          // Atribuição first-touch (lida pelo trigger na criação do profile)
+          first_utm_source: ft?.utm_source ?? null,
+          first_utm_medium: ft?.utm_medium ?? null,
+          first_utm_campaign: ft?.utm_campaign ?? null,
+          first_landing_page: ft?.landing_page ?? null,
+          first_touch_at: ft?.ts ?? null,
         },
       },
     });
@@ -75,8 +88,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         fullName: name,
       });
-      // Atribuição: grava o first-touch UTM no profile (best-effort, não bloqueia)
+      // Backup best-effort (caso haja sessão imediata): grava o first-touch
+      // direto no profile. Idempotente com o trigger — não bloqueia o fluxo.
       applyFirstTouchToProfile(data.user.id);
+      // Pixel: cadastro concluído — sinal de conversão de topo para o Meta.
+      trackCompleteRegistration({ method: signupIntent === 'paid_signup' ? 'paid_intent' : 'organic' });
     }
 
     return { error };
