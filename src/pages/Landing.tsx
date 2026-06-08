@@ -15,6 +15,7 @@ import Reveal from '@/components/landing/Reveal';
 import ScrollProgress from '@/components/landing/ScrollProgress';
 import Parallax from '@/components/landing/Parallax';
 import DemoFechamento from '@/components/landing/DemoFechamento';
+import SectionCTA from '@/components/landing/SectionCTA';
 
 const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
   <span
@@ -402,6 +403,14 @@ const Landing = () => {
                 </Reveal>
               ))}
             </div>
+
+            <SectionCTA
+              variant="dark"
+              ctaId="recursos-signup"
+              label="Testar todas as ferramentas — 3 dias grátis"
+              sub="Sem cartão • acesso imediato"
+              onClick={() => { trackConversion('recursos-signup'); navigate('/auth?tab=signup'); }}
+            />
           </div>
         </section>
 
@@ -496,6 +505,14 @@ const Landing = () => {
                 ))}
               </Reveal>
             </div>
+
+            <SectionCTA
+              variant="light"
+              ctaId="como-funciona-signup"
+              label="Gerar questões ENAMED do meu jeito"
+              sub="Vinhetas no padrão INEP, ilimitadas"
+              onClick={() => { trackConversion('como-funciona-signup'); navigate('/auth?tab=signup'); }}
+            />
           </div>
         </section>
 
@@ -627,6 +644,14 @@ const Landing = () => {
                 </div>
               </div>
             </div>
+
+            <SectionCTA
+              variant="light"
+              ctaId="exemplo-pbl-signup"
+              label="Gerar um resumo assim do meu tema"
+              sub="Do tema ao fechamento completo em segundos"
+              onClick={() => { trackConversion('exemplo-pbl-signup'); navigate('/auth?tab=signup'); }}
+            />
           </div>
         </section>
 
@@ -770,6 +795,14 @@ const Landing = () => {
                 </div>
               </Reveal>
             </div>
+
+            <SectionCTA
+              variant="dark"
+              ctaId="depoimentos-signup"
+              label="Entrar pra +1.200 estudantes"
+              sub="3 dias grátis • cancela quando quiser"
+              onClick={() => { trackConversion('depoimentos-signup'); navigate('/auth?tab=signup'); }}
+            />
           </div>
         </section>
 
@@ -1033,6 +1066,14 @@ const Landing = () => {
                 preceptormed@gmail.com
               </a>
             </p>
+
+            <SectionCTA
+              variant="light"
+              ctaId="faq-signup"
+              label="Tirei minhas dúvidas — quero testar"
+              sub="3 dias grátis • sem compromisso"
+              onClick={() => { trackConversion('faq-signup'); navigate('/auth?tab=signup'); }}
+            />
           </div>
         </section>
 
