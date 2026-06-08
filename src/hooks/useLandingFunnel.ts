@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { trackPixelCustom } from '@/lib/metaPixel';
 
 /**
  * Landing funnel analytics.
@@ -238,6 +239,16 @@ export function useLandingFunnel() {
             if (!sectionEnterTimes.current[section]) {
               sectionEnterTimes.current[section] = Date.now();
               track({ ...base(), event_type: 'section_view', section });
+              // Meta: atualiza a URL (?secao=...) — refresh-safe, preserva
+              // utm/fbclid — e dispara um evento custom por seção. Permite
+              // montar no Meta um funil da LP (Custom Conversion por
+              // `section_name` OU por URL contendo "secao=precos", etc.).
+              try {
+                const u = new URL(window.location.href);
+                u.searchParams.set('secao', section);
+                window.history.replaceState(window.history.state, '', u.pathname + u.search + u.hash);
+              } catch { /* ignore */ }
+              trackPixelCustom('ViewSection', { section_name: section });
             }
           } else {
             const enteredAt = sectionEnterTimes.current[section];

@@ -28,6 +28,19 @@ export function trackPixel(event: string, params?: PixelParams, eventID?: string
   } catch { /* no-op */ }
 }
 
+/**
+ * Evento CUSTOM do Pixel (`fbq('trackCustom', ...)`). Para sinais que não são
+ * eventos padrão do Meta — ex.: navegação por seção da landing (ViewSection).
+ * No Events Manager dá pra medir o funil da LP por `section_name` ou por URL
+ * (cada seção atualiza a URL ?secao=...).
+ */
+export function trackPixelCustom(event: string, params?: PixelParams): void {
+  try {
+    if (typeof window === 'undefined' || typeof window.fbq !== 'function') return;
+    window.fbq('trackCustom', event, params ?? {});
+  } catch { /* no-op */ }
+}
+
 /** Cadastro concluído — sinal de topo de conversão (registro). */
 export const trackCompleteRegistration = (params?: PixelParams, eventID?: string) =>
   trackPixel('CompleteRegistration', params, eventID);
