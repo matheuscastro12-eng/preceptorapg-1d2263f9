@@ -8,7 +8,11 @@
 // IMPORTANTE: nada é deletado. As rotas continuam existindo e acessíveis
 // por URL — só saem da sidebar. Para reverter, basta FOCUS_MODE = false.
 
-export const FOCUS_MODE = true;
+// Desligado a pedido do dono: itens (Provas Importadas, Cronograma, Casos
+// clínicos, PreceptorBook, Scribe, Curadoria) tinham sumido da sidebar e isso
+// foi percebido como regressão. Sidebar volta completa. Para reativar o modo
+// foco depois (tunado), basta voltar para true e ajustar FOCUS_NAV_PATHS.
+export const FOCUS_MODE = false;
 
 /**
  * Caminhos que permanecem na sidebar quando FOCUS_MODE está ligado.
