@@ -17,6 +17,7 @@ import Parallax from '@/components/landing/Parallax';
 import DemoFechamento from '@/components/landing/DemoFechamento';
 import SectionCTA from '@/components/landing/SectionCTA';
 import MobileStickyCTA from '@/components/landing/MobileStickyCTA';
+import PlatformShowcase from '@/components/landing/PlatformShowcase';
 import { useInView } from '@/hooks/useInView';
 
 const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
@@ -442,6 +443,9 @@ const Landing = () => {
             />
           </div>
         </section>
+
+        {/* ─── A plataforma por dentro — mockups SVG on-brand ─── */}
+        <PlatformShowcase onSignup={() => { trackConversion('plataforma-signup'); navigate('/auth?tab=signup'); }} />
 
         {/* ─── Como funciona — Exemplo real ──────────────── */}
         <section id="como-funciona" data-section="como-funciona" className="relative py-16 sm:py-28 bg-white overflow-hidden">
