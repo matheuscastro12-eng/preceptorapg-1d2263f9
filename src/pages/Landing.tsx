@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useVisitorTracking } from '@/hooks/useVisitorTracking';
 import { useLandingFunnel } from '@/hooks/useLandingFunnel';
-import { Menu, X as XIcon } from 'lucide-react';
+import { Menu, X as XIcon, ChevronDown } from 'lucide-react';
 import { getEasyflowLink } from '@/utils/easyflow';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import PixPaymentModal from '@/components/PixPaymentModal';
@@ -16,6 +16,8 @@ import ScrollProgress from '@/components/landing/ScrollProgress';
 import Parallax from '@/components/landing/Parallax';
 import DemoFechamento from '@/components/landing/DemoFechamento';
 import SectionCTA from '@/components/landing/SectionCTA';
+import MobileStickyCTA from '@/components/landing/MobileStickyCTA';
+import { useInView } from '@/hooks/useInView';
 
 const MI = ({ name, fill = false, className = '' }: { name: string; fill?: boolean; className?: string }) => (
   <span
@@ -39,6 +41,19 @@ const Landing = () => {
 
   // Funnel analytics: onde o visitante para, onde converte
   const { trackConversion } = useLandingFunnel();
+
+  // Hero em viewport — controla o CTA fixo mobile, o scroll-cue e a condensação
+  // do header. Trata como "no hero" até a 1ª detecção real do observer (evita
+  // flash do CTA fixo no load, quando o hero já está visível).
+  const [heroRef, heroVisible] = useInView<HTMLElement>({ triggerOnce: false, threshold: 0, rootMargin: '0px' });
+  const [heroSeen, setHeroSeen] = useState(false);
+  useEffect(() => { if (heroVisible) setHeroSeen(true); }, [heroVisible]);
+  const heroInView = !heroSeen || heroVisible;
+
+  // Navegação suave entre seções (scroll-margin-top no CSS compensa o header).
+  const scrollToId = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   // Redirect logged-in users to menu
   if (!loading && user) {
@@ -65,11 +80,11 @@ const Landing = () => {
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col texture-grain" style={{ fontFamily: 'var(--font-body)' }}>
 
       {/* ─── Header ───────────────────────────────────── */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200/60">
+      <header className={'sticky top-0 z-50 bg-white/95 backdrop-blur border-b transition-all duration-300 ' + (heroInView ? 'border-slate-200/60' : 'border-slate-200 shadow-[0_4px_20px_-6px_rgba(0,109,91,0.12)]')}>
         {/* Accent line — gold assinatura (mesma linguagem do sidebar + auth) */}
         <div className="h-px w-full bg-gradient-to-r from-transparent via-brand-gold/30 to-transparent" />
 
-        <nav className="flex justify-between items-center w-full px-4 sm:px-6 md:px-10 py-3 sm:py-4 max-w-7xl mx-auto">
+        <nav className={'flex justify-between items-center w-full px-4 sm:px-6 md:px-10 max-w-7xl mx-auto transition-all duration-300 ' + (heroInView ? 'py-3 sm:py-4' : 'py-2 sm:py-2.5')}>
           {/* Logo + eyebrow */}
           <button
             onClick={() => navigate('/')}
@@ -104,6 +119,7 @@ const Landing = () => {
               <a
                 key={l.href}
                 href={l.href}
+                onClick={(e) => { e.preventDefault(); scrollToId(l.href.slice(1)); }}
                 className="px-5 text-[13px] font-medium text-brand-ink-2 hover:text-brand-primary-dark transition-colors"
               >
                 {l.label}
@@ -143,9 +159,14 @@ const Landing = () => {
               <button
                 onClick={() => setMobileMenu(!mobileMenu)}
                 className="md:hidden p-2 text-brand-ink-2 hover:text-brand-primary-dark transition-colors -mr-2"
-                aria-label="Menu"
+                aria-label={mobileMenu ? 'Fechar menu' : 'Abrir menu'}
+                aria-expanded={mobileMenu}
+                aria-controls="mobile-nav"
               >
-                {mobileMenu ? <XIcon className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                <span className="relative block w-5 h-5">
+                  <Menu className={'absolute inset-0 w-5 h-5 transition-all duration-200 ' + (mobileMenu ? 'opacity-0 rotate-90 scale-75' : 'opacity-100 rotate-0')} />
+                  <XIcon className={'absolute inset-0 w-5 h-5 transition-all duration-200 ' + (mobileMenu ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-90 scale-75')} />
+                </span>
               </button>
             </div>
           )}
@@ -153,7 +174,7 @@ const Landing = () => {
 
         {/* Mobile menu dropdown */}
         {mobileMenu && !user && (
-          <div className="md:hidden border-t border-slate-200/60 bg-white px-4 py-4 space-y-1 animate-fade-in">
+          <div id="mobile-nav" className="md:hidden border-t border-slate-200/60 bg-white px-4 py-4 space-y-1 animate-fade-in">
             {[
               { href: '#como-funciona', label: 'Como funciona' },
               { href: '#recursos',      label: 'Recursos' },
@@ -163,7 +184,7 @@ const Landing = () => {
               <a
                 key={l.href}
                 href={l.href}
-                onClick={() => setMobileMenu(false)}
+                onClick={(e) => { e.preventDefault(); setMobileMenu(false); scrollToId(l.href.slice(1)); }}
                 className="block py-2.5 text-sm font-medium text-brand-ink-2 hover:text-brand-primary-dark"
               >
                 {l.label}
@@ -195,7 +216,7 @@ const Landing = () => {
       <main className="flex-1">
 
         {/* ─── Hero ─────────────────────────────────────── */}
-        <section data-section="hero" className="relative flex items-center min-h-[calc(100vh-65px)] py-10 sm:py-14 px-4 sm:px-6 lg:px-10 overflow-hidden">
+        <section ref={heroRef} data-section="hero" className="relative flex items-center min-h-[calc(100vh-65px)] py-10 sm:py-14 px-4 sm:px-6 lg:px-10 overflow-hidden">
           {/* Dot grid decorativo no canto superior direito */}
           <div className="absolute -top-10 right-0 w-[28rem] h-[28rem] pointer-events-none texture-dots-subtle" style={{ maskImage: 'radial-gradient(ellipse at top right, black 20%, transparent 75%)', WebkitMaskImage: 'radial-gradient(ellipse at top right, black 20%, transparent 75%)' }} />
           {/* Glow gold no canto inferior esquerdo */}
@@ -248,7 +269,7 @@ const Landing = () => {
             </div>
 
             <Reveal as="div" direction="left" distance={32} delay={120} className="lg:w-1/2 relative w-full">
-              <Parallax speed={0.06}>
+              <Parallax speed={typeof window !== 'undefined' && window.innerWidth >= 768 ? 0.06 : 0}>
                 {/* Preview do produto — CSS puro (antes era um vídeo de 41MB que
                     matava o load no mobile). Mostra um fechamento real em 20s. */}
                 <div className="relative z-10 rounded-xl overflow-hidden border border-slate-200 bg-white shadow-[0_24px_60px_-20px_rgba(0,109,91,0.35),0_8px_20px_-8px_rgba(0,109,91,0.20),0_1px_3px_0_rgba(25,28,29,0.08)]">
@@ -296,6 +317,14 @@ const Landing = () => {
               <div className="absolute -bottom-8 -right-8 w-64 h-64 rounded-full bg-brand-primary/10 blur-3xl pointer-events-none -z-0" />
               <div className="absolute -top-8 -left-8 w-48 h-48 rounded-full bg-brand-gold/10 blur-3xl pointer-events-none -z-0" />
             </Reveal>
+          </div>
+
+          {/* Scroll-cue — convida o mobile a rolar; some quando o hero sai da viewport */}
+          <div
+            className={'absolute bottom-3 left-1/2 -translate-x-1/2 md:hidden pointer-events-none transition-opacity duration-500 ' + (heroInView ? 'opacity-100' : 'opacity-0')}
+            aria-hidden
+          >
+            <ChevronDown className="w-6 h-6 text-brand-gold motion-safe:animate-bounce" />
           </div>
         </section>
 
@@ -718,6 +747,10 @@ const Landing = () => {
                   <img
                     src="/alicia-cosendey.jpg"
                     alt="Alicia Cosendey"
+                    width={40}
+                    height={40}
+                    loading="lazy"
+                    decoding="async"
                     className="w-10 h-10 rounded-full object-cover"
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
@@ -772,6 +805,10 @@ const Landing = () => {
                   <img
                     src="/matheus-milani.jpg"
                     alt="Matheus Milani"
+                    width={40}
+                    height={40}
+                    loading="lazy"
+                    decoding="async"
                     className="w-10 h-10 rounded-full object-cover"
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
@@ -1175,6 +1212,15 @@ const Landing = () => {
           </div>
         </div>
       </footer>
+
+      {/* Espaçador para a barra fixa mobile não cobrir o rodapé */}
+      <div className="h-20 md:hidden" aria-hidden />
+
+      {/* CTA fixo mobile — gatilho de cadastro persistente p/ quem rola além do hero */}
+      <MobileStickyCTA
+        show={!heroInView}
+        onClick={() => { trackConversion('mobile-sticky-signup'); navigate('/auth?tab=signup'); }}
+      />
 
       <PixPaymentModal
         open={pixModal}

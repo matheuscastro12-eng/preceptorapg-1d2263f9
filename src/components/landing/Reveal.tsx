@@ -31,6 +31,11 @@ export default function Reveal({
   style,
 }: RevealProps) {
   const [ref, inView] = useInView<HTMLDivElement>();
+  // Respeita a preferência do sistema — espelha o guard já presente em Parallax.
+  const reduce =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const translate = !inView
     ? direction === 'up'
@@ -49,13 +54,17 @@ export default function Reveal({
     <Tag
       ref={ref}
       className={className}
-      style={{
-        opacity: inView ? 1 : 0,
-        transform: translate,
-        transition: `opacity ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, transform ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms`,
-        willChange: inView ? 'auto' : 'transform, opacity',
-        ...style,
-      }}
+      style={
+        reduce
+          ? { opacity: 1, ...style }
+          : {
+              opacity: inView ? 1 : 0,
+              transform: translate,
+              transition: `opacity ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, transform ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms`,
+              willChange: inView ? 'auto' : 'transform, opacity',
+              ...style,
+            }
+      }
     >
       {children}
     </Tag>

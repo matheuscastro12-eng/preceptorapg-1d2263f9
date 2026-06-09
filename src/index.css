@@ -888,3 +888,26 @@ a:focus-visible {
     opacity: 0;
   }
 }
+
+/* ── Navegação suave: compensa o header sticky ao pular para uma seção ── */
+[data-section] {
+  scroll-margin-top: 5rem;
+}
+
+/* ── prefers-reduced-motion (global) ───────────────────────────────────
+   Fecha num só lugar o gap de acessibilidade: cobre Reveal, animate-fade-up
+   (texto+CTA do hero), animate-pulse e os slide-ins. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-fade-up {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

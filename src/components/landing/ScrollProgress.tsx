@@ -32,7 +32,7 @@ export default function ScrollProgress() {
   return (
     <div
       aria-hidden
-      className="fixed top-0 left-0 right-0 z-[60] h-0.5 pointer-events-none"
+      className="fixed top-0 left-0 right-0 z-[60] h-1 sm:h-0.5 pointer-events-none"
       style={{ transform: 'translateZ(0)' }}
     >
       <div
@@ -40,6 +40,7 @@ export default function ScrollProgress() {
         style={{
           width: `${progress}%`,
           background: 'linear-gradient(90deg, rgb(var(--brand-gold)) 0%, rgb(var(--brand-primary)) 100%)',
+          boxShadow: '0 0 8px rgba(201, 168, 76, 0.45)',
           transition: 'width 80ms linear',
         }}
       />
