@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { trackPurchase } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import logoIcon from '@/assets/logo-icon.png';
 import { CheckCircle, BookOpen, Brain, Zap, ArrowRight, Sparkles, Star } from 'lucide-react';
@@ -20,6 +21,14 @@ const PLAN_INFO: Record<string, { label: string; title: string }> = {
   bianual: { label: 'Plano Bi-anual', title: 'Assinatura Bi-anual Confirmada' },
 };
 
+// Valor cheio por plano (BRL) — mesmos números de src/utils/easyflow.ts.
+// Aqui as chaves são em PT (param da rota /obrigado/:plano).
+const PLAN_VALUE_BRL: Record<string, number> = {
+  mensal: 49.90,
+  anual: 350.90,
+  bianual: 599.90,
+};
+
 export default function SubscriptionThankYou() {
   const navigate = useNavigate();
   const { plano } = useParams<{ plano?: string }>();
@@ -31,6 +40,39 @@ export default function SubscriptionThankYou() {
     document.title = `Bem-vindo ao PreceptorMED! — ${plan.label}`;
     return () => { document.title = 'PreceptorMED'; };
   }, [plan.label]);
+
+  // Conversão de Compra (fundo de funil) — Meta Pixel + GA4.
+  // eventID determinístico p/ o Meta deduplicar com o Purchase do CAPI
+  // (easyflow-webhook usa a mesma fórmula `pmed_purchase_<uid>`).
+  // Fallback resiliente caso o webhook falhe; guard de sessão evita disparo duplo.
+  useEffect(() => {
+    if (!user?.id) return;
+    const firedKey = `pmed_purchase_fired_${user.id}`;
+    try {
+      if (sessionStorage.getItem(firedKey)) return;
+      sessionStorage.setItem(firedKey, '1');
+    } catch { /* ignora storage indisponível */ }
+
+    const eventID = `pmed_purchase_${user.id}`;
+    const value = PLAN_VALUE_BRL[plano ?? ''];
+    const contentName = `plano_${plano ?? 'assinatura'}`;
+
+    trackPurchase(
+      value
+        ? { value, currency: 'BRL', content_name: contentName }
+        : { currency: 'BRL', content_name: contentName },
+      eventID,
+    );
+
+    try {
+      window.gtag?.('event', 'purchase', {
+        ...(value ? { value } : {}),
+        currency: 'BRL',
+        transaction_id: eventID,
+        items: [{ item_name: contentName }],
+      });
+    } catch { /* no-op */ }
+  }, [user?.id, plano]);
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col" style={{ fontFamily: 'var(--font-body)' }}>

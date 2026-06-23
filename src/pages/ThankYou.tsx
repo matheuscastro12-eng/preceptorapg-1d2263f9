@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { trackStartTrial } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import logoIcon from '@/assets/logo-icon.png';
 import { CheckCircle, BookOpen, Brain, Zap, ArrowRight, Sparkles, Clock } from 'lucide-react';
@@ -23,6 +24,22 @@ export default function ThankYou() {
     document.title = 'Teste de 3 dias iniciado — PreceptorMED';
     return () => { document.title = 'PreceptorMED'; };
   }, []);
+
+  // Conversão do trial grátis (sem valor) — Meta Pixel + GA4.
+  // Guard de sessão evita disparo duplo (StrictMode / revisita).
+  useEffect(() => {
+    if (!user?.id) return;
+    const firedKey = `pmed_trial_fired_${user.id}`;
+    try {
+      if (sessionStorage.getItem(firedKey)) return;
+      sessionStorage.setItem(firedKey, '1');
+    } catch { /* ignora storage indisponível */ }
+
+    trackStartTrial({ content_name: 'trial_3dias' }, `pmed_trial_${user.id}`);
+    try {
+      window.gtag?.('event', 'start_trial', { method: 'trial_3dias' });
+    } catch { /* no-op */ }
+  }, [user?.id]);
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col" style={{ fontFamily: 'var(--font-body)' }}>

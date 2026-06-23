@@ -64,7 +64,9 @@ async function sendMetaCapiPurchase(
         event_name: "Purchase",
         event_time: Math.floor(Date.now() / 1000),
         action_source: "website",
-        event_id: args.eventId || `pmed_${args.userId}_${Math.floor(Date.now() / 1000)}`,
+        // event_id determinístico por usuário — o client (página /obrigado) dispara
+        // o Purchase do Pixel com a mesma fórmula, e o Meta deduplica os dois.
+        event_id: args.userId ? `pmed_purchase_${args.userId}` : (args.eventId || `pmed_${Math.floor(Date.now() / 1000)}`),
         event_source_url: "https://thepreceptor.com.br/",
         user_data: userData,
         custom_data: { currency: "BRL", value: Number((args.valueCents / 100).toFixed(2)), content_name: `plano_${args.plan}` },
