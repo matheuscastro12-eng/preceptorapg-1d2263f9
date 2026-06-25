@@ -11,6 +11,7 @@
 declare global {
   interface Window {
     fbq?: (...args: unknown[]) => void;
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
@@ -52,6 +53,18 @@ export const trackInitiateCheckout = (params?: PixelParams, eventID?: string) =>
 /** Lead — interesse qualificado (ex.: deixou contato). */
 export const trackLead = (params?: PixelParams, eventID?: string) =>
   trackPixel('Lead', params, eventID);
+
+/**
+ * Compra concluída — fundo de funil. Disparado no client (página de obrigado)
+ * com o MESMO `eventID` usado pelo CAPI (server, easyflow-webhook) para o Meta
+ * deduplicar os dois e não contar a compra duas vezes.
+ */
+export const trackPurchase = (params?: PixelParams, eventID?: string) =>
+  trackPixel('Purchase', params, eventID);
+
+/** Início de teste grátis — sinal de conversão do trial (sem valor). */
+export const trackStartTrial = (params?: PixelParams, eventID?: string) =>
+  trackPixel('StartTrial', params, eventID);
 
 // ── Cookies de matching (fbp/fbc) — melhoram a atribuição do CAPI ──
 
